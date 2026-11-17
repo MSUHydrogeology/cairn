@@ -316,3 +316,11 @@ verify mechanics before archive. The real anchor remains unpassed.
 
 **Coverage:** Focused on changes addressing the three findings in `958e31b8`.
 No implementation tests, migration, desktop or ceremony runs.
+
+## Implementation progress -- C1 -- 2026-11-17
+
+C1 source work is committed: shared test roots (`62461f5d`, exact trailing-parent correction `33e0adeb`), scanner roots (`5d9cde98`), remaining command roots (`3cf3ac7f`), the ownership catalog (`cdfa8f4c`), and committed-history prose-tool lookup (`66c05be9`). Small public-entry and disposable relocated-layout checks passed; no mapped-family or suite rerun was made. The earlier scanner commit's literal newline escapes are formatting only.
+
+The two standalone gate files and two `conftest.py` roots retain their pre-authentication behavior for C4's explicit transition. Relocated end-to-end Meter/network execution, lock finalization and final combined checks remain with C3–C5; C1 is not whole-tree certification.
+
+C2 execution escalated to Sol after two Terra attempts ended at inspection without product edits or tests. The reviewed transaction and accepted scope remain unchanged. Luna is absent from the current model catalog; Terra is the available ordinary execution model. Elapsed and tokens: unknown.
