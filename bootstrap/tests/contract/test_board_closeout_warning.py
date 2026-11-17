@@ -79,7 +79,8 @@ def test_non_plain_modes_do_not_warn(tmp_path, capsys):
 
 
 def test_warning_escapes_untrusted_name_and_never_shows_closeout(tmp_path, capsys):
-    name = "2026-01-01-bad\x1b.md"
+    name = "2026-01-01-\x1b" + "x" * 105 + ".md"
+    assert len(name) == 120
     try:
         _plan(tmp_path, body="Not run: PRIVATE\x1b\x01 text\n", name=name)
     except OSError:
