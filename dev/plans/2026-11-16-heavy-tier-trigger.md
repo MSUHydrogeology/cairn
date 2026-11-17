@@ -317,3 +317,27 @@ The ordinary review's required-selection finding remains unresolved pending the 
 ## Targeted review disposition -- GPT-6.1 Terra -- 2026-11-17
 
 Reviewed verification replacement `bbc10dc6527a214c06d6be7272f538326d072db0` against the finding in `63e74fe6`. The Maintainer's quoted direction replaces the per-chunk before/after family requirement with focused public-promise checks and one joined Group 2 integration selection. The plan expressly records that the old coverage, including C2, was not fully run; it retains the cap, parity, exact-text sweep and negative controls. The former blocking finding is closed under the authorized requirement. **Verdict: ACCEPT**, subject to the joined integration still due at arc closeout. No tests or source were rerun for this targeted disposition. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Implementation and final disposition
+
+The implementation is delivered under the Maintainer's short-rule allowance:
+the narrowed trigger, Maintainer-only tier lowering, Windows network-share
+guidance, and the preserved stricter `AGENTS.md` and engine/security rules.
+The accepted degraded Scope delta remains explicit; its reduced repeated
+coverage is the authorized short-rule fallback, not an unrecorded omission.
+Ordinary review `9f0a249b` closes the finding in `63e74fe6` under the
+Maintainer's direction `bbc10dc6`; Security Review `725f48e1` found no source
+defect.
+
+The obsolete whole mapped before/after family repetitions were not run.
+Focused public checks and recorded evidence are retained; one joined Group 2
+integration selection remains due at arc closeout and does not block this
+plan. The separate Group 1 Human baseline wait remains unpassed and is not
+plan work. The four-hash C7 record `7ebd3d8e` was valid at the completed
+revision. No other accepted plan check remains open.
+
+**Benefit versus cost**: worth it — Security Review follows meaningful
+behavior/input changes and new trust boundaries, while only the Maintainer
+can lower a tier and doubt or stricter project rules still route to review;
+implementation cost unknown; remaining burden one joined Group 2 integration
+selection at arc closeout. Revisit if that integration finds a defect.
