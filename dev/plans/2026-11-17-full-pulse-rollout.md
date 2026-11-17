@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-17-terra-meter-adopter-rollout.md
 **Author**: GPT-6.1 Terra (Medium)
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-17
 **In brief**: Offer Meter setup with consent and deliver the complete pulse at every goodnight.
@@ -442,3 +442,49 @@ Independently walked attended consent, refusal with/without remembrance, request
 **Bounding**: WIDER RUN REQUIRED — changed Windows report behavior and joined installed/upgrade entries still need their accepted native node and C4 checks. These remain unpassed.
 
 **Coverage:** Combined committed source and scoped prior results, including original runtime/native records, C1–C3 checks and reported mutations; no reviewer runtime reruns or private inputs. Live timings had active logs, not controlled unchanged inputs. Excludes unrelated Git-helper/ceremony repairs. Slightly over target to retain both-plan and scenario coverage; final integration, installed hashes and native evidence remain due.
+
+## Review response and implementation verification -- GPT-6.1 Terra (plan author, Medium) -- 2026-11-17
+
+The ordinary review's non-blocking double-offer finding is fixed in both
+session-start copies at `3f5fed07`: a declined offer is reused for that
+invocation, including when refusal was not remembered, while a requested
+reoffer remains available. The combined Security Review accepts the same
+source. The Maintainer's “Use agent scenario review” allowance was carried
+out: attended consent, refusal with and without remembrance, requested
+reoffer, unattended silence, and reflection-only and full-handoff goodnight
+were independently walked, including deliberately wrong actions. These are
+instruction scenarios, not evidence of future agent compliance.
+
+C4 is complete. The required native report node
+`test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile`
+passed on Windows x64 Python 3.13.18 in 19.22 seconds using a synthetic
+profile. The joined fresh-install and pre-Pulse upgrade smoke passed one
+case on Python 3.13.13 in 7.69 seconds, checking installed CLI views and a
+fresh Meter report in each phase. A separate synthetic two-call run passed
+in 2.82 seconds: report 1.16677 seconds and default pre-prune refresh
+1.18088 seconds. This is not an actual full-handoff pruning measurement or
+human-use evidence. The initial scratch collection error was corrected
+before any case ran. Reused records include the three C2 freshness mutants
+(each failed its public node), the unmutated Python 3.12.9 control (3.00
+seconds), and the C2 native report evidence; no full selection or repeat of
+the 35 native nodes was run.
+
+The scoped install finalization registered Pulse and the existing living-state
+rule, preserving both destination bytes, then finalized the four changed
+records. Five records including Pulse were verified; other records,
+ancestors and provenance remained untouched. The prior Security Review's
+“WIDER RUN REQUIRED” bound is now met by the named native report and C4
+joined smoke above. No trust operation or real-checkout re-anchor was run.
+
+**Dispositions**: none for agent-owned work. The grouped Maintainer re-anchor
+and legacy AST mismatch remain separate, unpassed waits on `dev/PLANNING.md`;
+the full-handoff pruning and human-use observations remain unmeasured and are
+not claimed by this synthetic C4 check.
+
+**Benefit versus cost**: worth it -- adopters retain the complete Pulse at
+each goodnight with fresh current-project usage when available and an honest
+closed status otherwise; cost includes the named focused native and joined
+checks, with aggregate agent time and tokens unknown; remaining burden is the
+separate grouped Maintainer re-anchor and future human-use evidence. Revisit
+if an installed or upgraded report shows stale or cross-project usage, or a
+goodnight omits the complete pulse.

@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-meter-reads-only-new-bytes.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **In brief**: The usage meter will count from the day it is turned on, read only what each session log has gained, keep the individual events in its private ledger to a bounded number, and say plainly when a run is incomplete.
@@ -404,3 +404,33 @@ and tokens: unknown.
 ## Security code review cross-reference -- Sol High -- 2026-11-17
 
 The combined Security code review is in [the full Pulse plan](2026-11-17-full-pulse-rollout.md), reviewed commit `3f5fed079498e55fa54e16dc91b0b67dd716bce6`, covering this runtime range and the rollout at the same revision. Source review ACCEPTS with no remaining defect; Bounding is WIDER RUN REQUIRED for the already owed native report and joined installed/upgrade checks. Existing scoped runtime/native results are reused with their limits; no private inputs or reviewer runtime reruns. This record does not clear remaining verification or authorize archive. Elapsed and tokens: unknown.
+
+## Implementation closeout -- Codex Luna (Implementation Low) -- 2026-11-17
+
+C10 is complete at the authorized 8 MiB line bound. Its exact-bound and
+over-bound public refresh checks passed on synthetic inputs; the accepted
+constant is 8 MiB in both Meter copies, with the 512 MiB log cap, 1 GiB run
+cap, privacy checks and refusal behavior retained. The separate live timing
+record above contains two successful receipts (`ok`, no reason, unknown
+coverage) at 6.70 and 6.46 seconds, peak RSS 233,914,368 and 214,056,960
+bytes, and sanitized ledger counts. These were immediate follow-ups with
+active logs, not a controlled unchanged-input measurement.
+
+The ordinary and Security Review findings are closed in the full Pulse plan:
+the C2 overlap repair resolves the export refusal, and the C3 double-offer
+correction is recorded with the combined ordinary review. The accepted native
+report check and C4 joined installed/upgrade smoke are also recorded there.
+They are relevant final-path evidence; no Meter family, Windows roster or
+benchmark was rerun during closeout. The C7 synthetic timing and C9 native
+results remain the recorded runs on their stated commits and interpreters.
+
+**Dispositions**: none for agent-owned work. The grouped Maintainer re-anchor
+remains a separate, unpassed wait on `dev/PLANNING.md`; archiving this plan
+does not clear it.
+
+**Benefit versus cost**: worth it -- Meter reads forward from saved cursors,
+keeps bounded event history and now exports the owned current-project usage
+without the former overlap refusal; cost includes the recorded focused runs
+and two live follow-up refreshes, with total agent time and tokens unknown;
+remaining burden is the separate grouped Maintainer re-anchor. Revisit if a
+future refresh breaches its 60-second, 32 MiB ledger or 50,000-wait limits.
