@@ -750,3 +750,23 @@ The trim preserves core testing protections and adds closeout warnings.
 **Coverage.** Traced C3–C7 security duties, amendment and closeout survivors, slots and Plain Language; checked appendix scope, encoding, board parity, mapping and eight lock hashes. Python 3.13.13: 227 board tests passed. No security family, full suite, install/upgrade rerun or Windows. The grouped Human re-anchor remains unpassed.
 
 **Waiting-line check.** Plan history shows no newly reached plan fence or deviation request in the reviewed range.
+
+## Author response -- Codex (Implementation, Medium) -- 2026-11-17
+
+Accepted the three Security findings. Source `4610bb42` restores the exact summary prohibition to all four templates and fixes the moved span, isolates second-pass UTF-8/read failures as an incomplete advisory while retaining unsafe-source refusals, and requires the escaped, elided 120-character filename in a positive warning. Public controls passed for both error classes and unsafe source (3 cases including the filename control); removing the warning made its control fail. The first run had two test assertion failures because the table displays the filename, not its title; the corrected assertions passed. Scoped hash commit `012de4a9` updates only the two installed templates and board. Security re-review of these corrections remains due. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation closeout -- Codex -- 2026-11-17
+
+C1–C6 held on the recorded implementation evidence; C7's prescribed boundary and C8's advisory and positive control are corrected above; C9's lock and closeout are recorded here, subject to the targeted Security re-review. Accepted scope is preserved. Shipped / Cairn word counts: testing 1,369 / 1,369; guide 4,785 / 4,754; plan 3,887 / 3,875; proposal 3,396 / 3,878. All four template slot sets match their post-C7 predecessors; board copies match. The shorter instructions reduce reading; the background file and warning add an installed file and an advisory read. These counts measure words, not real agent attention or efficacy.
+
+Correction checks: claim and link checks on the five changed prose files, snippet sync and neutrality passed; targeted public controls passed, and the warning-removal mutation failed as intended. The previous 227 board results cover unchanged behavior; no broad rerun was made. Integrity reports 12 existing mismatches and none in the three finalized paths; it is not a clean-tree pass. The reviewed `_CORE_MAPPINGS` mismatch remains unpassed. The prior install and upgrade fixture results are recorded in `d8b80db0`.
+
+Remaining: targeted Security re-review of the correction. Home: this plan's code review before archive.
+
+Remaining: grouped Human baseline re-anchor and release certification, including native Windows. Home: `dev/PLANNING.md` Waiting on Maintainer and `docs/release-process.md`.
+
+Remaining: one joined Group 2 integration on the combined revision. Home: `dev/PLANNING.md` Sequence, arc owner.
+
+Remaining: upgrade warning about moving local rule lines before merging. Home: coordinator's `CHANGELOG.md` release entry, as specified in this plan's Upgrade note.
+
+Not covered: whole suite, security family, native Windows, desktop-app behavior and a real adopter upgrade merge. Home: release certification and joined Group 2 integration above; the real-adopter merge is not claimed by the fixture.
