@@ -122,3 +122,13 @@ Both quick passes are ACCEPT with no blocking findings. Operative text revised i
 **Tier**: light
 
 **ACCEPTED**, by the Maintainer's direction in chat, 2026-11-16: "Great, yeah get it working quickly and then we can do a full session handoff after." This accepts the recommended option (remove the refusal) with the review findings folded in. Recurring human operations added: none beyond the one re-anchor the pinned files already owe. If the Maintainer wants a different option, `git revert` of the implementation commits undoes it, followed by one more pin cycle.
+
+## Implementation record -- Claude Sonnet 5.5 -- 2026-11-16
+
+Built by a Sonnet implementer and the coordinator. The simpler form (remove the key from the query pattern) landed at `04be1505`; the scoped lockfile record at `3be80d14`. The implementer's tests: 9 helper tests (3 failing first) and 5 meter tests (2 failing first), 8 mutants all caught; the new helper digest is pinned in the 23 files and both `exact_replace.py` second-order digests. Red until the Maintainer's re-anchor: the gate-manifest digest tests and `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package`.
+
+Live check, 2026-11-16 20:5x: `python tools/meter.py refresh --json` moved from `project_remote_unavailable` to a second refusal: the meter's strict claim parser raised on 1,565 older records in Cairn's own `dev/intents.jsonl` whose agent is a name (for example a coordinator title), not a session tag. Fixed as a defect repair at `b78b8fa3` (such a claim is skipped; a malformed files list is still refused; one failing-first test; `test_meter.py` 489 passed, 35 skipped; six more tier files 149 passed; not run: `test_session_routines.py` after that change). The refresh now reaches `source_budget_exceeded`, the known limit that meter plan chunks C5 to C8 remove; the proposal's aim (the meter gets past the project checks) is met, and the budget is the plan's.
+
+Not run: Windows (the worker route is unchanged and the Windows twin of the `commondir` and `config.worktree` refusal has no fake); the other two projects' own claim ledgers (their layouts were not read). Owed before archive: the Maintainer's re-anchor and the joined targeted check.
+
+**Benefit versus cost**: the project checks now pass for Cairn and the worktree-using projects, for two small edits and one pin cycle; the whole-log refresh stays unavailable until the plan's later chunks land.
