@@ -264,3 +264,26 @@ Conclusion: at the Maintainer's direction (chat, 2026-11-16, quoted in Scope del
 What changed: F1 to F8, the per-place sentence list and the Waiting line are gone; Acceptance and Verification match. The rule (trigger sentence; "when in doubt, take the Security Review"; "a project rule that names its own Security Review still applies") is the same words at 15 places and its first two sentences at the four picture descriptions. `AGENTS.md` and the figure note keep compressed lines because the rule does not fit (1,523 words against a 1,500 cap; 175 characters against 85). The five-limits list is dropped. B and W are unchanged; L uses the rule's doubt wording. Scope delta stays `degraded`; the Maintainer's words are the allowance.
 
 No second Security Review pass is needed: the change only narrows the plan. The Security reviewer's two blocking points are met by the rule's last two sentences, and the 12 places where an author picks a tier keep a doubt sentence and pointer. The Maintainer may call one.
+
+## Code review -- GPT-6.1 Terra (ordinary Reviewer, Medium) -- 2026-11-17
+
+```
+Reviewed commit: 1c76dd2b
+Range: 612a9999^..1c76dd2b, heavy-tier plan paths only
+```
+
+**Findings**: raised. **Verdict**: REVISE (required verification evidence).
+
+The strongest case is a shorter, consistent rule that avoids unnecessary review while retaining the doubt route, stricter project fences, and Maintainer authority.
+
+**Foundations**
+
+1. **Should this happen as framed?** The prose implements the allowed short rule, lowering procedure and Windows guidance; the required selected-test evidence below remains incomplete. -- governing guides, lifecycle, Security Review module; Verification 3
+2. **Best alternative.** Keep the shared short rule and the explicitly permitted word-cap fallback; a separate exception list would add continuing maintenance. -- Scope delta; C4 and C7 records
+3. **What would show it wrong?** A changed guard or new untrusted supplier classified light, an unauthorized lowering, or a selected check failing after an edit would falsify the claim. -- proposal worked cases; Verification 3
+
+**Blocking: selected tests lack required evidence.** Verification 3 requires the selector's tests for each chunk before and after its edit. For C2, `python tools/test_tiers.py for dev/modules/security-review.md templates/modules/team-gated/security-review.md` selects `test_onboarding_seed_roster.py`, `test_replacement_tools.py` and `test_scaffold.py`, but `b0bc52cd` states no tests were named or run. The handoff records focused results rather than a complete before/after mapping for all chunks. Close with applicable exact before/after evidence or the Maintainer's explicit disposition of unmet accepted checks; do not treat the prose gates as those tests.
+
+**Cases and rule loss.** Path validation changes, new untrusted suppliers and guard fixture/policy changes call for heavy; a pure comment or unchanged guard move can drop unless a stricter rule applies. The unattended fetch case changes caller assumptions and merits Security Review under the doubt rule. Only the Maintainer lowers a tier. The authorized short rule drops the five-limit list, and the restored old AGENTS line remains stricter; the proposal-path, security-verification and one-line engine fences remain. Audience judgment: authoring duties stay in the installed guide and templates; summaries are shorter as allowed.
+
+**Coverage.** Read committed plan, proposal and scoped diffs; checked the C2 selector, not the tests. Reused recorded 367 C1 and 28 focused C3 passes, parity, cap, sweeps and negative controls. Coordinator reports canonical Python 3.13 repin status succeeded with no changed plan paths; 25 other frozen changes and a pin remain. Did not inspect unrelated Git attributes changes, execute Windows behavior, rerun tests or resolve the 14 unrelated integrity mismatches. Security Review is independent. Elapsed and tokens: unknown. Over target to identify the unmet check and worked cases.
