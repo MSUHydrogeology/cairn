@@ -113,6 +113,7 @@
         "test_meter",
         "test_prune_tools",
         "test_replacement_tools",
+        "test_rules_folder_offer",
         "test_gauge",
         "test_reference_scripts",
         "test_fork_advisory",
