@@ -1,7 +1,7 @@
 # Plan: Offer rules-folder guidance when a project's rules folder grows
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-staged-modules-and-triggers.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Opened**: 2026-11-16
 **In brief**: When a project's rules folder grows past 5,000 words, the session-start routine offers once a short guide to organizing it, asks, and remembers the answer in a committed file.
@@ -237,3 +237,18 @@ Not run: any repository test, T1 itself (only a scratch prototype of it), the tr
 The original review identifies the prior ID; the binding names the replacement. The amendment replaces the incorrect new-file expectation with unchanged frozen drift, verifies classification with a positive control, and preserves the C3 stop for unexplained drift. The saved before and after reports compare equal. The existing focused checks and tier registration provide coverage; C2, C3, integrity checks and the separate baseline operation remain owed. No accepted outcome or fence is removed.
 
 Coverage: Read the amendment diff, binding, original review and amendment rules. Relied on the author's classification and check results; did not rerun tests, inspect implementation or perform a baseline operation. **Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+
+## Response -- Terra Medium -- 2026-11-17
+
+**Prior reviewed commit**: fdada31b8520c9b29689864e7a1a92673a7a3c2e
+**Replacement commit**: c287ae3ae9aef312e488e8e426078ab52f2a4061
+**Affected cells and dependencies**: Sequence, Acceptance criteria, Verification, C1, C2, C3
+**Disposition**: ready-to-implement
+
+Accept the Internal amendment review at `957d3584`. The corrected report
+expectation is verified by the saved reports and pinned-roster membership
+check; no baseline or protection changes. Reuse passing C1 checks and the
+registry correction `d52c1bb8`; resume C2 and C3 without replaying C1.
+
+**Elapsed**: under 1 minute. **Tokens**: unknown.
