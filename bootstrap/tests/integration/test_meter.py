@@ -843,7 +843,8 @@ def gate():
     event(release, wait=True)
 ns = runpy.run_path(meter_path, run_name="meter_native_control")
 globals_ = ns["main"].__globals__
-globals_["_now_utc"] = lambda: datetime.datetime(2026, 11, 5, tzinfo=datetime.timezone.utc)
+globals_["_now_utc"] = lambda: datetime.datetime(
+    2026, 11, 5, tzinfo=datetime.timezone.utc)
 real_api = globals_["_WindowsConsentAPI"]
 class SyntheticProfileAPI:
     def __init__(self):
@@ -1495,14 +1496,19 @@ def test_windows_native_claude_resume_and_identity_on_a_spaced_root(
 
     spaced_root = native_windows_root / "meter root with spaces"
     spaced_root.mkdir()
-    setup = _native_meter_setup(spaced_root, native_meter_git_exe,
+    setup = _native_meter_setup(native_windows_root, native_meter_git_exe,
                                 source_records=False)
-    assert Path(setup["root"]).drive and " " in str(setup["source"])
+    setup["source"].rmdir()
+    spaced_source = spaced_root / "approved-source"
+    spaced_source.mkdir()
+    assert Path(setup["root"]).drive and " " in str(spaced_source)
 
     config_path = setup["profile"] / ".cairn" / "meter.json"
     config = json.loads(config_path.read_bytes())
     config["sources"][0]["tool"] = "claude"
+    config["sources"][0]["root"] = str(spaced_source)
     config_path.write_bytes(json.dumps(config).encode("utf-8"))
+    setup["source"] = spaced_source
 
     source = setup["source"] / "session-alpha.jsonl"
 
@@ -1567,6 +1573,10 @@ def test_windows_native_meter_source_metadata_mutations(
     source = setup["source"] / "session-alpha.jsonl"
     original = source.read_bytes()
     _native_meter_successful_refresh(setup)
+    if case in {"append-and-replace-held", "creation-time-drift",
+                "dacl-drift-restored-times"}:
+        _native_meter_append_valid_update(setup)
+        original = source.read_bytes()
     if case == "hardlink":
         os.link(source, setup["source"] / "linked.jsonl")
         receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
@@ -1629,6 +1639,7 @@ def test_windows_native_meter_source_metadata_mutations(
             bounded_root, native_meter_git_exe,
             meter_overrides=[(f"{bound} = " + ("10_000" if bound == "MAX_SOURCE_FILES" else "1_000_000"),
                              f"{bound} = 0" if bound == "MAX_SOURCE_FILES" else f"{bound} = 1")])
+        _native_meter_write_control(setup, "ordinary")
         if case == "enumeration-bound":
             receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
             _native_meter_receipt(receipt, "unavailable", "source_budget_exceeded")
@@ -3182,6 +3193,14 @@ def test_windows_scan_normalizes_synthetic_source_without_project_proof(monkeypa
     records = codex()
     records[1]["payload"]["cwd"] = r"C:\synthetic\project"
     api = SyntheticWindowsStreamAPI(b"".join(encoded(records)))
+    info = api.info
+
+    def post_start_file_mtime(handle):
+        result = info(handle)
+        if api.paths.get(handle) == "file":
+            result["mtime_ns"] = int(CLOCK.timestamp() * 1_000_000_000) + 1
+        return result
+    api.info = post_start_file_mtime
     events, cursors, reasons, forks, conflicts, waits = scan_started(
         config, windows_api=api, windows_user_sid=b"synthetic-user-sid")
     event, = events
@@ -3784,6 +3803,7 @@ def test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile(
                for project in projects)
 
     source_root.mkdir()
+    source_rows = []
     for index, (alias, project, remote) in enumerate(zip(aliases, projects, remotes), 1):
         (project / ".git").mkdir(parents=True)
         (project / ".git" / "config").write_text(
@@ -3800,15 +3820,15 @@ def test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile(
                                  "model": "gpt-5.3-codex"}),
             codex_direct(owner, owner, turn, turn, f"response-{alias}", 20, 20, 20),
         ]
-        (source_root / f"session-{alias}.jsonl").write_bytes(
-            b"".join(encoded(owner_rows)))
+        source_rows.append((alias, owner_rows))
         _claim_id, project_claims = c2_claim_records(owner)
         (project / "dev" / "intents.jsonl").write_bytes(b"".join(encoded(project_claims)))
 
-    wrapper = r'''import runpy, sys
+    wrapper = r'''import datetime, runpy, sys
 meter_path, synthetic_profile, command = sys.argv[1:]
 namespace = runpy.run_path(meter_path, run_name="meter_native_synthetic")
 globals_ = namespace["main"].__globals__
+globals_["_now_utc"] = lambda: datetime.datetime(2026, 11, 5, tzinfo=datetime.timezone.utc)
 real_api = globals_["_WindowsConsentAPI"]
 class SyntheticProfileAPI:
     def __init__(self):
@@ -3836,6 +3856,10 @@ raise SystemExit(namespace["main"]())
     ledger_path = profile / ".cairn" / "meter" / "ledger.json"
     export_paths = [project / "dev" / "measurement" / "meter.json"
                     for project in projects]
+    run("refresh")  # Record the start point while the approved source is empty.
+    for alias, owner_rows in source_rows:
+        (source_root / f"session-{alias}.jsonl").write_bytes(
+            b"".join(encoded(owner_rows)))
     snapshots = None
     for command in ("refresh", "refresh", "rebuild"):
         run(command)
