@@ -356,3 +356,19 @@ The ordinary reader corrected its non-blocking estimate classification in
 at `f9b579df`. The Maintainer's allowance is `3462d142`. Actual paired
 manual reviews and the preserved history establish this bounded adjustment;
 the legacy advisory baseline mismatch is not represented as cleared.
+
+## Implementation -- coordinator -- 2026-11-17
+
+**C10 remains open.** Luna reported the real 8 MiB refresh failed with
+`source_budget_exceeded` in 4.385 seconds. Counter-only instrumentation then
+located the refusal in `_wait_artifact_map`'s closed-claim overlap comparisons,
+not the source line bound. That instrumented refresh wrote the 3,699,862-byte
+ledger before project export failed; it printed no private content or paths.
+The unchanged refresh was not run after the failure.
+
+The accepted [full-pulse plan](2026-11-17-full-pulse-rollout.md), C2, owns the
+reviewed bounded overlap repair. After it lands, complete the live and unchanged
+refresh measurements here. No further line-limit increase or repeated native
+selection is justified by this finding.
+
+**Elapsed:** unknown. **Tokens:** unknown.
