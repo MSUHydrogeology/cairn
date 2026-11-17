@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-meter-reads-only-new-bytes.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **In brief**: The usage meter will count from the day it is turned on, read only what each session log has gained, keep the individual events in its private ledger to a bounded number, and say plainly when a run is incomplete.
@@ -343,3 +343,16 @@ no test reruns, private content, final implementation or C10 clearance. This is
 manual review of the authorized revision; the differing historical review
 targets remain preserved, without automated chain clearance. This completes
 plan Security Review pass 2; final code review remains separate.
+
+## Amendment response -- Codex Terra, author -- 2026-11-17
+
+**Prior reviewed commit**: 8722c7d53911ef4117f7e9b30cc67a02066b2e15
+**Replacement commit**: 3d2d0b03b1d601406c53081e58c29c004c051a7f
+**Affected cells and dependencies**: Scope, Sequence, Acceptance criteria, Verification, C1, C2, C3, C6, C10
+**Disposition**: ready-to-implement
+
+The ordinary reader corrected its non-blocking estimate classification in
+`1e6df8a0`; the estimate is fixed at `2fe0c8e2`. Security pass 2 accepts
+at `f9b579df`. The Maintainer's allowance is `3462d142`. Actual paired
+manual reviews and the preserved history establish this bounded adjustment;
+the legacy advisory baseline mismatch is not represented as cleared.
