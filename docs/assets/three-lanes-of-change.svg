@@ -7,8 +7,7 @@
   implementation with final verification recorded on the accepted proposal);
   and the standard/heavy path (proposal review and Decision, plan triage,
   required plan review, implementation and code review). Heavy adds Security
-  Review. Named high-risk surfaces and added or widened trust boundaries
-  trigger heavy. Footer: light is the default; chunk count does not remove
+  Review. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review. A project rule that names its own Security Review still applies. Footer: light is the default; chunk count does not remove
   obligations; ordinary ceremony uncertainty resolves to the lighter lane
   with a reason. Stop on a newly discovered trust boundary. Every step is a
   commit. Checkable against docs/methodology/lifecycle.md > "Three lanes,
@@ -28,7 +27,7 @@
 <svg viewBox="0 0 700 390" xmlns="http://www.w3.org/2000/svg"
      role="img" aria-labelledby="fig-title fig-desc">
   <title id="fig-title">Three supported lifecycle paths: trivial, light proposal, and standard or heavy proposal.</title>
-  <desc id="fig-desc">Trivial work takes the direct path: change and any needed test, without proposal or code review. Other substantive work starts with a proposal, review and Maintainer Decision. Light keeps implementation and final verification on the accepted proposal, including multi-chunk work. Standard and heavy work retain plan triage; plan review, code review, checks and fences apply when required. Heavy adds Security Review. Named high-risk surfaces and added or widened trust boundaries trigger heavy. Chunk count does not lower the tier. Ordinary ceremony uncertainty takes the lighter lane with a reason. Stop on a newly discovered trust boundary. Every step is a commit.</desc>
+  <desc id="fig-desc">Trivial work takes the direct path: change and any needed test, without proposal or code review. Other substantive work starts with a proposal, review and Maintainer Decision. Light keeps implementation and final verification on the accepted proposal, including multi-chunk work. Standard and heavy work retain plan triage; plan review, code review, checks and fences apply when required. Heavy adds Security Review. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review. Chunk count does not lower the tier. Ordinary ceremony uncertainty takes the lighter lane with a reason. Stop on a newly discovered trust boundary. Every step is a commit.</desc>
   <style>
     svg { --ink: #1f2328; }
     .lane   { fill: #f6f8fa; stroke: #d0d7de; stroke-width: 1; }
@@ -123,5 +122,5 @@
   <text x="30" y="329" class="t lwhen">remain in force</text>
 
   <text x="350" y="358" text-anchor="middle" class="t note">Light is default; its proposal records implementation. Standard/heavy retain plan triage.</text>
-  <text x="350" y="377" text-anchor="middle" class="t note">Heavy adds Security Review; high-risk surfaces and new/widened boundaries trigger it.</text>
+  <text x="350" y="377" text-anchor="middle" class="t note">Heavy adds Security Review; high-risk behavior, input or boundary changes trigger it.</text>
 </svg>

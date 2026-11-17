@@ -89,7 +89,7 @@ an issue on Cairn's own tracker. The template is
 3. **Standard or heavy proposal** -- a proposal is reviewed and decided
    first. Non-trivial work gets plan triage; required plan and code reviews,
    Security Reviews, checks and fences remain in force. Heavy adds Security
-   Review. Named high-risk surfaces and widened trust boundaries trigger it.
+   Review. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review. A project rule that names its own Security Review still applies.
 
 For ordinary ceremony uncertainty, take the lighter lane with a reason; stop
 on a newly discovered trust boundary. Every step is its own
