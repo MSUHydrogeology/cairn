@@ -200,3 +200,43 @@ Security review (`3e125583`):
 Not run: any Windows node, the real logs, a whole-suite run. Length: about 600 words against 300, because twelve findings each point to a corrected cell. The body outside Acceptance is about 5,500 words (target 1,000; the design alone is about 3,050) and Acceptance about 2,250 (target 1,500), because a Low-tier implementer must decide nothing.
 
 **Disposition**: revising-plan, waiting on the Maintainer's allowance for the Scope delta. **Elapsed**: about 26 minutes (14:43 to 15:09, by `date`). **Tokens**: unknown.
+
+## Implementation checkpoint -- Codex Terra, coordinator -- 2026-11-17
+
+C1–C9 are built. Today's runtime range is `f65cbfc3` through `9647142e`;
+C7/C8 delivery is `70c17f93`, native fixture corrections `c9a42f5b`.
+Focused macOS checks passed; ordinary and Security readers found no remaining
+code blocker. Final review records await C10. No whole suite ran.
+
+C7's clean `835dc50c` workloads passed: 1 GiB median 8.98 seconds; 400 MiB
+reread 7.61 seconds, peak RSS 425,541,632 bytes. These are workload results,
+not a general memory bound. Source comments preserve the measured limits.
+
+C9, native x64 Python 3.13.18: combined focused reports have 71 distinct
+passes and 157 unpassed POSIX skips; all 35 required native Meter IDs pass.
+Only the eight initial failures were retried (all passed, 38.52 seconds).
+The new CR-LF/space/identity case passes. One export-flush miss passed
+unchanged; its original cause remains unknown, with no claimed repair.
+
+Scoped finalize `06a4e2e2` updated five install hashes; ancestor data was
+unchanged. All 16 remaining full-integrity mismatches predate `5d5d337a`
+and remain unpassed under the board's separate trust-operation wait.
+
+**C10 remains unmet.** The real refresh returned
+`unavailable/source_budget_exceeded` in 3.07 seconds. Sanitized counters
+locate an entry over the 1 MiB line bound, not an exhausted run budget;
+no source, consent or ledger contents were exposed.
+
+**Waiting on Maintainer**: allow the proposed 1→8 MiB shared line bound.
+This changes D6's explicit unchanged limit and is outside the earlier three
+allowances. A scratch-only Python 3.13.13 check accepted exactly 8 MiB with
+owned usage, no duplicate or payload export, and refused 8 MiB + 1 without
+ledger/export changes (positive 0.068 seconds; peak RSS 230,637,568 bytes).
+Existing file/run/privacy guards stay; actual corpus sufficiency is unknown.
+Production remains at 1 MiB pending allowance and amendment disposition.
+
+Adopter offers and every-goodnight reports remain unimplemented in the
+separate reviewed `dev/proposals/2026-11-17-terra-meter-adopter-rollout.md`.
+Cairn's local custom routine does not deliver them to adopters. Aggregate
+agent time and tokens: unknown. Remaining: guard decision, C10, review
+records and archive; the board retains both decisions and their owners.
