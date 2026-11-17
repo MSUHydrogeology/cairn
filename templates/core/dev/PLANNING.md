@@ -124,7 +124,7 @@ one-way accumulator.
 
 The vocabulary, restated here so the board can be read on its own. **This
 copy is not the source — cite the governing statement instead**:
-`dev/plans/_template.md` > *Dispositions* (and *Scope delta*, for the
+`dev/plans/_template.md` > *Implementation closeout* (and *Scope delta*, for the
 scope-reduction rule in the `accept` entry), with the *why* in
 Cairn's published lifecycle method > "Archive precondition".
 
@@ -150,7 +150,7 @@ Cairn's published lifecycle method > "Archive precondition".
   the added scope in the receiving plan.
 
 A deferral names one of the three reasons in the governing plan template's
-*Dispositions*; a priority label is not a reason. This mirror adds no rule.
+*Implementation closeout*; a priority label is not a reason. This mirror adds no rule.
 
 **No required order** — the record says why the chosen disposition is
 right. Two eligibility rules bound it: a follow-up that **reaches an

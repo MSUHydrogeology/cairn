@@ -93,9 +93,7 @@ their work. Keep
 `<what>` under 48 characters, the board's cell width; the detail stays in the
 plan. The colon sits outside the bold, exactly as shown: with the colon
 inside the bold the board does not read the line. `python tools/board.py --maintainer` lists
-every artifact that carries it. This paragraph sits above the rule, so the line
-is described here and not printed in the header below: a header line the board
-reads would list every new plan as waiting.
+every artifact that carries it.
 
 ## Review
 
@@ -124,52 +122,17 @@ Each pass opens with a **Foundations** block of three lines, one answer per
 question, each ending in the file, test, line or command that backs it. Each
 answer states its point in a sentence; it may also point to a finding. Question
 3 names a forward test even when there are no findings.
-**Improve means recommend**: the reviewer proposes the better version ("don't do
-this" and "do it differently" count) and the author decides. **There is no
-quota of findings.** "No defects found" is allowed only with the three answers
+ "No defects found" is allowed only with the three answers
 evidenced and the gaps named.
 
-Code review's job is falsification, and its floor is **not the implementing
-agent**. It never reopens the Decision (what to build is settled; how it was
-built, and what breaks it, is the question). A clean code review reports concise evidence and remaining uncertainty
-(`dev/agent_collaboration.md` > "The review sweep").
+Code review's floor is not the implementing agent, and it never reopens the Decision.
 
 For test additions or removals, the reviewer asks: **Are permanent tests
 limited to external promises worth their runtime (the Pareto 80/20 rule), with
 developmental and private-helper tests removed?** This is a coverage question,
 not a fourth Foundations answer.
 
-**More distance is the Maintainer's call, and only theirs.**
-
-* **What it is.** An *External read* is a review the Maintainer asked for on one
-  named artifact that exists now, in chat or inside a Decision, outside the usual
-  procedure. A call that covers artifacts not yet written is a standing floor (a
-  rule that applies without being asked), and a standing floor returns only by
-  proposal. A roster the Maintainer sets (which agent types work the tree)
-  is the team's shape, not a call: it adds no
-  read and upgrades none. Distance is information, not a rule: a different agent
-  type has different failure modes and a person has different knowledge. The
-  staffing reviewer follows the Maintainer's brief, answers the same three
-  questions from that distance, and says so.
-* **How it is recorded.** The pass carries `**Called by**: Maintainer -- Decision
-  at <commit>` (or `-- chat, <date>`, with `, relayed by <who>` where it was
-  relayed), followed by the Maintainer's words, verbatim and set apart. The same
-  words go in the commit message, as for a scribed Decision. `**Tier**: External`
-  is valid only with that line, and a pass headed External without it is read as
-  the usual review.
-* **What an agent never does.** Declare External as a required review in a
-  header, say a change needs one, recommend more distance, head a pass External
-  on its own, or start one without those words. It may name a risk and a gap in
-  its coverage line.
-* **What a called read never does to the other reviews.** It adds to the usual
-  review and replaces nothing. Its brief may add focus; it removes no owed
-  answer, and it discharges no Security Review by its distance or its brief (a
-  pass clears a Security Review only by being one). Any other authority in the
-  quoted words, such as a waiver or a change of scope, takes effect only where
-  Maintainer authorizations already live, a Decision block or a plan's fence,
-  and never from a `Called by` line. Nothing checks the quote mechanically, in
-  the pass or in the commit message: the next reviewer and the Maintainer at the
-  Decision are the check.
+**More distance is the Maintainer's call, and only theirs.** See `dev/agent_collaboration.md` > "Review rules".
 
 A plan whose surface calls for security treatment declares `Plan review:
 required(Internal + Internal Security Review)`. Only an appended `## Plan review`
@@ -178,6 +141,8 @@ pass. No tool reads that line: the next reviewer, the code reviewer and the
 Maintainer check it.
 
 **Write for the reader.** Follow Cairn Plain Language (the section of `dev/agent_collaboration.md`): conclusion first, and measured, assumed and expected claims kept apart.
+
+**Rules that apply.** List the rule file paths from the `RULES.md` routing table that apply, never rule text, or write `bright lines only`. A rule that applies but is not listed is still followed; add it to the line. The line never narrows a review, a Security Review trigger or a protected-surface obligation. Reviewers compare it with Scope.
 
 ## Keep the plan short
 
@@ -197,7 +162,7 @@ A plan is one file by default: reviews, responses and records are appended to it
 * **Never copy template boilerplate or later-stage sections.** Copy only the
   operative headings (`## Build summary` through `## Verification`), replace
   prompts and slot blocks with your plan's specifics (or a one-line `N/A`), and
-  do not copy template instructions or the `## Dispositions`, `## Plan review`,
+  do not copy template instructions or the `## Implementation closeout`, `## Plan review`,
   and `## Code review` sections until those lifecycle steps occur.
 * **Scripts and task briefs stay out.** A checker lives in a script or a test
   file, not in the plan. A task brief for a sub-agent is a short note or file,
@@ -221,10 +186,7 @@ physical line per bullet. Drop a line once its path resolves.
 
 **The summary line.** In the `In brief` header line below the rule, write one plain
 sentence a scientist outside the project could follow, and keep it on one physical
-line because the board reads that line only. `python tools/board.py --json` prints
-it as `in_brief` and a view shows it in place of the title; a longer `## In brief`
-section below the header is separate and is not read by the board. Leave no
-placeholder in a finished artifact, because the board prints whatever the line holds.
+line because the board reads that line only. `
 
 ---
 
@@ -234,6 +196,7 @@ placeholder in a finished artifact, because the board prints whatever the line h
 **Status**: awaiting-plan-review
 **Plan review**: {{required(Internal) | required(Internal + Internal Security Review)}}
 **Opened**: {{YYYY-MM-DD}}
+**Rules that apply**: {{rule file paths from the RULES.md routing table | bright lines only}}
 **In brief**: {{one plain sentence: what changes and why it matters}}
 
 ## Build summary
@@ -253,19 +216,9 @@ What this plan does and, where it is not obvious, what it deliberately does
 not. Name the surfaces it touches.
 
 State the specific useful result and why it advances the accepted objective.
-One plan may include dependent internal chunks when together they deliver a
-coherent outcome whose implementation, required evidence, reviews and archive
-finish without another unfinished plan. Do not split work by default or leave
-an accepted outcome unassigned.
 
-For related authorized work in a connected arc, the coordinator decides
-whether separate plans and reviews are needed or a shared arc scope and review
-cover it. Do not create a plan or review artifact per work item when that
-shared record actually covers it. Grouping keeps all required ordinary and
-Security Review coverage, scientific checks, Human Decisions and fences,
-model/data floors, and trust operations due. Outside a connected arc, apply
-existing tier defaults: light work has no plan; nontrivial standard/heavy work
-uses the usual plan and reviews.
+
+
 
 **Reuse.** What existing code does this reuse or generalize? Where did you
 search for near-duplicates (query or path, and what it found)? "None" needs a
@@ -287,37 +240,16 @@ plan's *Scope* must name the doctrine-surface touched (or an explicit
 
 ## Sequence
 
-Show that the goal is achievable with the capabilities and prerequisites
-available to this plan. Give a realistic work-window estimate and name material
-uncertainty; it is a planning estimate, not a deadline or a waiver of accepted
-work. Open only outcomes with their needed authority and resources available.
-Keep an outcome waiting for an unavailable approval or passive calendar
-observation queued on the existing board with its proposal source, owner and
-concrete restart condition. A ready, approved scientific observation remains
-implementation work even when it spans days; include that duration in the
-estimate. Missing required evidence still leaves the outcome unverified. A
-shipped capability may be a prerequisite; another plan's future review,
-archive or release may not be required to finish this plan.
+
 
 One row per chunk: what it does, what gates it, roughly what it ships. Mark a
 chunk MAINTAINER-GATED or MAINTAINER-ONLY only when an actual decision or
 permission is load-bearing to carry out accepted work. Do not use a fence for a
-routine approval or passive calendar wait. If work already opened encounters
-unexpected missing authority, stop that action and use the Waiting line
-(`**Waiting on Maintainer**: <what>`) in the header block, beside Status; delete
-it when the Maintainer answers.
+routine approval or passive calendar wait.
 
-Cheap follow-ups mean a few person-steps, no new Decision or public name beyond
-the plan, and a test that fits existing test files. This is not the narrower
-cheap defect-fix exception in `AGENTS.md`. Code review identifies cheap
-findings and advice; in the code-review response, fix each before archive or
-use an existing deferral reason with the Maintainer's verbatim authorization.
-Cheapness grants no scope, boundary or required-check waiver. Non-cheap advice
-keeps its existing disposition, and a required failed check remains
-implementation work.
 
-A fence is for a Decision or permission needed to carry out accepted scope,
-not a routine human-run trust or release operation. A plan reaches
+
+A fence is for a Decision or permission needed to carry out accepted scope, not a routine human-run trust or release operation. A plan reaches
 `ready-to-archive` after its agent-owned scope, required reviews, applicable
 checks, findings and dispositions are complete. Track a human operation in a separate,
 named standalone board wait with its owner, evidence and link to the
@@ -342,14 +274,7 @@ criterion is falsifiable; do not substitute a count of files or checkboxes for
 evidence that the outcome works. A criterion you cannot imagine failing is not
 one.
 
-Optional prompts for a criterion: condition, observable behavior, behavior
-that must remain unchanged, and the check that demonstrates the result. Use
-only prompts that help make the outcome observable. EARS is optional; one form
-is `WHEN <condition> THE SYSTEM SHALL <observable behavior>`. Example ordinary
-defect: current behavior: `greet("Ada")` returns `Hello, world!`; expected:
-`Hello, Ada!`; unchanged: `greet()` still returns `Hello, world!`; check: the
-named-greeting and default-greeting tests. These prompts do not replace accepted
-scope or required checks.
+
 
 For each change, name the caller-visible promise it adds or alters and the
 public entry point that checks it. Separate temporary developmental checks
@@ -370,11 +295,7 @@ quoted allowance. Saying that the result now rests on the implementation does
 not settle it. When the check fails for real during implementation, one line
 records whether anything else would have shown the error.
 
-Record scientific evidence with the work or release that requires it. A run is
-not part of routine tree certification merely because it is scientific, but a
-configured suite member and every other applicable requirement remain required
-at each required point. Subject or duration does not authorize a waiver or
-rescheduling.
+
 
 
   <!-- cairn:slot acceptance-doc-tooling -->
@@ -404,9 +325,7 @@ assigning sentence and the Decision, which is the authorization; a plan that
 simply fell short has no assignment to quote, and its remainder goes to the
 Maintainer.
 
-**A reviewer cannot create that authority by calling the remainder "out of
-scope."** Neither author nor reviewer may concede a baseline outcome; only the
-Maintainer can.
+
 
 If scope is reduced, declare it here — one grouped record, not a set of roadmap
 rows, and each entry blocks archive until dispositioned:
@@ -435,11 +354,7 @@ on committed structure. Missing or failed required evidence keeps work open.
 Preserve required security checks and reviews, scientific independent error and
 positive controls, and release operations.
 
-**Example.** A plan changes the public summary from `upgrade --plan` and checks
-that output with the same command. It reuses the existing denied-path control,
-citing that it covers denial but not successful installation. After connected
-plans finish review, the arc owner joins their selected checks against the final
-combined revision.
+
 
 <!-- cairn:slot verification-commands -->
 Before implementation, run `python tools/test_tiers.py for <paths>` to list
@@ -450,16 +365,7 @@ reviewed range with `--range BASE..HEAD`. The selector claims no unknown
 dependencies. Keep canonical runtimes and standing project checks in their
 existing homes.
 
-The arc owner joins connected work after reviews and dispositions, or earlier
-at a named critical shared boundary. Use the canonical runtime and applicable
-standing gates. Cover the clean final combined revision before arc completion
-or release; record the revision, selected producers and consumers, results and
-omissions in the existing verification record. Applicable prior results may
-cover unchanged behavior and inputs. After a repair, rerun only affected
-checks. A post-archive defect belongs to the arc owner, who records and repairs
-it under existing rules without reopening the archived plan. Do not replay the
-whole selection solely to stamp a new commit ID. A failed promise or required
-check remains plan work before archive.
+
 <!-- cairn:end verification-commands -->
 
 Code review remains an independent required review. Reviewers may use committed
@@ -470,11 +376,11 @@ authorized triggers and required checks.
 <!-- Later-stage sections — do NOT copy into a new plan; append each
      section only when that lifecycle step occurs. -->
 
-## Dispositions
+## Implementation closeout -- <agent> -- <YYYY-MM-DD>
 
 *Appended at archive-preparation (`docs/methodology/lifecycle.md` > "Archive
 precondition" and `docs/methodology/plans.md` > "Lasting-truth migration
-doctrine").* Record one `Dispositions: ...` line per deferred follow-up:
+doctrine").* Say in a few lines whether each acceptance criterion held. Write each check not run, area not covered or work remaining as its own item: `Not run: <what>`, `Not covered: <what>` or `Remaining: <what>`, ending `Home: <roadmap row, issue, proposal or the Maintainer's quoted word>`. An empty Home means the plan is not ready to archive. A deferral of accepted scope or of a required check has the Maintainer's quoted word as its Home; a Home an agent creates alone (an issue or a roadmap row) covers only a follow-up that defers neither. Then record one `Dispositions: ...` line per deferred follow-up:
 `accept` (fixed in scope), `guard (<path>::<node>)` (homed in an executing
 test/check, never a comment), `wontfix` (with rationale; ineligible if it
 reaches an adopter, blocks a release, needs a Decision, or was named by a

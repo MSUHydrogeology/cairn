@@ -30,17 +30,10 @@ awaiting-review <-> revising -> awaiting-decision
 
 Each status names **who holds it next**. A review moves a proposal to
 `revising`; the author's response carries it to `awaiting-decision`. One usual
-proposal review and response suffice. A second pass applies only to widened
-scope; Security Review normally stops after two passes. Each further pass needs
-its specific unresolved security question or newly changed material, why prior
-passes and evidence cannot resolve it, expected value, named artifact and
-scope, and the Maintainer's explicit authorization; another pass needs new
-authorization. Without these, the ordinary cap stands. In the usual proposal
+proposal review and response suffice.  In the usual proposal
 review, consider whether the Maintainer could explain the choice
 without a live translation. This is a reading judgment, not a checklist or
-score. At the cap, only
-unresolved blockers or unmet accepted criteria/checks go to the Maintainer by
-name. Clean work advances without a clearing review.
+score.
 `accepted` is terminal — archiving is a file move, not a status.
 
 Two rules are bright-line:
@@ -70,48 +63,13 @@ Each pass opens with a **Foundations** block of three lines, one answer per
 question, each ending in the file, test, line or command that backs it. Each
 answer states its point in a sentence; it may also point to a finding. Question
 3 names a forward test even when there are no findings.
-**Improve means recommend**: the reviewer proposes the better version ("don't do
-this" and "do it differently" count) and the author decides. **There is no
-quota of findings.** "No defects found" is allowed only with the three answers
-evidenced and the gaps named. Target 300 words of reviewer-written text per
-pass, excluding template skeleton lines, preserving verdict, findings and
-coverage gap. Explain an over-target pass in its coverage line. Resolve non-blocking advice in one line per
-finding; do not waive accepted criteria or required checks.
+ "No defects found" is allowed only with the three answers
+evidenced and the gaps named.
 Reviews are **attributed and self-committed**: a review you did not write is not
 yours to sign, and an independent read is only independent if its author is its
 committer.
 
-**More distance is the Maintainer's call, and only theirs.**
-
-* **What it is.** An *External read* is a review the Maintainer asked for on one
-  named artifact that exists now, in chat or inside a Decision, outside the usual
-  procedure. A call that covers artifacts not yet written is a standing floor (a
-  rule that applies without being asked), and a standing floor returns only by
-  proposal. A roster the Maintainer sets (which agent types work the tree)
-  is the team's shape, not a call: it adds no
-  read and upgrades none. Distance is information, not a rule: a different agent
-  type has different failure modes and a person has different knowledge. The
-  staffing reviewer follows the Maintainer's brief, answers the same three
-  questions from that distance, and says so.
-* **How it is recorded.** The pass carries `**Called by**: Maintainer -- Decision
-  at <commit>` (or `-- chat, <date>`, with `, relayed by <who>` where it was
-  relayed), followed by the Maintainer's words, verbatim and set apart. The same
-  words go in the commit message, as for a scribed Decision. `**Tier**: External`
-  is valid only with that line, and a pass headed External without it is read as
-  the usual review.
-* **What an agent never does.** Declare External as a required review in a
-  header, say a change needs one, recommend more distance, head a pass External
-  on its own, or start one without those words. It may name a risk and a gap in
-  its coverage line.
-* **What a called read never does to the other reviews.** It adds to the usual
-  review and replaces nothing. Its brief may add focus; it removes no owed
-  answer, and it discharges no Security Review by its distance or its brief (a
-  pass clears a Security Review only by being one). Any other authority in the
-  quoted words, such as a waiver or a change of scope, takes effect only where
-  Maintainer authorizations already live, a Decision block or a plan's fence,
-  and never from a `Called by` line. Nothing checks the quote mechanically, in
-  the pass or in the commit message: the next reviewer and the Maintainer at the
-  Decision are the check.
+**More distance is the Maintainer's call, and only theirs.** See `dev/agent_collaboration.md` > "Review rules".
 
 A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. A template is not high-risk solely because it contains prose; code, installer structure, and functional configuration may remain high-risk under the project's written list. When in doubt, take the Security Review (`dev/agent_collaboration.md` > "Review rules"). A project rule that names its own Security Review still applies. `usual + Security Review` in a
 header means two passes: the usual pass and a Security Review pass that names its
@@ -120,6 +78,8 @@ In a proposal review, `**Tier**: Security Review` names that obligation; the
 skeleton does not call for a separate `**Obligation**` line.
 
 **Write for the reader.** Follow Cairn Plain Language (the section of `dev/agent_collaboration.md`): conclusion first, and measured, assumed and expected claims kept apart.
+
+**Rules that apply.** List the rule file paths from the `RULES.md` routing table that apply, never rule text, or write `bright lines only`. A rule that applies but is not listed is still followed; add it to the line. The line never narrows a review, a Security Review trigger or a protected-surface obligation. Reviewers compare it with Scope.
 
 ## Keep the proposal short
 
@@ -132,8 +92,7 @@ The proposal stays one file: reviews, responses and decisions are appended to it
   accepted findings require, and name the finding for each addition in the
   response. When shortening, cut repeatable detail available elsewhere before
   cutting explanation; shorten the Decision summary last. A modest
-  clarity-preserving overrun is preferable to obscurity. Wrap prose normally; putting a
-  paragraph on one 400-character line to lower `wc -l` saves zero tokens.
+  clarity-preserving overrun is preferable to obscurity.
 * **Never copy template boilerplate or later-stage sections.** Copy only the
   opening headings (`## Decision summary` through `## Assurance path`) below
   the rule;
@@ -147,9 +106,8 @@ The proposal stays one file: reviews, responses and decisions are appended to it
   The proposal carries the criterion and the result, not the code behind them.
 * **Cite evidence concisely.** Point to reproducible tests or scripts and state
   their outcome; do not copy probe inventories into lifecycle records.
-* **Read by section.** Give each review, response or decision its own `##`
-  heading, titled by what it holds and when it was written. Readers list them
-  with `grep -n '^## ' <proposal>` and read only the sections the job needs.
+* **Read by section.** Give each review, response or decision its own `##` heading, titled by what it holds and when it was written. Readers list them with `grep -n '^## ' <proposal>` and read only the sections the job needs.
+* **Appendix.** Default none. Allowed only for a table or arithmetic a reviewer must check that no cited record can hold: one separate file per proposal, `<proposal-stem>--appendix.md`, beside it, never inline. The board skips it; session start still lists it. The 1,000-word budget applies to the text at the Decision, so cut or move review additions before it.
 
 ## Forward-reference paths
 
@@ -159,10 +117,7 @@ line each. Drop a line once its path resolves.
 
 **The summary line.** In the `In brief` header line below the rule, write one plain
 sentence a scientist outside the project could follow, and keep it on one physical
-line because the board reads that line only. `python tools/board.py --json` prints
-it as `in_brief` and a view shows it in place of the title; a longer `## In brief`
-section below the header is separate and is not read by the board. Leave no
-placeholder in a finished artifact, because the board prints whatever the line holds.
+line because the board reads that line only. `
 
 ---
 
@@ -174,25 +129,16 @@ placeholder in a finished artifact, because the board prints whatever the line h
 **Proposed tier**: {{light | standard | heavy}} — light is the default; the author may propose a higher tier, which stands unless the Decision changes it
 **Plan review**: {{required(Internal) | required(Internal + Internal Security Review)}} — for light, use `not required(no plan: light tier)` even for multi-area or wide work; standard/heavy use plan triage and may use `not required(no plan: <how each plan-skip condition holds>)`
 **Opened**: {{YYYY-MM-DD}}
+**Rules that apply**: {{rule file paths from the RULES.md routing table | bright lines only}}
 **In brief**: {{one plain sentence: what changes and why it matters}}
 
 ## Decision summary
 
-In a few ordinary-language sentences, say what issue people notice, what change
-is proposed, the material outputs being added, changed or removed, and their
-meaningful cost or tradeoff. Name only useful output categories; a
-documentation-only change need not invent a tool. Define technical terms where
-they first matter and use a concrete example when it would make an abstract
-point clearer. Put supporting evidence and technical detail in the sections
-below. Keep this short; a short proposal may do most of its work here and in
-Rationale, without repeating the same points to fill sections. This is a
-reading aid, not a second scope contract; correct a mismatch to the operative
-proposal text.
+Briefly name in plain language the issue people notice, proposed change, material outputs added, changed or removed, and meaningful costs or tradeoffs. Define technical terms at first use; give a concrete example when it clarifies an abstraction. Supporting evidence and technical detail go below. This reading aid is not another scope contract; correct mismatches to the operative proposal text.
 
 ## Context
 
-What is true today, and what about it is a problem. Evidence, not assertion —
-if you are claiming something is broken, show it failing.
+Describe current state and problem with evidence; demonstrate claimed failures.
 
 ## Proposal
 
@@ -208,21 +154,9 @@ deliver one independently finishable outcome. Its required implementation,
 reviews, checks and archive must not wait on another unfinished plan. Keep
 routine human operations as separately owned, evidenced waits, never as final
 plan tasks. Failed required checks remain implementation work.
-Open each implementation plan only when its needed authority and resources are
-available. Queue later outcomes awaiting an unavailable approval or passive
-calendar wait on the existing board with this proposal as source, an owner, and
-a concrete restart condition. A ready, approved scientific observation is
-implementation work even when it spans days; include its duration in the
-estimate.
 
-For related authorized work in a connected arc, the coordinator decides
-whether separate plans and reviews are needed or a shared arc scope and review
-cover it. Do not create a plan or review artifact per work item when that
-shared record actually covers it. Grouping keeps all required ordinary and
-Security Review coverage, scientific checks, Human Decisions and fences,
-model/data floors, and trust operations due. Outside a connected arc, apply
-existing tier defaults: light work has no plan; nontrivial standard/heavy work
-uses the usual plan and reviews.
+
+
 
 ## Rationale
 
@@ -236,8 +170,7 @@ counts only if you say what doing nothing costs.
 
 ## Documentation / doctrine surface
 
-What documentation, doctrine, or contract surface does this change touch, and
-where does the change to it land?
+Name affected documentation, doctrine and contract surfaces and their destinations.
 
 <!-- cairn:slot documentation-tier-home -->
 (Filled from the `documentation-plan` default-on module when installed
@@ -256,44 +189,13 @@ what would falsify it.
 
 ### Tests required
 
-For every implementation change, name the caller-visible promise it adds or
-alters and the public entry point that checks it. Do not propose a test only
-because the change exists; identify an uncovered plausible fault or extend an
-existing promise test.
+For each implementation change, name its caller-visible promise and public entry point. Identify a plausible uncovered fault or extend an existing promise test; do not propose a test merely because a change exists.
 
-Select the smallest checks that could expose plausible faults, grouping
-equivalent paths. Reuse existing results only when the tested bytes, platform,
-input and obligation still apply; cite the source and its limit. A changed
-boundary, failed check, uncovered fault or explicit requirement expands the
-selection. A claim about every member inventories the set and checks each
-applicable path; it does not require a separate mutant for each member.
-Reviewers may use committed evidence or static calculation when adequate;
-forward behavior needs executable evidence before completion. The plan's
-Verification names the checks for changed promises. Related plans join at the
-selected arc integration point after reviews and dispositions, or earlier at a
-named critical shared boundary. Required checks and failed promises remain
-open; scientific independent error and positive controls, security checks and
-reviews, and release operations keep their existing triggers.
+
 
 <!-- cairn:slot tests-tier-home -->
-(Adopter-specific test taxonomy — name the project's **test homes**, affected
-behavioral nodes, and **public paths** that must be exercised through their real
-entry points. Trace changed behavior through callers, imports, configuration
-and data readers, and public paths to existing checks. Local effects default
-to affected checks; shared contracts, common infrastructure, language seams,
-solver or physics behavior, and uncertain dependencies widen to owning families
-and relevant consumers. Add or extend tests only for plausible uncovered
-faults. Record speed or environment tiers where they exist, but **speed alone
-does not establish affected coverage**. The eventual plan owns a reviewed
-change-specific mapping, not a permanent fast set. `bounded` covers mapped
-affected behavior and consumers; `wide` covers owning test families, known
-integration and public paths, and standing gates when effects cannot be
-confidently bounded. Unknown dependencies are not claimed as covered: name the
-uncertainty and keep work open if a known required check or criterion remains
-unmet. Broader certification is separate and does not replace a missing check.
-Routine selection belongs to agents applying this mapping and reviewers
-challenge it at the existing stages; Maintainers set high-level needs and
-material exceptions. Fill from the project's test plan, or replace with
+(Name the project's test homes, affected behavioral nodes and public paths exercised through their real entry points.  Record speed or environment tiers, but speed alone does not establish affected coverage. The reviewed plan maps changed behavior, not a permanent fast set: `bounded` covers affected behavior and consumers; `wide` covers owning families, known integration, public paths and standing gates. Name uncertainty; never claim unknown dependencies covered, and keep known unmet checks or criteria open. Certification cannot replace a missing check.
+ Fill from the project's test plan, or replace with
 `N/A: no test layout` plus the project's scoped test procedure.)
 <!-- cairn:end tests-tier-home -->
 
@@ -317,8 +219,7 @@ entry.*
 Answer all five, one or two sentences each. These are **design questions, asked
 while the design is still movable** — not documentation written after it is
 fixed. An absent answer is a review finding; a *wrong* answer is a falsifiable
-one, which is the point: the reviewer checks a stated claim in one read instead
-of hunting for an absence over four rounds.
+one.
 
 Structural questions about where material comes from and what runs. They do not
 check whether an answer is *true*; they convert a hidden property into a written
@@ -348,8 +249,7 @@ retro-fitted with them.
 **What they do not reach.** A semantically valid instruction that is hostile
 carries no lexical signature, and no question here finds it.
 
-**Prospective only.** This accounting applies to active and future artifacts;
-an archived proposal or plan is immutable and is never retro-fitted with it.
+
 
 ### Independent scientific check
 
@@ -386,9 +286,7 @@ only about itself:
   that matters (a positive control), or say plainly that it cannot. The failing
   run above serves as the control when the mistake it makes produces an effect
   of that size. At implementation, the implementer records the control with the
-  failing run. For example, an analysis that reports no streamflow depletion
-  from a pumping well first recovers the depletion of a synthetic well at the
-  same rate, distance and schedule.
+  failing run.
 
 **Reviewers.** The proposal reviewer challenges whether the basis is really
 independent of the code under review. The code reviewer verifies the recorded
@@ -503,10 +401,4 @@ commit carries nothing else.
 *Append for light work only; the accepted proposal is its implementation and
 verification record.* Record the selected changed-promise checks, tested
 revision, canonical runtime, commands and results, non-pass dispositions and
-omissions. Cite reused results and their limits. When work joins a connected
-arc, the arc owner records the final combined revision, selected producers and
-consumers, results and omissions in the existing record; applicable prior
-results may cover unchanged behavior and inputs. After a repair, record only
-affected correction checks. A post-archive defect belongs to the arc owner,
-who records and repairs it under existing rules without reopening the archived
-plan. Record elapsed time and tokens, using `unknown` when unavailable.
+omissions. Cite reused results and their limits.  Record elapsed time and tokens, using `unknown` when unavailable.

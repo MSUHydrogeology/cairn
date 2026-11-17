@@ -164,3 +164,69 @@ private memory is not shared with another agent type or with a human reviewer.
 
 a lesson that stays only in
 a reflection is a lesson that expires.
+
+
+## Plan and proposal template background
+
+### Plan template: The Waiting line
+
+This paragraph sits above the rule, so the line
+is described here and not printed in the header below: a header line the board
+reads would list every new plan as waiting.
+
+### Plan template: The summary line
+
+python tools/board.py --json` prints
+it as `in_brief` and a view shows it in place of the title; a longer `## In brief`
+section below the header is separate and is not read by the board. Leave no
+placeholder in a finished artifact, because the board prints whatever the line holds.
+
+### Plan template: Acceptance criteria prompts
+
+Optional prompts for a criterion: condition, observable behavior, behavior
+that must remain unchanged, and the check that demonstrates the result. Use
+only prompts that help make the outcome observable. EARS is optional; one form
+is `WHEN <condition> THE SYSTEM SHALL <observable behavior>`. Example ordinary
+defect: current behavior: `greet("Ada")` returns `Hello, world!`; expected:
+`Hello, Ada!`; unchanged: `greet()` still returns `Hello, world!`; check: the
+named-greeting and default-greeting tests. These prompts do not replace accepted
+scope or required checks.
+
+### Plan template: Verification example
+
+**Example.** A plan changes the public summary from `upgrade --plan` and checks
+that output with the same command. It reuses the existing denied-path control,
+citing that it covers denial but not successful installation. After connected
+plans finish review, the arc owner joins their selected checks against the final
+combined revision.
+
+### Plan template: Distance is information
+
+Distance is information, not a rule: a different agent
+  type has different failure modes and a person has different knowledge.
+
+### Proposal template: Proposal shortness
+
+Wrap prose normally; putting a
+  paragraph on one 400-character line to lower `wc -l` saves zero tokens.
+
+### Proposal template: Decision summary categories
+
+Name only useful output categories; a
+documentation-only change need not invent a tool.
+
+### Proposal template: Decision summary economy
+
+a short proposal may do most of its work here and in
+Rationale, without repeating the same points to fill sections.
+
+### Proposal template: Security preflight question
+
+which is the point: the reviewer checks a stated claim in one read instead
+of hunting for an absence over four rounds.
+
+### Proposal template: Scientific positive control example
+
+For example, an analysis that reports no streamflow depletion
+  from a pumping well first recovers the depletion of a synthetic well at the
+  same rate, distance and schedule.
