@@ -196,3 +196,13 @@ Not run: any test, a real-tree record or join, Windows, pytest 9.2.0. The roster
 
 **Disposition**: ready-to-implement
 **Elapsed**: about 15 minutes (16:07 to 16:22 EST, start estimated). **Tokens**: unknown.
+
+## Implementation
+
+- **C1 — `97ff68ac`:** Added the pinned exclusion and required-file lists, updated the native roster and policy identity, and added selector controls. Focused controls: 31 passed. A later tier inventory check reported 132 test files assigned once.
+- **C2 — `a7860d29`:** Added the strict-context collection filter and cases for strict, ordinary, broad-override and malformed-list behavior. Focused real-tree and fixture controls: 10 passed.
+- **C3 — `fbb53ebb`:** Added excluded-file counts to records and validation. Focused record and refusal controls: 22 passed. The connected record/join fixture failed before record creation on existing Bandit B314 at `templates/skills/_lib/pulse.py:166`.
+- **C4 — `45fe2fc2`:** Joined records now reconcile collected paths against tracked test files. Focused synthetic join and refusal controls: 61 passed. Its connected-output assertion remains unverified because the C3 fixture is blocked by B314.
+- **C5 — `e1741407`:** Updated `SECURITY.md` and `docs/release-process.md`. Focused documentation checks (3), membership documentation checks (2), and documented invocation check (1) passed; claim, link, snippet and tier-inventory checks were clean.
+
+Plain collect-only measurements, with the full-suite override unset, changed from 5,742 to 5,785 IDs. The difference contains exactly the five accepted native IDs from the excluded files. Collect-only was not test execution. No whole suite or mapped families were run. Elapsed time and token use: unknown. Ordinary and Security code review remain due; the connected C3/C4 evidence is not claimed as passing.
