@@ -761,13 +761,11 @@ C1–C6 held on the recorded implementation evidence; C7's prescribed boundary a
 
 Correction checks: claim and link checks on the five changed prose files, snippet sync and neutrality passed; targeted public controls passed, and the warning-removal mutation failed as intended. The previous 227 board results cover unchanged behavior; no broad rerun was made. Integrity reports 12 existing mismatches and none in the three finalized paths; it is not a clean-tree pass. The reviewed `_CORE_MAPPINGS` mismatch remains unpassed. The prior install and upgrade fixture results are recorded in `d8b80db0`.
 
-Remaining: targeted Security re-review of the correction. Home: this plan's code review before archive.
-
 Remaining: grouped Human baseline re-anchor and release certification, including native Windows. Home: `dev/PLANNING.md` > Waiting on you > Completed repairs awaiting the trust operation; `docs/release-process.md` for release certification.
 
 Remaining: one joined Group 2 integration on the combined revision. Home: `dev/PLANNING.md` > v0.8 Sequence; Root coordinator.
 
-Remaining: upgrade warning about moving local rule lines before merging. Home: Root coordinator's `CHANGELOG.md` > Unreleased > Changed entry.
+Remaining: upgrade warning about moving local rule lines before merging. Home: `CHANGELOG.md` > Unreleased > Major changes > `Changed: Shorter working guidance` (commit `779da4c0`).
 
 Not covered: whole suite, security family, native Windows, desktop-app behavior and a real adopter upgrade merge. Home: release certification and joined Group 2 integration above; the real-adopter merge is not claimed by the fixture.
 
@@ -794,3 +792,9 @@ Reviewed range: 213c95a6..a68d62dc
 **Bounding**: ACCEPTED. Verified corrected hashes against committed bytes. Used prior evidence for unchanged paths. No fresh test, install, or platform runs. The Human re-anchor and joined Group 2 integration remain pending.
 
 **Waiting-line check.** This correction reached no fence or deviation request.
+
+## Author disposition -- Codex (Implementation, Medium) -- 2026-11-17
+
+The ordinary review’s C8 filename finding is closed by `e9ba22a6`; the C9 closeout finding is closed by the record above. Security findings are closed by `4610bb42` and targeted Security pass 2 ACCEPT `2b7f19e3`. Scope is preserved; no accepted outcome was removed or deferred.
+
+**Benefit versus cost**: worth it -- shipped reader files measure 1,369 module, 4,785 guide, 3,887 plan template, 3,396 proposal template and 154 wrapper words; cost 8 finalized installed paths, one background file and one 8-case advisory contract; remaining burden is 8 lock-tracked files and the optional background plus board-warning upkeep. Revisit if adopter feedback shows a missed instruction or the warning fails to point to useful follow-up.
