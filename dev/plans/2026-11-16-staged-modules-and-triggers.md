@@ -336,7 +336,7 @@ No baseline operation or repeated unchanged mutant checks.
 ## Plan change -- Terra Medium -- 2026-11-17
 
 **Prior reviewed commit**: 8f51e8259fdfc3dde1c0b9f0f74ec5827c3d999c
-**Replacement commit**: this commit
+**Replacement commit**: 4d4f6225711a5760aaee970ffedd17c9732a3c94
 **Affected cells and dependencies**: Acceptance criteria, Verification, C2, C3
 **Change**: Give R4 a meaningful synthetic mixed/duplicated rule at the unchanged 5,412-word size, bind replies to the question they answer, and use the Medium authoring floor for its proposal task. Keep all eight behavior and safety obligations. No shipped wording or C1 check changes; rerun R4 and continue the already-reviewed remaining selection. C2/C3 remain stopped until review.
 **Reason**: The pure filler gave the actor no grounded change to propose; it reasonably declined invented work and asked file approval before record consent. The record reply cannot authorize unrelated file changes. Sol's bounded premise check recommends this fixture/reply/floor correction within the accepted scope, without accepting a no-op as a successful positive case.
