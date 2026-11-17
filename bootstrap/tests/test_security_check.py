@@ -1783,6 +1783,35 @@ def test_a_live_allowlist_entry_passes(monkeypatch, capsys) -> None:
     assert security_check.run_bandit() == 0
     assert "1 live allowlist entr" in capsys.readouterr().out
 
+    # Simulate the spelling returned by a native Windows Path after containment:
+    # the public run_bandit path must still match the slash-keyed allowance.
+    class _WindowsRelative:
+        def __str__(self) -> str:
+            return r"templates\skills\_lib\pulse.py"
+
+        def as_posix(self) -> str:
+            return "templates/skills/_lib/pulse.py"
+
+    class _WindowsPath:
+        def resolve(self):
+            return self
+
+        def relative_to(self, root):
+            assert root == security_check.CAIRN_ROOT
+            return _WindowsRelative()
+
+    pulse_key = ("templates/skills/_lib/pulse.py", "B314")
+    monkeypatch.setattr(security_check, "ALLOWLIST",
+                        {pulse_key: "guarded Pulse XML parsing"})
+    monkeypatch.setattr(
+        security_check, "Path", lambda _filename: _WindowsPath())
+    monkeypatch.setattr(security_check, "scan_targets", lambda: ["fixture.py"])
+    windows_finding = _finding(*pulse_key, "MEDIUM")
+    windows_finding["filename"] = r"C:\cairn\templates\skills\_lib\pulse.py"
+    _bandit_report(monkeypatch, [windows_finding])
+    assert security_check.run_bandit() == 0
+    assert "1 live allowlist entr" in capsys.readouterr().out
+
 
 def test_an_absent_allowlist_entry_fails_closed(monkeypatch, capsys) -> None:
     """Direction 2, the one this chunk adds: the scan reports nothing at that

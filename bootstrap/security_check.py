@@ -167,8 +167,9 @@ _PHASE_RESULTS: dict[str, str] = {}
 #: LOW findings there -- and was deleted rather than left as a latch. Its
 #: rationale (the opt-in, SSRF-guarded external-link probe) is preserved in
 #: that module and in ``SECURITY.md``'s documented residual risks. The current
-#: nineteen entries below classify only fixed-pin, verified-buffer helper loading;
-#: they remain subject to the same report-liveness check.
+#: twenty entries below classify guarded Pulse XML parsing and fixed-pin,
+#: verified-buffer helper loading; they remain subject to the same
+#: report-liveness check.
 ALLOWLIST: dict[tuple[str, str], str] = {
     ("bootstrap/_scaffold/lockfile.py", "B102"):
         "`_git_read_helper` executes only the bounded single-descriptor bytes "
@@ -212,6 +213,11 @@ ALLOWLIST: dict[tuple[str, str], str] = {
         "source/tools layout after the literal `SAFE_GIT_SOURCE_SHA256` pin "
         "matches; descriptor-relative or verified NTFS reading precedes "
         "execution, never target code.",
+    ("templates/skills/_lib/pulse.py", "B314"):
+        "`_parse_pulse_report` parses only bounded UTF-8 text after rejecting "
+        "NUL, non-UTF-8 declarations, DOCTYPE and ENTITY; the input checks "
+        "precede its sole ElementTree call. Reassess this path/rule allowance "
+        "if that changes.",
     ("templates/skills/_lib/session.py", "B102"):
         "`_load_git_read_helper` executes only its bounded, revalidated "
         "sibling helper bytes after the literal `_GIT_READ_SHA256` pin "
@@ -1363,7 +1369,7 @@ def scan_targets() -> list[str]:
 
 def _rel(filename: str) -> str:
     try:
-        return str(Path(filename).resolve().relative_to(CAIRN_ROOT))
+        return Path(filename).resolve().relative_to(CAIRN_ROOT).as_posix()
     except ValueError:
         return filename
 
