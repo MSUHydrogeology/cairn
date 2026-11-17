@@ -664,3 +664,45 @@ Not run: the four files whole, other Windows hosts or interpreters, the
 `repin.py status`, or re-anchor. No repair was made for cause 1 because it is
 only a validation-copy setup step. **Elapsed:** about 30 minutes. **Tokens:**
 unknown.
+
+## Code review -- Sol (Security Review, High) -- 2026-11-17
+
+Reviewed commits: `63d0704aaef53f19a5110a77eeec4e262bd11e68` and
+`7c77da3d9326383882a0c433a75d886823caaa07` (focused Windows repairs only).
+**Obligation:** Internal Security Review, code pass 1 for this defect range.
+**Verdict:** ACCEPT. **Findings:** none.
+
+The repairs let Windows handoff accept the same successful Meter receipt and
+prune an existing CR-LF ledger without changing its retained bytes.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Folding only a terminal CR-LF leaves
+   every other CR, extra newline, missing terminator, bad exit, duplicate key,
+   unexpected field and unsuccessful status rejected. The caller still bounds
+   both streams and skips both pruners on failure -- `tools/session.py`,
+   `_meter_refresh_receipt`, `_meter_refresh_before_prune` and full-handoff gate.
+2. **Best alternative.** Keep these localized changes: stripping general
+   whitespace would broaden receipt acceptance, while text-mode rewriting would
+   change ledger bytes. `O_BINARY` adds no pathname authority and preserves
+   `O_APPEND`, one-write append, exclusive temp creation and `O_NOFOLLOW` --
+   `tools/_intent/record_io.py`, `append_record` and `prune_released_pairs`.
+3. **What would show it wrong?** A malformed CR-LF receipt reaching either
+   pruner, a planted temp link changing its target, or retained ledger bytes
+   changing would falsify this pass. I traced those branches and read the
+   public refusal and hostile-temp checks; the recorded Windows public handoff
+   and CR-LF ledger successes support the repaired path --
+   `bootstrap/tests/test_session_writes_contained.py` and
+   `bootstrap/tests/test_intents_tool.py`, plus Implementation follow-up above.
+
+The raw-byte read restores the size comparison's original byte count; the
+documented final check-to-replace race remains unchanged. Both shipped twins
+have identical repairs. Removing the redundant private receipt check preserves
+public malformed-receipt refusal coverage; its special terminator variations
+were assessed statically here. Fixture changes retain their security assertions.
+
+**Covered:** committed diffs, surrounding receipt/prune guards and named retained
+checks. **Not covered / low confidence:** no test reruns, private logs, VM access,
+broad suite, mutation inventory, unrelated prior repair range or new concurrency
+proof. Existing native results are author-reported evidence, not my measurements.
+**Elapsed:** approximately 7 minutes. **Tokens:** unknown.
