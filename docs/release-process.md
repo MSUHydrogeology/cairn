@@ -61,8 +61,7 @@ a sweep slots into the matching row or proposes a new lens.
   starts with a proposal and a Maintainer Decision sets its tier. Light keeps
   implementation and final verification on the accepted proposal, including
   multi-chunk work. Standard and heavy retain plan triage and their required
-  reviews, checks and fences; heavy adds Security Review. Named high-risk
-  surfaces and added or widened trust boundaries trigger heavy.
+  reviews, checks and fences; heavy adds Security Review. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review. A project rule that names its own Security Review still applies.
   Deferred work goes to a durable home with a revival condition — never to an untracked
   note.
 * **Close out lifecycle records before the cut.** Review the latest committed

@@ -19,8 +19,7 @@ and its needed test. Other substantive work starts with a proposal; its
 Maintainer Decision sets *light*, *standard* or *heavy*. Light keeps the
 implementation and final verification on the accepted proposal, even across
 multiple chunks. Standard and heavy retain plan triage and every review, check
-and fence required by their Decision. Heavy adds Security Review; high-risk
-surfaces and widened trust boundaries trigger it. A new boundary stops work
+and fence required by their Decision. Heavy adds Security Review. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review. A project rule that names its own Security Review still applies. A new boundary stops work
 for reassessment.
 
 **Implementation record** — the evidence of how accepted work was carried
@@ -81,7 +80,7 @@ to serve it.
 implementer. A plan cannot archive until one has occurred.
 
 **Security Review** — a focused review of a high-risk surface, its own pass
-beside the usual review, triggered by named high-risk surfaces rather than by
+beside the usual review, triggered by a change to what a named high-risk surface does or accepts, or a new place where outside input enters, rather than by
 size.
 
 **Comprehension floor** — the rule that you cannot legitimately decide what you

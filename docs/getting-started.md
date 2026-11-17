@@ -27,7 +27,7 @@ Not every change needs all five. Eligible trivial repairs go straight to
 implementation and any needed test. Other substantive work starts with a
 proposal; its Decision sets the tier. The steps below show the proposal path:
 
-![Three lanes: trivial work takes the direct path; light work keeps implementation and final verification on its accepted proposal; standard and heavy work retain plan triage and required reviews. Heavy is triggered by named high-risk surfaces and widened trust boundaries. Ordinary uncertainty takes the lighter lane with a reason; stop on a newly discovered boundary. Every lifecycle step is a commit.](assets/three-lanes-of-change.svg)
+![Three lanes: trivial work takes the direct path; light work keeps implementation and final verification on its accepted proposal; standard and heavy work retain plan triage and required reviews. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review. Ordinary uncertainty takes the lighter lane with a reason; stop on a newly discovered boundary. Every lifecycle step is a commit.](assets/three-lanes-of-change.svg)
 
 A substantive change moves through
 [propose → review → decide → implement → record](methodology/lifecycle.md).

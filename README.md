@@ -49,10 +49,9 @@ to implementation and any needed test. Other substantive work starts with a
 proposal whose Maintainer Decision sets its tier. Light is the default and
 keeps implementation and final verification on the accepted proposal, even for
 multi-chunk work. Standard and heavy work retain plan triage and their required
-reviews, checks and fences; heavy adds Security Review. Named high-risk surfaces
-and added or widened trust boundaries trigger heavy:
+reviews, checks and fences; heavy adds Security Review. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review. A project rule that names its own Security Review still applies.
 
-![Three lifecycle paths: trivial work takes the direct path; light work keeps implementation and final verification on its accepted proposal; standard and heavy work retain plan triage and required reviews, checks and fences. Heavy adds Security Review. Named high-risk surfaces and added or widened trust boundaries trigger heavy. Ordinary uncertainty takes the lighter lane with a reason; stop on a newly discovered trust boundary. Every step is a commit.](docs/assets/three-lanes-of-change.svg)
+![Three lifecycle paths: trivial work takes the direct path; light work keeps implementation and final verification on its accepted proposal; standard and heavy work retain plan triage and required reviews, checks and fences. Heavy adds Security Review. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review. Ordinary uncertainty takes the lighter lane with a reason; stop on a newly discovered trust boundary. Every step is a commit.](docs/assets/three-lanes-of-change.svg)
 
 For other substantive work, the proposal path:
 
