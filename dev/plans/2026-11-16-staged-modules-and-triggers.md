@@ -298,7 +298,7 @@ rerunning it to reproduce a final-summary format. No C1 or baseline rerun.
 
 **Prior reviewed commit**: 41b10e2df08cafefaeb16f1b6408ddae0353238b
 **Replacement commit**: 8f51e8259fdfc3dde1c0b9f0f74ec5827c3d999c
-**Affected cells and dependencies**: Acceptance criteria, Verification, C1, C2, C3
+**Affected cells and dependencies**: Sequence, Acceptance criteria, Verification, C1, C2, C3
 **Change**: Make the already-required R4 response explicit in the skill bullet: on yes, name proposed rule-file changes in this session's reply and request file-by-file approval; retain the no-edit boundary and separate record consent. After review, synchronize skill twins and rerun C1's five public cases and skill prose gates; retain unchanged count/schema mutant evidence. Run R4 on the corrected source and R2 as its decline control, then complete the unrun R5–R8 cases. Retain already-observed R1/R3 results for unchanged pre-offer guards; name their source versions and the trial's limited assurance. All eight scenario obligations and the repeat policy remain; no general model-reliability claim is added. Then C3. Affected work remains stopped until review.
 **Reason**: The R4 actor recorded acceptance but omitted the required proposed file changes. No rule file changed. This clarifies the accepted outcome rather than relaxing its safety criterion; all eight scenarios, record format and consent boundaries remain.
 **Required obligations**: Internal
