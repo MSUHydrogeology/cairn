@@ -629,3 +629,27 @@ Also: TM1 deletes line 1 (the `claim-check-allow` comment); anchors no longer ca
 **Tokens**: unknown
 
 The Maintainer, 2026-11-16, refused the target waiver: “I think that those three modules need to be trimmed, not waived. We need some principles for combining rules.” C4 and C6 now specify compact replacements, retain the operative duties and require both actual copies to meet their targets. The explanation home is a core shipped file: adding its existing installer mapping delivers the accepted requirement, rather than the previous author's proposed Cairn-only destination. The expected engine AST mismatch is recorded for the existing separate Human re-anchor wait. Scratch C3–C7 replays, word counts and their limits are in Scope; no product files, runtime tests, or release operations were run. C7 retains its previously reviewed rows; its reserve and all required reviews remain due.
+
+## Plan review -- Terra Medium -- 2026-11-17
+
+Reviewed commit: be02b1f05f57e2e3ba1cb31715c2f0700b8a59a7
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** The exact cuts and shipped explanation support the accepted trim, but GT3 changes the grouping rule (finding 1). -- proposal item 1; plan C2, C6
+2. **Best alternative.** Keep the same compact rows and retain independence of the outcome, not of each dependent chunk. -- `dev/agent_collaboration.md`, Plans and records
+3. **What would show it wrong?** A plan with dependent chunks that together deliver one finishable outcome would be incorrectly excluded by GT3's wording. -- plan GT3; `dev/agent_collaboration.md`, Plans and records
+
+1. **Blocking -- preserve the grouping rule.** GT3 changes “dependent chunks that deliver one independently finishable outcome” to “dependent, independently finishable chunks.” The latter puts independence on each chunk and can narrow when one plan may hold dependent work. Restore the original relationship in the compact replacement, then remeasure both guides against 4,800 words. -- plan GT3; `dev/agent_collaboration.md`, Plans and records
+2. **Non-blocking -- stale estimate.** C7 still says the proposal template is planned at 3,398 words, while Scope reports the newer scratch replay at 3,360 shipped and 3,807 Cairn. Label the shipped target and update the estimate so Low can distinguish the target from Cairn's added slots. -- plan Scope and C7; accepted proposal target table
+
+**Audience / rule loss:** GT3 narrows an operative planning permission; Plain Language is explicitly preserved. The explanation mapping gives adopters the moved background, and the expected AST mismatch remains a separate Human wait.
+
+**Coverage:** Compared revised C2–C7 rows, targets, dependency and review responses with the accepted proposal and current source, sampling replacement duties and survivors. Template-scan wording remains future work and actual counts must be remeasured. Did not replay all rows, run tests, inspect private inputs or perform Security Review.
