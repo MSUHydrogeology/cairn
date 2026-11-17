@@ -4190,6 +4190,12 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                 if (old is None
                         and (source["alias"] not in had_start
                              or enumerated["mtime_ns"] < started_ns)):
+                    bookmark_reservation = (2 * MAX_LINE + 2
+                                            + (MAX_LINE + 1 if source["tool"] == "codex"
+                                               else 0))
+                    if remaining < bookmark_reservation:
+                        reasons.add("catching_up")
+                        continue
                     cursors[file_key], used = _start_bookmark(
                         source, relative, enumerated, file_key,
                         windows_api=windows_api, windows_user_sid=windows_user_sid)
@@ -4398,7 +4404,15 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                 row["reasons"] = sorted(set(row["reasons"])
                                          | {"conflicting_binding"})
             if lineage_key is not None:
-                if lineage_key in verified_lineages:
+                matching_proof = next((proof for proof in verified_forks
+                                       if proof["source_alias"] == batch["source_alias"]
+                                       and proof["child_file_key"] == batch["file_key"]
+                                       and any(item["owner_key"] == candidate["thread_key"]
+                                               and item["session_key"] == candidate["session_key"]
+                                               and item["turn_key"] == candidate["turn_key"]
+                                               and item["root_key"] == candidate["root_turn_key"]
+                                               for item in proof["child_sequence"])), None)
+                if matching_proof is not None:
                     row["ownership"] = "proven"
                     candidate_project = candidate.get("_candidate_project_alias")
                     if candidate_project is not None:
@@ -6805,7 +6819,8 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     "turn_key": _digest(tool, thread, turn),
                     "root_turn_key": (_digest(tool, active_pair[1], context["root"])
                                        if context is not None else None),
-                    "lineage_key": (_digest("codex-lineage", fork_metadata["child"])
+                    "lineage_key": (_digest("codex-lineage",
+                                             _digest(tool, fork_metadata["child"]))
                                     if fork_metadata is not None and fork_marker is not None
                                     and thread == fork_metadata["child"]
                                     and turn == fork_marker["turn"] else None),
@@ -6851,7 +6866,8 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
         reasons = set(wait["reasons"])
         binding_proven = bool(
             context is not None and context.get("owner") == (thread, session)
-            and context.get("turn") == turn and context.get("root") == turn
+            and context.get("turn") == turn
+            and (context.get("root") == turn or wait["_fork_child"])
             and not owner_conflict and header_eligible
             and ((fork_metadata is None and owner == (thread, session))
                  or wait["_fork_child"])
@@ -7056,11 +7072,11 @@ def _closed_refresh_receipt(result):
         result = {}
     status = result.get("status")
     reason = result.get("reason")
-    if status == "written":
-        status = "ok"
-        reason = "none"
-    if status == "ok":
-        reason = "none"
+    if status in {"written", "ok"}:
+        if reason is not None and reason != "none":
+            status, reason = "unavailable", "unavailable"
+        else:
+            status, reason = "ok", "none"
     elif status == "partial":
         if reason not in {"catching_up", "source_too_large"}:
             status, reason = "unavailable", "unavailable"

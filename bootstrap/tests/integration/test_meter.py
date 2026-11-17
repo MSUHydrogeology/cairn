@@ -811,7 +811,7 @@ def _native_meter_setup(root, native_git_exe, *, git_mode="ordinary",
             "git": bin_dir / "git.exe", "bin": bin_dir}
 
 
-_NATIVE_METER_MAIN_WRAPPER = r'''import ctypes, json, os, runpy, subprocess, sys
+_NATIVE_METER_MAIN_WRAPPER = r'''import ctypes, datetime, json, os, runpy, subprocess, sys
 meter_path, profile, source_root, git_exe, command, hook, fault, start_ready, start_release, ready, release, done, done_release = sys.argv[1:]
 k = ctypes.WinDLL("kernel32.dll", winmode=0x800, use_last_error=True)
 k.OpenEventW.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_wchar_p]
@@ -836,6 +836,7 @@ def gate():
     event(release, wait=True)
 ns = runpy.run_path(meter_path, run_name="meter_native_control")
 globals_ = ns["main"].__globals__
+globals_["_now_utc"] = lambda: datetime.datetime(2026, 11, 5, tzinfo=datetime.timezone.utc)
 real_api = globals_["_WindowsConsentAPI"]
 class SyntheticProfileAPI:
     def __init__(self):
@@ -3465,6 +3466,12 @@ def test_explicit_refresh_partial_receipt_is_closed_and_nonzero(
         refresh_result={"status": "partial", "reason": "future_reason"})
     assert bad_code == 5
     assert json.loads(bad.out)["status"] == "unavailable"
+
+    wrong_code, wrong = run_main_with_synthetic_home(
+        tmp_path, monkeypatch, capsys, command=command,
+        refresh_result={"status": "ok", "reason": "catching_up"})
+    assert wrong_code == 5
+    assert json.loads(wrong.out)["status"] == "unavailable"
 
 
 @POSIX_ONLY
@@ -6825,9 +6832,12 @@ def grow(path, data):
 def run_until_caught_up(home, limit=40):
     results = []
     for _ in range(limit):
-        results.append(meter._refresh_ledger(home))
-        assert results[-1]["status"] == "written", results[-1]
-        if "catching_up" not in ledger_of(home)["coverage"]["reasons"]:
+        result = meter._refresh_ledger(home)
+        results.append(result)
+        reasons = set(ledger_of(home)["coverage"]["reasons"])
+        partial = bool(reasons & {"catching_up", "source_too_large"})
+        assert result["status"] == ("partial" if partial else "written"), result
+        if not partial:
             return results
     raise AssertionError("still catching up")
 
@@ -7094,7 +7104,7 @@ def test_a_small_batch_limit_ends_a_piece_on_a_line_boundary_and_later_runs_fini
     first = meter._refresh_ledger(home)
 
     ledger = ledger_of(home)
-    assert first["status"] == "written" and first["events"] == 2
+    assert first["status"] == "partial" and first["events"] == 2
     assert "catching_up" in ledger["coverage"]["reasons"]
     cursor = cursor_for(ledger, "claude-source")
     assert cursor["offset"] == len(old) + 2 * one_line and cursor["line"] == 2
@@ -7118,7 +7128,7 @@ def test_a_small_event_limit_leaves_later_logs_for_later_runs(tmp_path, monkeypa
 
     first = meter._refresh_ledger(home)
 
-    assert first["status"] == "written" and first["events"] == 2
+    assert first["status"] == "partial" and first["events"] == 2
     assert "catching_up" in ledger_of(home)["coverage"]["reasons"]
     run_until_caught_up(home)
     assert len(ledger_of(home)["events"]) == 6
@@ -7195,7 +7205,7 @@ def test_refresh_total_source_budget_is_all_or_unavailable(tmp_path, monkeypatch
     result = meter._refresh_ledger(home)
 
     ledger = ledger_of(home)
-    assert result["status"] == "written"
+    assert result["status"] == ("partial" if over_by else "written")
     reasons = ledger["coverage"]["reasons"]
     if over_by:
         assert result["events"] == 0 and "catching_up" in reasons
@@ -7221,18 +7231,71 @@ def test_the_start_run_counts_tail_and_first_line_bytes_and_defers_the_rest(
         (claude_root / name).write_bytes(old)
         before = int(datetime(2026, 11, 1, tzinfo=timezone.utc).timestamp() * 1e9)
         os.utime(claude_root / name, ns=(before, before))
-    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", len(old))
+    tail_reservation = 2 * meter.MAX_LINE + 2
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", tail_reservation + len(old) - 1)
 
     result = meter._refresh_ledger(home)
 
     ledger = ledger_of(home)
-    assert result["status"] == "written"
+    assert result["status"] == "partial" and result["reason"] == "catching_up"
     assert [item["file_key"] for item in ledger["cursors"]] == [
         meter._digest("cursor", "claude-source", "a.jsonl")]
     assert "catching_up" in ledger["coverage"]["reasons"]
     monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", 1024 ** 3)
     assert meter._refresh_ledger(home)["events"] == 0
     assert len(ledger_of(home)["cursors"]) == 2
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("tool", ["claude", "codex"])
+def test_a_start_bookmark_waits_for_its_full_read_reservation(
+        tmp_path, monkeypatch, tool):
+    records = {"claude_logs": {}, "codex_logs": {}}
+    if tool == "claude":
+        data = claude_lines("old-1", timestamp=OLD)
+    else:
+        codex_records = codex_host_cwd()
+        for record in codex_records:
+            record["timestamp"] = OLD
+        data = b"".join(encoded(codex_records))
+    records[f"{tool}_logs"] = {"session.jsonl": data}
+    home, claude_root, codex_root, _project, _config = c1_home(
+        tmp_path, monkeypatch, **records)
+    source_fd_set = set()
+    source_reads = []
+    real_open, real_read, real_close = os.open, os.read, os.close
+
+    def tracking_open(path, *args, **kwargs):
+        fd = real_open(path, *args, **kwargs)
+        if isinstance(path, str) and Path(path).name == "session.jsonl":
+            source_fd_set.add(fd)
+        return fd
+
+    def tracking_read(fd, size):
+        block = real_read(fd, size)
+        if fd in source_fd_set:
+            source_reads.append(len(block))
+        return block
+
+    def tracking_close(fd):
+        source_fd_set.discard(fd)
+        return real_close(fd)
+
+    monkeypatch.setattr(meter.os, "open", tracking_open)
+    monkeypatch.setattr(meter.os, "read", tracking_read)
+    monkeypatch.setattr(meter.os, "close", tracking_close)
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", 1)
+
+    first = meter._refresh_ledger(home)
+
+    assert (first["status"], first["reason"]) == ("partial", "catching_up")
+    assert source_reads == []
+    assert ledger_of(home)["cursors"] == []
+
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", 1024 ** 3)
+    second = meter._refresh_ledger(home)
+    assert second["status"] == "written" and second["events"] == 0
+    assert source_reads and len(ledger_of(home)["cursors"]) == 1
 
 
 @POSIX_ONLY
@@ -7245,7 +7308,7 @@ def test_a_run_with_no_budget_opens_no_log_and_keeps_its_cursors(tmp_path, monke
     grow(log, claude_lines("new-1", timestamp=NEW))
     monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", 0)
     result = meter._refresh_ledger(home)
-    assert result["status"] == "written" and result["events"] == 0
+    assert result["status"] == "partial" and result["events"] == 0
     ledger = ledger_of(home)
     assert ledger["cursors"] == kept and "catching_up" in ledger["coverage"]["reasons"]
 
@@ -7265,7 +7328,7 @@ def test_a_resume_window_that_does_not_fit_the_piece_defers_the_log(tmp_path, mo
 
     ledger = ledger_of(home)
     cursor = cursor_for(ledger, "claude-source")
-    assert result["status"] == "written" and result["events"] == 0
+    assert result["status"] == "partial" and result["events"] == 0
     assert "catching_up" in ledger["coverage"]["reasons"]
     assert (cursor["offset"], cursor["digest"], cursor["line"], cursor["generation"]) == (
         bookmark["offset"], bookmark["digest"], 0, 1)
@@ -7484,7 +7547,7 @@ def test_a_child_is_dropped_when_the_run_cannot_pay_for_its_parent(tmp_path, mon
     result = meter._refresh_ledger(home)
 
     ledger = ledger_of(home)
-    assert result["status"] == "written" and result["events"] == 0
+    assert result["status"] == "partial" and result["events"] == 0
     assert "parent.jsonl" not in opened and "child.jsonl" in opened
     assert "catching_up" in ledger["coverage"]["reasons"]
     assert ledger["events"] == [] and ledger["lineages"] == []
@@ -7521,7 +7584,7 @@ def test_a_parent_the_run_already_read_is_not_read_again_as_context(tmp_path, mo
 
 @POSIX_ONLY
 def test_a_parent_cursor_without_an_owner_leaves_the_child_unverified(tmp_path, monkeypatch):
-    home, source, _project, _parent_rows, child_rows, _parent, child = fork_start(
+    home, source, _project, _parent_rows, child_rows, parent, child = fork_start(
         tmp_path, monkeypatch)
     edit_ledger(home, lambda ledger: ledger["cursors"][0].update(owner_key=None))
     write_codex(source / "child.jsonl", child_rows)
@@ -7666,7 +7729,7 @@ def test_codex_logs_over_a_read_limit_are_skipped_and_the_others_count(tmp_path,
     result = meter._refresh_ledger(home)
 
     ledger = ledger_of(home)
-    assert result["status"] == "written" and result["events"] == 1
+    assert result["status"] == "partial" and result["events"] == 1
     assert keys_of(ledger) == [codex_event_key(owners["fine"], "turn-new")]
     reasons = ledger["coverage"]["reasons"]
     assert "source_too_large" in reasons and "source_budget_exceeded" not in reasons
@@ -7698,7 +7761,7 @@ def test_a_codex_log_that_fits_the_limits_but_not_the_rest_of_the_run_is_deferre
     result = meter._refresh_ledger(home)
 
     ledger = ledger_of(home)
-    assert result["status"] == "written" and result["events"] == 1
+    assert result["status"] == "partial" and result["events"] == 1
     reasons = ledger["coverage"]["reasons"]
     assert "catching_up" in reasons and "source_too_large" not in reasons
     monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", 1024 ** 3)
@@ -8037,16 +8100,24 @@ def test_a_verified_lineage_whose_child_events_are_all_folded_is_dropped(tmp_pat
 
 @POSIX_ONLY
 def test_a_wait_that_cites_a_lineage_keeps_it_when_the_events_fold(tmp_path, monkeypatch):
-    home, source, _project, _parent_rows, child_rows, _parent, child = fork_start(
+    home, source, _project, _parent_rows, child_rows, parent, child = fork_start(
         tmp_path, monkeypatch)
     start_ms = int(CLOCK.timestamp() * 1000)
     wait = timing_record(item_id="child-wait", start=start_ms + 60_000, end=start_ms + 61_000)
     wait["payload"]["thread_id"], wait["payload"]["turn_id"] = child, "turn-child"
     write_codex(source / "child.jsonl", child_rows + [wait])
     assert meter._refresh_ledger(home)["events"] == 1
-    lineage_key = ledger_of(home)["lineages"][0]["lineage_key"]
-    # no wait of a fork child is bound to its lineage today, so cite it by hand
-    edit_ledger(home, lambda ledger: ledger["waits"][0].update(lineage_key=lineage_key))
+    first = ledger_of(home)
+    lineage_key = first["lineages"][0]["lineage_key"]
+    wait_row, = first["waits"]
+    assert wait_row["lineage_key"] == lineage_key
+    assert wait_row["ownership"] == "proven"
+    assert wait_row["thread_key"] == meter._digest("codex", child)
+    assert wait_row["session_key"] == meter._digest("codex", parent)
+    assert wait_row["turn_key"] == meter._digest("codex", child, "turn-child")
+    assert wait_row["root_turn_key"] == meter._digest("codex", parent, "turn-parent")
+    assert wait_row["project_alias"] == "sample"
+    assert wait_row["project_association"] == "current_local_verified"
     at_clock(monkeypatch, LATER)
 
     assert meter._refresh_ledger(home)["status"] == "written"
@@ -8054,6 +8125,27 @@ def test_a_wait_that_cites_a_lineage_keeps_it_when_the_events_fold(tmp_path, mon
     ledger = ledger_of(home)
     assert ledger["events"] == [] and daily_events(ledger) == 1
     assert [item["lineage_key"] for item in ledger["lineages"]] == [lineage_key]
+
+
+@POSIX_ONLY
+def test_a_fork_wait_without_its_parent_proof_stays_unknown(tmp_path, monkeypatch):
+    home, source, _project, _parent_rows, child_rows, _parent, child = fork_start(
+        tmp_path, monkeypatch)
+    start_ms = int(CLOCK.timestamp() * 1000)
+    wait = timing_record(item_id="child-wait", start=start_ms + 60_000, end=start_ms + 61_000)
+    wait["payload"]["thread_id"], wait["payload"]["turn_id"] = child, "turn-child"
+    write_codex(source / "child.jsonl", child_rows + [wait])
+    (source / "parent.jsonl").unlink()
+
+    meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    wait_row, = ledger["waits"]
+    assert wait_row["ownership"] == "unknown"
+    assert wait_row["lineage_key"] is None
+    assert wait_row["thread_key"] is None and wait_row["session_key"] is None
+    assert wait_row["turn_key"] is None and wait_row["root_turn_key"] is None
+    assert wait_row["project_alias"] is None
 
 
 @POSIX_ONLY
@@ -8125,7 +8217,7 @@ def test_a_run_that_is_catching_up_raises_no_horizon_unless_the_ledger_is_very_l
     if force is not None:
         monkeypatch.setattr(meter, "FOLD_FORCE_EVENTS", force)
 
-    assert meter._refresh_ledger(home)["status"] == "written"
+    assert meter._refresh_ledger(home)["status"] == "partial"
 
     ledger = ledger_of(home)
     assert "catching_up" in ledger["coverage"]["reasons"]
@@ -8142,7 +8234,7 @@ def test_a_reply_split_across_a_piece_boundary_counts_once_in_the_daily_rows(
     grow(log, usage_record("split-1", 10, day_stamp(2)) + usage_record("split-1", 10, day_stamp(2)))
     monkeypatch.setattr(meter, "MAX_BATCH_LINES", 1)
 
-    assert meter._refresh_ledger(home)["status"] == "written"
+    assert meter._refresh_ledger(home)["status"] == "partial"
     first = ledger_of(home)
     assert "catching_up" in first["coverage"]["reasons"]
     assert len(first["events"]) == 1 and first["daily"] == []
@@ -8168,7 +8260,7 @@ def test_a_late_line_older_than_the_saved_horizon_still_counts_and_folds_the_sam
         grow(log, priced_lines("recent", day_stamp(28)))
         monkeypatch.setattr(meter, "MAX_BATCH_LINES", 1)
 
-    assert meter._refresh_ledger(home)["status"] == "written"
+    assert meter._refresh_ledger(home)["status"] == ("partial" if catching_up else "written")
 
     ledger = ledger_of(home)
     assert ("catching_up" in ledger["coverage"]["reasons"]) is catching_up
