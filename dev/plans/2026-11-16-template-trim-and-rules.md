@@ -770,3 +770,27 @@ Remaining: one joined Group 2 integration on the combined revision. Home: `dev/P
 Remaining: upgrade warning about moving local rule lines before merging. Home: Root coordinator's `CHANGELOG.md` > Unreleased > Changed entry.
 
 Not covered: whole suite, security family, native Windows, desktop-app behavior and a real adopter upgrade merge. Home: release certification and joined Group 2 integration above; the real-adopter merge is not claimed by the fixture.
+
+## Code review -- Codex (GPT-6.2 Sol, Security Review, High), targeted pass 2 -- 2026-11-17
+
+```
+Reviewed commit: a68d62dc3f0757378f1e1b3b885a617a5cc1bde0
+Reviewed range: 213c95a6..a68d62dc
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: about 1 minute
+**Tokens**: unknown
+
+**Scope.** C7–C8 corrections and their three lock hashes. The first pass could not assess the new advisory error handler.
+
+1. **Should this happen as framed?** Yes. All four templates restore the summary rule and the background span has balanced backticks. Shipped counts are 3,887 and 3,396. The slots match their prior versions and the board copies are byte-identical.
+2. **Best alternative.** The narrow handler keeps the board exit at 0 on second-pass read or decode errors and marks the check incomplete. Source-type failures still reach the hard error handler and links remain unread (`tools/board.py:1194`).
+3. **What would show it wrong?** A read failure returning 1, an unsafe source returning 0, or a missing warning passing test 5. The author recorded three passing targeted cases and a failing warning-removal control.
+
+**Bounding**: ACCEPTED. Verified corrected hashes against committed bytes. Used prior evidence for unchanged paths. No fresh test, install, or platform runs. The Human re-anchor and joined Group 2 integration remain pending.
+
+**Waiting-line check.** This correction reached no fence or deviation request.
