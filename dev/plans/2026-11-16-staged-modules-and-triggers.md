@@ -18,7 +18,7 @@ The accepted proposal (Decision 2026-11-16, standard tier, Internal plan review)
 
 **Result.** A project past the line is offered the guide once and its answer is kept. A missing, malformed or hostile record fails to "no offer", with a stated reason. A `--drain` run, which has nobody to answer, makes no offer and writes nothing. Guidance only.
 
-**Branch.** Shipped-file changes for v0.8 groups 2 to 5 do not land on `master` (`dev/PLANNING.md`, "Branches for v0.8"). Every chunk runs on `0.8-dev`, made from `master` when group 1 (`dev/plans/2026-11-16-adopter-defects-0-7-0.md`) is done; this plan, a document, is committed on `master`. Group 2 order: heavy-tier trigger, template security scan, release tests shipped-only, template trim, this change, scientific run evidence.
+**Branch.** Shipped-file changes for v0.8 groups 2 to 5 do not land on `master` (`dev/PLANNING.md`, "Branches for v0.8"). Every chunk runs on `0.8-dev`, made from `master` when group 1 (`dev/plans/archive/2026-11-16-adopter-defects-0-7-0.md`) is done; this plan, a document, is committed on `master`. Group 2 order: heavy-tier trigger, template security scan, release tests shipped-only, template trim, this change, scientific run evidence.
 
 **Edits.** `templates/skills/session-start/SKILL.md` and its byte copy `.agents/skills/session-start/SKILL.md` (one bullet); `templates/core/dev/rules/README.md` (one section); new `bootstrap/tests/test_rules_folder_offer.py`; Cairn's install lock `dev/.cairn/cairn-lock.yml` for the copy's new hash (C3). An adopter's `dev/modules/offers.md` appears on its first answer; Cairn does not ship it.
 
