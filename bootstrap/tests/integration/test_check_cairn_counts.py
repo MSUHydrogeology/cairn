@@ -27,7 +27,7 @@ import pytest
 
 from bootstrap.tests._repo_root import repository_root
 
-CAIRN_ROOT = repository_root(Path(__file__)).parent
+CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT / "scripts"))
 
 import check_cairn  # noqa: E402

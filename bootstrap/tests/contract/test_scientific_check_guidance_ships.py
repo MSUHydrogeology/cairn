@@ -12,7 +12,7 @@ from bootstrap import scaffold
 
 from bootstrap.tests._repo_root import repository_root
 
-CAIRN_ROOT = repository_root(Path(__file__)).parent
+CAIRN_ROOT = repository_root(Path(__file__))
 _PLAN_TEMPLATES = (
     "dev/plans/_template.md",
     "templates/core/dev/plans/_template.md",

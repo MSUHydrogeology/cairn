@@ -30,7 +30,7 @@ import pytest
 
 from bootstrap.tests._repo_root import repository_root
 
-CAIRN_ROOT = repository_root(Path(__file__)).parent
+CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 
 #: A backticked token whose first segment is ``cairn/`` (no whitespace or

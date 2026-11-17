@@ -37,7 +37,7 @@ import pytest
 
 from bootstrap.tests._repo_root import repository_root
 
-CAIRN_ROOT = repository_root(Path(__file__)).parent
+CAIRN_ROOT = repository_root(Path(__file__))
 QG_SRC = CAIRN_ROOT / "scripts" / "quality_gate.py"
 
 pytestmark = pytest.mark.skipif(

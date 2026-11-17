@@ -49,7 +49,7 @@ import pytest
 
 from bootstrap.tests._repo_root import repository_root
 
-CAIRN_ROOT = repository_root(Path(__file__)).parent
+CAIRN_ROOT = repository_root(Path(__file__))
 MODULE_PATH = CAIRN_ROOT / "templates" / "modules" / "team-gated" / "link_check.py"
 sys.path.insert(0, str(CAIRN_ROOT))
 sys.path.insert(0, str(CAIRN_ROOT / 'scripts'))

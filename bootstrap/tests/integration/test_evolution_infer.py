@@ -38,7 +38,7 @@ import pytest
 
 from bootstrap.tests._repo_root import repository_root
 
-CAIRN_ROOT = repository_root(Path(__file__)).parent
+CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 TOOL_SRC = TEMPLATES_ROOT / "modules" / "default-on" / "evolution_infer.py"
 

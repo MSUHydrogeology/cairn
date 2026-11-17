@@ -33,7 +33,7 @@ import pytest
 
 from bootstrap.tests._repo_root import repository_root
 
-CAIRN_ROOT = repository_root(Path(__file__)).parent
+CAIRN_ROOT = repository_root(Path(__file__))
 SCRIPTS = CAIRN_ROOT / "scripts"
 
 _SCANS = ["link_check", "sync_doc_snippets", "check_cairn"]
