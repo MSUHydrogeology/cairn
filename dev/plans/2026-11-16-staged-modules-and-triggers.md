@@ -1,7 +1,7 @@
 # Plan: Offer rules-folder guidance when a project's rules folder grows
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-staged-modules-and-triggers.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Opened**: 2026-11-16
 **In brief**: When a project's rules folder grows past 5,000 words, the session-start routine offers once a short guide to organizing it, asks, and remembers the answer in a committed file.
@@ -276,3 +276,18 @@ registry correction `d52c1bb8`; resume C2 and C3 without replaying C1.
 The prior ID matches the preceding replacement and the binding names this replacement. The changed C2 method reads actual saved interactions and repository effects, retaining all eight cases, repeat rules, safety boundaries, consent and offer requirements. Missing evidence fails; reuse requires evidence of the same requirements. C3 remains gated by C2. The saved R2 repeat interaction contains the offer, count, command, cost and request to record; its final reply omits the earlier offer. The valid current date is consistent with format 1.
 
 Coverage: Compared the amendment and prior record, and read the saved R2 messages. Relied on the reported repository effects and reply handling; did not run tests or trial agents, inspect product implementation, or perform baseline operations. **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+
+## Response -- Terra Medium -- 2026-11-17
+
+**Prior reviewed commit**: c287ae3ae9aef312e488e8e426078ab52f2a4061
+**Replacement commit**: 41b10e2df08cafefaeb16f1b6408ddae0353238b
+**Affected cells and dependencies**: Acceptance criteria, Verification, C2, C3
+**Disposition**: ready-to-implement
+
+Accept Internal review `5b035a32`. Resume the unchanged source trial using the
+recorded actual interactions and repository effects. Preserve all eight cases,
+repeats and safety/consent requirements. Reuse R2's observed repeat rather than
+rerunning it to reproduce a final-summary format. No C1 or baseline rerun.
+
+**Elapsed**: under 1 minute. **Tokens**: unknown.
