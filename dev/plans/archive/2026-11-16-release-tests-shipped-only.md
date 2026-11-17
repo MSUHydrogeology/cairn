@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-release-tests-shipped-only.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **In brief**: The strict release check stops re-running 16 test files that cover only the Maintainer's own signing tools, saves about 30% of its time, and says in its output which files it left out.
@@ -221,12 +221,15 @@ bounds after the source file shrank. The original citation was restored in
 `926d6026` and is not rewritten; this is a historical citation flag, not a
 product-check failure.
 
-**Benefit versus cost**: worth it — the narrowly scoped exception and path
-normalization let the real scanner and connected release fixture pass while
-retaining all scan targets, severity rules, parser guards and fail-closed
-liveness. Cost was not measured. Remaining burden: reassess the allowance if
-Pulse's parser guards or call path change. Revisit at that change or when the
-scanner's path-matching contract changes. Elapsed time and tokens: unknown.
+**Benefit versus cost**: worth it — the strict release selection excludes the
+16 pinned Cairn-only files and reports them, while ordinary collections and
+full certifying runs still cover every test. The Pulse repair keeps the
+scanner's targets, severity rules, parser guards and fail-closed liveness.
+Runtime savings are expected but not measured; the release owner gets the
+first real records and join from [the release process](../../../docs/release-process.md).
+Implementation and check cost were not measured. Reassess at the first real
+strict release and if Pulse's parser guards, call path or scanner path contract
+change. Elapsed time and tokens: unknown.
 
 ## Code review -- Terra (Reviewer, Medium) -- 2026-11-17
 
@@ -269,7 +272,7 @@ No implementation scope is deferred or removed. The still-unpassed operations
 have active homes outside this plan:
 
 - The first full strict release records and join, including native Windows
-  execution, follow [the release process](../../docs/release-process.md)
+  execution, follow [the release process](../../../docs/release-process.md)
   and the existing release-cut wait in `dev/PLANNING.md`; they do not gate
   this plan's archive.
 - The post-C4 frozen-baseline update and grouped re-anchor remain at the
