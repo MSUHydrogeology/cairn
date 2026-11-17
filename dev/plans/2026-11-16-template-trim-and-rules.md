@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-template-trim-and-rules.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md
@@ -694,3 +694,7 @@ Reviewed commit: 5c8659cdb7fb8c9d7611abb47c2d5362dcf699f5
 **Tokens**: unknown
 
 Both findings are closed: GT3 restores dependent chunks delivering one independently finishable outcome; C7 labels shipped targets and updates both copies' scratch estimates. Scope and C6 record the revised guide estimates and require actual measurement. Read the committed correction and affected rows; did not repeat the full review, replay counts or run tests.
+
+## Author disposition -- Terra Medium -- 2026-11-17
+
+**Disposition**: ready-to-implement. Ordinary and Security reviews accept the corrected plan. Implementation waits for `0.8-dev` and must remeasure after the dependent template-scan wording lands. The expected engine AST mismatch remains unpassed until the existing separate grouped Human re-anchor. Elapsed: unknown. Tokens: unknown.
