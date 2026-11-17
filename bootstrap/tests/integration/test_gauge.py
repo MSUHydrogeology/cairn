@@ -978,6 +978,23 @@ def test_full_pulse_public_parity(tmp_path):
             assert gauge.stdout == shared.stdout
 
 
+def test_pulse_loader_uses_source_sibling_through_leaf_symlink(tmp_path):
+    alias_dir = tmp_path / "alias"
+    alias_dir.mkdir()
+    alias = alias_dir / "gauge.py"
+    try:
+        alias.symlink_to(GAUGE)
+    except (OSError, NotImplementedError):
+        pytest.skip("file symlinks unavailable")
+    (alias_dir / "pulse.py").write_text(
+        "raise RuntimeError('hostile sibling selected')\n", encoding="utf-8")
+    result = subprocess.run(
+        [sys.executable, str(alias), "--pulse"], cwd=ROOT,
+        capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stderr
+    assert "hostile sibling selected" not in result.stderr
+
+
 def test_artifact_snapshot_mismatch_and_secret_fail_closed(tmp_path):
     bundle = {
         "schema": "cairn-pulse-artifacts/1", "project_alias": "other",

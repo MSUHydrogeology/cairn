@@ -66,7 +66,7 @@ _PARENT_RE = re.compile(
 
 def _load_shared_pulse():
     """Load the shared pulse module only from beside this tool."""
-    path = Path(__file__).absolute().with_name("pulse.py")
+    path = Path(__file__).resolve().with_name("pulse.py")
     spec = importlib.util.spec_from_file_location("_cairn_shared_pulse", path)
     if spec is None or spec.loader is None:
         raise RuntimeError("pulse-module-unavailable")

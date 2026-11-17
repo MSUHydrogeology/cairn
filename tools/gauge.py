@@ -207,7 +207,7 @@ _RULES: Tuple[Tuple[str, str], ...] = (
 _CLASSES = ("dev", "security-machinery", "other-machinery", "product")
 def _load_shared_pulse():
     """Load the shared pulse only from the sibling tool directory."""
-    path = Path(__file__).absolute().with_name("pulse.py")
+    path = Path(__file__).resolve().with_name("pulse.py")
     spec = importlib.util.spec_from_file_location("_cairn_shared_pulse", path)
     if spec is None or spec.loader is None:
         raise RuntimeError("pulse-module-unavailable")
