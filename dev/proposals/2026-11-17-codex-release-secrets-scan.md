@@ -1,7 +1,7 @@
 # Proposal: release secrets scanning on Mac and Windows
 
 **Author**: Codex
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
