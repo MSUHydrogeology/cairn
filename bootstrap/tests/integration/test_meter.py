@@ -7396,6 +7396,87 @@ def test_a_failing_seek_or_identity_read_is_unavailable_and_leaves_the_ledger(
 
 
 @POSIX_ONLY
+def test_public_refresh_accepts_an_exact_8_mib_line_without_leaking_or_recounting(
+        tmp_path, monkeypatch):
+    limit = 8 * 1024 * 1024
+    home, source, project, _config_path = c2_home(tmp_path, records=codex())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+    log = source / "session.jsonl"
+
+    started = meter._refresh_ledger(home)
+    assert started["status"] == "written" and started["events"] == 0, started
+    context = row("turn_context", {
+        "turn_id": "turn-large", "cwd": str(project),
+        "synthetic_padding": "C10_SYNTHETIC_PADDING_MUST_NOT_ESCAPE_"})
+    context["payload"]["synthetic_padding"] += "x" * (
+        limit - len(encoded([context])[0]))
+    context_line = encoded([context])[0]
+    assert len(context_line) == limit
+    owner = "019a0000-0000-7000-8000-000000000001"
+    usage_line = encoded([codex_direct(
+        owner, owner, "turn-large", "turn-large", "response-large", 31, 31, 31)])[0]
+    log.write_bytes(log.read_bytes() + context_line + usage_line)
+
+    result = meter._refresh_ledger(home)
+
+    ledger_path = home / ".cairn" / "meter" / "ledger.json"
+    export_path = project / "dev" / "measurement" / "meter.json"
+    ledger_bytes = ledger_path.read_bytes()
+    export_bytes = export_path.read_bytes()
+    ledger = meter._load_ledger(ledger_bytes)
+    export = json.loads(export_bytes)
+    assert result["status"] == "written" and result["events"] == 1, result
+    assert len(ledger["events"]) == 1
+    assert ledger["events"][0]["project_alias"] == "sample"
+    assert cursor_for(ledger, "codex-source")["offset"] == log.stat().st_size
+    assert sum(item["events"] for item in export["aggregates"]) == 1
+    assert b"C10_SYNTHETIC_PADDING_MUST_NOT_ESCAPE_" not in ledger_bytes
+    assert b"C10_SYNTHETIC_PADDING_MUST_NOT_ESCAPE_" not in export_bytes
+    assert b"synthetic_padding" not in export_bytes
+
+    repeated = meter._refresh_ledger(home)
+    assert repeated["status"] == "written" and repeated["events"] == 1, repeated
+    assert len(ledger_of(home)["events"]) == 1
+
+
+@POSIX_ONLY
+def test_public_refresh_refuses_one_byte_over_8_mib_without_publication_changes(
+        tmp_path, monkeypatch):
+    limit = 8 * 1024 * 1024
+    home, source, project, _config_path = c2_home(tmp_path, records=codex())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+    log = source / "session.jsonl"
+    started = meter._refresh_ledger(home)
+    assert started["status"] == "written" and started["events"] == 0, started
+
+    context = row("turn_context", {
+        "turn_id": "turn-over-limit", "cwd": str(project),
+        "synthetic_padding": "C10_SYNTHETIC_PADDING_MUST_NOT_ESCAPE_"})
+    context["payload"]["synthetic_padding"] += "x" * (
+        limit + 1 - len(encoded([context])[0]))
+    context_line = encoded([context])[0]
+    assert len(context_line) == limit + 1
+    owner = "019a0000-0000-7000-8000-000000000001"
+    usage_line = encoded([codex_direct(
+        owner, owner, "turn-over-limit", "turn-over-limit", "response-over-limit",
+        31, 31, 31)])[0]
+    log.write_bytes(log.read_bytes() + context_line + usage_line)
+    ledger_path = home / ".cairn" / "meter" / "ledger.json"
+    export_path = project / "dev" / "measurement" / "meter.json"
+    previous_ledger = ledger_path.read_bytes()
+    previous_export = export_path.read_bytes()
+
+    result = meter._refresh_ledger(home)
+
+    assert result["status"] == "unavailable"
+    assert result["reason"] == "source_budget_exceeded"
+    assert ledger_path.read_bytes() == previous_ledger
+    assert export_path.read_bytes() == previous_export
+
+
+@POSIX_ONLY
 def test_a_line_over_the_line_limit_is_still_source_budget_exceeded(tmp_path, monkeypatch):
     home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
     log = claude_root / "session.jsonl"
