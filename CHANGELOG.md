@@ -42,9 +42,13 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 - **Added: Rule against committing secrets.** `AGENTS.md` now tells every agent never to commit a credential, key, token or private data, and to stop and tell the person if one is committed, because Git history keeps it. ([proposal](dev/proposals/archive/2026-11-16-claude-never-commit-secrets.md))
 
+- **Added: Help for growing rules.** When a project's Markdown rules exceed 5,000 words, an attended session-start can offer guidance on organizing them and remember the answer with permission. Rules are changed only after file-by-file approval. ([proposal](dev/proposals/archive/2026-11-16-claude-staged-modules-and-triggers.md))
+
 - **Changed: Commit-time claim check warns by default.** If you installed the optional commit check (`python tools/intent.py install-precommit`), it now warns and lets the commit through when another session holds a claim on the same file. To keep refusing, add `"enforce": "block"` to `dev/.cairn/intent-config.json` (older installs: `dev/intent-config.json`); no hook reinstall is needed. ([proposal](dev/proposals/archive/2026-11-16-claude-claims-check-warn-only.md))
 
 - **Changed: Security review trigger.** A Security Review is required when a change alters what a named high-risk surface does or accepts, or adds a place where outside input enters the system; merely touching the surface does not trigger one. Prose-only shipped templates receive a release-wide read on the exact candidate, while code, installer structure and functional configuration retain their protections; the development checkout therefore carries that exposure until release. ([heavy-tier plan](dev/plans/archive/2026-11-16-heavy-tier-trigger.md); [template-scan plan](dev/plans/archive/2026-11-17-template-scan-and-risk-list.md))
+
+- **Changed: Shorter working guidance.** Authoring templates, testing guidance and collaboration rules are shorter; plans name applicable rules and give unfinished work an explicit home. Before upgrading, move project rules you added to these templates or guides into `RULES.md` or `dev/rules/`; choosing Cairn's replacement during a merge can otherwise lose those additions. ([proposal](dev/proposals/archive/2026-11-16-claude-template-trim-and-rules.md))
 
 ### Minor changes
 
