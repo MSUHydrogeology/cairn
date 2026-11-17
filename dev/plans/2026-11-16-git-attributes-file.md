@@ -323,3 +323,28 @@ the quickstart node and 25.57 seconds on Windows, plus 12.6 seconds for M1–M8
 and 2.6 seconds for M4/T3. Setup and agent time are unknown. Remaining burden:
 grouped verification disposition and required reviews. Revisit after those
 records are complete; the Maintainer re-anchor remains separate.
+
+## Code review -- Sol High, Security Review -- 2026-11-17
+
+Reviewed commit: e45af87347b82ae1020f254882af093c33ef609f
+Range: ac76f0c8^..e45af873, Git-attributes implementation and evidence only
+
+**Obligation**: Internal Security Review
+**Findings**: none in source
+**Verdict**: ACCEPT, bounded source review
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: existing attributes survive forced install, and only the root attributes path receives the editable-state and differing-copy exemptions. -- `bootstrap/_scaffold/lockfile.py`; `bootstrap/_scaffold/install.py`
+2. **Best alternative.** The existing unconditional verbatim mapping and bounded safe-Git reader deliver the result without another upgrade or integrity mechanism. -- `bootstrap/_scaffold/config.py`; `_index_crlf_count`
+3. **What would show it wrong?** A broadened exemption escaping T4, or a Windows checkout remaining dirty while its control fails to reproduce CRLF, would falsify delivery; the recorded controls distinguish both. -- Implementation mutation record; `dev/measurement/windows-git-attributes-run.md`
+
+The one-path set has no broad hash-bypass option. Fresh attributes are verbatim with no base-cache copy; existing collision/adoption and integrity code is unchanged. The accepted `--init-lock` overwrite residual and attributes hiding diffs are disclosed in `bootstrap/UPGRADE.md`. CRLF reporting uses fixed safe-Git arguments, bounded output and timeout, emitting only a count or unavailable guidance. Renormalization instructions protect checksummed evidence and require no unrelated uncommitted work.
+
+Reused recorded host/native ten-check results and M1–M8 detections, including M1/T4's lock assertion and M4/T3's verbatim assertion. C5's nine relevant files were hash-matched, but its reconstructed VM tree is not a clean candidate archive; it supports those tested paths, not whole-candidate platform equivalence.
+
+**Bounding**: WIDER RUN REQUIRED — accepted mapped/control-selection coverage and the C5 reconstruction-equivalence disposition remain unpassed pending the Maintainer's grouped answer. Source approval does not authorize archive. Expected engine AST keys and pre-existing frozen changes remain unpassed for the separate Human operation.
+
+**Coverage:** Committed C1–C5 source, public tests, guides and recorded results; no reviewer runtime/native reruns or private inputs. No rule or guard loss beyond the explicit accepted one-path policy was identified. Slightly over target to preserve verification and reconstruction limits.
