@@ -21,7 +21,10 @@ Apply the proposal's items 1–12, including the root `.gitattributes` exception
 
 Move `bootstrap/tests/` to `tests/`, `bootstrap/` to `install/`, pre-install phase-0 and readiness inputs to `install/`, root `dimensions/` and `on-ramp/` to `install/`, onboarding guides into `templates/`, and `case-studies/` into `docs/case-studies/`. Move the two baseline and re-anchor runbooks, `reanchor.sh`, launcher and values templates from `bootstrap/`, and `repin.py`, `reanchor_ceremony.py`, `check_release_publication.py` and `check_release_test_members.py` from `scripts/` to `release/`. Place remaining Cairn-only scripts in `tests/`, keeping `audit_report.py` beside `gauge.py`; migrate the installed tools from `tools/` and `scripts/` to flat `dev/tools/` through upgrade. Move associated manifests and configuration alongside their readers. Machine-assisted path rewrites must be surgical: inspect each functional-prose patch, retain its duties and do not rewrap it.
 
-**Reuse.** `bootstrap/_scaffold/{config,install,upgrade}.py` contains mappings, staging and historical reads; `scripts/repin.py` and the re-anchor runbook contain the existing authority chain. `rg 'parents\[|CAIRN_ROOT|_theirs_text|reanchor|VENDOR' bootstrap scripts tools templates` finds existing root, migration and wrapper mechanisms. Extend these rather than creating a parallel installer or verifier.
+**Reuse.** Extend the installer catalog, upgrade staging and historical reads in
+`bootstrap/_scaffold/{config,install,upgrade}.py` and the ceremony in
+`scripts/repin.py`. The self-hosted tool directory is flat at the command
+level. Packages keep their internal module structure.
 
 ### Documentation / doctrine surface
 
@@ -32,20 +35,129 @@ Update both `AGENTS.md` files for commands, citations and `dev/` as records, sta
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
 | C1 | Discover roots and inventory source, destination and lock ownership | None | Shared test root helper; executable root fixes; reviewed mapping |
-| C2 | Implement destination migration and reconcile self-lock | C1 | Upgrade transaction and provenance reconciliation |
+| C2 | Implement reconciliation and destination migration in upgrade | C1 | Upgrade transaction and provenance reconciliation |
 | C3 | Relocate sources and update references | C1–C2 | New layout, compatibility entry and wrapper guidance |
-| C4 | Run real self-upgrade and prepare trust transition | C2–C3 | Self-adopted tools and verified candidate chain |
+| C4 | Reconcile Cairn's existing lock, run real self-upgrade and exercise the layout transition | C2–C3 | Self-adopted tools and verified candidate chain |
 | C5 | Verify promises and close records | C1–C4 | Focused evidence, reviews and issue closure |
+
+### Upgrade transaction
+
+Extend `upgrade --plan` and `--stage` for catalogued moves. A reconciliation-only
+`--stage --reconcile-layout REV` compares Cairn's existing lock and unlisted
+copies with a named Cairn source revision. Reuse fork-record generation and
+the lock-last cache writer. Proven rendered ancestors require actual source
+or cache evidence and the original rendering inputs. A verified comparison
+revision can identify a fork, with historical ancestry still marked unknown
+where unproved. An absent base blocks a move that requires it. Apply the
+reconciliation before staging Cairn's moves. At v0.7.0, `tools/code_map.py`
+and `templates/modules/team-gated/code_map.py` have the current installed
+blob. Restore its architecture-review ownership in Cairn's self-profile.
+
+Stage one transaction under the existing upgrade staging directory ahead of
+ordinary in-place updates. The durable receipt hashes the target identity,
+source revisions, mapped actions and modes, old/new lock and profile bytes,
+cache identities, and input/output bytes or their digests. Record keep, copy,
+fork and clean merge actions. Keep an unfinished receipt across restaging.
+`upgrade --apply --migration-receipt SHA256` takes the literal reported at stage
+time, as collision adoption takes observed digests. Before writing, rederive
+ownership and upstream provenance from the running installer's catalog and
+trusted source. Compare the receipt and live files, locks, profile and caches.
+An adopter-controlled stage or lock cannot supply a removal path or authorize
+replacement. Keep the existing edit and containment guards, including for
+retirement.
+
+With the old lock live, publish and flush destinations and new caches without
+clobbering. Replace the matched profile if needed, then atomically replace
+the lock last. Keep referenced caches intact. With the new lock live, recheck
+destinations, profile, caches and old path identities and bytes, then retire
+only verified mapped old copies. On retry, accept an exact already-written
+output or a pending output under the old lock. Only the exact new profile
+matches the new lock. An absent old path counts only with the new lock and
+matching destination. Keep the receipt until retirement finishes. Other
+states refuse and name the path.
+
+### Layout transition
+
+The old signed anchor P supplies its manifest, signer roster, and verifier and
+scanner closure at the old paths. Reuse prior-verifier extraction and signature
+checks with the independently known fingerprint. The old scan command
+requires C's roster at the old path. Invoke P's raw-object line scan with
+P's verified roster and carry its decision classes to the relocated paths
+through C1's mapping. Check C's mapped protected roster against that same
+membership. Run P's unchanged static verifier on exact C before candidate
+imports and preserve the scan digest and verifier HOLDs. The old launcher
+fixes its artifact path and member list, so add a layout mode to the existing
+transition.
+The independent reader binds P, C and its tree, the standalone repin bootstrap,
+launcher, packet and exact old/new path, mode, digest and import-name lists,
+including both rosters and the artifact. Bind Python's resolved path and
+digest to P's signed minor. Check the externally held bootstrap digest before
+launching it in isolation. Its standard-library startup rechecks the binding
+and all raw members before it loads any candidate helper or starts the artifact.
+Reuse existing reader records, stage checks including E7, and fresh stage-two
+extraction. Compare the stage report to P's bound scan digest.
+
+The prior full verifier's collector hardcodes the old test directory and
+plugin. Use its existing observer seam for a reviewed adapter limited to the
+fixed relocated collection route. Capture actual C node and skip/xfail IDs,
+translate file prefixes by C1's reviewed one-to-one map for P's comparisons,
+and surface missing or ambiguous protected IDs. Leave P's verifier bytes,
+static HOLDs and disposition rules intact. Exercise the transition through
+collection in a disposable fixture with a test prior key and an unsigned
+candidate. The real release verifier still requires the Maintainer's key-away
+confirmation. Carry its bound report and existing HOLD handling into the
+separate cut. A failed authority check stops and names the exact mismatch
+for Maintainer disposition under the existing transition.
 
 ## Acceptance criteria
 
-**C1.** Tests use one repository-root helper based on a repository marker, not parent counts. Installed commands and configuration discover their intended project root, including `content_scan_runner.py`; test misleading nested roots through public entry points. Inventory all installer sources and destinations, selected modules, unlisted self-hosted copies, and source moves in the committed mapping. Mapping has one owner per destination and names every root exception: `AGENTS.md`, `RULES.md`, `VENDOR.md`, `.gitattributes`, `.agents/skills/`, Claude skills discovery, and project-facing `CHANGELOG.md`, `NOTICE.md` and selected optional templates. Inventory actual lock destinations, including every selected module. Record elapsed and tokens for each step, or `unknown`.
+**C1.** One repository marker locates the test root. Installed commands and
+configurations, including `content_scan_runner.py`, resolve their project
+through misleading nested roots. Commit the revision-aware catalog of old
+and new installer sources and destinations, source moves, selected modules
+and unlisted self-hosted copies. Use exact Cairn revisions and regular blobs
+for historical lookup. Assign one owner per destination. Inventory all lock
+destinations, including `AGENTS.md`, `RULES.md`, `VENDOR.md` or its existing
+wrapper alias, `.gitattributes`, `.agents/skills/`, `.claude/skills/`,
+`CHANGELOG.md`, `NOTICE.md`, `docs/DOCUMENTATION_PLAN.md` and any other
+selected exceptions. Record elapsed and tokens for each step, or `unknown`.
 
-**C2.** Upgrade uses explicit revision-aware old/new source and destination mappings, not lock claims as authority. For unchanged tracked files move verified bytes; preserve executable modifications as marked forks and merge modified prose only against a verified base. Keep installed hashes distinct from upstream base hashes and migrate cache references. Unprovable ancestry remains unknown, bytes stay untouched, and the report names reconciliation; verify actual source commits/blobs or caches with rendering inputs before recovering bases, including unlisted copies. Stage bytes, provenance and lock/cache updates together; recheck inputs before apply, retain old bytes until verified destination and recoverable transaction state are durable. Occupied, conflicting, linked or non-file paths refuse without overwrite or traversal. Interrupted retry recognizes completed bytes, refuses changed inputs and never deletes the only copy. Retained old paths are reported and prevent migration-complete claims. Existing onboarding copies survive Write E separately; historical reads resolve the path appropriate to their revision.
+**C2.** Move verified bytes, preserve executable modifications as marked
+forks, and merge prose against verified ancestors. Track installed and
+upstream hashes separately and migrate cache references. Report unproved
+ancestry and any old path requiring reconciliation. Keep those bytes and
+withhold migration completion. Occupied, conflicting, linked or non-file
+paths refuse without overwrite or traversal. Retain unrelated project files
+under the old tool directories. Exercise interruption before and after
+lock replacement, a changed input, and a tampered receipt. Write E resolves
+the onboarding source for each revision separately and preserves existing
+onboarding copies.
 
-**C3.** Every installed template source is under `templates/`, and every file there is read by the installer; every `dev/tools/` file is an install destination, with no Cairn root `scripts/` or `tools/`. Check every lock destination lies under `dev/` or a named root exception. Build a test release archive with `dev/` omitted and inspect its remaining Cairn footprint, including `AGENTS.md`; do not claim the exceptions disappear. Mutate each layout rule to confirm its check fails. Release-policy work stays with the later release items. `cairn/…` citations mean Cairn's source, bare `bootstrap/` citations are repaired, and a test install passes link checking. The legacy `bootstrap/scaffold.py` only reports the new command until v1.0. Hooks, imports, configuration, hashes and manifest paths follow moved files; preserve byte-identical shipped twins and existing module behavior. Keep `VENDOR.md` for other tools but stop directing Claude Code users to create a wrapper. Put Claude habits in `AGENTS.md`, document the local uncommitted `CLAUDE.md` fallback containing `@AGENTS.md`, and leave existing adopter wrappers untouched. An agent checks a fresh desktop session for an observable instruction unique to `AGENTS.md` with the wrapper absent in a disposable copy; remove Cairn’s wrapper only if that check succeeds. If the desktop session cannot be tested or the check fails, retain the wrapper and record the limit; no human action gates archive.
+**C3.** The layout check proves the installer reads exactly the
+`templates/` files, owns every `dev/tools/` file and leaves no Cairn root
+`scripts/` or `tools/`. Inspect the lock exceptions and a test archive
+excluding `dev/`. Hooks, imports, configuration, hashes and manifests follow
+moves. Keep shipped twins byte-identical and module behavior intact.
+`cairn/…` means Cairn source. Repair bare `bootstrap/` citations.
+`bootstrap/scaffold.py` reports the new command until v1.0.
 
-**C4.** The real self-upgrade uses C2 and completes without overwriting adaptations or leaving competing commands. Preserve the old anchor's verifier and interpreter binding while preparing the new layout: verify candidate bytes, paths and import roster before any candidate import, using the old trusted verifier and independently trusted signer. Update the existing ceremony's exact path and module roster as a reviewed transition, not a candidate-authorized loader. Substituted helpers, unauthorized candidate code and wrong interpreters refuse before import. If the chain cannot establish authority, stop for the named Maintainer risk decision. The Maintainer's exact authorization and re-anchor are a separate board wait with linked evidence; the anchor stays unpassed until performed and does not gate plan archive or permit activation or release.
+Keep `VENDOR.md` for other tools. Move wrapper duties to vendor-neutral
+`AGENTS.md` and document the uncommitted `CLAUDE.md` fallback containing
+`@AGENTS.md`. For an existing recorded or resolved wrapper, bypass merging
+and replacement creation. Keep its path, bytes and base, using scoped
+finalization for installed hash updates. Verify a customized alias by upgrade
+and integrity checks. Remove Cairn's wrapper only after a fresh desktop session
+demonstrates an instruction unique to `AGENTS.md` in a disposable wrapper-free
+copy. If unavailable or unsuccessful, retain it and record the limit.
+
+**C4.** Cairn's real upgrade uses C2, preserves adaptations and leaves no
+competing commands. Use the layout transition above to bind the exact
+relocated candidate to the old authority and interpreter. Refuse substituted
+helpers, unauthorized candidate bytes and wrong interpreters before import.
+Keep the Maintainer's exact authorization, real collection and re-anchor in a
+separate linked board wait. The anchor remains unpassed until performed.
+Plan archive attests to the reviewed machinery and unsigned exercise.
+Activation and release require the signed cut.
 
 **C5.** Run the checks below on the final relevant bytes; remedy failures before code review and archive. Close #67 when the destination inventory and root exceptions establish its promise. Close #90 only if its full issue scope is satisfied; the broader helper standard remains queued. Close a satisfied issue at its fixing commit, not release. Record limitations, review dispositions, changed-file burden and benefit versus cost.
 
@@ -59,7 +171,15 @@ Proposed paths:
 
 ## Verification
 
-Use the canonical Python recorded in the environment. Before implementation run `python tools/test_tiers.py for <changed paths>`; run mapped checks and prose gates for changed prose, including claim, link, snippet and neutrality checks, and pass the reviewed range for governing text. Follow changed public promises through scaffold fresh install, v0.7 migration and Cairn's real self-upgrade: unchanged, forked, unprovable, occupied/linked and interrupted/retry cases check bytes, ownership, locks, caches and stale commands. Check historical reads, misleading roots, layout mutants and ceremony refusals through public entries. The layout check joins certification; migration and ceremony checks run in plan verification. Test a negative search with a known positive. Retain only external-promise tests and protected guards; remove developmental probes.
+Use the canonical Python and the reviewed range for governing text. Use
+`python tools/test_tiers.py for <changed paths>` to identify checks for
+changed behavior. Reserve wider checks for changed public promises and
+required certification.
+Run the claim, link, snippet and neutrality prose gates. Exercise the named
+promises through fresh install, v0.7 migration, real self-upgrade and the
+disposable ceremony. Include one failing mutation for each layout rule.
+The layout check joins certification. Test a negative search against a
+known positive. Keep external-promise tests and protected guards.
 
 Run scaffold summary and dry-run, both example self-tests, prose gates at their new paths, and test-install link checking. In the separate authorized certification operation compare clean before/after pass, skip and node counts; counts alone establish neither behavior nor authority. Keep those results unpassed until the Maintainer runs it. The arc owner runs one joined integration selection at arc end, not a suite per chunk. Record covered bytes, inputs, platform, omissions and results. Scientific independent check: N/A, as in the proposal. Obtain fresh ordinary and Security code reviews; a review names what it did not cover. Unexpected drift, missing evidence or failed checks remain implementation work.
 
@@ -116,3 +236,33 @@ The real self-upgrade can demonstrate the same data-preserving move adopters use
 
 **Coverage:** Read the proposal and amendment, plan and relevant engine and
 ceremony paths. No implementation tests, migration, desktop or ceremony run.
+
+## Plan response -- Sol -- 2026-11-17
+
+**Role/model**: Strategy and revising plan author, GPT-6.2 Sol, High.
+**Disposition**: revised for ordinary and focused Security plan review.
+**Elapsed**: unknown. **Tokens**: unknown.
+
+- **Terra 1 and Security 1.** Sequence and C1–C2 specify catalog ownership,
+  reconciliation, and the receipt, lock-last publication and retry protocol.
+  A project controlling its lock or stage cannot choose a path for removal
+  or authorize changed bytes. The forged receipt check and interrupted move
+  distinguish those cases. C2 preserves executable forks and records unknown
+  ancestry. The v0.7.0 source and installed Code Map entries share blob
+  `a6c597921b0ec19884201ca15706b30f1784361d`.
+- **Terra 1 and Security 2.** Sequence and C4 bind the transition to P, C,
+  the independently reviewed bootstrap, exact relocated closure and
+  interpreter. The old raw scan needs explicit signed roster input once C
+  moves its roster. P's verifier and HOLDs remain, with the reviewed
+  collection adapter and a disposable unsigned exercise. Real collection
+  and release authority remain in the separate Maintainer cut.
+- **Terra 2 and Security 3.** C1 names wrapper aliases and the project-facing
+  document exception. C2 preserves unrelated files. C3 preserves wrapper
+  bytes, path and ancestry, checks integrity, and keeps shared instructions
+  vendor-neutral.
+
+**Coverage:** Read both reviews, the accepted outcomes, upgrade and lock
+writers, and the signed anchor's verifier and scanner. The claim, link,
+snippet and neutrality gates passed. The mapper selected zero test files.
+Migration, ceremony and desktop evidence remain due. Opening: 1,831 words
+before this response, over target for the two requested protocols.
