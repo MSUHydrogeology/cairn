@@ -235,3 +235,14 @@ This accepts the proposal (`light` tier, no plan) **with the Maintainer modifica
 **Not run.** No whole suite; no native ARM64 Python; one Git version; the mutation scripts are not committed; the file's pin in `gate_manifest.json` is not refreshed (report-only note until the Maintainer's re-anchor). `scripts/claim_check.py` on the proposal, the measurement note and the VM note: no flags.
 
 **Benefit versus cost**: worth it -- 20 per-route Windows checks that previously skipped now run and fail when a route launches the repository's own `git`, including install and upgrade; cost: one test file, about 250 added lines, 73 s per Windows run, about 28 minutes of agent time (tokens unknown); remaining burden: a fixed `csc.exe` path on the Windows host, a default-mode temp folder for the meter check, and the Maintainer's re-anchor of this file's pin; no new recurring human step.
+
+## Implementation closeout -- Codex Terra, coordinator -- 2026-11-17
+
+Complete on the recorded focused results, reusing evidence for unchanged
+behavior. The combined revision includes the reviewed Windows receipt/ledger
+repairs (`63d0704a`, `7c77da3d`; reviews `f8d171fd`, `aa1aeeba`). No suite
+is repeated for this Boundary B record. Existing skips and omissions remain
+unpassed; the grouped re-anchor stays a separate Maintainer wait on
+`dev/PLANNING.md`, not an archive prerequisite.
+
+Elapsed: approximately ten minutes for the grouped closeout; tokens unknown.

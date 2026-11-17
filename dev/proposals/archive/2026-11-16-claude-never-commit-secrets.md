@@ -118,3 +118,14 @@ Reviewed commit: c3f5c1d4
 2. **Non-blocking: the revoke step was cut.** The accepted draft (Proposal item 1) said the secret "must be revoked, not just deleted"; shipped `templates/core/AGENTS.md` line 69 drops it. "Stop and tell the person, because history keeps it" is accurate, and "stop" plus line 71 ("Ask the Maintainer before you push") blocks a force-push. But nothing tells the person the secret needs revoking, and an agent might later "fix" it by deleting the file. Adding "to revoke it" after "tell the person" (3 words, reaching 1,500) would close this, if the cap allows 1,500.
 
 **Coverage**: quick pass on the diff, the Proposal and Decision only; not checked: other shipped docs, `dev/agent_collaboration.md`, or tests.
+
+## Implementation closeout -- Codex Terra, coordinator -- 2026-11-17
+
+Complete on the recorded focused results, reusing evidence for unchanged
+behavior. The combined revision includes the reviewed Windows receipt/ledger
+repairs (`63d0704a`, `7c77da3d`; reviews `f8d171fd`, `aa1aeeba`). No suite
+is repeated for this Boundary B record. Existing skips and omissions remain
+unpassed; the grouped re-anchor stays a separate Maintainer wait on
+`dev/PLANNING.md`, not an archive prerequisite. The shipped rule includes the revocation step (`75f02e2d`).
+
+Elapsed: approximately ten minutes for the grouped closeout; tokens unknown.

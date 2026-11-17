@@ -154,3 +154,14 @@ This accepts the proposal as revised (`light` tier, no plan), using the `CHANGEL
 ## Implementation verification addendum -- Claude Sonnet 5.5 (coordinator) -- 2026-11-16
 
 Found after the implementer's record: `tools/_intent/cli.py` and its twin still called `block` the shipped default, in the `_cmd_precommit_check` docstring and in the `install-precommit` help text that adopters see. Corrected in both copies, which stay identical (commit message "Correct the claims-check default in the intent CLI docstring and install-precommit help"). This is outside item 2's list but serves the same purpose; no behavior changed. Checked: `test_intents_tool.py` and `test_verify_ref.py`, 264 passed, 1 skipped. The templates copy of `cli.py` is a frozen file and joins the Maintainer's re-anchor. The Decision's quoted "#5 ... windows" belongs to the Windows route-check proposal and does not bear on this one.
+
+## Implementation closeout -- Codex Terra, coordinator -- 2026-11-17
+
+Complete on the recorded focused results, reusing evidence for unchanged
+behavior. The combined revision includes the reviewed Windows receipt/ledger
+repairs (`63d0704a`, `7c77da3d`; reviews `f8d171fd`, `aa1aeeba`). No suite
+is repeated for this Boundary B record. Existing skips and omissions remain
+unpassed; the grouped re-anchor stays a separate Maintainer wait on
+`dev/PLANNING.md`, not an archive prerequisite. The local installed guide is also corrected at `43821932`.
+
+Elapsed: approximately ten minutes for the grouped closeout; tokens unknown.

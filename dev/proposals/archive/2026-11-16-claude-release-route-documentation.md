@@ -190,3 +190,14 @@ This accepts the proposal as revised (`light` tier, with the completed Security 
 ## Implementation verification addendum 2 -- Claude Sonnet 5.5 (coordinator) -- 2026-11-16
 
 After the implementer's record, the neutrality sub-gate (`python scripts/quality_gate.py --sub neutrality`) failed on `bootstrap/PROVENANCE.md:122`: the Git Bash note named a vendor that shipped text must not name. Reworded to "Windows Store"; the gate now reports `fail=0`. The earlier record said only that the gate checks it ran were clean, so this was not run before.
+
+## Implementation closeout -- Codex Terra, coordinator -- 2026-11-17
+
+Complete on the recorded focused results, reusing evidence for unchanged
+behavior. The combined revision includes the reviewed Windows receipt/ledger
+repairs (`63d0704a`, `7c77da3d`; reviews `f8d171fd`, `aa1aeeba`). No suite
+is repeated for this Boundary B record. Existing skips and omissions remain
+unpassed; the grouped re-anchor stays a separate Maintainer wait on
+`dev/PLANNING.md`, not an archive prerequisite.
+
+Elapsed: approximately ten minutes for the grouped closeout; tokens unknown.

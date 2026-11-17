@@ -195,3 +195,14 @@ This accepts the proposal as revised (`light` tier, with the completed Security 
 **Not run.** Whole suite; native ARM64 Python; an older Git; `XDG_CONFIG_HOME` pass-through; Windows without `USERPROFILE`.
 
 **Benefit versus cost**: worth it -- the known planted-`git` hole in the hook installer and two tracebacks are closed, and a hostile linked hook file is refused, with Windows checks; cost: 339 added lines in 7 files, +15 s macOS and +27 s Windows per route-file run, about 50 minutes from first claim (12:23) to this record (13:11, `date`; tokens unknown); remaining burden: the Maintainer's re-anchor, a project that links its hook file installs by hand, reliance on one private helper name.
+
+## Implementation closeout -- Codex Terra, coordinator -- 2026-11-17
+
+Complete on the recorded focused results, reusing evidence for unchanged
+behavior. The combined revision includes the reviewed Windows receipt/ledger
+repairs (`63d0704a`, `7c77da3d`; reviews `f8d171fd`, `aa1aeeba`). No suite
+is repeated for this Boundary B record. Existing skips and omissions remain
+unpassed; the grouped re-anchor stays a separate Maintainer wait on
+`dev/PLANNING.md`, not an archive prerequisite.
+
+Elapsed: approximately ten minutes for the grouped closeout; tokens unknown.

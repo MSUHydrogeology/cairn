@@ -132,3 +132,14 @@ Live check, 2026-11-16 20:5x: `python tools/meter.py refresh --json` moved from 
 Not run: Windows (the worker route is unchanged and the Windows twin of the `commondir` and `config.worktree` refusal has no fake); the other two projects' own claim ledgers (their layouts were not read). Owed before archive: the Maintainer's re-anchor and the joined targeted check.
 
 **Benefit versus cost**: the project checks now pass for Cairn and the worktree-using projects, for two small edits and one pin cycle; the whole-log refresh stays unavailable until the plan's later chunks land.
+
+## Implementation closeout -- Codex Terra, coordinator -- 2026-11-17
+
+Complete on the recorded focused results, reusing evidence for unchanged
+behavior. The combined revision includes the reviewed Windows receipt/ledger
+repairs (`63d0704a`, `7c77da3d`; reviews `f8d171fd`, `aa1aeeba`). No suite
+is repeated for this Boundary B record. Existing skips and omissions remain
+unpassed; the grouped re-anchor stays a separate Maintainer wait on
+`dev/PLANNING.md`, not an archive prerequisite. The remaining source-processing work belongs to the separate meter plan.
+
+Elapsed: approximately ten minutes for the grouped closeout; tokens unknown.
