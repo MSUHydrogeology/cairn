@@ -3897,7 +3897,7 @@ def test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile(
         (project / "dev" / "intents.jsonl").write_bytes(b"".join(encoded(project_claims)))
 
     wrapper = r'''import datetime, runpy, sys
-meter_path, synthetic_profile, command = sys.argv[1:]
+meter_path, synthetic_profile, command, report = sys.argv[1:]
 namespace = runpy.run_path(meter_path, run_name="meter_native_synthetic")
 globals_ = namespace["main"].__globals__
 globals_["_now_utc"] = lambda: datetime.datetime(2026, 11, 5, tzinfo=datetime.timezone.utc)
@@ -3911,19 +3911,27 @@ class SyntheticProfileAPI:
     def __getattr__(self, name):
         return getattr(self.api, name)
 globals_["_WindowsConsentAPI"] = SyntheticProfileAPI
-sys.argv = [meter_path, command, "--json"]
+sys.argv = [meter_path, command, "--json"] + (["--report"] if report == "1" else [])
 raise SystemExit(namespace["main"]())
 '''
 
-    def run(command):
+    def run(command, *, report=False):
         result = subprocess.run(
-            [sys.executable, "-c", wrapper, str(runtime_meter), str(profile), command],
-            capture_output=True, text=True, check=False, timeout=90)
+            [sys.executable, "-c", wrapper, str(runtime_meter), str(profile), command,
+             "1" if report else "0"],
+            cwd=str(projects[0]), capture_output=True, text=True, check=False, timeout=90)
         assert result.returncode == 0, result.stderr
         assert str(native_windows_root) not in result.stdout + result.stderr
-        receipt = json.loads(result.stdout)
-        assert receipt == {"schema": "cairn-meter-refresh/1", "status": "ok",
-                           "reason": "none", "coverage": "unknown"}
+        output = json.loads(result.stdout)
+        if report:
+            assert output["schema"] == "cairn-pulse/1"
+            assert output["project_usage"]["project_alias"] == "alpha"
+            assert {row["events"] for row in output["project_usage"]["aggregates"]} == {1}
+            assert "beta" not in result.stdout
+        else:
+            assert output == {"schema": "cairn-meter-refresh/1", "status": "ok",
+                              "reason": "none", "coverage": "unknown"}
+        return output
 
     ledger_path = profile / ".cairn" / "meter" / "ledger.json"
     export_paths = [project / "dev" / "measurement" / "meter.json"
@@ -3932,6 +3940,7 @@ raise SystemExit(namespace["main"]())
     for alias, owner_rows in source_rows:
         (source_root / f"session-{alias}.jsonl").write_bytes(
             b"".join(encoded(owner_rows)))
+    run("refresh", report=True)
     snapshots = None
     for command in ("refresh", "refresh", "rebuild"):
         run(command)
