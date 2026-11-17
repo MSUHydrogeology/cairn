@@ -1886,6 +1886,24 @@ def install_issue_capture_reference(
 # Post-scaffold report
 # ---------------------------------------------------------------------------
 
+def _index_crlf_count(target: Path) -> int | None:
+    if not (target / ".git").exists():
+        return 0
+    try:
+        git_read = _git_read_helper()
+        result = git_read.run_git(
+            str(target), ("ls-files", "--eol"), timeout=30,
+        )
+    except (OSError, RuntimeError, ValueError):
+        return None
+    if result.state != "completed" or result.returncode != 0:
+        return None
+    return sum(
+        1 for line in result.stdout.splitlines()
+        if (fields := line.split()) and fields[0] == b"i/crlf"
+    )
+
+
 def print_report(
     target: Path,
     dirs_created: list[Path],
@@ -1908,7 +1926,10 @@ def print_report(
         print(f"  {d.relative_to(target)}/")
 
     written = [r for r in installed if r[3] == "installed"]
-    skipped = [r for r in installed if r[3] == "skipped-exists"]
+    skipped = [
+        r for r in installed
+        if r[3] == "skipped-exists" and r[0] != target / ".gitattributes"
+    ]
     dry = [r for r in installed if r[3] == "dry-run"]
 
     if dry:
@@ -1932,6 +1953,29 @@ def print_report(
                 "     block slots and other customizations.  Pass --force to "
                 "overwrite (back up first if you have customizations\n"
                 "     you want to keep)."
+            )
+
+    attrs_row = next(
+        (r for r in installed if r[0] == target / ".gitattributes"), None,
+    )
+    if not dry and attrs_row is not None and attrs_row[3] == "installed":
+        crlf_count = _index_crlf_count(target)
+        if crlf_count is None:
+            print(
+                "  [note] Could not count CRLF files in the Git index. Run "
+                "git ls-files --eol; if any line starts with i/crlf, follow "
+                "bootstrap/BOOTSTRAP.md, II-2b before committing."
+            )
+        elif crlf_count > 0:
+            print(
+                f"  [note] {crlf_count} file(s) in the Git index have CRLF "
+                "line endings (git ls-files --eol lists them as i/crlf)."
+            )
+            print(
+                "         The new .gitattributes makes Git show them as modified "
+                "until they are renormalized. Commit .gitattributes alone "
+                "first, then follow bootstrap/BOOTSTRAP.md, II-2b. Do not "
+                "renormalize while other work is uncommitted."
             )
 
     # Unfilled inline tokens (only count files we actually wrote or

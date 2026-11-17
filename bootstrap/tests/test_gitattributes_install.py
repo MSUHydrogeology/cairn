@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -14,6 +15,7 @@ sys.path.insert(0, str(CAIRN_ROOT))
 
 from bootstrap import scaffold as s  # noqa: E402
 from bootstrap import verify_integrity  # noqa: E402
+from bootstrap._scaffold import install as engine  # noqa: E402
 
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 ATTRS = TEMPLATES_ROOT / "core" / "gitattributes.txt"
@@ -229,3 +231,50 @@ def test_no_crlf_rule_matches_an_installed_path(tmp_path: Path) -> None:
             if attr == b"eol" and value == b"crlf"}
     assert "probe.bat" in crlf
     assert not (set(installed) & crlf)
+
+
+@pytest.mark.parametrize(
+    ("case", "line_endings"),
+    [("crlf-in-index", b"\r\n"), ("lf-only", b"\n"),
+     ("own-file-kept", b"\r\n"), ("read-unavailable", b"\r\n")],
+)
+def test_install_counts_crlf_files_in_the_index(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch,
+    case: str, line_endings: bytes,
+) -> None:
+    version = subprocess.run(
+        ["git", "--version"], check=True, capture_output=True, text=True,
+    ).stdout.strip().split()[-1]
+    numbers = tuple(int(part) for part in version.split(".")[:2])
+    if numbers < (2, 45):
+        pytest.skip(f"Git {version} is below the safe reader's 2.45 floor")
+    target = tmp_path.resolve()
+    target.mkdir(parents=True, exist_ok=True)
+    (target / "first.txt").write_bytes(b"one" + line_endings)
+    (target / "second.txt").write_bytes(b"two" + line_endings)
+    if case == "own-file-kept":
+        (target / ".gitattributes").write_bytes(b"# mine\n")
+    _git(target, "init")
+    _git(target, "-c", "core.autocrlf=false", "add", "-A")
+
+    if case == "read-unavailable":
+        helper = engine._git_read_helper()
+        original = helper.run_git
+
+        def unavailable(root: str, args: tuple[str, ...], **kwargs):
+            if args == ("ls-files", "--eol"):
+                return helper.ReadResult("failed", None, b"", "x")
+            return original(root, args, **kwargs)
+
+        monkeypatch.setattr(helper, "run_git", unavailable)
+    assert _install(target) == 0
+    captured = capsys.readouterr()
+    report = captured.out + captured.err
+    if case == "crlf-in-index":
+        assert re.search(r"\[note\] 2 [^\n]*i/crlf", report)
+    elif case == "read-unavailable":
+        assert "ls-files --eol" in report
+        assert "file(s) in the Git index have CRLF" not in report
+    else:
+        assert "i/crlf" not in report
+        assert "ls-files --eol" not in report
