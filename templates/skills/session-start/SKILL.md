@@ -93,11 +93,15 @@ not run a refresh or read provider logs. After consent, use the configuration
 shape documented in `dev/measurement/README.md`, replacing every example path
 with the exact approved value.
 
-If the person declines, ask whether they want that refusal remembered. Record a
-non-private instruction in the existing `dev/rules/custom_session_routines.md`
-`## Session start` section only if they say yes; reoffer only when asked. If
-they decline to remember it, persist nothing. An unattended start makes no
-offer, private-source read or configuration write.
+The custom `## Session start` steps above run before this section. If they
+already offered Meter during this invocation, use that interaction and do not
+offer again here. Consider the offer at most once per explicit session-start,
+including when the person declines without asking to remember the choice. In
+that case, keep the decline only for this invocation and persist nothing. Ask
+whether they want a refusal remembered; record a non-private instruction in
+`dev/rules/custom_session_routines.md` only if they say yes. A remembered
+refusal suppresses future offers; reoffer only when asked. An unattended start
+makes no offer, private-source read or configuration write.
 
 ## 4. Drain mode -- only when the arguments contain `--drain`
 
