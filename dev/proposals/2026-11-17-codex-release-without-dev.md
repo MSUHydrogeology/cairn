@@ -104,3 +104,25 @@ The release boundary is useful, but the exception for the retained entry file co
 **Rule loss:** The proposal says to preserve project-wide rules, but the narrow exception above conflicts with retained references. Rewritten guidance is not yet available to assess.
 
 **Audience and coverage:** The choice and report's advisory role are understandable. Compared the proposal with the Group 4 row, accepted option (a), template and protected-surface rule. The 1,248-word opening exceeds the 1,000-word target. No issue comments were read; no runtime tests, install, release, report scan or Security Review were run.
+
+## Review -- Codex -- 2026-11-17
+
+Reviewed commit: faa0a07528352101c97c16a9ac4a8f82affc8898
+
+**Tier**: Security Review
+**Model basis**: GPT-6.2 Sol, High
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** An advisory report fits, with its own rules for what gets reported and read. — Proposal items 4–5 and S3–S5.
+2. **Best alternative.** Reuse local parsing in an adopter-invoked report from the development checkout and leave packaging to v0.9. — `dev/PLANNING.md`, Group 4 and the release-module row.
+3. **What would show it wrong?** The installed command must flag a kept file's link to an existing `dev/` target despite a link-check allowance, and mark an out-of-tree input incomplete. — `templates/modules/team-gated/link_check.py`, `check_links`.
+
+**Blocking finding.** Both scanners can accept existing targets or suppress findings (`check_path_token` and `_scan` in `templates/modules/default-on/claim_check.py`, `check_links` in the link checker). Specify that ordinary exemptions cannot suppress release findings and that the report reads only selected regular files within the project. It reports skipped or unclassified inputs as incomplete, works offline, and neither executes project content nor changes files. The plan should name the command, adopter trigger, formats and selection, with synthetic positive and negative controls.
+
+**Rule preservation.** A folder's README or list entry records permission already granted by the Maintainer. Scratch guidance should explain that Git ignore only affects tracking and that private evidence stays out of commits and releases (`templates/core/AGENTS.md`, Working tree and commits). Preserve accepted option (a), including the Operator's stop when required development material is absent.
+
+**Coverage.** Read the committed proposal, board, governing rules, accepted run-rules Decision, layout criteria and scanner paths. No issue comments, adopter files, tests or installs examined.
