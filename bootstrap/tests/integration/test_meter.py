@@ -1481,6 +1481,71 @@ def _native_meter_restore_dacl(path, saved):
 
 
 @WINDOWS_ONLY
+def test_windows_native_claude_resume_and_identity_on_a_spaced_root(
+        native_windows_root, native_meter_git_exe):
+    import hashlib
+    import json
+
+    spaced_root = native_windows_root / "meter root with spaces"
+    spaced_root.mkdir()
+    setup = _native_meter_setup(spaced_root, native_meter_git_exe,
+                                source_records=False)
+    assert Path(setup["root"]).drive and " " in str(setup["source"])
+
+    config_path = setup["profile"] / ".cairn" / "meter.json"
+    config = json.loads(config_path.read_bytes())
+    config["sources"][0]["tool"] = "claude"
+    config_path.write_bytes(json.dumps(config).encode("utf-8"))
+
+    source = setup["source"] / "session-alpha.jsonl"
+
+    def assistant(message_id):
+        record = claude_record(message_id)
+        record["cwd"] = str(setup["project"])
+        return json.dumps(record).encode("utf-8") + b"\r\n"
+
+    first_line = assistant("native-crlf-first")
+    source.write_bytes(first_line)
+    _native_meter_successful_refresh(setup)
+    ledger_path = setup["profile"] / ".cairn" / "meter" / "ledger.json"
+
+    def source_cursor():
+        ledger = json.loads(ledger_path.read_bytes())
+        matches = [row for row in ledger["cursors"]
+                   if row["source_alias"] == "source"]
+        assert len(matches) == 1
+        return ledger, matches[0]
+
+    first_ledger, first = source_cursor()
+    assert first["offset"] == len(first_line)
+    assert first["digest"] == hashlib.sha256(first_line).hexdigest()
+    assert first["line"] == 0
+    assert first_ledger["events"] == []
+
+    second_line = assistant("native-crlf-second")
+    with source.open("ab") as handle:
+        handle.write(second_line)
+    receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
+    _native_meter_receipt(receipt, "ok", "none")
+    second_ledger, second = source_cursor()
+    assert second["offset"] == len(first_line) + len(second_line)
+    assert second["digest"] == hashlib.sha256(second_line).hexdigest()
+    assert (second["dev"], second["ino"]) == (first["dev"], first["ino"])
+    assert second["file_key"] == first["file_key"]
+    assert len(second_ledger["events"]) == 1
+
+    prior_offset = second["offset"]
+    source.unlink()
+    source.write_bytes(first_line + second_line + assistant("native-crlf-recreated"))
+    receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
+    _native_meter_receipt(receipt, "ok", "none")
+    replaced_ledger, replaced = source_cursor()
+    assert "resume_failed_file_replaced" in replaced_ledger["coverage"]["reasons"]
+    assert replaced["generation"] == second["generation"] + 1
+    assert replaced["offset"] > prior_offset
+
+
+@WINDOWS_ONLY
 @pytest.mark.parametrize("case", [
     "append-and-replace-held", "replace-after-enumeration", "creation-time-drift",
     "hardlink", "file-to-directory", "entry-and-parent-reparse",
