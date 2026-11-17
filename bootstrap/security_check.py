@@ -42,10 +42,10 @@ an earlier one has failed, so one run yields a complete repair list:
 1. the repository-state preflight above;
 2. Bandit over the derived shipped surface, plus the Markdown self-check
    (``scripts/check_cairn.py``);
-3. the whole engine suite (``bootstrap/tests``) in default collection order;
+3. the shipped-only engine selection (``bootstrap/tests``) in default order;
    only fixed, source-reviewed opposite-platform node IDs may have their
    expected setup skip recorded;
-4. ``scripts/quality_gate.py`` with its seed-0 whole-suite child, plus
+4. ``scripts/quality_gate.py`` with its seed-0 shipped-only child, plus
    vendor-neutrality and redundancy.
 
 Each suite order records the exact collected IDs and setup/call/teardown
@@ -101,8 +101,11 @@ from bootstrap._scaffold.config import (  # noqa: E402  (trust anchor: narrowest
 from bootstrap._scaffold.install import install_manifest  # noqa: E402
 from bootstrap.tests.security_manifest import (  # noqa: E402
     NATIVE_ONLY_POLICY_ID,
+    release_excluded_files,
     validated_native_only_nodes,
 )
+
+_RELEASE_EXCLUDED = release_excluded_files()
 
 _BLOCKING_SEVERITIES = {"MEDIUM", "HIGH"}
 
@@ -457,7 +460,7 @@ def _validate_raw_suite_report(raw: object, *, nonce: str, head: str,
 def _validate_local_record(raw: object, expected_head: str) -> dict:
     record = _exact_keys(raw, {
         "schema", "kind", "head", "platform", "os_name", "python",
-        "policy_id", "nonce", "phases", "orders",
+        "policy_id", "nonce", "phases", "orders", "excluded",
     }, "local record")
     if (type(record["schema"]) is not int or record["schema"] != 1
             or record["kind"] != "cairn-native-local-v1"
@@ -500,12 +503,29 @@ def _validate_local_record(raw: object, expected_head: str) -> dict:
         order_ids[label] = set(ids)
     if order_ids["default"] != order_ids["seed-0"]:
         raise ValueError("default and seed-0 collection sets differ")
+    excluded = _exact_keys(record["excluded"], {"files", "count"},
+                           "local excluded-test summary")
+    excluded_files = excluded["files"]
+    excluded_count = excluded["count"]
+    expected_excluded = sorted(_RELEASE_EXCLUDED)
+    if (type(excluded_files) is not list
+            or any(type(path) is not str or not path for path in excluded_files)
+            or excluded_files != expected_excluded):
+        raise ValueError("local excluded-test file list differs from the manifest")
+    if (type(excluded_count) is not int
+            or excluded_count < len(excluded_files)
+            or (not excluded_files and excluded_count != 0)
+            or (excluded_files and excluded_count == 0)):
+        raise ValueError("local excluded-test count is malformed")
+    for label, ids in order_ids.items():
+        if any(node.split("::", 1)[0] in _RELEASE_EXCLUDED for node in ids):
+            raise ValueError(f"{label} order collected an excluded test file")
     return record
 
 
 def _build_local_record(head: str, nonce: str, platform_name: str,
                         os_name: str, version: list[int], phases: dict[str, str],
-                        orders: dict[str, dict]) -> dict:
+                        orders: dict[str, dict], excluded: dict) -> dict:
     return {
         "schema": 1,
         "kind": "cairn-native-local-v1",
@@ -517,7 +537,40 @@ def _build_local_record(head: str, nonce: str, platform_name: str,
         "nonce": nonce,
         "phases": phases,
         "orders": orders,
+        "excluded": excluded,
     }
+
+
+def _measure_excluded_tests(root: Path) -> dict[str, object]:
+    """Collect only listed files to record the exact unrun test count."""
+    paths = sorted(_RELEASE_EXCLUDED)
+    if not paths:
+        return {"files": [], "count": 0}
+    for rel in paths:
+        path = root / rel
+        if not path.is_file():
+            raise ValueError(f"excluded test path is not a file: {rel}")
+    env = _release_child_env()
+    env.pop(RELEASE_GATE_ENV, None)
+    for name in _NATIVE_CONTEXT_ENV_NAMES:
+        env.pop(name, None)
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-m", "pytest", *paths, "--collect-only", "-q",
+             "-p", "no:cacheprovider"],
+            cwd=str(root), env=env, capture_output=True, text=True, check=False,
+        )
+    except OSError as exc:
+        raise ValueError(f"cannot collect excluded test files: {exc}") from exc
+    if proc.returncode != 0:
+        raise ValueError("excluded-test collection failed")
+    counts = {
+        rel: sum(line.startswith(rel + "::") for line in proc.stdout.splitlines())
+        for rel in paths
+    }
+    if any(count == 0 for count in counts.values()):
+        raise ValueError("an excluded test file collected no test IDs")
+    return {"files": paths, "count": sum(counts.values())}
 
 
 def _write_exclusive_json(path: Path, value: object, root: Path) -> None:
@@ -1530,7 +1583,7 @@ def _release_child_env() -> dict[str, str]:
 
 
 def run_suite() -> int:
-    """Phase 3: the whole engine suite, in release mode.
+    """Phase 3: the shipped-only engine selection, in release mode.
 
     Output is not captured: the operator records this run in the release
     notes, so the evidence has to be visible while it happens.
@@ -1540,7 +1593,7 @@ def run_suite() -> int:
         print(f"security_check: {tests} is missing -- fail closed. A release "
               f"cannot be cut on a suite that is not there.", file=sys.stderr)
         return 1
-    print(f"security_check: running the engine suite in release mode "
+    print(f"security_check: running the shipped-only selection in release mode "
           f"({RELEASE_GATE_ENV}={RELEASE_GATE_VALUE}) -- only fixed opposite-"
           "platform setup skips are eligible; all other incomplete outcomes refuse.")
     try:
@@ -1660,10 +1713,12 @@ def _run_bound_phases(head: str) -> int:
             seeded = _NATIVE_RUN_EVIDENCE["seed-0"]
             if set(default["collection_ids"]) != set(seeded["collection_ids"]):
                 raise ValueError("default and seed-0 collections differ")
+            excluded = _measure_excluded_tests(CAIRN_ROOT)
             local = _build_local_record(
                 head, context["nonce"], sys.platform, os.name,
                 list(sys.version_info[:3]), dict(_PHASE_RESULTS),
                 {"default": default, "seed-0": seeded},
+                excluded,
             )
             _validate_local_record(local, head)
             summary_path = os.environ.get(_NATIVE_RUN_SUMMARY_ENV)

@@ -493,7 +493,8 @@ def test_phase_interrupt_is_not_normalized(monkeypatch) -> None:
 
 def _synthetic_local_record(
         platform_name: str, head: str, nonce: str, *,
-        portable_id: str = "bootstrap/tests/test_probe.py::test_portable") -> dict:
+        portable_id: str = "bootstrap/tests/test_probe.py::test_portable",
+        excluded: dict | None = None) -> dict:
     host_tag = "nt" if platform_name == "win32" else "posix"
     os_name = "nt" if host_tag == "nt" else "posix"
     native_by_id = security_check.NATIVE_POLICY_BY_ID
@@ -531,6 +532,8 @@ def _synthetic_local_record(
             "release-mode suite": "PASS", "quality_gate": "PASS",
         },
         "orders": orders,
+        "excluded": excluded if excluded is not None else {
+            "files": sorted(security_check._RELEASE_EXCLUDED), "count": 1020},
     }
 
 
@@ -543,6 +546,49 @@ def _pretend_python_313(monkeypatch) -> None:
         SimpleNamespace(version_info=(3, 13, 0), platform=sys.platform,
                         stdout=sys.stdout, stderr=sys.stderr),
     )
+
+
+# Declared exception (internal hook): exercises the isolated collect-only
+# measurement helper, which has no public route short of a complete --record.
+def test_excluded_test_measurement_counts_and_refuses_incomplete_files(
+        tmp_path, monkeypatch) -> None:
+    root = tmp_path / "candidate"
+    tests = root / "bootstrap" / "tests"
+    tests.mkdir(parents=True)
+    one = "bootstrap/tests/test_excluded_one.py"
+    two = "bootstrap/tests/test_excluded_two.py"
+    one_path, two_path = root / one, root / two
+    one_path.write_text(
+        "def test_first():\n    assert True\n\n"
+        "def test_second():\n    assert True\n", encoding="utf-8")
+    two_path.write_text("# no tests\n", encoding="utf-8")
+
+    monkeypatch.setattr(security_check, "_RELEASE_EXCLUDED", frozenset({one}))
+    measured = security_check._measure_excluded_tests(root)
+    assert measured == {"files": [one], "count": 2}
+
+    with monkeypatch.context() as empty:
+        empty.setattr(security_check, "_RELEASE_EXCLUDED", frozenset())
+        empty.setattr(security_check.subprocess, "run",
+                      lambda *args, **kwargs: pytest.fail("empty list ran pytest"))
+        assert security_check._measure_excluded_tests(root) == {
+            "files": [], "count": 0,
+        }
+
+    monkeypatch.setattr(security_check, "_RELEASE_EXCLUDED",
+                        frozenset({one, two}))
+    with pytest.raises(ValueError, match="no test IDs"):
+        security_check._measure_excluded_tests(root)
+
+    two_path.write_text("def test_syntax(:\n    pass\n", encoding="utf-8")
+    monkeypatch.setattr(security_check, "_RELEASE_EXCLUDED", frozenset({two}))
+    with pytest.raises(ValueError, match="collection failed"):
+        security_check._measure_excluded_tests(root)
+
+    monkeypatch.setattr(security_check, "_RELEASE_EXCLUDED",
+                        frozenset({"bootstrap/tests/test_missing.py"}))
+    with pytest.raises(ValueError, match="not a file"):
+        security_check._measure_excluded_tests(root)
 
 
 def _first_roster_row_per_host_and_file() -> list[tuple[str, str]]:
@@ -738,6 +784,9 @@ def test_public_join_accepts_real_git_object_formats(
     "missing-id", "duplicate-outcome", "wrong-sha", "wrong-platform",
     "roster-drift", "failed-phase", "substituted-order", "portable-skip",
     "malformed-head-width", "malformed-head-hex", "malformed-head-type",
+    "missing-excluded", "listed-name-missing", "shipped-file-added",
+    "excluded-count-zero", "excluded-count-bool", "excluded-count-too-small",
+    "order-collected-excluded",
 ])
 def test_join_main_refuses_mutated_native_records(
         tmp_path, monkeypatch, capsys, fault) -> None:
@@ -779,10 +828,58 @@ def test_join_main_refuses_mutated_native_records(
         mac_record["head"] = "g" * 40
     elif fault == "malformed-head-type":
         mac_record["head"] = 123
+    elif fault == "missing-excluded":
+        mac_record.pop("excluded")
+    elif fault == "listed-name-missing":
+        mac_record["excluded"]["files"].pop()
+    elif fault == "shipped-file-added":
+        mac_record["excluded"]["files"].append(
+            "bootstrap/tests/test_security_marker.py")
+        mac_record["excluded"]["files"].sort()
+    elif fault == "excluded-count-zero":
+        mac_record["excluded"]["count"] = 0
+    elif fault == "excluded-count-bool":
+        mac_record["excluded"]["count"] = True
+    elif fault == "excluded-count-too-small":
+        mac_record["excluded"]["count"] = len(mac_record["excluded"]["files"]) - 1
+    elif fault == "order-collected-excluded":
+        excluded_id = sorted(security_check._RELEASE_EXCLUDED)[0] + "::test_added"
+        phases = {name: {"outcome": "passed", "wasxfail": False}
+                  for name in ("setup", "call", "teardown")}
+        for order in mac_record["orders"].values():
+            order["collection_ids"].append(excluded_id)
+            order["outcomes"].append({
+                "nodeid": excluded_id, "status": "PASS", "phases": phases,
+            })
     mac = tmp_path / "mac.json"
     windows = tmp_path / "windows.json"
     mac.write_text(json.dumps(mac_record), encoding="utf-8")
     windows.write_text(json.dumps(windows_record), encoding="utf-8")
+    assert security_check.main(["--join", str(mac), str(windows)]) == 1
+    assert "refused" in capsys.readouterr().err
+
+
+def test_join_accepts_only_zero_count_for_an_empty_exclusion_list(
+        tmp_path, monkeypatch, capsys) -> None:
+    _pretend_python_313(monkeypatch)
+    head = "c" * 40
+    monkeypatch.setattr(security_check, "_RELEASE_EXCLUDED", frozenset())
+    monkeypatch.setattr(security_check, "repo_state_preflight",
+                        lambda: (0, head))
+    monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
+    empty = {"files": [], "count": 0}
+    mac_record = _synthetic_local_record("darwin", head, "a" * 64,
+                                         excluded=empty)
+    windows_record = _synthetic_local_record("win32", head, "b" * 64,
+                                             excluded=empty)
+    mac, windows = tmp_path / "mac.json", tmp_path / "windows.json"
+    mac.write_text(json.dumps(mac_record), encoding="utf-8")
+    windows.write_text(json.dumps(windows_record), encoding="utf-8")
+    assert security_check.main(["--join", str(mac), str(windows)]) == 0
+    assert "PASS" in capsys.readouterr().out
+
+    mac_record["excluded"] = {"files": [], "count": 1}
+    mac.write_text(json.dumps(mac_record), encoding="utf-8")
     assert security_check.main(["--join", str(mac), str(windows)]) == 1
     assert "refused" in capsys.readouterr().err
 
@@ -871,6 +968,7 @@ def test_committed_fixture_connects_real_record_and_join_entrypoints(
     from importlib.util import module_from_spec, spec_from_file_location
 
     root, fixture_policy_id, fixture_nodeids = _connected_runner_fixture(tmp_path)
+    fixture_excluded = "bootstrap/tests/test_security_fixture_excluded.py"
     policy_path = root / "bootstrap" / "tests" / "security_manifest.py"
     spec = spec_from_file_location("_connected_security_fixture_manifest", policy_path)
     assert spec is not None and spec.loader is not None
@@ -881,6 +979,8 @@ def test_committed_fixture_connects_real_record_and_join_entrypoints(
                          for host in ("nt", "posix")
                          for nodeid in sorted(fixture_nodes[host]))
     monkeypatch.setattr(security_check, "CAIRN_ROOT", root)
+    monkeypatch.setattr(security_check, "_RELEASE_EXCLUDED",
+                        frozenset({fixture_excluded}))
     monkeypatch.setattr(security_check, "NATIVE_ONLY_POLICY_ID", fixture_policy_id)
     monkeypatch.setattr(security_check, "_NATIVE_POLICY", fixture_nodes)
     monkeypatch.setattr(security_check, "NATIVE_POLICY_ROWS", fixture_rows)
@@ -947,6 +1047,7 @@ def test_committed_fixture_connects_real_record_and_join_entrypoints(
     local_path = tmp_path / "local-record.json"
     assert security_check.main(["--record", str(local_path)]) == 5
     local = json.loads(local_path.read_text(encoding="utf-8"))
+    assert local["excluded"] == {"files": [fixture_excluded], "count": 2}
     assert local["policy_id"] == fixture_policy_id
     assert local["phases"] == {
         "bandit": "PASS", "check_cairn": "PASS",
@@ -958,6 +1059,8 @@ def test_committed_fixture_connects_real_record_and_join_entrypoints(
     for order in local["orders"].values():
         assert set(order["collection_ids"]) == expected
         assert {row["nodeid"] for row in order["outcomes"]} == expected
+        assert not any(node.split("::", 1)[0] == fixture_excluded
+                       for node in order["collection_ids"])
     assert not local_path.resolve().is_relative_to(root.resolve())
     assert len(scratch_paths) == 1
     raw_report_paths = [scratch_paths[0] / "default.json",
@@ -977,7 +1080,8 @@ def test_committed_fixture_connects_real_record_and_join_entrypoints(
     head = local["head"]
     other_host = "win32" if sys.platform == "darwin" else "darwin"
     counterpart = _synthetic_local_record(
-        other_host, head, "b" * 64, portable_id=fixture_nodeids[2])
+        other_host, head, "b" * 64, portable_id=fixture_nodeids[2],
+        excluded=local["excluded"])
     counterpart_path = tmp_path / "counterpart-record.json"
     counterpart_path.write_text(json.dumps(counterpart), encoding="utf-8")
     paths = ([local_path, counterpart_path] if sys.platform == "darwin"
@@ -1073,6 +1177,11 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
     identity_end = manifest.index('"', identity_start)
     manifest = (manifest[:identity_start] + policy_id
                 + manifest[identity_end:])
+    manifest += (
+        '\nRELEASE_EXCLUDED_TESTS = '
+        '(("bootstrap/tests/test_security_fixture_excluded.py", '
+        '("scripts/x.py",), "Fixture."),)\n'
+    )
     old_count_guard = (
         'if len(grouped["nt"]) != 63 or len(grouped["posix"]) != 285:'
     )
@@ -1096,6 +1205,11 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
         "def test_native_posix():\n    assert True\n\n"
         "def test_native_windows():\n    assert True\n\n"
         "def test_portable():\n    assert True\n",
+        encoding="utf-8",
+    )
+    (test_root / "test_security_fixture_excluded.py").write_text(
+        "def test_excluded_one():\n    assert True\n\n"
+        "def test_excluded_two():\n    assert False\n",
         encoding="utf-8",
     )
 
