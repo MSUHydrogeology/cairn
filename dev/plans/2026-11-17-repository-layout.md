@@ -87,3 +87,32 @@ A coherent footprint exercised through the actual upgrade can simplify adoption 
 **Audience and rule loss:** The intended audience can follow the summary; the plan requires duties to remain in installed instructions. Actual rewritten prose was unavailable.
 
 **Coverage:** Read the committed plan, accepted proposal and amendment, template, rules, installer and anchored-loader excerpts; repeated the reuse search and searched wrapper resolution. Opening: 1,388 words; C3 exceeds the 150-word target. No implementation tests, full mapping inventory, migration, desktop check or Security Review were run.
+
+## Plan review -- Sol -- 2026-11-17
+
+Reviewed commit: 0622d1ec5ce28c450755c9992403578c8e54cc92
+
+**Obligation**: Internal Security Review of migration, trust transition and wrapper preservation
+**Tier**: Internal Security Review
+**Model basis**: GPT-6.2 Sol, High
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: reading approximately three minutes; recording and checks unknown.
+**Tokens**: unknown.
+
+The real self-upgrade can demonstrate the same data-preserving move adopters use.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, once C2 and C4 specify the mechanisms their criteria assume. -- `bootstrap/_scaffold/upgrade.py:1382`, `scripts/repin.py:2208`.
+2. **Best alternative.** Extend staged upgrade and the maintained ceremony with independently checked transition inputs. -- `bootstrap/_scaffold/upgrade.py:1356`, `bootstrap/REANCHOR_RUNBOOK.md:84`.
+3. **What would show it wrong?** Interrupt after a destination write and retry, or substitute a relocated authority member and observe an import before refusal. -- Proposal verification.
+
+1. **Blocking, C2:** Staging deletes prior state and apply commits the lock after writing files. Specify durable phases, restaging and retries against independently derived mapping, live digests and lock/cache identities. Files or stage records controlled by a project checkout must confer no removal authority. Specify how the existing lock is reconciled, including unlisted copies such as `tools/code_map.py`; init-lock returns when a lock exists. -- `bootstrap/_scaffold/upgrade.py:1382`, `:1868`, `:3981`.
+2. **Blocking, C4:** The anchor launcher requires the old member set and artifact path. Prior full collection also requires a human confirmation and calls the old test path. Specify which authenticated old checks run, how an independently reviewed exact new closure and interpreter bind before candidate imports, and where a disposable unsigned exercise ends before the separate Maintainer operation. -- `bootstrap/reanchor-launcher.template.sh:450`, `bootstrap/tests/_gate_manifest.py:513`, `scripts/repin.py:1939`.
+3. **Blocking, C3:** The upgrade resolves and can merge a renamed `CLAUDE.md`. Specify byte-preserving treatment of recorded or resolved existing wrappers and check their lock/integrity behavior. -- `bootstrap/_scaffold/upgrade.py:823`, `:3918`.
+
+**Rule loss:** Generalize wrapper duties in shared instructions to preserve vendor neutrality under `bootstrap/SAFETY.md:107`. Rewritten prose was unavailable.
+
+**Coverage:** Read the proposal and amendment, plan and relevant engine and
+ceremony paths. No implementation tests, migration, desktop or ceremony run.
