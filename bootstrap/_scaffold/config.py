@@ -547,6 +547,7 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     ("core/VENDOR.md",                              "VENDOR.md"),
     # dev/ tree
     ("core/dev/README.md",                          "dev/README.md"),
+    ("core/dev/method-background.md",               "dev/method-background.md"),
     ("core/dev/modules/README.md",                  "dev/modules/README.md"),
     ("core/dev/PLANNING.md",                        "dev/PLANNING.md"),
     ("core/dev/agent_collaboration.md",             "dev/agent_collaboration.md"),

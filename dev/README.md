@@ -1,6 +1,8 @@
 <!-- cairn-internal-ref-allow: docs/methodology/doc-governance.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # dev/ — the development coordination space
 
+[Cairn method background](../templates/core/dev/method-background.md)
+
 `dev/` is Cairn's **deliberation layer**: where the
 project's direction is argued, decided, and recorded. It is not a
 scratch directory — every file here is durable coordination state,

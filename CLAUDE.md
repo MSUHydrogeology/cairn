@@ -1,8 +1,5 @@
 # Vendor wrapper — Cairn (Claude Code)
 
-> **Thin vendor wrapper.** This is Cairn's own renamed copy of the
-> shipped `templates/core/VENDOR.md`, pointed at Claude Code's
-> auto-loaded file. It carries *only* habits specific to this one tool.
 > Codex and other harnesses read the shared `AGENTS.md` directly; their
 > tool-specific habits, if any, belong in their own wrapper, not here.
 
@@ -39,9 +36,4 @@ AGENTS.md's content down here. -->
 
 ---
 
-**Drift guard.** This file stays thin by construction. Anything an
-agent of a *different* tool would also need belongs in `AGENTS.md`
-(shared), not here. A wrapper that has grown to duplicate the test
-command, the git rules, the routines, or the required-reading list has
-drifted into a fat fourth doc — fold that content back to its single
-source and leave only the pointer.
+**Drift guard.** Anything an agent of a different tool would also need belongs in `AGENTS.md`, not here. A wrapper that duplicates the test command, git rules, routines or required reading has drifted: fold that content back to its single source and leave the pointer.

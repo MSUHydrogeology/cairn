@@ -42,7 +42,7 @@ not into shared doctrine in place — see below.)
 ## How files arrive and leave
 
 Session orientation reads project rules first (`AGENTS.md` > "Roles").
-When a rule needs explanation, this folder or `docs/` can hold it. Keep
+When a rule needs explanation, this folder or `docs/` can hold it. A Maintainer's rule goes in the rule file with the Maintainer's approved wording, never only in an agent's memory. Keep
 `RULES.md` a small router; no scheduled rewrite is prescribed here.
 
 ## Contents

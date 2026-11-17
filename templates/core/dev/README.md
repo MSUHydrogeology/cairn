@@ -2,6 +2,8 @@ External-repo paths: `docs/methodology/doc-governance.md`
 # dev/ — the development coordination space
 Written in [Cairn Plain Language 1.0](agent_collaboration.md).
 
+[Cairn method background](method-background.md)
+
 `dev/` is {{project_name}}'s **deliberation layer**: where the
 project's direction is argued, decided, and recorded. It is not a
 scratch directory — every file here is durable coordination state,
