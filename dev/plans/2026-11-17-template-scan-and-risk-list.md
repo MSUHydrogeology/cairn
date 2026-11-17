@@ -96,3 +96,14 @@ Reviewed commit: 62105804784ba8dafe52d7d099c77751ceccdf7c
 **Disposition**: revised; targeted ordinary and Security rereads requested.
 
 Both reviews' blocking finding is accepted. C2 now requires both scans from a fresh, clean detached checkout of the candidate, records its verified identity and results, and permits scan-result carryover only after byte equality of scanned bytes and relevant scanner inputs. This uses the existing clean-checkout practice and release evidence. No scanner or release sweep was run.
+
+## Targeted plan reread -- Terra Medium -- 2026-11-17
+
+Reviewed commit: 52288dfef98ee3ddd2508dabb5e21a4d52faa645
+
+**Obligation**: Internal
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+The candidate-binding finding is closed: C2 requires both scans in a fresh, clean detached candidate checkout, records identity and results, and conditions carried results on byte equality of scanned content and relevant scanner inputs. No new defect appeared in the changed text. Compared the revision with 62105804 and the prior review; did not repeat the full review or run scanners or a release sweep.
