@@ -60,7 +60,8 @@
         "test_core_dev_folders",
         "test_next_session_local_note",
         "test_lockfile_provenance",
-        "test_test_tiers"
+        "test_test_tiers",
+        "test_board_closeout_warning"
       ]
     },
     {

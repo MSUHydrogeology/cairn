@@ -19,6 +19,11 @@ warns: every artifact is still listed, archived records are never flagged, and
 waiting on the Maintainer, and names the plans that mention a fence but
 declare nothing; it never decides whether a wait is over.
 
+The plain view warns on ready-to-archive plans whose implementation closeout
+items have no Home, writing only to stderr and never changing stdout or exit
+status. A headerless proposal appendix beside its proposal is omitted from the
+board; one with header fields remains visible.
+
 The artifact is authoritative; this view is derived and says so. It is
 read-only and mutates nothing. A symbolic link is never read and is named in
 the output.
@@ -63,6 +68,7 @@ _WAIT = "Waiting on Maintainer"
 _FENCE_WORDS: Tuple[str, ...] = ("MAINTAINER-GATED", "MAINTAINER-ONLY")
 #: `awaiting-decision`, with an optional note after the word (` -- ...`, ` (...)`).
 _AWAITING_DECISION_RE = re.compile(r"^awaiting-decision(?![A-Za-z0-9_])")
+_AWAITING_ARCHIVE_RE = re.compile(r"^ready-to-archive(?![A-Za-z0-9_-])")
 #: In `dev/PLANNING.md`, the marker counts only when the line starts with it
 #: (after indentation and one optional list bullet), never inside prose or
 #: backticks.
@@ -907,7 +913,64 @@ def _artifacts(root: Path, include_archive: bool,
                     text = path.read_text(encoding="utf-8")
                 except (OSError, UnicodeError) as exc:
                     raise _BoardSourceError(leaf_rel, "cannot read UTF-8 text") from exc
+                if kind == "proposal" and name.endswith("--appendix.md"):
+                    sibling_name = name[:-len("--appendix.md")] + ".md"
+                    sibling_rel = f"{folder_rel}/{sibling_name}"
+                    sibling = _check_source(root, sibling_rel, "file", seen_skipped)
+                    if sibling is not None and not _header_fields(text):
+                        continue
                 yield kind, path, text
+
+
+def _closeout_warnings(root: Path, encode):
+    """Return advisory lines for ready plans with closeout items lacking Homes."""
+    warnings: List[str] = []
+    for kind, path, text in _artifacts(root, False, []):
+        if kind != "plan" or not _AWAITING_ARCHIVE_RE.match(
+                _header_fields(text).get("Status", "")):
+            continue
+        lines = text.splitlines()
+        in_closeout = False
+        in_fence = False
+        items: List[Tuple[int, List[str]]] = []
+        current: Optional[Tuple[int, List[str]]] = None
+        for number, line in enumerate(lines, 1):
+            stripped = line.strip()
+            if stripped.startswith(("```", "~~~")):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                continue
+            if line.startswith("## "):
+                if current is not None:
+                    items.append(current)
+                    current = None
+                in_closeout = bool(re.match(r"^## Implementation closeout(?:$| )", line))
+                continue
+            if not in_closeout:
+                continue
+            item = re.match(r"^ *(?:[-*] )?(Not run:|Not covered:|Remaining:)", line)
+            if item:
+                if current is not None:
+                    items.append(current)
+                current = (number, [line])
+            elif current is not None:
+                if not line.strip() or line.startswith("#"):
+                    items.append(current)
+                    current = None
+                else:
+                    current[1].append(line)
+        if current is not None:
+            items.append(current)
+        for number, body in items:
+            if re.search(r"Home: *[^ <]", " ".join(body)):
+                continue
+            warnings.append(
+                f"board: warning -- {encode(path.name)}:{number} has no Home")
+    if len(warnings) > 5:
+        omitted = len(warnings) - 5
+        warnings = warnings[:5] + [f"board: warning -- {omitted} more not shown"]
+    return warnings
 
 
 def _rows(root: Path, include_archive: bool,
@@ -1128,6 +1191,8 @@ def main(argv: Optional[List[str]] = None) -> int:
              for r in rows if not r["archived"]],
             _encode(limit=200, module=kernel))
         print(_render(rows, encode, skipped, advisory))
+        for warning in _closeout_warnings(root, encode):
+            print(warning, file=sys.stderr)
         return 0
     except _BoardSourceError as exc:
         print(f"board: error: cannot read {encode(exc.rel)} ({exc.reason})",
