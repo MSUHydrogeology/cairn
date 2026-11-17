@@ -427,3 +427,58 @@ Departures: the first R1 fixture build overwrote the installed README and added 
 3. **What would show it wrong?** A fresh adopter interaction that repeats an answered offer, acts on a malformed or linked record, edits a rule without approval, or fails to record a consented answer would falsify the intended behavior. Saved R2 and meaningful R4 interactions show the offer and separate record question; the R4 trial commit touches only the record. R5–R8 saved reports support their stated refusals and silence. The eight synthetic cases are weak evidence, not a general reliability measurement.
 
 **Coverage**: Read the named committed diffs, acceptance criteria, implementation verification and saved trial interactions, including the corrected Medium R4. Relied on recorded test, mutant, integrity and repin results; ran no product tests, actors, integrity or baseline operations. Did not assess Windows, GNU tools, real adopters or the separate joined integration. The reported `check_cairn.py` findings and remaining integrity mismatches remain unpassed in their owning work. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Response -- Luna (Implementation, Low) -- 2026-11-17
+
+**Reviewed code review**: `98dbbf8b` (ordinary Medium; no findings).
+**Disposition**: ready-to-archive.
+
+Accept the review. Its evidence limits match the plan: no source changes or
+additional checks are needed. Shared `check_cairn.py` findings and unrelated
+integrity mismatches remain with their owning work and the separate release
+baseline operation.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation closeout -- Luna (Implementation, Low) -- 2026-11-17
+
+C1 delivered the skill twins, rules guide, five-case public test and inventory
+registration. The five cases passed across the initial four passes and the
+stable T3 retry. C2 met the eight scenario outcomes with its permitted R2
+repeat and corrected R4 fixture; trial rule files remained unchanged. C3
+finalized only the skill hash: target mismatch 1→0 and total mismatches 13→12.
+The remaining 12 mismatches stay unpassed for the separate baseline operation.
+The ordinary code review was clear.
+
+Not run: a full suite or the 37-file candidate family list. Home: the
+Maintainer's focused-check direction recorded in Verification; the arc owner
+still runs the one joined Group 2 integration selection separately.
+
+Not run: native Windows execution of
+`bootstrap/tests/test_rules_folder_offer.py::test_count_command_and_offer_text`
+(the node is skipped on Windows because it uses POSIX `find`, `wc` and `awk`).
+Home: the existing Group 5 Windows-roster refresh row in `dev/PLANNING.md`.
+
+Not run: GNU `find`/`wc` or a T1 folder large enough to split `find`'s calls.
+Home: the accepted C1 scope and measurement note; no GNU claim is made.
+
+Not run: global integrity baseline or re-anchor. Home: the separate release
+baseline operation; the remaining mismatches are not cleared here.
+
+Not covered: real-adopter usefulness or a live response; C2 used fixed
+synthetic replies. Home: the accepted C2 evidence limit in this plan.
+
+Not covered: the seven `check_cairn.py` findings in concurrent Trim or
+historical files. Home: their owning Trim and historical artifacts; no fix is
+assigned to this plan.
+
+Dispositions: accept the unmeasured real-adopter benefit and the GNU/large-
+folder limits as explicit plan boundaries. The Windows follow-up remains in
+the existing Group 5 row and is not a new plan or an archive gate.
+
+Benefit versus cost: acceptable for the accepted guidance outcome; no real
+adopter benefit was measured. Cost remains 720 shipped words, a five-case
+public test, one test-tier pattern and one skill lock hash. The ongoing burden
+is one short record line per answer.
+
+**Elapsed**: unknown. **Tokens**: unknown.
