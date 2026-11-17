@@ -1,7 +1,7 @@
 # Proposal: let a project leave Cairn out of a release
 
 **Author**: Codex
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
