@@ -26,6 +26,49 @@ them.
   figure which must be re-measured every time it is wanted *will* be
   re-measured every time it is wanted, and lost again in between.
 
+* **Opt-in Meter pulse** — Meter does not collect until the person has reviewed
+  the proposed provider-log roots and project paths and explicitly enabled
+  consent in `~/.cairn/meter.json`. Its private ledger is
+  `~/.cairn/meter/ledger.json`; each configured project receives a sanitized
+  `dev/measurement/meter.json` export. The recurring work and cost depend on
+  selected logs and are unmeasured. `python tools/meter.py refresh --report
+  --json` reports the complete pulse and joins only the current configured
+  project from that successful refresh. Partial or failed runs return a closed
+  status and reason; an older project export is never used as fallback. Full
+  handoff retains its separate locked pre-prune refresh.
+
+  After explicit consent, create the version-1 config at the fixed account
+  path with only the approved provider and project paths. The aliases below
+  are examples; replace every placeholder with the actual approved value.
+
+  ```json
+  {
+    "version": 1,
+    "enabled": true,
+    "sources": [{
+      "alias": "codex-main",
+      "tool": "codex",
+      "root": "/approved/absolute/provider-log-root"
+    }],
+    "projects": [{
+      "alias": "project",
+      "path": "/approved/absolute/project-path",
+      "remote": "git@host:team/project.git"
+    }]
+  }
+  ```
+
+  Public pulse inputs remain explicit. Add `--junit-report PATH`,
+  `--before-junit-report PATH`, `--tier-inventory PATH`,
+  `--before-tier-inventory PATH`, or `--artifact-input PATH` to the report
+  command to include named public files. They are bounded and are not found by
+  discovery. Do not pass `--meter-aggregate` to `refresh --report`; the fresh
+  aggregate is joined in memory. Standalone `tools/pulse.py` and Gauge pulse
+  views remain available for explicit public inputs. `--commit-label`,
+  `--python-label`, `--selection-label`, and `--seed-label` (with their
+  `--before-` counterparts) are caller-supplied identifiers; they do not
+  establish that two cohorts are equivalent.
+
 ## What does NOT belong here — the membership rule
 
 `dev/measurement/` is **measurement**, and the boundary is two-sided:

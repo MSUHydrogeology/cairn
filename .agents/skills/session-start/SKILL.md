@@ -78,6 +78,27 @@ authoritative. Both views are read-only.
   Apart from the tool's one self-heal write in step 1 (the tool's, not yours), the
   only exception is `--drain`, which is that direction given in advance (step 4).
 
+### Optional Meter setup offer
+
+Only at an attended, explicitly requested session-start, and only when
+`tools/meter.py` is installed, consider the opt-in offer. Do not run it during an
+unattended start. If an enabled consent config already exists or the project's
+`## Session start` routine records a remembered refusal, do not offer or read
+provider logs. Otherwise, show the exact proposed provider-log roots and
+projects, the private ledger path (`~/.cairn/meter/ledger.json`), the sanitized
+project-export paths (`dev/measurement/meter.json` under each project), and
+that recurring work and cost depend on those logs and are unmeasured. Ask for a
+clear yes before creating or changing the consent file. The offer itself must
+not run a refresh or read provider logs. After consent, use the configuration
+shape documented in `dev/measurement/README.md`, replacing every example path
+with the exact approved value.
+
+If the person declines, ask whether they want that refusal remembered. Record a
+non-private instruction in the existing `dev/rules/custom_session_routines.md`
+`## Session start` section only if they say yes; reoffer only when asked. If
+they decline to remember it, persist nothing. An unattended start makes no
+offer, private-source read or configuration write.
+
 ## 4. Drain mode -- only when the arguments contain `--drain`
 
 `--drain` tells you to do the work, not only read about it, for this run. It lets

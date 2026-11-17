@@ -1,20 +1,37 @@
 # Custom session routines
 
+## Session start
+
+At an attended, explicitly requested session-start, offer the opt-in Meter only
+when `tools/meter.py` is installed, no enabled consent config exists, and no
+remembered refusal appears in this routine. Show the exact provider-log roots
+and project paths proposed for consent, the private ledger at
+`~/.cairn/meter/ledger.json`, each sanitized project export path, and that
+recurring work and cost depend on the selected logs and are unmeasured. Ask
+before creating the consent file. The offer does not run a refresh or read
+provider logs. Unattended starts make no offer, private-source read or config
+write.
+
+If the person declines, remember that choice only if they ask: add a
+non-private instruction here to reoffer only on request. If they do not ask to
+remember it, add nothing. An enabled consent config or remembered refusal
+means no offer.
+
 ## Goodnight
 
-**Usage report, every goodnight (reflection-only included).** Run the step
-the session-end skill will carry once the meter is installed and enabled
-(Maintainer, chat 2026-11-16: "Cairn's should start it--as if the skill were
-installed here"). First `python tools/meter.py refresh --json`. If it
-completes, render `python tools/gauge.py --pulse --meter-aggregate
-dev/measurement/meter.json`. Put the result in the reflection: the token
-counts if it completed, or the status and reason exactly as printed (for
-example `unavailable` with `source_budget_exceeded`). A refresh that does
-not complete is reported as such, never as zero use. Do not commit the
-per-project `meter.json` until the Maintainer decides it may be committed.
-The refresh reads only the sources and projects named in the private
-consent file, `~/.cairn/meter.json`; never edit that file without the
-Maintainer's yes.
+**Usage report, every goodnight (reflection-only included).** When Meter is
+installed, run `python tools/meter.py refresh --report --json` once, or use the
+result if the session-end skill has already run it. On success, include the
+complete sanitized `cairn-pulse/1` record in the reflection. For a closed
+`partial`, `unavailable` or `disabled` receipt, include only the status and
+reason exactly as reported; missing or failed usage is never zero. This fresh
+report joins only the current configured project after its export succeeds. Do
+not read an older `dev/measurement/meter.json`, pass an aggregate path, or
+commit a per-project export. If it exits without a valid pulse or closed
+receipt, report unavailable without raw diagnostics. Collection reads only roots and projects in the
+private consent file `~/.cairn/meter.json`; never create or edit it without the
+Maintainer's clear yes. The full-handoff pre-prune refresh remains a separate
+locked step and still fails closed.
 
 For a full handoff, run Cairn's local fast/default smoke selection from the
 repository root:

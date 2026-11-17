@@ -362,3 +362,33 @@ Windows execution and C4 joined selection remain due. The one actual refresh and
 immediate follow-up at the committed C2 repair are recorded in the Meter runtime
 plan (commit `6675e7e7`); the follow-up had active source logs and is not a
 controlled unchanged-input measurement. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record — C3
+
+**Model / role**: GPT-6.1 Luna, Implementation Low.
+
+Both session-start copies now describe the attended consent offer, exact data
+and storage disclosure, explicit yes before configuration writes, optional
+remembered refusal and requested reoffer, and no unattended private read or
+write. Both session-end copies carry one `refresh --report --json` report for
+reflection-only and full handoff, preserve the separate locked pre-prune
+refresh, and require complete sanitized pulse output or a closed status/reason.
+Cairn's Goodnight instructions no longer reopen the saved aggregate. The
+installed measurement guide includes the consent config example, storage/cost
+limits, fresh report and explicit public-input options; Cairn's measurement
+guide describes the same route.
+
+The Maintainer replaced the impossible automated manual-agent check with
+independent scenario review (“Use agent scenario review”). That review remains
+due; this implementation does not claim it passed.
+
+**Checks** (Python 3.13.13):
+
+- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_skill_contract.py bootstrap/tests/test_session_start_drain_rules.py::test_the_skill_keeps_its_drain_safety_rules bootstrap/tests/test_skills_install.py::test_skills_install_to_canonical_paths bootstrap/tests/test_skills_upgrade.py::test_pre_skills_apply_records_skills_in_lockfile_and_fans_out` — 6 passed, 2.39 s. This checks skill metadata and fresh-install/upgrade fan-out, not agent scenario behavior.
+- `scripts/check_cairn.py` on the seven changed Markdown files — passed.
+- `claim_check.py` on each changed guide/routine and this plan, and byte comparisons of both session-skill copies — passed.
+
+The named `test_meter_offer_and_goodnight_public` automated node was not run or
+created. Independent scenario review, C2 native report evidence, the final code
+and Security Reviews, and C4 joined integration remain due. **Elapsed**:
+unknown. **Tokens**: unknown.

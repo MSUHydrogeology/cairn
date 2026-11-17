@@ -110,11 +110,24 @@ them.
   state fails closed as unavailable. Aggregate coverage remains globally
   unknown; the output does not claim complete project history.
 
-  To render one aggregate beside public test reports, pass its path explicitly
-  to `python tools/gauge.py --pulse --meter-aggregate PATH`; adding `--json`
-  emits the structured pulse. Text and JSON distinguish the supplied project
-  observations from unknown global coverage. No private collector runs during
-  pulse rendering.
+  To refresh and render the complete pulse, run
+  `python tools/meter.py refresh --report --json`. The report joins only the
+  current configured project from that successful refresh; if the current
+  directory is unconfigured or ambiguous, usage remains unknown. Partial and
+  failed refreshes return a closed status and reason, never an older export.
+  The default `refresh --json` receipt is unchanged, and full handoff keeps its
+  separate locked pre-prune refresh.
+
+  Public pulse inputs remain explicit: add named `--junit-report PATH`,
+  `--before-junit-report PATH`, `--tier-inventory PATH`,
+  `--before-tier-inventory PATH`, or `--artifact-input PATH` arguments to
+  `refresh --report`. These bounded files are not discovered automatically.
+  Do not pass `--meter-aggregate` to this route; Meter supplies the fresh
+  aggregate in memory. The standalone Gauge and pulse CLIs remain available
+  for rendering explicit public inputs without private collection. Optional
+  `--commit-label`, `--python-label`, `--selection-label`, and `--seed-label`
+  (and their `--before-` counterparts) are caller-supplied identifiers, not
+  proof that two cohorts are equivalent.
 
 ## What does NOT belong here — the membership rule
 
