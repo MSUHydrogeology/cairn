@@ -3862,10 +3862,13 @@ def test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile(
     runtime_tools = native_windows_root / "runtime" / "tools"
     runtime_tools.mkdir(parents=True)
     runtime_meter = runtime_tools / "meter.py"
+    runtime_pulse = runtime_tools / "pulse.py"
     runtime_git_helper = runtime_tools / "git_read.py"
     shutil.copyfile(METER, runtime_meter)
+    shutil.copyfile(ROOT / "tools" / "pulse.py", runtime_pulse)
     shutil.copyfile(ROOT / "tools" / "git_read.py", runtime_git_helper)
     for original, copied in ((METER, runtime_meter),
+                             (ROOT / "tools" / "pulse.py", runtime_pulse),
                              (ROOT / "tools" / "git_read.py", runtime_git_helper)):
         assert hashlib.sha256(original.read_bytes()).digest() == hashlib.sha256(
             copied.read_bytes()).digest()
