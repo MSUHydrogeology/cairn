@@ -188,7 +188,8 @@ def _marked_helper() -> bytes:
     return helper + (
         b"\nimport os as _cairn_test_os\n"
         b"from pathlib import Path as _cairn_test_Path\n"
-        b"_cairn_test_Path(_cairn_test_os.environ['CAIRN_TEST_HELPER_MARKER'])"
+        b"if 'CAIRN_TEST_HELPER_MARKER' in _cairn_test_os.environ:\n"
+        b"    _cairn_test_Path(_cairn_test_os.environ['CAIRN_TEST_HELPER_MARKER'])"
         b".write_text('trusted-helper-ran', encoding='utf-8')\n"
     )
 
@@ -557,7 +558,7 @@ class TestFilterSources:
 
     def test_excludes_dev_archive_and_reflections(self, tmp_path: Path) -> None:
         kept = link_check.filter_sources(self._paths(tmp_path), tmp_path)
-        rel = sorted(str(p.relative_to(tmp_path)) for p in kept)
+        rel = sorted(p.relative_to(tmp_path).as_posix() for p in kept)
         # docs/archive/ is KEPT: the rule is anchored to dev/ as the first
         # segment so docs/ stays fully link-gated.
         assert rel == sorted([

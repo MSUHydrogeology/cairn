@@ -158,7 +158,9 @@ def append_record(
     else:
         target.parent.mkdir(parents=True, exist_ok=True)
     payload = _record_bytes(record_dict)
-    fd = os.open(str(target), os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
+    fd = os.open(str(target),
+                 os.O_WRONLY | os.O_APPEND | os.O_CREAT | getattr(os, "O_BINARY", 0),
+                 0o644)
     try:
         written = os.write(fd, payload)
         if written != len(payload):
@@ -457,7 +459,7 @@ def prune_released_pairs(
     if not target.exists():
         return report
 
-    raw_lines = target.read_text(encoding="utf-8").splitlines(keepends=True)
+    raw_lines = target.read_bytes().decode("utf-8").splitlines(keepends=True)
 
     # Parse what we can; remember which raw index each parsed record came from.
     parsed: List[tuple] = []          # (index, record dict)
@@ -560,7 +562,8 @@ def prune_released_pairs(
     # to zero bytes and ``os.replace`` then made the ledger itself the symlink.
     # ``O_EXCL`` refuses an existing path and ``O_NOFOLLOW`` refuses a link, so
     # neither is reachable now.
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+    flags = (os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+             | getattr(os, "O_BINARY", 0))
     tmp = target.with_name(f"{target.name}.prune-{os.getpid()}.tmp")
     try:
         fd = os.open(str(tmp), flags, 0o644)

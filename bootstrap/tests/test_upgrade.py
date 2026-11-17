@@ -226,8 +226,8 @@ class TestProfileSizedAssembly:
         if cff.exists():
             shutil.copy2(cff, croot / "CITATION.cff")
         agents = croot / "templates" / "core" / "AGENTS.md"
-        agents.write_text(
-            agents.read_text(encoding="utf-8") + self._REGION, encoding="utf-8")
+        agents.write_bytes(
+            (agents.read_text(encoding="utf-8") + self._REGION).encode("utf-8"))
         return croot
 
     @staticmethod
@@ -312,7 +312,7 @@ class TestProfileSizedAssembly:
         # gated region, so the two changes land in different merge hunks) ...
         lines = agents_path.read_text(encoding="utf-8").splitlines(keepends=True)
         lines.insert(1, "<!-- LOCAL CUSTOMIZATION: keep me -->\n")
-        agents_path.write_text("".join(lines), encoding="utf-8")
+        agents_path.write_bytes("".join(lines).encode("utf-8"))
         # ... and flips their committed profile from solo to multi-human.
         prof = target / "dev" / ".cairn" / "profile.yml"
         prof.parent.mkdir(parents=True, exist_ok=True)
@@ -1602,13 +1602,14 @@ class TestInitLock:
         review = self._migrate(tmp_path)
         modules = s.read_lockfile(tmp_path)["modules"]
         inventory = tmp_path / "dev/modules/README.md"
-        inventory.write_text(inventory.read_text() + "\nprivate local note\n",
-                             encoding="utf-8")
+        inventory.write_text(
+            inventory.read_text(encoding="utf-8") + "\nprivate local note\n",
+            encoding="utf-8")
         installed_before = inventory.read_bytes()
         assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
-        ours = (review / "dev/modules/README.md.ours").read_text()
-        theirs = (review / "dev/modules/README.md.theirs").read_text()
+        ours = (review / "dev/modules/README.md.ours").read_text(encoding="utf-8")
+        theirs = (review / "dev/modules/README.md.theirs").read_text(encoding="utf-8")
         assert "private local note" in ours
         assert "private local note" not in theirs
         assert [line for line in theirs.splitlines()
@@ -2795,6 +2796,8 @@ class TestDirtyTreeGuard:
 
     def test_literal_pathspec_name_is_a_single_tracked_path(self, tmp_path: Path) -> None:
         """Caller paths that resemble Git pathspec syntax remain literal."""
+        if sys.platform == "win32":
+            pytest.skip("a file name with a colon and asterisks cannot exist on Windows")
         self._init_committed(tmp_path)
         special = ":(glob)**.md"
         (tmp_path / special).write_text("initial\n")

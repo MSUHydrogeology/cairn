@@ -62,6 +62,24 @@ def _load() -> ModuleType:
 lifecycle = _load()
 
 
+def test_meter_refresh_receipt_accepts_only_one_windows_line_ending() -> None:
+    receipt = (
+        b'{"schema":"cairn-meter-refresh/1","status":"ok",'
+        b'"reason":"none","coverage":"unknown"}'
+    )
+    assert lifecycle._meter_refresh_receipt(receipt + b"\n", 0)
+    assert lifecycle._meter_refresh_receipt(receipt + b"\r\n", 0)
+    for malformed in (
+        receipt + b"\r\r\n",
+        receipt + b"\r\n\r\n",
+        receipt[:-1] + b"\r}\n",
+        receipt + b"\r",
+        receipt,
+    ):
+        assert not lifecycle._meter_refresh_receipt(malformed, 0)
+    assert not lifecycle._meter_refresh_receipt(receipt + b"\r\n", 5)
+
+
 def _install_synthetic_meter(root: Path) -> None:
     tools = root / "tools"
     tools.mkdir(exist_ok=True)
@@ -284,7 +302,7 @@ def test_reflection_filename_is_session_distinct(repo, monkeypatch, capsys):
     lifecycle.main(["session-end"])
     out2 = capsys.readouterr().out
 
-    pat = re.compile(r"dev/reflections/(\d{4}-\d{2}-\d{2}-claude-[A-Za-z0-9._-]+)\.md")
+    pat = re.compile(r"dev[\\/]reflections[\\/](\d{4}-\d{2}-\d{2}-claude-[A-Za-z0-9._-]+)\.md")
     m1, m2 = pat.search(out1), pat.search(out2)
     assert m1 and m2, "reflection path must be <date>-<agent>-<session>.md"
     assert m1.group(1) != m2.group(1), "two runs must resolve distinct sessions"

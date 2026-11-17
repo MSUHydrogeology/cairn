@@ -1254,7 +1254,8 @@ def test_read_origin_bounds_input_while_draining_both_output_streams(
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="real Git control unavailable")
 def test_read_origin_uses_git_parser_for_quoted_and_continued_values(
-        tmp_path: Path) -> None:
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _bind_worker_source(monkeypatch)  # Windows: bind the worker, clear the version cache
     target = tmp_path / "target"
     target.mkdir()
     git_path = shutil.which("git")

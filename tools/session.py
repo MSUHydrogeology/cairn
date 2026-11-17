@@ -1883,6 +1883,9 @@ def _stop_meter_child(proc: subprocess.Popen) -> bool:
 
 def _meter_refresh_receipt(stdout: bytes, returncode: int) -> bool:
     """Validate the closed Meter receipt without relaying child output."""
+    if isinstance(stdout, bytes) and stdout.endswith(b"\r\n"):
+        # Windows print() output uses CR-LF; fold that one terminator only.
+        stdout = stdout[:-2] + b"\n"
     if (returncode != 0 or not isinstance(stdout, bytes)
             or not stdout.endswith(b"\n") or b"\r" in stdout
             or stdout.count(b"\n") != 1):

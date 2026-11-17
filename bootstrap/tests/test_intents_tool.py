@@ -2986,6 +2986,39 @@ def _corpus(path: Path) -> Path:
 
 
 class TestIntentSurfacePruning:
+    def test_append_and_prune_preserve_binary_jsonl_line_endings(
+        self, tmp_path: Path,
+    ) -> None:
+        from tools._intent import record_io
+
+        log = tmp_path / "dev" / "intents.jsonl"
+        record_io.append_record(
+            {"event": "claim", "id": "old", "ts": _ts(45), "agent": "a",
+             "files": ["x.md"], "action": "old work"},
+            log_path=log,
+        )
+        record_io.append_record(
+            {"event": "release", "id": "old", "ts": _ts(44)},
+            log_path=log,
+        )
+        kept = {"event": "claim", "id": "kept", "ts": _ts(45),
+                "agent": "a", "files": ["y.md"], "action": "stale work"}
+        record_io.append_record(kept, log_path=log)
+        written = log.read_bytes()
+        assert b"\r" not in written
+        kept_line = written.splitlines(keepends=True)[-1]
+
+        # Existing Windows ledgers can contain CR-LF from the old text-mode
+        # writer; pruning must preserve byte lengths while reading and rewrite
+        # the surviving JSONL in binary mode.
+        log.write_bytes(written.replace(b"\n", b"\r\n"))
+        report = record_io.prune_released_pairs(
+            older_than_days=30, log_path=log,
+        )
+        assert report["refused"] is None
+        assert report["pruned_pairs"] == 1
+        assert log.read_bytes() == kept_line.replace(b"\n", b"\r\n")
+
     @pytest.mark.parametrize(
         "case", ["corpus", "recent-claim", "bad-timestamp", "hostile-link"],
     )
