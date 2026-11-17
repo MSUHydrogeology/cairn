@@ -62,3 +62,28 @@ Proposed paths:
 Use the canonical Python recorded in the environment. Before implementation run `python tools/test_tiers.py for <changed paths>`; run mapped checks and prose gates for changed prose, including claim, link, snippet and neutrality checks, and pass the reviewed range for governing text. Follow changed public promises through scaffold fresh install, v0.7 migration and Cairn's real self-upgrade: unchanged, forked, unprovable, occupied/linked and interrupted/retry cases check bytes, ownership, locks, caches and stale commands. Check historical reads, misleading roots, layout mutants and ceremony refusals through public entries. The layout check joins certification; migration and ceremony checks run in plan verification. Test a negative search with a known positive. Retain only external-promise tests and protected guards; remove developmental probes.
 
 Run scaffold summary and dry-run, both example self-tests, prose gates at their new paths, and test-install link checking. In the separate authorized certification operation compare clean before/after pass, skip and node counts; counts alone establish neither behavior nor authority. Keep those results unpassed until the Maintainer runs it. The arc owner runs one joined integration selection at arc end, not a suite per chunk. Record covered bytes, inputs, platform, omissions and results. Scientific independent check: N/A, as in the proposal. Obtain fresh ordinary and Security code reviews; a review names what it did not cover. Unexpected drift, missing evidence or failed checks remain implementation work.
+
+## Plan review -- Terra -- 2026-11-17
+
+Reviewed commit: 0622d1ec5ce28c450755c9992403578c8e54cc92
+
+**Obligation**: Internal plan review
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown. **Tokens**: unknown.
+
+A coherent footprint exercised through the actual upgrade can simplify adoption while preserving local work and trust.
+
+**Foundations**
+
+1. **Should this happen as framed?** The Decision supports it, but C2 and C4 leave design decisions to the low-tier executor. -- Plan C2/C4; `dev/agent_collaboration.md`, Review rules.
+2. **Best alternative.** Extend the existing staging and anchored loader, with a reviewed recovery protocol and transition design. -- `bootstrap/_scaffold/upgrade.py:1362`; `scripts/repin.py:635`.
+3. **What would show it wrong?** An interrupted upgrade loses the only copy or relocated authority executes before verification. -- Proposal, Evidence / verification plan.
+
+1. **Blocking: specify the migration and trust-transition designs.** C2 states safety outcomes but does not say how durable transaction progress, retry decisions and source-to-destination ownership are represented and ordered. Existing staging and recovery metadata do not specify that move protocol (`upgrade.py:1416`, `:1638`). C4 requires old authority to verify new paths but does not define how the old verifier accepts the new roster before import; the current loader freezes exact paths and module names (`scripts/repin.py:66`, `:635`). Provide concise designs identifying the authoritative records, state transitions and verification/authorization order, grounded in the existing mechanisms, so execution does not invent them.
+2. **Blocking: resolve wrapper inventory conflict.** C1 omits renamed wrappers from root exceptions while C3 requires every lock destination to use an exception and also preserves adopter wrappers. Upgrade can record `CLAUDE.md` as the actual destination (`bootstrap/_scaffold/upgrade.py:3918`). Permit existing renamed project wrappers in the inventory and verify a customized wrapper survives upgrade with valid provenance; retain unrelated project-owned root tool files as the proposal requires.
+
+**Audience and rule loss:** The intended audience can follow the summary; the plan requires duties to remain in installed instructions. Actual rewritten prose was unavailable.
+
+**Coverage:** Read the committed plan, accepted proposal and amendment, template, rules, installer and anchored-loader excerpts; repeated the reuse search and searched wrapper resolution. Opening: 1,388 words; C3 exceeds the 150-word target. No implementation tests, full mapping inventory, migration, desktop check or Security Review were run.
