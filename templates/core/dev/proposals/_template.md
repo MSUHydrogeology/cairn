@@ -113,7 +113,7 @@ committer.
   the pass or in the commit message: the next reviewer and the Maintainer at the
   Decision are the check.
 
-A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review (`dev/agent_collaboration.md` > "Review rules"). A project rule that names its own Security Review still applies. `usual + Security Review` in a
+A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. A template is not high-risk solely because it contains prose; code, installer structure, and functional configuration may remain high-risk under the project's written list. When in doubt, take the Security Review (`dev/agent_collaboration.md` > "Review rules"). A project rule that names its own Security Review still applies. `usual + Security Review` in a
 header means two passes: the usual pass and a Security Review pass that names its
 own obligation. The usual pass never clears the second.
 In a proposal review, `**Tier**: Security Review` names that obligation; the
@@ -488,7 +488,7 @@ Record elapsed time and token use for this step; use `unknown` when unavailable.
 
 **Tier**: {{light | standard | heavy}}
 
-Light is the default and requires no plan regardless of implementation size. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review (`dev/agent_collaboration.md` > "Review rules"). A project rule that names its own Security Review still applies.
+Light is the default and requires no plan regardless of implementation size. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. A template is not high-risk solely because it contains prose; code, installer structure, and functional configuration may remain high-risk under the project's written list. When in doubt, take the Security Review (`dev/agent_collaboration.md` > "Review rules"). A project rule that names its own Security Review still applies.
 
 **{{ACCEPTED | REJECTED | SUPERSEDED}}.** The Maintainer's authorization,
 quoted **verbatim and visually isolated** (no paraphrase):

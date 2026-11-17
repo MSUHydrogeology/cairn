@@ -132,37 +132,34 @@ blast radius: a hidden instruction injected into a template reaches
 **every downstream adopter's agents at once**.
 
 Therefore **template integrity is a security property**, not only a
-correctness one.  Every change to agent-loaded content is reviewed
-for *injected, hidden, or unsafe instructions* — not just for whether
-the prose is right — and **must pass** the content-integrity scanner
-(`content_scan.py`, run by [`check_cairn.py`](../scripts/check_cairn.py)).
-**Two triggers exist and neither fires on a commit**: the suite scans
-generated output and the skills artifacts on every `pytest` run, and
-`check_cairn.py` scans the tracked Markdown files **its default filter
-keeps** when a person runs it (the **maintainer-run** release gate
-`security_check.py` invokes it, when a maintainer runs that).  That
-filter is not a formality: `main` wraps the tracked list in
-`link_check.filter_sources`, which drops four classes by default —
-`dev/**/archive/`, `dev/modules/`, `dev/.cairn/` and `dev/reflections/`,
-each re-includable by flag.  **249 tracked, 195 scanned, 54 skipped**
-(`as_of 2026-08-04`); the run's own "N Markdown file(s) scanned" banner
-is the honest number.  Everything skipped is under `dev/`, so
-`docs/` (including `docs/methodology/`), `case-studies/`, `bootstrap/`
-and `templates/` are all reached — but `dev/modules/` is **vendored, agent-loaded
-content that a default run does not scan**.  Source prose that no
-scaffolded profile emits — **including** `docs/methodology/`, other
-`docs/`, `case-studies/` and this document — is reached **only** by that manual
-run.  **Running it, and resolving what it flags to a clean scan, is the
-reviewer's obligation, not a mechanism's guarantee.**  The review threshold
-scales **by file class**:
+correctness one. Existing applicable scanner duties remain, and ordinary
+review still applies. Scanner silence does not establish that prose is safe.
 
-* **Source template → instruction file** (the core `AGENTS.md`
-  template, the `dev/` templates) — strictest: full scanner +
-  injection-review on every change.
-* **Published methodology** (`docs/methodology/*.md`, the module templates) — scanned;
-  injection-review on change.
-* **Docs / case-study prose** (`docs/*.md`, `case-studies/*.md`) —
-  scanned, lighter threshold.
+For shipped template prose, the Maintainer-assigned security reader performs
+one complete, candidate-bound human read at release sweep B. The reader
+enumerates the candidate's tracked templates, reconciles that list with the
+installer sources, includes the two onboarding documents shipped from `docs/`,
+reads every shipped prose source, and records covered paths, exclusions,
+findings and dispositions in the existing release evidence. The reader also
+runs both scanners from a fresh, clean checkout of that candidate; the scanners'
+narrower file selections do not define the read. If candidate bytes change,
+the reader reconciles coverage and reads changed or new prose before release.
+The release procedure owns the exact commands and evidence fields.
+
+This release read replaces change-by-change injection review only for the
+shipped prose it covers. Those prose-only template edits are not high-risk by
+themselves. A change to template Python, installer structure (`cairn:slot`,
+`{{token}}`, or parsed task syntax), or functional configuration such as
+`templates/core/gitattributes.txt` remains protected; a mixed prose and
+structural or code change remains protected too. Other agent-loaded content,
+including methodology and case studies outside the release inventory, keeps
+its on-change injection review. The scanners remain tripwires, not a safety
+proof or a replacement for the human read.
+
+* **Published methodology** (`docs/methodology/*.md`, the module templates) —
+  scanned and injection-reviewed on change.
+* **Other docs / case-study prose** (`docs/*.md`, `case-studies/*.md`) —
+  scanned and injection-reviewed on change.
 * **Executable code** — Layer 4 (Bandit + the symlink/containment
   hardening), not the prose scanner. This class is the **whole shipped
   Python surface**, not only the scaffold: the scaffold engine — the thin

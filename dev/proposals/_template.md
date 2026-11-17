@@ -130,7 +130,7 @@ committer.
   the pass or in the commit message: the next reviewer and the Maintainer at the
   Decision are the check.
 
-A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review (`dev/agent_collaboration.md` > "Review rules"). A project rule that names its own Security Review still applies. `usual + Security Review` in a
+A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. Under Cairn's protected-surfaces rule, prose-only template changes are not high-risk solely because they are templates; Python, installer structure and functional configuration remain protected. A project's own protected-surface rules still apply. When in doubt, take the Security Review (`dev/agent_collaboration.md` > "Review rules"). A project rule that names its own Security Review still applies. `usual + Security Review` in a
 header means two passes: the usual pass and a Security Review pass that names its
 own obligation. The usual pass never clears the second.
 In a proposal review, `**Tier**: Security Review` names that obligation; the
@@ -482,8 +482,10 @@ Cairn's own mandatory high-assurance surfaces, each named in `AGENTS.md` >
   `run_portable_security_sweeps.py`, its resolve/revalidate pair, and
   `portable_security_policy.json`;
 * **governing doctrine and lifecycle enforcement** — anything under
-  `docs/methodology/`, the lifecycle planner's gate predicates, or the authoring
-  templates themselves.
+  `docs/methodology/` or the lifecycle planner's gate predicates; authoring
+  template Python, installer structure, and functional configuration also stay
+  protected. Prose-only template changes do not trigger high-assurance solely
+  because they are templates.
 
 Plus the two non-surface triggers: the **by-file license split**, and the
 **vendor-neutrality boundary** (a model/vendor name reaching doctrine or a
@@ -540,7 +542,7 @@ Record elapsed time and token use for this step; use `unknown` when unavailable.
 
 **Tier**: {{light | standard | heavy}}
 
-Light is the default and requires no plan regardless of implementation size. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review (`dev/agent_collaboration.md` > "Review rules"). A project rule that names its own Security Review still applies.
+Light is the default and requires no plan regardless of implementation size. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. Under Cairn's protected-surfaces rule, prose-only template changes are not high-risk solely because they are templates; Python, installer structure and functional configuration remain protected. A project's own protected-surface rules still apply. When in doubt, take the Security Review (`dev/agent_collaboration.md` > "Review rules"). A project rule that names its own Security Review still applies.
 
 **{{ACCEPTED | REJECTED | SUPERSEDED}}.** The Maintainer's authorization,
 quoted **verbatim and visually isolated** (no paraphrase):
