@@ -1,7 +1,7 @@
 # Make Meter visible and report at goodnight
 
 **Author**: GPT-6.1 Terra (Medium)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the existing automatic trigger applies to shipped templates and documentation; the accepted narrowing is not yet implemented
 **Plan review**: required(Internal + Internal Security Review)
@@ -203,3 +203,17 @@ freshness and the named negative controls executable. No implementation or
 verification result is claimed. The Maintainer's Decision remains due.
 
 **Disposition**: awaiting-decision. **Elapsed:** about 2 minutes. **Tokens:** unknown.
+
+## Decision -- Anthony Kendall -- 2026-11-17
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> Accept and implement
+
+The accepted full pulse preserves every existing view and output, shares its
+implementation with adopters, and adds the consent-based setup offer and
+goodnight report. A reviewed plan precedes implementation.
+
+**Elapsed:** unknown. **Tokens:** unknown.
