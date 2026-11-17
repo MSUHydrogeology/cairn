@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-release-tests-shipped-only.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **In brief**: The strict release check stops re-running 16 test files that cover only the Maintainer's own signing tools, saves about 30% of its time, and says in its output which files it left out.
@@ -262,3 +262,29 @@ Reviewed commit: f436717b47a2fa67d2564bd449c7d320710b3af3
 **Audience and rule loss.** Release operators see the excluded names and count. Full certification, required guards and scanner phases remain. The Pulse exception applies file-wide for B314.
 
 **Coverage.** Read committed changes and reported evidence. No test reruns, native Windows run, full release or certification, baseline ceremony, or exhaustive exclusion-classification audit. Historical citation flag remains.
+
+## Dispositions
+
+No implementation scope is deferred or removed. The still-unpassed operations
+have active homes outside this plan:
+
+- The first full strict release records and join, including native Windows
+  execution, follow [the release process](../../docs/release-process.md)
+  and the existing release-cut wait in `dev/PLANNING.md`; they do not gate
+  this plan's archive.
+- The post-C4 frozen-baseline update and grouped re-anchor remain at the
+  existing Maintainer wait in `dev/PLANNING.md`. This plan's six frozen-file
+  edits join that group and remain expected unpassed until the operation.
+- The joined Group 2 integration belongs to the arc owner after connected
+  plans finish, under `dev/agent_collaboration.md` > "Plans and records". It
+  does not gate this plan's archive.
+
+## Author disposition -- Luna Low -- 2026-11-17
+
+**Disposition**: ready-to-archive. C1–C5 and the Maintainer-authorized Pulse
+repair are complete; ordinary and Security code reviews ACCEPT with no
+remaining findings. The earlier C3 B314 failure is closed by `f436717b`, and
+the connected record/join fixture passes. Accepted scope is preserved. The
+expected runtime saving is not measured; the first actual release run is its
+home. No full suite or native Windows execution was run. The historical
+claim-check citation flag remains unchanged.
