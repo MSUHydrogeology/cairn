@@ -268,6 +268,9 @@ class SyntheticWindowsStreamAPI:
         self.C = ctypes
         self.W = SimpleNamespace(DWORD=ctypes.c_uint32)
         self.content = content
+        self.grow_on_read = False
+        self.fail_seek = False
+        self.fail_file_info = False
         self.entry_file_id = 4
         self.offsets = {}
         self.paths = {}
@@ -322,6 +325,8 @@ class SyntheticWindowsStreamAPI:
     def info(self, handle):
         path = self.paths[handle]
         is_file = path == "file"
+        if is_file and self.fail_file_info:
+            raise meter.Unavailable("injected-info-failure")
         return {"identity": (7, {"volume": 1, "synthetic": 2,
                                   "source": 3, "file": 4}[path]),
                 "size": len(self.content) if is_file else 0,
@@ -340,11 +345,22 @@ class SyntheticWindowsStreamAPI:
             self.C.memmove(buffer, self.content[start:start + count], count)
             self.offsets[handle] += count
             self.accessed += 1
+            if self.grow_on_read:
+                self.grow_on_read = False
+                self.content += b'{"grown":1}\n'
         self.C.cast(received, self.C.POINTER(self.W.DWORD)).contents.value = count
         return 1
 
     def close(self, handle):
         self.closed.append(handle)
+
+    def seek_zero(self, handle):
+        self.offsets[handle] = 0
+
+    def seek_to(self, handle, offset):
+        if self.fail_seek:
+            raise meter.Unavailable("source_read_unavailable")
+        self.offsets[handle] = offset
 
 
 class SyntheticWindowsLedgerAPI:
@@ -1532,16 +1548,23 @@ def test_windows_native_meter_source_metadata_mutations(
         return
     if case in {"enumeration-bound", "read-bound"}:
         _native_meter_successful_refresh(setup)
-        bound = "MAX_SOURCE_FILES" if case == "enumeration-bound" else "MAX_BATCH_BYTES"
+        bound = "MAX_SOURCE_FILES" if case == "enumeration-bound" else "MAX_REREAD_LINES"
         bounded_root = native_windows_root / ("bounded-enumeration" if
                                                case == "enumeration-bound" else "bounded-read")
         bounded_root.mkdir()
         setup = _native_meter_setup(
             bounded_root, native_meter_git_exe,
-            meter_overrides=[(f"{bound} = " + ("10_000" if bound == "MAX_SOURCE_FILES" else "64 * 1024 * 1024"),
+            meter_overrides=[(f"{bound} = " + ("10_000" if bound == "MAX_SOURCE_FILES" else "1_000_000"),
                              f"{bound} = 0" if bound == "MAX_SOURCE_FILES" else f"{bound} = 1")])
+        if case == "enumeration-bound":
+            receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
+            _native_meter_receipt(receipt, "unavailable", "source_budget_exceeded")
+            return
         receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
-        _native_meter_receipt(receipt, "unavailable", "source_budget_exceeded")
+        _native_meter_receipt(receipt, "ok", "none")
+        _native_meter_append_valid_update(setup)
+        receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
+        _native_meter_receipt(receipt, "partial", "source_too_large")
         return
 
     if case == "unsupported-filesystem-response":
@@ -6443,11 +6466,82 @@ def test_stream_refuses_inconsistent_keywords(tmp_path, options):
     assert list(stream) == [] and stream.terminal_reason is not None
 
 
-def test_windows_stream_refuses_the_new_keywords_until_it_supports_them():
-    api = SyntheticWindowsStreamAPI(b'{"record":1}\n')
+def test_windows_stream_supports_tail_resume_pieces_growth_and_reread():
+    api = SyntheticWindowsStreamAPI(b"one\r\ntwo\r\npartial")
+    tail = meter._iter_approved_lines(
+        r"C:\synthetic\source", "session.jsonl", 2 * meter.MAX_LINE + 2,
+        windows_api=api, windows_user_sid=b"synthetic-user-sid",
+        piece=True, tail=True)
+    assert list(tail) == [] and tail.terminal_reason is None
+    assert tail.tail_offset == len(b"one\r\ntwo\r\n")
+    assert tail.tail_digest == sha256_of(b"two\r\n")
+
+    api = SyntheticWindowsStreamAPI(b"one\ntwo\nthree\n")
+    resumed = meter._iter_approved_lines(
+        r"C:\synthetic\source", "session.jsonl", meter.MAX_REREAD_BYTES,
+        windows_api=api, windows_user_sid=b"synthetic-user-sid", piece=True,
+        resume={"dev": 7, "ino": 4, "offset": 4,
+                "digest": sha256_of(b"one\n")})
+    assert list(resumed) == [b"two\n", b"three\n"]
+    assert resumed.terminal_reason is None and resumed.end_offset == 14
+
+    limited = meter._iter_approved_lines(
+        r"C:\synthetic\source", "session.jsonl", 100,
+        windows_api=api, windows_user_sid=b"synthetic-user-sid",
+        piece=True, max_lines=1)
+    assert list(limited) == [b"one\n"] and limited.limit_stop
+    assert limited.terminal_reason is None
+
+    api = SyntheticWindowsStreamAPI(b"one\ntwo\n")
+    api.grow_on_read = True
+    grown = meter._iter_approved_lines(
+        r"C:\synthetic\source", "session.jsonl", 100,
+        windows_api=api, windows_user_sid=b"synthetic-user-sid", piece=True)
+    assert list(grown) == [b"one\n", b"two\n"]
+    assert grown.terminal_reason is None and grown.final_identity["size"] > 8
+
+    reread = meter._iter_approved_lines(
+        r"C:\synthetic\source", "session.jsonl", 100,
+        windows_api=api, windows_user_sid=b"synthetic-user-sid", piece=True,
+        max_lines=10, resume={"dev": 7, "ino": 4, "offset": 4,
+                              "digest": sha256_of(b"one\n")}, reread=True)
+    assert list(reread) == [b"one\n", b"two\n", b'{"grown":1}\n']
+    assert reread.checkpoint_line == 1 and reread.resume_failure is None
+
+
+@pytest.mark.parametrize("resume, expected", [
+    ({"dev": 7, "ino": 9, "offset": 4, "digest": sha256_of(b"one\n")},
+     "file_replaced"),
+    ({"dev": 7, "ino": 4, "offset": 100, "digest": sha256_of(b"one\n")},
+     "cursor_past_end"),
+    ({"dev": 7, "ino": 4, "offset": 3, "digest": sha256_of(b"one\n")},
+     "not_line_boundary"),
+    ({"dev": 7, "ino": 4, "offset": 4, "digest": "0" * 64},
+     "digest_mismatch"),
+])
+def test_windows_resume_failures_yield_no_lines(resume, expected):
+    api = SyntheticWindowsStreamAPI(b"one\ntwo\n")
     stream = meter._iter_approved_lines(
-        r"C:\synthetic\source", "session.jsonl", windows_api=api,
-        windows_user_sid=b"synthetic-user-sid", piece=True, tail=True)
+        r"C:\synthetic\source", "session.jsonl", 100,
+        windows_api=api, windows_user_sid=b"synthetic-user-sid",
+        piece=True, resume=resume)
+    assert list(stream) == []
+    assert stream.resume_failure == expected
+
+
+@pytest.mark.parametrize("failure", ["identity", "seek"])
+def test_windows_piece_read_failures_are_unavailable_without_fresh_lines(failure):
+    api = SyntheticWindowsStreamAPI(b"one\ntwo\n")
+    resume = {"dev": 7, "ino": 4, "offset": 4,
+              "digest": sha256_of(b"one\n")}
+    if failure == "identity":
+        api.fail_file_info = True
+    else:
+        api.fail_seek = True
+    stream = meter._iter_approved_lines(
+        r"C:\synthetic\source", "session.jsonl", 100,
+        windows_api=api, windows_user_sid=b"synthetic-user-sid",
+        piece=True, resume=resume)
     assert list(stream) == []
     assert stream.terminal_reason == "source_read_unavailable"
 
@@ -6484,7 +6578,7 @@ def test_a_fresh_read_drops_waits_that_began_before_the_start(tmp_path, monkeypa
     assert [wait["started_at_ms"] for wait in waits] == [clock_ms + 5000]
 
 
-def test_windows_interim_scan_reads_a_log_without_a_cursor_from_byte_zero_and_filters(
+def test_windows_start_scan_bookmarks_existing_log_without_counting_it(
         monkeypatch):
     from pathlib import PureWindowsPath
 
@@ -6507,9 +6601,51 @@ def test_windows_interim_scan_reads_a_log_without_a_cursor_from_byte_zero_and_fi
         config, windows_api=api, windows_user_sid=b"synthetic-user-sid")
     assert events == []
     cursor, = cursors
-    assert cursor["line"] == 3 and cursor["offset"] == len(b"".join(encoded(records)))
+    assert cursor["line"] == 0 and cursor["offset"] == len(b"".join(encoded(records)))
     assert cursor["digest"] == sha256_of(encoded(records)[-1])
     assert cursor["owner_key"] == meter._digest("codex", "019a0000-0000-7000-8000-000000000001")
+
+
+def test_windows_codex_scan_re_reads_from_bookmark_and_counts_only_growth(monkeypatch):
+    from pathlib import PureWindowsPath
+
+    monkeypatch.setattr(meter, "Path", PureWindowsPath)
+    monkeypatch.setattr(meter, "os", SimpleNamespace(
+        name="nt", path=SimpleNamespace(abspath=lambda value: value)))
+    config = {
+        "version": 1, "enabled": True,
+        "sources": [{"alias": "source", "tool": "codex",
+                     "root": r"C:\synthetic\source"}],
+        "projects": [{"alias": "project", "path": r"C:\synthetic\project",
+                      "remote": "https://example.test/team/project.git"}],
+        "requested_accounts": {},
+    }
+    initial = codex()
+    initial[1]["payload"]["cwd"] = r"C:\synthetic\project"
+    appended = [
+        row("turn_context", {"turn_id": "turn-b", "root_turn_id": "turn-b",
+                              "cwd": r"C:\synthetic\project"}),
+        codex_direct("019a0000-0000-7000-8000-000000000001",
+                     "019a0000-0000-7000-8000-000000000001", "turn-b", "turn-b",
+                     "response-b", 10, 10, 30),
+    ]
+    api = SyntheticWindowsStreamAPI(b"".join(encoded(initial)))
+    first = meter._scan_approved_sources(
+        config, [], starts=[{"source_alias": "source", "started_at": CLOCK_STAMP}],
+        now=CLOCK, windows_api=api, windows_user_sid=b"synthetic-user-sid")
+    assert first[0] == []
+    cursor, = first[1]
+    api.content += b"".join(encoded(appended))
+
+    second = meter._scan_approved_sources(
+        config, [cursor], starts=first[6], now=CLOCK,
+        windows_api=api, windows_user_sid=b"synthetic-user-sid")
+
+    assert len(second[0]) == 1
+    assert second[0][0]["turn_key"] == meter._digest(
+        "codex", "019a0000-0000-7000-8000-000000000001", "turn-b")
+    assert second[1][0]["offset"] == len(api.content)
+    assert "resume_failed_digest_mismatch" not in second[2]
 
 
 # ---- Resume, pieces and the run limit (plan C2) ------------------------------

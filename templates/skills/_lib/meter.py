@@ -529,13 +529,21 @@ class _WindowsConsentAPI:
         if status != 0:
             raise Unavailable("ledger_write_failed")
 
-    def seek_zero(self, handle):
-        position = self.C.create_string_buffer(struct.pack("<q", 0), 8)
+    def _set_position(self, handle, offset, reason):
+        position = self.C.create_string_buffer(struct.pack("<q", offset), 8)
         ios = self.IOS()
         status = self.nt.NtSetInformationFile(
             handle, self.C.byref(ios), position, 8, 14)
         if status != 0:
-            raise Unavailable("ledger_write_failed")
+            raise Unavailable(reason)
+
+    def seek_zero(self, handle):
+        self._set_position(handle, 0, "ledger_write_failed")
+
+    def seek_to(self, handle, offset):
+        if type(offset) is not int or offset < 0:
+            raise Unavailable("source_read_unavailable")
+        self._set_position(handle, offset, "source_read_unavailable")
 
     def delete_by_handle(self, handle):
         disposition = self.C.create_string_buffer(b"\x01", 1)
@@ -1304,6 +1312,8 @@ class _ApprovedLineStream:
                     or self.reread):
                 return "source_read_unavailable"
             return "source_budget_exceeded" if self.budget > MAX_BATCH_BYTES else None
+        if self.tail and self.budget > 2 * MAX_LINE + 2:
+            return "source_budget_exceeded"
         if self.budget > MAX_REREAD_BYTES:
             return "source_budget_exceeded"
         if self.max_lines is not None and (
@@ -1705,12 +1715,12 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
         file_handle = -1
         reason = "source_read_unavailable"
         try:
-            if (self.piece or self.tail or self.max_lines is not None
-                    or self.resume is not None or self.reread):
-                reason = "source_read_unavailable"  # not supported on this reader yet
-                return
-            if (type(self.budget) is not int or not 0 <= self.budget <= MAX_BATCH_BYTES):
-                reason = "source_budget_exceeded"
+            request_error = self._request_error()
+            if request_error is None and (
+                    not isinstance(self.relative, str) or not self.relative):
+                request_error = "source_budget_exceeded"
+            if request_error is not None:
+                reason = request_error
                 return
             root_handles, root_links, volume, volume_info = self._open_root()
             handles.extend(root_handles)
@@ -1729,11 +1739,17 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
                 current = child
             leaf = relative[-1]
             file_handle = api.open(leaf, current, read_data=True)
-            before = api.info(file_handle)
+            try:
+                before = api.info(file_handle)
+            except (Unavailable, OSError, ValueError, TypeError, AttributeError):
+                reason = "source_read_unavailable"
+                return
             if (before["directory"] or before["links"] != 1
-                    or before["identity"][0] != volume
-                    or before["size"] > self.budget):
-                reason = "source_budget_exceeded" if before["size"] > self.budget else "source_read_unavailable"
+                    or before["identity"][0] != volume):
+                reason = "source_read_unavailable"
+                return
+            if not self.piece and before["size"] > self.budget:
+                reason = "source_budget_exceeded"
                 return
             api.check_acl(file_handle, self.user_sid, "ancestor")
             self.open_identity = {
@@ -1741,62 +1757,128 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
                 "size": before["size"], "mtime_ns": before["mtime_ns"],
                 "ctime_ns": before["ctime_ns"],
             }
-            total = line_count = 0
-            pending = b""
-            last_line = None
-            while True:
-                allowance = self.budget - total + 1
-                block_size = min(64 * 1024, allowance)
-                buffer = api.C.create_string_buffer(block_size)
-                received = api.W.DWORD()
-                if not api.kernel.ReadFile(file_handle, buffer, block_size,
-                                           api.C.byref(received), None):
-                    reason = "source_read_unavailable"
+            initial_size = before["size"]
+            if self.tail:
+                offset, digest, tail_reason = self._windows_tail(file_handle, initial_size)
+                if tail_reason is not None:
+                    reason = tail_reason
                     return
-                count = int(received.value)
-                if count > block_size:
-                    reason = "source_read_unavailable"
-                    return
-                if count == 0:
-                    break
-                total += count
-                self.bytes_read = total
-                if total > self.budget:
-                    reason = "source_budget_exceeded"
-                    return
-                pending += buffer.raw[:count]
-                while True:
-                    boundary = pending.find(b"\n")
-                    if boundary < 0:
-                        if len(pending) > MAX_LINE:
-                            reason = "source_budget_exceeded"
+                self.tail_offset, self.tail_digest = offset, digest
+            else:
+                if self.resume is not None:
+                    resume = self.resume
+                    if (resume["dev"], resume["ino"]) != (
+                            before["identity"][0], before["identity"][1]):
+                        self.resume_failure = "file_replaced"
+                        self._capture_windows_final(file_handle)
+                        reason = None
+                        return
+                    if initial_size < resume["offset"]:
+                        self.resume_failure = "cursor_past_end"
+                        self._capture_windows_final(file_handle)
+                        reason = None
+                        return
+                    if resume["offset"] and not self.reread:
+                        window_size = min(MAX_LINE + 1, resume["offset"])
+                        try:
+                            window = self._windows_read_at(
+                                file_handle, resume["offset"] - window_size, window_size)
+                        except (Unavailable, OSError, ValueError, TypeError, AttributeError):
+                            reason = "source_read_unavailable"
                             return
+                        verdict = _resume_window_verdict(
+                            window, resume["offset"], resume["digest"])
+                        if verdict is not None:
+                            self.resume_failure = verdict
+                            self._capture_windows_final(file_handle)
+                            reason = None
+                            return
+                if self.resume is not None and self.reread:
+                    api.seek_to(file_handle, 0)
+                    position = 0
+                elif self.resume is not None:
+                    api.seek_to(file_handle, resume["offset"])
+                    position = resume["offset"]
+                else:
+                    api.seek_zero(file_handle)
+                    position = 0
+                cutter = _LineCutter()
+                line_count = 0
+                line_start = position
+                max_lines = self.max_lines if self.max_lines is not None else MAX_BATCH_LINES
+                while position < initial_size:
+                    if self.piece and (self.bytes_read >= self.budget
+                                       or line_count >= max_lines):
+                        self.limit_stop = True
                         break
-                    line, pending = pending[:boundary + 1], pending[boundary + 1:]
-                    if len(line) > MAX_LINE:
-                        reason = "source_budget_exceeded"
+                    allowance = (self.budget - self.bytes_read if self.piece
+                                 else self.budget - self.bytes_read + 1)
+                    if allowance <= 0:
+                        self.limit_stop = self.piece
+                        reason = None if self.limit_stop else "source_budget_exceeded"
+                        break
+                    block_size = min(64 * 1024, allowance, initial_size - position)
+                    buffer = api.C.create_string_buffer(block_size)
+                    received = api.W.DWORD()
+                    if not api.kernel.ReadFile(file_handle, buffer, block_size,
+                                               api.C.byref(received), None):
+                        reason = "source_read_unavailable"
                         return
-                    line_count += 1
-                    self.complete_lines = line_count
-                    if line_count > MAX_BATCH_LINES:
-                        reason = "source_budget_exceeded"
+                    count = int(received.value)
+                    if count > block_size or count <= 0:
+                        reason = "source_read_unavailable"
                         return
-                    self.end_offset += len(line)
-                    last_line = line
-                    yield line
-            self.tail_offset = self.end_offset
-            if last_line is not None:
-                self.tail_digest = hashlib.sha256(last_line).hexdigest()
-            after = api.info(file_handle)
-            api.check_acl(file_handle, self.user_sid, "ancestor")
-            self.final_identity = {
-                "dev": after["identity"][0], "ino": after["identity"][1],
-                "size": after["size"], "mtime_ns": after["mtime_ns"],
-                "ctime_ns": after["ctime_ns"],
-            }
-            stable = _windows_stable_info(before) == _windows_stable_info(after)
-            if (not stable or total != before["size"] or pending):
-                reason = "partial_tail" if pending and stable and total == before["size"] else "source_changed"
+                    position += count
+                    self.bytes_read += count
+                    lines, cutter_error = cutter.feed(buffer.raw[:count])
+                    if cutter_error is not None:
+                        reason = cutter_error
+                        return
+                    for line in lines:
+                        if self.piece and line_count >= max_lines:
+                            self.limit_stop = True
+                            break
+                        line_count += 1
+                        self.complete_lines = line_count
+                        self.end_offset = line_start + len(line)
+                        self.tail_digest = hashlib.sha256(line).hexdigest()
+                        if (self.resume is not None and self.reread
+                                and self.end_offset == resume["offset"]):
+                            self.checkpoint_line = line_count
+                            if self.tail_digest != resume["digest"]:
+                                self.resume_failure = "digest_mismatch"
+                        elif (self.resume is not None and self.reread
+                              and line_start < resume["offset"] < self.end_offset):
+                            self.resume_failure = "not_line_boundary"
+                        line_start = self.end_offset
+                        yield line
+                    if self.limit_stop:
+                        break
+                    if self.piece and self.bytes_read >= self.budget and position < initial_size:
+                        self.limit_stop = True
+                        break
+                if (self.resume is not None and self.reread
+                        and self.checkpoint_line is None and self.resume_failure is None):
+                    self.resume_failure = "not_line_boundary"
+                if self.resume is not None and self.reread and self.resume_failure:
+                    self._capture_windows_final(file_handle)
+                    reason = None
+                    return
+                if cutter.pending and not self.piece:
+                    reason = "partial_tail"
+                self.tail_offset = self.end_offset
+            try:
+                after = self._capture_windows_final(file_handle)
+            except (Unavailable, OSError, ValueError, TypeError, AttributeError):
+                reason = "source_read_unavailable"
+                return
+            if (before["identity"] != after["identity"]
+                    or after["size"] < initial_size):
+                reason = "source_changed"
+                return
+            if not self.piece and (after["size"] != initial_size
+                                   or self.bytes_read != initial_size):
+                reason = "source_changed"
                 return
             current_volume = api.info(root_handles[0])
             api.check_acl(root_handles[0], self.user_sid, "ancestor")
@@ -1822,12 +1904,14 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
             try:
                 named_info = api.info(named)
                 api.check_acl(named, self.user_sid, "ancestor")
-                if _windows_stable_info(named_info) != _windows_stable_info(before):
+                if (named_info["identity"] != before["identity"]
+                        or named_info["size"] < initial_size):
                     reason = "source_changed"
                     return
             finally:
                 api.close(named)
-            reason = None
+            if reason != "partial_tail":
+                reason = None
         except Unavailable as exc:
             reason = exc.reason
         except (OSError, ValueError, TypeError, AttributeError, OverflowError):
@@ -1838,6 +1922,84 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
             for handle in reversed(handles):
                 api.close(handle)
             self.terminal_reason = reason
+
+    def _capture_windows_final(self, handle):
+        """Record the open file's closing identity for the scan's identity check."""
+        after = self.api.info(handle)
+        self.api.check_acl(handle, self.user_sid, "ancestor")
+        if (self.open_identity is not None
+                and ((after["identity"][0], after["identity"][1]) != (
+                    self.open_identity["dev"], self.open_identity["ino"])
+                    or after["size"] < self.open_identity["size"])):
+            raise Unavailable("source_changed")
+        self.final_identity = {
+            "dev": after["identity"][0], "ino": after["identity"][1],
+            "size": after["size"], "mtime_ns": after["mtime_ns"],
+            "ctime_ns": after["ctime_ns"],
+        }
+        return after
+
+    def _windows_read_at(self, handle, offset, size):
+        """Read exactly `size` bytes at `offset`, charging them to this stream."""
+        self.api.seek_to(handle, offset)
+        output = bytearray()
+        while len(output) < size:
+            amount = min(64 * 1024, size - len(output))
+            buffer = self.api.C.create_string_buffer(amount)
+            received = self.api.W.DWORD()
+            if not self.api.kernel.ReadFile(
+                    handle, buffer, amount, self.api.C.byref(received), None):
+                raise Unavailable("source_read_unavailable")
+            count = int(received.value)
+            if count <= 0 or count > amount:
+                raise Unavailable("source_read_unavailable")
+            self.bytes_read += count
+            output.extend(buffer.raw[:count])
+        return bytes(output)
+
+    def _windows_tail(self, handle, size):
+        """Find and hash the final complete line without yielding source bytes."""
+        position, scanned, newline, base, block = size, 0, -1, size, b""
+        while position > 0 and scanned < MAX_LINE + 1:
+            want = min(64 * 1024, position, MAX_LINE + 1 - scanned)
+            position -= want
+            block = self._windows_read_at(handle, position, want)
+            scanned += want
+            found = block.rfind(b"\n")
+            if found >= 0:
+                newline = position + found
+                base = position
+                block = block[:found + 1]
+                break
+        if self.bytes_read > self.budget:
+            return None, None, "source_budget_exceeded"
+        if newline < 0:
+            if scanned > MAX_LINE:
+                return None, None, "source_budget_exceeded"
+            return 0, None, None
+        line = block
+        while True:
+            earlier = line.rfind(b"\n", 0, len(line) - 1)
+            if earlier >= 0:
+                line = line[earlier + 1:]
+                break
+            if base == 0:
+                break
+            want = min(64 * 1024, base, MAX_LINE + 1 - len(line))
+            if want <= 0:
+                return None, None, "source_budget_exceeded"
+            base -= want
+            more = self._windows_read_at(handle, base, want)
+            if self.bytes_read > self.budget:
+                return None, None, "source_budget_exceeded"
+            earlier = more.rfind(b"\n")
+            if earlier >= 0:
+                line = more[earlier + 1:] + line
+                break
+            line = more + line
+        if len(line) > MAX_LINE:
+            return None, None, "source_budget_exceeded"
+        return newline + 1, hashlib.sha256(line).hexdigest(), None
 
 
 def _iter_approved_lines(root, relative, budget=MAX_BATCH_BYTES, *,
@@ -3779,14 +3941,16 @@ def _check_stream_identity(stream, enumerated):
         raise Unavailable
 
 
-def _start_bookmark(source, relative, enumerated, file_key):
+def _start_bookmark(source, relative, enumerated, file_key, *,
+                    windows_api=None, windows_user_sid=None):
     """Where a log ends now: its last complete line, and the source owner.
 
     Nothing before the returned offset is ever counted. Returns the cursor and
     the bytes read.
     """
-    tail = _iter_approved_lines(source["root"], relative, 2 * MAX_LINE + 2,
-                                piece=True, tail=True)
+    tail = _iter_approved_lines(
+        source["root"], relative, 2 * MAX_LINE + 2, piece=True, tail=True,
+        windows_api=windows_api, windows_user_sid=windows_user_sid)
     for _unused in tail:
         pass
     if tail.terminal_reason is not None:
@@ -3795,9 +3959,12 @@ def _start_bookmark(source, relative, enumerated, file_key):
     owner_key = None
     used = tail.bytes_read
     if source["tool"] == "codex":
-        first = _iter_approved_lines(source["root"], relative, MAX_LINE + 1,
-                                     piece=True, max_lines=1)
-        owner_key = read_records("codex", first)["source_owner_key"]
+        first = _iter_approved_lines(
+            source["root"], relative, MAX_LINE + 1, piece=True, max_lines=1,
+            windows_api=windows_api, windows_user_sid=windows_user_sid)
+        owner_key = read_records(
+            "codex", first, windows_api=windows_api,
+            windows_user_sid=windows_user_sid)["source_owner_key"]
         if first.terminal_reason is not None:
             raise Unavailable(first.terminal_reason)
         _check_stream_identity(first, enumerated)
@@ -3852,7 +4019,8 @@ def _piece_cursor(source, file_key, stream, old, resumed, *, whole_log=False,
     }
 
 
-def _read_codex_log(source, relative, config, budget, *, resume=None):
+def _read_codex_log(source, relative, config, budget, *, resume=None,
+                    windows_api=None, windows_user_sid=None):
     """Read one whole-log source from byte 0, or do not count it (plan D6, D12).
 
     With `resume` the stream checks the saved bookmark on the way through.
@@ -3860,9 +4028,11 @@ def _read_codex_log(source, relative, config, budget, *, resume=None):
     """
     stream = _iter_approved_lines(
         source["root"], relative, budget, piece=True, max_lines=MAX_REREAD_LINES,
-        resume=resume, reread=resume is not None)
+        resume=resume, reread=resume is not None,
+        windows_api=windows_api, windows_user_sid=windows_user_sid)
     batch = read_records("codex", stream, config=config,
-                         source_aliases=[source["alias"]], source_root=source["root"])
+                         source_aliases=[source["alias"]], source_root=source["root"],
+                         windows_api=windows_api, windows_user_sid=windows_user_sid)
     return stream, batch
 
 
@@ -4017,52 +4187,15 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                     if old is not None:
                         cursors[file_key] = dict(old)
                     continue
-                if (old is None and not windows
+                if (old is None
                         and (source["alias"] not in had_start
                              or enumerated["mtime_ns"] < started_ns)):
                     cursors[file_key], used = _start_bookmark(
-                        source, relative, enumerated, file_key)
+                        source, relative, enumerated, file_key,
+                        windows_api=windows_api, windows_user_sid=windows_user_sid)
                     total_bytes += used
                     continue
-                if windows:
-                    if enumerated["size"] > remaining:
-                        reasons.add("catching_up")
-                        if old is not None:
-                            cursors[file_key] = dict(old)
-                        continue
-                    stream = _iter_approved_lines(
-                        source["root"], relative, windows_api=windows_api,
-                        windows_user_sid=windows_user_sid)
-                    batch = read_records(source["tool"], stream, config=config,
-                                         source_aliases=[source["alias"]],
-                                         source_root=source["root"],
-                                         windows_api=windows_api,
-                                         windows_user_sid=windows_user_sid)
-                    total_bytes += stream.bytes_read
-                    if stream.terminal_reason == "partial_tail":
-                        reasons.add("partial_tail")
-                        if old is not None:
-                            cursors[file_key] = dict(old)
-                        continue
-                    if stream.terminal_reason is not None:
-                        raise Unavailable(stream.terminal_reason)
-                    _check_stream_identity(stream, enumerated)
-                    cursors[file_key] = {
-                        "source_alias": source["alias"], "file_key": file_key,
-                        "dev": stream.final_identity["dev"],
-                        "ino": stream.final_identity["ino"],
-                        "generation": 1 if old is None else old["generation"] + 1,
-                        "offset": stream.end_offset,
-                        "line": stream.complete_lines,
-                        "size": stream.final_identity["size"],
-                        "mtime_ns": stream.final_identity["mtime_ns"],
-                        "ctime_ns": stream.final_identity["ctime_ns"],
-                        "digest": stream.tail_digest,
-                        "owner_key": (batch["source_owner_key"]
-                                      if source["tool"] == "codex" else None),
-                    }
-                    resumed = False
-                elif source["tool"] == "codex":
+                if source["tool"] == "codex":
                     # Whole or not at all: a log over a limit is skipped for good
                     # (source_too_large); one the rest of the run cannot pay for waits.
                     if enumerated["size"] > min(MAX_REREAD_BYTES, MAX_RUN_READ_BYTES):
@@ -4082,7 +4215,8 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                     while True:
                         budget = min(MAX_REREAD_BYTES, MAX_RUN_READ_BYTES - total_bytes)
                         stream, batch = _read_codex_log(
-                            source, relative, config, budget, resume=resume)
+                            source, relative, config, budget, resume=resume,
+                            windows_api=windows_api, windows_user_sid=windows_user_sid)
                         total_bytes += stream.bytes_read
                         if stream.terminal_reason is not None:
                             raise Unavailable(stream.terminal_reason)
@@ -4121,10 +4255,13 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                         stream = _iter_approved_lines(
                             source["root"], relative,
                             min(MAX_BATCH_BYTES, MAX_RUN_READ_BYTES - total_bytes),
-                            piece=True, resume=resume)
+                            piece=True, resume=resume, windows_api=windows_api,
+                            windows_user_sid=windows_user_sid)
                         batch = read_records(source["tool"], stream, config=config,
                                              source_aliases=[source["alias"]],
-                                             source_root=source["root"])
+                                             source_root=source["root"],
+                                             windows_api=windows_api,
+                                             windows_user_sid=windows_user_sid)
                         total_bytes += stream.bytes_read
                         if stream.terminal_reason is not None:
                             raise Unavailable(stream.terminal_reason)
