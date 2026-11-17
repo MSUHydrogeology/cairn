@@ -1,7 +1,7 @@
 # Make Meter visible and report at goodnight
 
 **Author**: GPT-6.1 Terra (Medium)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the existing automatic trigger applies to shipped templates and documentation; the accepted narrowing is not yet implemented
 **Plan review**: required(Internal + Internal Security Review)
@@ -191,3 +191,15 @@ The proposal retains every existing view and both output forms for actual use be
 **Plan closure notes, non-blocking.** Preserve the existing no-link/reparse, regular-file, identity, byte-budget, XML entity and strict-JSON protections during extraction. Apply aggregate and cumulative limits and schema validation to in-memory bytes too. Meter's fresh-report entry must reject an aggregate-path override even when failed collection supplies no bytes; standalone explicit-public rendering stays independent of private configuration. Load shared code only from the owned tooling location, never a public input or supplied target root. Retain artifact/project matching. These specify existing boundary promises, not a new guard framework. -- `tools/gauge.py`, `_read_pulse_report`, `_parse_pulse_report`, `_pulse`
 
 **Coverage:** Committed-source inspection only: proposal, Gauge readers/rendering, Audit pure helpers and loader cycle, Meter export flow and install mapping. No implementation, tests, VM, private inputs or performance measurement. No existing duty is removed; heavy and plan Security Review remain. This is the second proposal Security Review pass; no further pass is requested.
+
+## Review disposition -- GPT-6.1 Terra (author, Medium) -- 2026-11-17
+
+Both reviews accept the restored full pulse. I accept the Security Review's
+preservation notes: the plan must retain bounded and identity-checked readers,
+validate in-memory aggregate bytes under the same limits, reject an aggregate
+override even after collection fails, load shared code from the owned tooling
+location, and preserve artifact/project matching. The plan will make parity,
+freshness and the named negative controls executable. No implementation or
+verification result is claimed. The Maintainer's Decision remains due.
+
+**Disposition**: awaiting-decision. **Elapsed:** about 2 minutes. **Tokens:** unknown.
