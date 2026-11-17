@@ -69,7 +69,9 @@ from bootstrap._scaffold.config import (  # noqa: E402
 )
 from bootstrap._scaffold.lockfile import _LOCKFILE_REL, _emit_lock_yaml  # noqa: E402
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 
 pytestmark = pytest.mark.skipif(

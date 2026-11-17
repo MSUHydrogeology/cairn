@@ -70,7 +70,9 @@ from bootstrap._scaffold import install as INS  # noqa: E402
 from bootstrap._scaffold.config import InstallSpec  # noqa: E402
 from bootstrap._scaffold.lockfile import read_lockfile  # noqa: E402
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 _PKG = CAIRN_ROOT / "bootstrap" / "_scaffold"
 
 #: The one shipped module carrying `cairn:merge-target` directives, and the

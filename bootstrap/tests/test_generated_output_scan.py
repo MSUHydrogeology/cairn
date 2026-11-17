@@ -28,7 +28,9 @@ from pathlib import Path
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 sys.path.insert(0, str(CAIRN_ROOT))
 # content_scan is single-sourced as the content-security module script.

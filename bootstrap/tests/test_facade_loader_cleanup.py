@@ -23,7 +23,9 @@ from pathlib import Path
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 
 FACADES = [
     ("templates/modules/team-gated/intent.py", "tools._intent"),

@@ -48,7 +48,9 @@ from bootstrap.scaffold import (  # noqa: E402
     expand_preset,
 )
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 PROFILES_DIR = CAIRN_ROOT / "bootstrap" / "profiles"
 SCAFFOLD = CAIRN_ROOT / "bootstrap" / "scaffold.py"
 

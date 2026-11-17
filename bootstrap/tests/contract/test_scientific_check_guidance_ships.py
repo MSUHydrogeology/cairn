@@ -10,7 +10,9 @@ from pathlib import Path
 from bootstrap import scaffold
 
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__)).parent
 _PLAN_TEMPLATES = (
     "dev/plans/_template.md",
     "templates/core/dev/plans/_template.md",

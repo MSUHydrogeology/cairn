@@ -33,7 +33,9 @@ import pytest
 
 from bootstrap.tests import _oracle as O
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 
 # --- teeth: the diff engine must not be vacuous --------------------------------
 

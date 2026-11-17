@@ -40,7 +40,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-CAIRN_ROOT = Path(__file__).resolve().parents[2]
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 CONFTEST = CAIRN_ROOT / "bootstrap" / "tests" / "conftest.py"
 
 #: Kept in step with the conftest by ``test_the_threshold_constant_is_shared``

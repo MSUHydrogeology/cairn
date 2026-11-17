@@ -28,7 +28,9 @@ from types import SimpleNamespace
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[3]
+from bootstrap.tests._repo_root import repository_root
+
+ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(ROOT))
 from bootstrap.scaffold import main as scaffold_main  # noqa: E402
 METER = ROOT / "tools/meter.py"

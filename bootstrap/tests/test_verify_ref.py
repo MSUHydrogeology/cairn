@@ -47,7 +47,9 @@ from pathlib import Path
 
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+from bootstrap.tests._repo_root import repository_root
+
+REPO_ROOT = repository_root(Path(__file__))
 SCRIPT = REPO_ROOT / "bootstrap" / "container" / "verify-ref.sh"
 ACCEPTANCE = REPO_ROOT / "bootstrap" / "container" / "acceptance.sh"
 PROVENANCE_MD = REPO_ROOT / "bootstrap" / "PROVENANCE.md"

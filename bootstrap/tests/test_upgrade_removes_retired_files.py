@@ -36,7 +36,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from bootstrap import scaffold as s  # noqa: E402
 from bootstrap._scaffold import config as C  # noqa: E402
 
-ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+ROOT = repository_root(Path(__file__))
 EMPTY_FILE_DIGEST = hashlib.sha256(b"").hexdigest()
 HEX64 = re.compile(r"[0-9a-f]{64}")
 HEX40 = re.compile(r"[0-9a-f]{40}")

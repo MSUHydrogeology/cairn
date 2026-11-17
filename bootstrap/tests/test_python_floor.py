@@ -48,7 +48,9 @@ import pytest
 # Paths
 # ---------------------------------------------------------------------------
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 ENGINE_DIR = CAIRN_ROOT / "bootstrap" / "_scaffold"
 
 # The declared supported minimum floor — >=3.11: the earliest non-EOL Python

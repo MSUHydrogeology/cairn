@@ -31,7 +31,9 @@ from pathlib import Path
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parents[2]
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 KERNEL = CAIRN_ROOT / "tools" / "session.py"
 _CONTENT_SCAN = CAIRN_ROOT / "scripts" / "content_scan.py"
 TWIN = CAIRN_ROOT / "templates" / "skills" / "_lib" / "session.py"

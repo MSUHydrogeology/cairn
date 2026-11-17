@@ -35,7 +35,9 @@ from tests.test_verify_counts import (
     _BINDING_MUTATIONS,
 )
 
-CAIRN_ROOT = Path(__file__).resolve().parents[2]
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 
 
 def _load(name: str):

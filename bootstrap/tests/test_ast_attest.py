@@ -24,7 +24,9 @@ from bootstrap.tests import _ast_attest as A
 # Post-0B the engine monolith lives in the private package's __init__; the
 # attestation reference re-pins here (the launcher bootstrap/scaffold.py is not
 # the engine). Stages 1-8 extract submodules from this file.
-_REPO = Path(__file__).resolve().parents[2]
+from bootstrap.tests._repo_root import repository_root
+
+_REPO = repository_root(Path(__file__))
 _SCAFFOLD = _REPO / "bootstrap" / "_scaffold" / "__init__.py"
 _BASELINE = _REPO / "bootstrap" / "tests" / "fixtures" / "scaffold_ast_baseline.json"
 _KNOWN_NEW = _REPO / "bootstrap" / "tests" / "fixtures" / "scaffold_ast_known_new.json"

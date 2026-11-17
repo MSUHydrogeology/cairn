@@ -31,7 +31,9 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[3]
+from bootstrap.tests._repo_root import repository_root
+
+ROOT = repository_root(Path(__file__))
 TEAM = ROOT / "templates" / "modules" / "team-gated"
 INSTALLED_HELPER = ROOT / "tools" / "git_read.py"
 SOURCE_HELPER = ROOT / "templates" / "skills" / "_lib" / "git_read.py"

@@ -38,7 +38,9 @@ from bootstrap.tests.test_security_net import (  # noqa: E402
     wait_for,
 )
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+from bootstrap.tests._repo_root import repository_root
+
+REPO_ROOT = repository_root(Path(__file__))
 TEMPLATE_DIR = REPO_ROOT / "templates" / "modules" / "team-gated"
 FACADE_SRC = TEMPLATE_DIR / "api_access_security.py"
 STUB_SRC = TEMPLATE_DIR / "api_access_policy_stub.json"

@@ -66,7 +66,9 @@ from typing import NamedTuple
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
 
 from bootstrap.scaffold import ScaffoldSecurityError  # noqa: E402  (the facade loads the engine)

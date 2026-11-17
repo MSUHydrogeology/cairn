@@ -19,7 +19,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 SKILL = CAIRN_ROOT / "templates" / "skills" / "session-start" / "SKILL.md"
 
 

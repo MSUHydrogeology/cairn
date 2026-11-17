@@ -24,7 +24,9 @@ from pathlib import Path
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 
 #: The shipped copy is the load-bearing one (adopters receive it). Cairn's own
 #: copy keeps Cairn bound by what it ships.

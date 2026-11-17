@@ -36,7 +36,9 @@ def _git(repo: Path, *args: str) -> str:
     return r.stdout.strip()
 
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 
 
 def _install(target: Path, cairn_root: Path) -> None:

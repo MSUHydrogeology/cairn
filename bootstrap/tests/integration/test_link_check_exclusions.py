@@ -47,7 +47,9 @@ from types import ModuleType
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__)).parent
 MODULE_PATH = CAIRN_ROOT / "templates" / "modules" / "team-gated" / "link_check.py"
 sys.path.insert(0, str(CAIRN_ROOT))
 sys.path.insert(0, str(CAIRN_ROOT / 'scripts'))

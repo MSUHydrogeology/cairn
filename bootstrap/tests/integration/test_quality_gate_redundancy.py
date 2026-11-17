@@ -35,7 +35,9 @@ from types import ModuleType
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__)).parent
 QG_SRC = CAIRN_ROOT / "scripts" / "quality_gate.py"
 
 pytestmark = pytest.mark.skipif(

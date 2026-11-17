@@ -38,7 +38,9 @@ import pytest
 from bootstrap.tests import _gate_preflight as P
 from bootstrap.tests.test_repin import a_copy_of_this_interpreter
 
-_REPO = Path(__file__).resolve().parents[2]
+from bootstrap.tests._repo_root import repository_root
+
+_REPO = repository_root(Path(__file__))
 _ARTIFACT = _REPO / "bootstrap/reanchor.sh"
 _EXAMPLE = _REPO / "bootstrap/reanchor-values.example"
 

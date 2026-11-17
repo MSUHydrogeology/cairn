@@ -18,7 +18,9 @@ from pathlib import Path
 from types import ModuleType
 
 
-ROOT = Path(__file__).resolve().parents[3]
+from bootstrap.tests._repo_root import repository_root
+
+ROOT = repository_root(Path(__file__))
 QUALITY_GATE = ROOT / "scripts" / "quality_gate.py"
 TESTING_MODULES = (
     ROOT / "dev" / "modules" / "testing-discipline.md",

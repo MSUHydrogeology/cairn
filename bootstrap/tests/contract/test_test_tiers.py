@@ -39,7 +39,9 @@ from tests.test_verify_counts import (
     _BINDING_MUTATIONS,
 )
 
-ROOT = Path(__file__).resolve().parents[3]
+from bootstrap.tests._repo_root import repository_root
+
+ROOT = repository_root(Path(__file__))
 _spec = importlib.util.spec_from_file_location("_test_tiers_tool", ROOT / "tools" / "test_tiers.py")
 tiers_tool = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(tiers_tool)

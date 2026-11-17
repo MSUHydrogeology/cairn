@@ -63,7 +63,9 @@ from bootstrap._scaffold.config import (  # noqa: E402
 )
 from bootstrap._scaffold.lockfile import read_lockfile  # noqa: E402
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 MODULE = "portable-security-sweeps"
 
 RUNNER_SRC = CAIRN_ROOT / "templates/modules/team-gated/run_portable_security_sweeps.py"

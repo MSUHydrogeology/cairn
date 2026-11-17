@@ -42,7 +42,9 @@ from types import ModuleType
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 MODULE_PATH = CAIRN_ROOT / "templates" / "skills" / "_lib" / "session.py"
 sys.path.insert(0, str(CAIRN_ROOT))
 from bootstrap.scaffold import main as scaffold_main  # noqa: E402

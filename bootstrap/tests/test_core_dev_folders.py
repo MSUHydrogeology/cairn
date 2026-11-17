@@ -28,7 +28,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from bootstrap import scaffold as s  # noqa: E402
 from bootstrap import verify_integrity  # noqa: E402
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 
 pytestmark = pytest.mark.skipif(

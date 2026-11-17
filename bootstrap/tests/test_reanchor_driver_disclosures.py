@@ -38,7 +38,9 @@ from pathlib import Path
 
 import pytest
 
-_REPO = Path(__file__).resolve().parents[2]
+from bootstrap.tests._repo_root import repository_root
+
+_REPO = repository_root(Path(__file__))
 _DRIVER_PATH = _REPO / "scripts" / "reanchor_ceremony.py"
 _TEMPLATE_REL = "bootstrap/reanchor-launcher.template.sh"
 _SLOT = "@PACKET_SHA256@"

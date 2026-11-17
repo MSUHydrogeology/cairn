@@ -26,7 +26,9 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[3]
+from bootstrap.tests._repo_root import repository_root
+
+ROOT = repository_root(Path(__file__))
 TEMPLATE = ROOT / "templates" / "modules" / "team-gated"
 GIT_HELPER = ROOT / "tools" / "git_read.py"
 GIT_SHA = hashlib.sha256(GIT_HELPER.read_bytes()).hexdigest()

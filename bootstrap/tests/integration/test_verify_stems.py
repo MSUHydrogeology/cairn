@@ -43,7 +43,9 @@ from types import ModuleType
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__)).parent
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 _DEFAULT_ON = TEMPLATES_ROOT / "modules" / "default-on"
 VERIFY_STEMS_SRC = _DEFAULT_ON / "verify_stems.py"

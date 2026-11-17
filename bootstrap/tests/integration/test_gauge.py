@@ -30,7 +30,9 @@ from tests.test_verify_counts import (
     _BINDING_MUTATIONS,
 )
 
-ROOT = Path(__file__).resolve().parents[3]
+from bootstrap.tests._repo_root import repository_root
+
+ROOT = repository_root(Path(__file__))
 GAUGE = ROOT / "tools" / "gauge.py"
 PULSE = ROOT / "tools" / "pulse.py"
 

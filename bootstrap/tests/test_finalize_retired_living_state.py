@@ -36,7 +36,9 @@ from bootstrap import scaffold as s  # noqa: E402
 from bootstrap._scaffold import config as C  # noqa: E402
 from bootstrap.verify_integrity import verify  # noqa: E402
 
-ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+ROOT = repository_root(Path(__file__))
 LOCK_REL = "dev/.cairn/cairn-lock.yml"
 LEDGER = "dev/.cairn/cairn_foldback.md"
 ROWS = {row[1]: row for row in C._RETIRED_INSTALLS}

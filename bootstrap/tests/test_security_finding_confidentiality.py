@@ -97,7 +97,9 @@ from bootstrap.tests.test_security_net import (  # noqa: E402
     tls_server_context,
 )
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+from bootstrap.tests._repo_root import repository_root
+
+REPO_ROOT = repository_root(Path(__file__))
 TEMPLATE_DIR = REPO_ROOT / "templates" / "modules" / "team-gated"
 
 API_FACADE_SRC = TEMPLATE_DIR / "api_access_security.py"

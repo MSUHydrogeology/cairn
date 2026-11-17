@@ -49,7 +49,9 @@ from bootstrap._scaffold.install import (  # noqa: E402
 )
 from bootstrap.verify_integrity import verify  # noqa: E402
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+from bootstrap.tests._repo_root import repository_root
+
+CAIRN_ROOT = repository_root(Path(__file__))
 
 _CAPABILITY_MODULES = ("api-access-security", "web-hosting-security")
 

@@ -23,7 +23,9 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[3]
+from bootstrap.tests._repo_root import repository_root
+
+ROOT = repository_root(Path(__file__))
 SCRIPT = ROOT / "scripts" / "check_release_publication.py"
 sys.path.insert(0, str(ROOT))
 

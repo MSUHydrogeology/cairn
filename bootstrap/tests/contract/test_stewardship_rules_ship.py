@@ -10,7 +10,9 @@ import subprocess
 import sys
 
 
-ROOT = Path(__file__).resolve().parents[3]
+from bootstrap.tests._repo_root import repository_root
+
+ROOT = repository_root(Path(__file__))
 
 
 def test_small_fix_rule_and_capture_pointer_reach_install(tmp_path: Path) -> None:
