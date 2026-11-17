@@ -145,3 +145,25 @@ The Maintainer rejected the usage-only reduction in chat:
 > It would presumably get used by our status monitoring website in v0.9 too
 
 The operative proposal restores all pulse views, text and schema through a shared shipped module. The earlier usage-only scope delta is withdrawn. This direction selects the broader alternative for review; it is not acceptance of the revised proposal. The changed module and input boundary return for review. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Review -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-17
+
+```
+Reviewed commit: 18e7707db8ebb493962cf530d46a4497897a103a
+```
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: about 3 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the shared module delivers the full pulse the Maintainer chose, including its text and JSON, to adopters. -- Proposal items 2–3; Maintainer scope direction
+2. **Best alternative.** Shipping all Gauge retains the pulse but also installs its Cairn-specific classifier; extraction reuses the pulse while avoiding that extra surface. -- `tools/gauge.py`; Proposal item 2
+3. **What would show it wrong?** A fresh install or upgrade loses a pulse field, uses an old or other-project aggregate, or fails to report at reflection-only goodnight. -- Evidence / verification plan
+
+The proposal now names the module, mapping, approximate moved code and unmeasured recurring cost; it keeps the locked handoff refresh and states that two may run. The offer requires consent, records refusal only with permission and permits a requested re-offer. The shared record is available to the future website without authorizing website work. The plan must make the stated parity and freshness checks executable; no results are claimed here.
+
+**Coverage:** Read the revised proposal and its prior reviews against the existing Meter, Gauge, install mapping and session guidance examined in the first pass. No tests, VM, private inputs, performance measurement or Security Review. No existing duty is proposed for removal.
