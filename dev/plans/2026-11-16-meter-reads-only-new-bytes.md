@@ -392,3 +392,11 @@ suite or native selection was repeated.
 
 **Elapsed:** 13.16 seconds for the two refreshes; coordination unknown.
 **Tokens:** unknown.
+
+## Code review cross-reference -- GPT-6.1 Terra -- 2026-11-17
+
+The combined ordinary review of the Meter runtime and full Pulse rollout is in
+[the full Pulse plan](2026-11-17-full-pulse-rollout.md) at reviewed commit
+`f9cca5f399a836754fa19671a487429bf70cfc1c`. It records the evidence, one cheap
+session-guidance finding, and remaining native and joined verification. Elapsed
+and tokens: unknown.

@@ -392,3 +392,26 @@ The named `test_meter_offer_and_goodnight_public` automated node was not run or
 created. Independent scenario review, C2 native report evidence, the final code
 and Security Reviews, and C4 joined integration remain due. **Elapsed**:
 unknown. **Tokens**: unknown.
+
+## Code review -- GPT-6.1 Terra (ordinary Reviewer, Medium) -- 2026-11-17
+
+```
+Reviewed commit: f9cca5f399a836754fa19671a487429bf70cfc1c
+Range: c2b54fda^..f9cca5f3, Meter/Gauge runtime and full Pulse rollout paths
+```
+
+**Findings**: raised (one non-blocking, cheap). **Verdict**: REVISE for the cheap follow-up.
+
+The strongest case is a bounded forward-only Meter whose fresh, approved project export supplies the existing complete Pulse without a stale fallback.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, subject to the duplicate offer below: published bytes come from the committed candidate after export and revalidation; partial and failed reports suppress usage. -- `tools/meter.py`, `_refresh_ledger`, `main`; C2 public controls
+2. **Best alternative.** Reuse the shared Pulse and the maximum-end overlap sweep; it preserves the output contract and existing work ceiling without pairwise overlap work. -- `tools/pulse.py`, `_wait_artifact_map`; C1 parity and C2 oracle evidence
+3. **What would show it wrong?** A fresh installed or upgraded report showing stale usage, changed text or attribution, or an unauthorized offer would falsify the promise; native report and joined install/upgrade checks remain due. -- C4 verification
+
+**Finding (non-blocking, cheap).** Step 3 of session-start runs the custom Session start routine, which offers Meter, and the later optional offer independently directs the same offer. A person declining without remembrance leaves both predicates true, so the same start can offer twice. Reuse the first offer result or explicitly limit the offer to once; retain refusal and requested-reoffer behavior. -- `templates/skills/session-start/SKILL.md`; `dev/rules/custom_session_routines.md`
+
+**Scenarios.** Attended/no consent: disclose roots, projects, ledger, exports and cost; only a clear yes permits approved configuration, with no pre-consent log read. Decline: remember only with permission; reoffer on request. Unattended: no offer, private read or config write. Reflection-only and full handoff: record sanitized Pulse or closed status; full handoff retains the separate locked refresh. A deliberately wrong instruction to collect before consent during unattended start contradicts both explicit prohibitions and is caught. These are instruction scenarios, not proof of future agent compliance.
+
+**Evidence and limits.** Read committed source and scoped records; did not rerun implementation tests. C1 recorded eight focused public checks; C2 recorded ten and a temporary overlap oracle, plus successful live refresh timing. Runtime mutants were reported to fail their three controls. Native report, joined installed/upgrade checks and final security review remain due. No rule loss found; test review found no clear cheap deletion that preserves named guards. Excludes unrelated Git-helper and ceremony repairs and private data. Elapsed and tokens: unknown. Over target to preserve the required scenario evidence.
