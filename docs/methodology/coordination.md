@@ -395,3 +395,24 @@ The removed Cairn-specific summary phrase was:
 The removed bibliographic explanation was:
 
 > “for the pointer Cairn relies on rather than re-teaching.”
+
+
+## Cairn team roster
+
+Cairn is built by the **Human Maintainer** and one or more **AI agents**.
+The Maintainer holds the project's direction, its priorities, and final
+decision authority. Agents propose, review, implement, and advise; they do
+not make the Decision.
+
+* **Human Maintainer — Anthony Kendall** (MSU Hydrogeology). Holds
+  product direction, priorities, and final Decision authority. The sole
+  human contributor (the human-team axis is `solo`).
+* **Agent contributors — a concurrent, multi-type roster.** More than
+  one agent *type* works the tree. Agents propose, review, implement, and
+  advise; they do not make the Decision. Specific agent types and models
+  are named in the deliberation record (each Review / Response names its
+  reviewer for attribution) and mapped to capability tiers in
+  `dev/.cairn/model-selection-mapping.yml` — not pinned in this
+  vendor-neutral file, so the roster can evolve without amending it.
+
+Refreshed when the team changes.

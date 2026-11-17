@@ -116,3 +116,51 @@ That is
 what makes the method model-agnostic: sessions coordinate through the record,
 not through shared memory, so a project can mix or swap AI vendors without
 changing anything.
+
+
+## Collaboration guide background (continued)
+
+### Author relation
+
+its author, who is typically the stronger party on the software.
+
+### Review record
+
+It is asynchronous and commit-mediated: not a conversation that
+leaves no record.
+
+### Steelman first
+
+A review that opens with
+findings reads as a verdict, and an author defends rather than thinks.
+
+### Review confidence
+
+a reviewer who reads to confirm that the change works will find that
+it does.
+
+### Review sweep examples
+
+("exists / works / is available / is atomic / fails closed")
+
+(empty /
+   None / zero / single / N≫1 / mismatched units or CRS)
+
+### Coverage gap
+
+A covered-only line manufactures false comfort.
+
+### Decision choices
+
+A menu of five options with no recommendation moves
+the work to the Maintainer rather than unblocking it.
+
+### Durable handoff
+
+A tool's
+private memory is not shared with another agent type or with a human reviewer.
+
+### Session reflection
+
+a lesson that stays only in
+a reflection is a lesson that expires.
