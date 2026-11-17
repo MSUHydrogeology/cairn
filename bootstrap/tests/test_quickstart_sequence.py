@@ -181,6 +181,7 @@ class TestLayerAStepsOneThroughThree:
             "dev/modules/claim-check.md",
             "scripts/claim_check.py",
             "dev/.cairn/cairn-lock.yml",
+            ".gitattributes",
             "CHANGELOG.md",
         ]
         for relative in expected_paths:
@@ -250,6 +251,9 @@ class TestLayerAStepsOneThroughThree:
         ).stdout.splitlines()
         assert "CHANGELOG.md" in committed_paths, (
             "quickstart's documented install commit must include CHANGELOG.md"
+        )
+        assert ".gitattributes" in committed_paths, (
+            "quickstart's documented install commit must include .gitattributes"
         )
 
 

@@ -326,6 +326,10 @@ The script:
   select — e.g. `CONTRIBUTING.md` at human-team `small-multi` /
   `large-multi` (I-5 step 4) — and surfaces them for recording under
   `optional_templates:` in the fidelity manifest.
+* Installs a root `.gitattributes` that stores and checks out text files with
+  LF on every machine (`.bat` and `.cmd` keep CRLF). It never replaces an
+  existing `.gitattributes`, even with `--force`; it prints the recommended
+  lines to merge by hand (II-2b).
 * Substitutes all inline `{{placeholder}}` tokens with the values
   from the profile config.
 * Writes a post-scaffold report listing every installed file and
@@ -367,6 +371,8 @@ python <path/to/cairn>/bootstrap/scaffold.py \
 Before running `--force` against an already-customized target,
 commit your current state so git records what the overwrite would
 discard.
+
+`--force` never overwrites an existing `.gitattributes`; that file is yours.
 
 **Manual module copy.** Copying module files by hand does not update the
 installed inventory or lockfile. After copying, run
@@ -433,6 +439,32 @@ adoption into two phases:
   failure surfaces stay separated.
 
 A project with no existing documentation build runs only Phase 1.
+
+### II-2b Line endings in an existing repository
+
+> **A new repository with no history skips this step.** The installed
+> `.gitattributes` is already right for it.
+
+The installed `.gitattributes` sets `* text=auto eol=lf`. If the Git index
+already holds CRLF text, Git shows those files as modified until they are
+renormalized. The scaffold counts them (`git ls-files --eol` lists them as
+`i/crlf`) and prints this step when it finds any.
+
+1. Commit `.gitattributes` alone first.
+2. Run `git ls-files --eol` and list the `i/crlf` files. A data or evidence
+   file whose checksum you recorded must stay byte for byte: add `-text` for it
+   to `.gitattributes` first, because renormalizing changes its stored bytes and
+   hash. A Windows tool that needs CRLF (`.sln`, `.reg`) needs an `eol=crlf` line.
+3. With no other work uncommitted, run `git add --renormalize .`, read
+   `git diff --cached --stat`, and commit.
+4. Make a fresh clone; it is the one safe way to refresh every working file.
+   Do not run `git rm --cached -r . && git reset --hard`: it discards
+   uncommitted work.
+
+If you keep your own `.gitattributes`, the scaffold leaves it alone and prints
+Cairn's lines; merge the ones you want by hand. Keep any `eol=crlf` line to
+paths Cairn does not install: Cairn records the hash of the LF bytes, so a CRLF
+checkout of an installed file fails the integrity check.
 
 ### II-3 Select (confirm)
 

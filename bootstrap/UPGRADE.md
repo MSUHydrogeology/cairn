@@ -645,6 +645,27 @@ before applying. Keep the saved history. A destination already tracked under a
 different source, a link, a folder or another ineligible path needs manual
 resolution; collision adoption does not cover those cases.
 
+### If `.gitattributes` meets your own
+
+The core install adds a root `.gitattributes` (line-ending rules; see
+`BOOTSTRAP.md` II-2b). It never replaces an existing one, even with `--force`,
+and records nothing for yours. The first `upgrade --plan` therefore shows it as
+`new-core-blocked`, and `--apply` refuses, until you remove your file and
+re-stage (to take Cairn's) or run the `--adopt-collisions` command that
+`upgrade --stage` prints, once, which keeps yours as a tracked fork. The stop
+repeats on every upgrade until you do. Adoption saves no copy under
+`dev/.cairn/base/` (a live `.gitattributes` there would apply to that folder),
+so a later change to Cairn's file shows as your fork differing from upstream,
+not as a three-way merge. With none of your own, upgrade adds Cairn's; if your
+repository stores CRLF text, follow `BOOTSTRAP.md` II-2b. After
+`upgrade --init-lock` records an existing file as Cairn's, a later change to
+Cairn's file would be applied over it; check the plan before `--apply`.
+
+`verify_integrity.py` does not flag edits to this file, so you can change the
+project-choice lines. A `-diff`, `binary` or `linguist-generated` line can hide a
+file's changes from review, this file's own included: read its changes in Git.
+Cairn's own files stay hash-checked, and no check reads attributes.
+
 ## Adopting a hand-placed module
 
 A module is **opt-in**, so it is never auto-added on upgrade. If you hand-placed
