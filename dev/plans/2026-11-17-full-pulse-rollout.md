@@ -236,3 +236,23 @@ Reviewed commit: dcface9ac6cd501c95e809cff0ebae6f3f99a357
 2. **Blocking -- make accepted controls executable.** As the ordinary finding states, S2 requires failing mutations and S3 requires plan-level commands and input sets; Verification currently defers exact nodes. Supply these for the named boundaries using existing public-entry test homes, without a new framework or broad matrix. -- accepted proposal Security preflight; plan Verification
 
 **Coverage / rule loss:** Inspected Gauge readers/schema/rendering, Audit producer/reducer cycle, both Meter publication paths, receipts, session lock and install mapping. C1–C3 retain limits, identity, strict parsing, matching, owned code loading, override refusal, disabled public rendering, consent and reflection privacy. No rule loss is authorized. The coordinator reports the existing wait-export work guard blocks publication: C2 cannot deliver a fresh report until its output-equivalent bounded repair. This is a prerequisite to the existing contract, not extra scope. No runtime checks, private inputs, Windows execution, parity measurement or cost evidence. The modest word-target overrun records this newly reported prerequisite.
+
+## Focused plan review -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-17
+
+Reviewed commit: 01d58bb95d6af1ce14511d873ac9b3ad6a12edc5
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the revision preserves the accepted fresh full report and replaces Cairn's stale aggregate route. -- C2–C3; `dev/rules/custom_session_routines.md`
+2. **Best alternative.** The bounded sweep repairs the existing export without a new collector or changed ceiling; named public tests and a temporary oracle reuse existing homes. -- C2 and Focused public controls; `tools/meter.py` `_wait_artifact_map`
+3. **What would show it wrong?** A mutation survives its named control, or the sweep disagrees with the pairwise overlap set or changes attribution. -- Focused public controls
+
+The revision names S2 mutations, targeted test nodes and synthetic inputs, including failure after the budget limit. Its sorted maximum-end sweep marks overlapping closed intervals while preserving touching and empty interval behavior; the separately charged candidate loop remains. Existing named Meter regression nodes are present. Functional prose retains consent, no-commit and locked pre-prune duties.
+
+**Coverage:** Focused reread of the revision, accepted S2–S3 and current Meter overlap and candidate loops, plus named existing test nodes. No test execution, Windows run, private data, performance measurement or independent Security Review. Implementation and new tests remain unverified.
