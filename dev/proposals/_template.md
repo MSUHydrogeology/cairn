@@ -130,7 +130,7 @@ committer.
   the pass or in the commit message: the next reviewer and the Maintainer at the
   Decision are the check.
 
-**A high-risk surface takes a Security Review.** `usual + Security Review` in a
+A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review (`dev/agent_collaboration.md` > "Review rules"). A project rule that names its own Security Review still applies. `usual + Security Review` in a
 header means two passes: the usual pass and a Security Review pass that names its
 own obligation. The usual pass never clears the second.
 In a proposal review, `**Tier**: Security Review` names that obligation; the
@@ -347,8 +347,7 @@ End-to-end surfaces a change can exercise:
 
 *Gated to a **security-touching** change: one that adds or widens a
 trust boundary (deserialization, subprocess invocation, parsing, file and path
-handling, network I/O, credentials and environment), or one that touches a
-high-risk surface this project's `AGENTS.md` names. For every other change, one
+handling, network I/O, credentials and environment), or one that alters what a high-risk surface this project's `AGENTS.md` names does or accepts. When in doubt, take the Security Review (`dev/agent_collaboration.md` > "Review rules"). For every other change, one
 line — "N/A: no trust boundary added or widened" — is the correct
 entry.*
 
@@ -470,7 +469,7 @@ checker attests that a path was declared, never that it was right.
 
 <!-- cairn:slot assurance-path-triggers -->
 Cairn's own mandatory high-assurance surfaces, each named in `AGENTS.md` >
-"High-risk surfaces" and each already a Security-Review trigger:
+"High-risk surfaces" and each a Security-Review trigger when a change alters what it does or accepts (when in doubt, take the Security Review; `dev/agent_collaboration.md` > "Review rules"):
 
 * the **scaffold / merge engine** (`bootstrap/scaffold.py` →
   `bootstrap/_scaffold/`) — untrusted module/profile parsing, path handling,
@@ -541,8 +540,7 @@ Record elapsed time and token use for this step; use `unknown` when unavailable.
 
 **Tier**: {{light | standard | heavy}}
 
-Light is the default and requires no plan regardless of implementation size;
-named high-risk or added/widened boundaries require heavy.
+Light is the default and requires no plan regardless of implementation size. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review (`dev/agent_collaboration.md` > "Review rules"). A project rule that names its own Security Review still applies.
 
 **{{ACCEPTED | REJECTED | SUPERSEDED}}.** The Maintainer's authorization,
 quoted **verbatim and visually isolated** (no paraphrase):
