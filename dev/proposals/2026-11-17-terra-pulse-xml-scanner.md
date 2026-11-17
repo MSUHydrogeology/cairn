@@ -1,10 +1,10 @@
 # Classify Pulse's guarded XML scanner finding
 
 **Author**: Terra Medium, proposal author; security design assessed by Sol High
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — changes an existing security-check exception
-**Plan review**: not required(no separate plan: connected Group 2 repair; the coordinator assigns explicit shared ordinary and Security code-review coverage with the release-test changes)
+**Plan review**: required(Internal + Internal Security Review), unless the Maintainer grants the explicit limited exception requested below
 **Opened**: 2026-11-17
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md
 **In brief**: Keep scanning Pulse's report reader, but classify its already-guarded XML call as an accepted scanner finding.
@@ -20,6 +20,9 @@ parser, tool, test or installed file changes.
 The exception covers this scanner rule throughout one file, including a future
 call added there. That is the tradeoff requiring your acceptance. The scanner
 continues reporting it, and the gate rejects an exception whose finding disappears.
+For this one settings entry, I also request permission to use this proposal's
+exact implementation instructions and the ongoing code reviews instead of
+adding a separate plan and plan reviews. Required code reviews and checks stay.
 
 ## Context
 
@@ -48,6 +51,9 @@ change with the existing release-cut baseline wait; it does not block archive.
 The coordinator owns this post-archive repair. The ordinary and Security code
 reviews of the release-test changes must explicitly cover this correction too;
 neither the archived Pulse plan nor its completed reviews are reopened.
+If the Maintainer does not explicitly grant the limited plan exception, open
+a plan with both required plan reviews before implementation. No current plan
+is claimed to have already approved this allowance.
 
 ## Rationale
 
