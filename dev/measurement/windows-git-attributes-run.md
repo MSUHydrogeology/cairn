@@ -1,6 +1,6 @@
 # Windows run of the Git attributes checks, 2026-11-17
 
-Evidence for C5 of `dev/plans/2026-11-16-git-attributes-file.md`. This records
+Evidence for C5 of `dev/plans/archive/2026-11-16-git-attributes-file.md`. This records
 the public install checks and a Windows checkout with
 `core.autocrlf=true`; it is not a release certification.
 

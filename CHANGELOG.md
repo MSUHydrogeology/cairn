@@ -44,6 +44,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 - **Changed: Commit-time claim check warns by default.** If you installed the optional commit check (`python tools/intent.py install-precommit`), it now warns and lets the commit through when another session holds a claim on the same file. To keep refusing, add `"enforce": "block"` to `dev/.cairn/intent-config.json` (older installs: `dev/intent-config.json`); no hook reinstall is needed. ([proposal](dev/proposals/archive/2026-11-16-claude-claims-check-warn-only.md))
 
+- **Changed: Security review trigger.** A Security Review is required when a change alters what a named high-risk surface does or accepts, or adds a place where outside input enters the system; merely touching the surface does not trigger one. Only the Maintainer may lower a tier, and doubt or stricter project rules still route to review. ([plan](dev/plans/archive/2026-11-16-heavy-tier-trigger.md))
+
 ### Minor changes
 
 - **Changed** — On the official-release route, the installer's closing checklist now tells you to run `verify_integrity.py` before editing any file, and the release guides document Git Bash as the tested Windows shell, with a recorded run of both release routes on Windows. ([proposal](dev/proposals/archive/2026-11-16-claude-release-route-documentation.md))
@@ -55,6 +57,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Fixed** — On Windows, the commit hook can now read the staged file list, and a failure of the safe Git reader names which stage failed instead of "worker-incomplete". ([proposal](dev/proposals/archive/2026-11-16-claude-adopter-defects-0-7-0.md))
 - **Fixed** — The link check no longer reports an absent optional file and refuses a link that points to a Windows network or drive path. Session start finds a lowercase handoff commit and prints one line break for Windows line endings. ([proposal](dev/proposals/archive/2026-11-16-claude-adopter-defects-0-7-0.md))
 - **Fixed** — Installed module documents now pass the claims check in an adopter's project, and `UPGRADE.md` explains the collision, review-only, finalize and line-ending steps. ([proposal](dev/proposals/archive/2026-11-16-claude-adopter-defects-0-7-0.md))
+- **Fixed** — New installs add a root `.gitattributes` so text files keep the same line endings on every machine, which stops a Windows checkout from silently differing from the repository; an existing `.gitattributes` is never replaced, even with `--force`. If your repository already stores Windows (CRLF) text, the installer counts those files and points to the steps in `bootstrap/BOOTSTRAP.md`, II-2b. ([plan](dev/plans/archive/2026-11-16-git-attributes-file.md))
 
 ## 0.7.0 — 2026-11-13
 
