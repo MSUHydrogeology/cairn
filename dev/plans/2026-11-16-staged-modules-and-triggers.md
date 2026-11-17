@@ -40,7 +40,6 @@ The accepted proposal (Decision 2026-11-16, standard tier, Internal plan review)
 **Reuse.** The local `_install` pattern of `bootstrap/tests/test_next_session_local_note.py` (22 test files define their own), the `upgrade --plan` call in `test_core_dev_folders.py`, `verify_integrity.verify`. `git grep -n "Offered when\|offers\.md"` over `templates`, `bootstrap`, `docs`, `.agents`, `tools`, `scripts` finds nothing (measured); "Selected when" in `templates/modules/README.md` is an install-time profile test, a different job.
 
 Proposed paths:
-- `bootstrap/tests/test_rules_folder_offer.py`
 - `dev/modules/offers.md`
 
 ### Documentation / doctrine surface
@@ -219,7 +218,7 @@ Not run: any repository test, T1 itself (only a scratch prototype of it), the tr
 ## Plan change -- Terra Medium -- 2026-11-17
 
 **Prior reviewed commit**: fdada31b8520c9b29689864e7a1a92673a7a3c2e
-**Replacement commit**: this commit
+**Replacement commit**: c287ae3ae9aef312e488e8e426078ab52f2a4061
 **Affected cells and dependencies**: Sequence, Acceptance criteria, Verification, C1, C2, C3
 **Change**: Correct the obsolete expected `FROZEN-NEW` increase to unchanged protected drift plus explicit ordinary-test classification, tracked-file and coverage checks; reuse the captured C1 reports. C2 and C3 remain stopped until this amendment is accepted.
 **Reason**: The approved roster excludes the new test. Both captured canonical reports have identical frozen blocks (31 modified, zero missing, zero new). The roster bytes match the manifest digest, the new test is tracked, and the protected conftest is a positive membership control. No baseline, roster, guard or source policy changes.
