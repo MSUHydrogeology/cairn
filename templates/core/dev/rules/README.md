@@ -45,6 +45,50 @@ Session orientation reads project rules first (`AGENTS.md` > "Roles").
 When a rule needs explanation, this folder or `docs/` can hold it. A Maintainer's rule goes in the rule file with the Maintainer's approved wording, never only in an agent's memory. Keep
 `RULES.md` a small router; no scheduled rewrite is prescribed here.
 
+## When this folder grows
+
+Offered when: the Markdown files under `dev/rules/` (`README.md` excluded) hold more than 5000 words.
+
+When that line is true, session start offers the guide below once and keeps the answer.
+
+**Offer** (an agent fills in FIGURE and COMMAND). Your rules folder now holds
+FIGURE words, counted with COMMAND, which adds up the words in each file.
+Cairn has a short guide for a folder this size, in this file under "When this
+folder grows": one shape for each rule, a line saying when it applies, a size
+limit per entry, run rules (how to run the project's software or analyses)
+kept apart from development rules (how to change its code and documents), and
+how a rule enters and leaves. It costs about 425 words to read, adds no tool
+and changes none of the files every session loads. Do you want help applying
+it? If yes, I will propose a plan and change no rule file until you approve
+that change. If no, I will not ask again. Either answer is fine.
+
+**The guide.**
+
+* **One shape per entry:** title, rule, why it exists, where its wording came from.
+* **An `Applies when:` line** in each entry, so an agent can skip entries a
+  task does not touch.
+* **A size limit per entry.** About 300 words is a starting point; an entry
+  well past it is usually two rules.
+* **Run rules apart from development rules,** in different files. Run rules
+  say how to run the project's software or analyses; development rules say how
+  to change its code and documents. A session doing one kind of work then
+  loads fewer words.
+* **How a rule enters and leaves.** It enters as the person's approved wording
+  in its file, never only in agent memory. It leaves by a dated line saying
+  why, not by silent deletion.
+
+**The record.** Answers are kept in dev/modules/offers.md: a first line
+`# Offers record (format 1)`, then one line per answer, and nothing else but
+blank lines.
+
+`2026-11-16 | rules-folder-growth | declined | answered by: <name or role> | measured 5412 words`
+
+The answer is `accepted` or `declined`. The name or role is what the person
+gave (up to 40 characters, no `|`), or `not given`. The last field is
+`measured`, a whole number and `words`. The file is at most 20,000 bytes of
+UTF-8. Anything else makes it unreadable: no offer is made, and the agent says
+why and leaves it as it is. To be asked again, delete your line; Git keeps it.
+
 ## Contents
 
 *(empty at adoption — add files as agent-discipline elaboration accumulates)*
