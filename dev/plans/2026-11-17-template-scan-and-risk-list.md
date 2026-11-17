@@ -64,3 +64,27 @@ Reviewed commit: 62105804784ba8dafe52d7d099c77751ceccdf7c
 **Audience / rule loss:** The intended loss is per-edit injection review for shipped template prose; C1 retains the other Rule 7 duties and C2 tells checkout users about the remaining exposure. The release reader needs the candidate-matching condition above.
 
 **Coverage:** Read the accepted proposal, plan, template, release roster and checks, installer onboarding sources and scanner entry points. The plan reuses existing sweep and evidence and separates the later release operation from implementation; its stated controls address accepted outcomes. Did not run scanners or the release sweep, independently inventory all installer sources, or perform Security Review.
+
+## Plan review -- Sol High -- 2026-11-17
+
+Reviewed commit: 62105804784ba8dafe52d7d099c77751ceccdf7c
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+**Model basis**: assigned Sol High Security Review.
+
+**Foundations**
+
+1. **Should this happen as framed?** A–D preserve the accepted exposure tradeoff and code protections, but candidate-bound assurance needs the scan identity condition below. -- source Decision; plan C1–C3
+2. **Best alternative.** Use the existing sweep and evidence with explicit candidate-matched scanner execution; no new gate is needed. -- `docs/release-process.md`, sweep B; plan Verification
+3. **What would show it wrong?** Scan a checkout whose template bytes differ from the recorded candidate; carrying that result forward would falsify candidate binding. -- `scripts/content_scan_runner.py`, `audit`; `scripts/check_cairn.py`, script-relative inputs
+
+1. **Blocking -- scan the candidate.** C2 binds the read and evidence to a candidate but leaves scanner execution against those bytes implicit. The runner resolves files and policy from its checkout; the Markdown caller likewise reads its checkout. Require both scans against the exact candidate tree, including relevant scanner inputs, and verify or record that identity before carrying results forward. This closes the same gap as the ordinary finding without adding tooling.
+
+**Audience / rule loss:** Per-edit shipped-prose review intentionally disappears with the Maintainer's accepted checkout exposure. C1 retains other Rule 7 duties, Python and parsed installer structure. C2 covers structured prose, both external onboarding sources, exclusions, changed-byte reads and byte-equality carryover. The proposed condition makes the release procedure executable for Low without changing user trust authority.
+
+**Coverage:** Inspected candidate template inventory, installer registries/onboarding delivery, protected surfaces, scanner selection, and dispatcher immutable roots binding against its lockfile record. No further blocker found. Did not read every template for unsafe instructions, execute controls or scans, or run tests/full suites; implementation verification and release reading remain due.
