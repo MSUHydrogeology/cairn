@@ -1,7 +1,7 @@
 # Plan: Shipped prose security read and risk list
 
 **Source proposal**: [Template scan and risk list](../proposals/archive/2026-11-10-claude-template-scan-and-risk-list.md)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-17
 **In brief**: Move template prose security review to the release sweep while retaining protections for code and installer structure.
