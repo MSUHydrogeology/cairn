@@ -718,3 +718,35 @@ The trim gives agents shorter working instructions while retaining duties in the
 2. **Blocking, C9 closeout:** This plan has no appended Implementation closeout, though C9 requires one with Homes for items not run or covered and the upgrade note. Close with that record and its named Homes, including the coordinator's changelog entry.
 
 **Audience and coverage:** Sampled C3–C7 replacements and survivors, installed background routing, rules lines and closeout duties; the placements suit acting agents and adopters. Read C8 implementation and its eight tests, C9 lock commit and reported installation evidence, and prior reviews and dispositions. Did not independently replay every row, rerun product tests or upgrade, verify all lock hashes, inspect Windows, or conduct Security Review; the separate Security pass owns that lane.
+
+## Code review -- Codex (GPT-6, Security Review, High) -- 2026-11-17
+
+```
+Reviewed commit: 4d6dde1f0c2c5b5633ef01167fd560cb04051ef7
+Reviewed range: e0462fa5..4d6dde1f
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 3 minutes
+**Tokens**: unknown
+
+The trim preserves core testing protections and adds closeout warnings.
+
+1. **Should this happen as framed?** Yes, after restoring the summary rule and ensuring the advisory cannot change a successful exit. See C7 PL13/QT5 and C8.
+2. **Best alternative.** Use the existing encoder and scan the board's artifact snapshot. The C2 mapping uses the existing install and upgrade paths.
+3. **What would show it wrong?** An advisory read failure returning 1 after the table prints, or a hostile-name test passing with the warning disabled. Source tracing establishes the first. Suppressing warnings in memory reproduced the second.
+
+**Blocking findings**
+
+- C7 moves the finished-summary placeholder prohibition into background and strands an opening backtick in all four templates. Restore the rule and move only the prescribed span (PL13/QT5).
+- C8 rereads artifacts after rendering. A second-pass read error reaches the main error handler and changes exit status (`tools/board.py:1194`). Reuse the first read or isolate advisory errors.
+- C8 test 5 accepts empty stderr and never requires elision (`bootstrap/tests/contract/test_board_closeout_warning.py:81`). Assert an emitted warning with an escaped, bounded filename and confirm warning removal fails the test.
+
+**Bounding**: WIDER RUN REQUIRED — focused checks for the advisory read error and filename elision.
+
+**Coverage.** Traced C3–C7 security duties, amendment and closeout survivors, slots and Plain Language; checked appendix scope, encoding, board parity, mapping and eight lock hashes. Python 3.13.13: 227 board tests passed. No security family, full suite, install/upgrade rerun or Windows. The grouped Human re-anchor remains unpassed.
+
+**Waiting-line check.** Plan history shows no newly reached plan fence or deviation request in the reviewed range.
