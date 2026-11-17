@@ -683,3 +683,14 @@ MT/GT rows retain refusal and negative-guard tests, independent expectations, pu
 C2 ships background through one core mapping; Cairn points to the canonical source without a duplicate file or false lock attestation. Expected mapping AST drift stays unpassed at the separate grouped Human operation. Scratch counts include heavy-tier additions; template-scan wording remains future work, so actual measurement and preservation checks remain due.
 
 **Coverage:** Changed rows at `be02b1f0`, the exact correction at the reviewed commit, and relevant current source; reused the first pass's unchanged-row coverage. Exactly one earlier plan Security pass exists; this is pass 2, not a reset. No row replay, runtime tests, private inputs, installer execution or complete resulting-prose read. No operative rule loss is authorized.
+
+## Targeted plan reread -- Terra Medium -- 2026-11-17
+
+Reviewed commit: 5c8659cdb7fb8c9d7611abb47c2d5362dcf699f5
+
+**Obligation**: Internal
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+Both findings are closed: GT3 restores dependent chunks delivering one independently finishable outcome; C7 labels shipped targets and updates both copies' scratch estimates. Scope and C6 record the revised guide estimates and require actual measurement. Read the committed correction and affected rows; did not repeat the full review, replay counts or run tests.
