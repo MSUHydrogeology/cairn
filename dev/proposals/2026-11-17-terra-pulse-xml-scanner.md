@@ -177,3 +177,13 @@ Reviewed commit: 679927e46ffa4006146367f4267f961eea56d4f4
 **Non-blocking finding.** Native Windows paths render with backslashes while `_rel` applies no separator conversion. Slash-key matching on Windows remains unverified. Limit the claimed repair to the checks that pass on their actual host. `bootstrap/security_check.py:1335`.
 
 **Coverage.** Read committed parser, filter, liveness and test entry points. `fbb53ebb` records the lint failure and `45fe2fc2` the fixture failure. Checked Windows path rendering with `PureWindowsPath`. No runtime scanner, fixture or native Windows run, and no general XML resource-exhaustion assessment.
+
+## Targeted ordinary review -- Terra (Reviewer, Medium) -- 2026-11-17
+
+**Steelman and verdict:** The widened proposal makes existing exception keys work on Windows while keeping containment and the fallback; accept subject to the Maintainer's explicit plan-routing Decision and the separate Security pass.
+
+1. **Should it happen?** Yes. `_rel` currently converts the resolved relative `Path` with `str` and returns the original filename on `ValueError`; the specified replacement changes only the successful conversion. The revised header requires both plan reviews unless the Maintainer expressly grants the requested exception, resolving my routing finding as a Decision choice.
+2. **Best alternative?** Reusing `as_posix()` and the existing public live-entry test avoids a new matcher. **Non-blocking:** the summary says “no ... tool ... changes,” although `bootstrap/security_check.py` changes; clarify that no installed Pulse tool changes.
+3. **What would show it wrong?** The extended public test must fail under the old conversion and pass under the new one; existing stale and unallowlisted controls must still pass.
+
+**Coverage:** Reviewed the widened diff, `_rel`, and test location; no tests, native Windows execution or renewed security assessment. No installed instruction is removed. Elapsed: approximately 2 minutes; tokens: unknown.
