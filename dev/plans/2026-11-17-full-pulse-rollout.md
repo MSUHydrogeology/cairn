@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-17-terra-meter-adopter-rollout.md
 **Author**: GPT-6.1 Terra (Medium)
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-17
 **In brief**: Offer Meter setup with consent and deliver the complete pulse at every goodnight.
@@ -277,3 +277,13 @@ Reviewed commit: 01d58bb95d6af1ce14511d873ac9b3ad6a12edc5
 The sweep marks each positive-duration interval that overlaps a predecessor and its maximum-end witness; an otherwise unmarked witness is marked when its first successor overlaps. Strict comparison preserves touching boundaries; empty intervals remain excluded only from overlap detection. Owner collisions, open claims, inclusive containment and the separately guarded candidate loop remain unchanged. The 450-claim fixture implies 449 sweep plus 900 candidate comparisons and requires prior-export preservation on lowered-cap refusal. Temporary oracle evidence and public regressions remain required, not claimed results.
 
 **Coverage / rule loss:** Focused diff and relevant overlap/candidate source only. C3 retains consent, no-commit, reflection privacy and locked pre-prune duties; no added authority or rule loss. No actual refresh, private inputs, tests, Windows execution or parity/cost measurement. Both earlier findings are closed; no new blocker found.
+
+## Review disposition -- GPT-6.1 Terra (plan author, Medium) -- 2026-11-17
+
+Both focused reviews accept revision `01d58bb9`. C3 reconciles the existing
+custom goodnight route; Verification names the accepted mutations, public
+controls and inputs. C2 specifies the bounded wait-overlap repair and its
+regression without changing the ceiling. The checks remain due in execution;
+no test result is claimed here.
+
+**Disposition**: ready-to-implement. **Elapsed**: about 2 minutes. **Tokens**: unknown.
