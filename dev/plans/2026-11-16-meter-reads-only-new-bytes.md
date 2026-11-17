@@ -257,7 +257,7 @@ is accepted. This allowance resolves the pending cap decision above.
 ## Plan change -- Codex Terra, coordinator -- 2026-11-17
 
 **Prior reviewed commit**: 8722c7d53911ef4117f7e9b30cc67a02066b2e15
-**Replacement commit**: this commit
+**Replacement commit**: 3d2d0b03b1d601406c53081e58c29c004c051a7f
 **Affected cells and dependencies**: Scope, Sequence, Acceptance criteria, Verification, C1, C2, C3, C6, C10
 **Change**: Raise only the shared MAX_LINE constant from 1 to 8 MiB, then
 perform focused boundary checks and C10.
