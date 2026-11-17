@@ -384,3 +384,14 @@ and a test fails when a file has no tier. Its moved ordinary tests live in
 unit, contract, integration, and security subfolders; `tools/test_tiers.json`
 still maps file names to tiers and discovery remains recursive, while workflow
 tests and protected apparatus stay at their approved paths.
+
+### Testing-discipline source notes
+
+The removed Cairn-specific summary phrase was:
+
+> “The tier scheme and the selection rules above are Cairn's summary of
+> established testing practice:”
+
+The removed bibliographic explanation was:
+
+> “for the pointer Cairn relies on rather than re-teaching.”

@@ -47,3 +47,40 @@ The guidance below is a practical summary, not a complete testing curriculum.
 > before fixing behavior; fix the behavior, not the expected value.
 
 optional architecture review is available, not required for every change.
+
+### Module: testing-discipline — continued
+
+**test-tier scheme** rather than an undifferentiated `tests/` pile. Broadly
+applicable; team-gated so a preset (`governance presets`) turns it on for the
+profiles that warrant it rather than every adoption paying for it by default.
+
+A tier communicates broad scope; the test name and assertions show its specific
+behavior.
+
+A test's tier is determined by where it lives (its directory, or a per-tier
+configuration that maps file names to tiers), applied automatically -- authors do
+not hand-tag each test, and a check fails when a test has no tier, so the scheme
+cannot rot.
+
+(valid and malformed input; dry and saturated cell; laminar and turbulent flow)
+
+(zero, empty, one, the threshold, a sign change)
+
+More examples inside a regime rarely find new faults.
+
+(conservation, symmetry, a round trip (`load(save(x)) == x`), a known limit)
+
+A golden output is a change detector: it fails on every harmless change and says
+nothing about whether the result is right.
+
+The removed optional detail was: “sample or generate varied cases to probe a
+stated invariant.”
+
+The contract-test sentence ended: “changes -- the change then has to be
+deliberate.”
+
+Scope and cost are separate: choose a tier by what a test covers, and record its
+runtime on its own.
+
+The removed sentence ending was: “in, so the suite's shape stays legible as it
+grows.”
