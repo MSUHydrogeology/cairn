@@ -1,7 +1,7 @@
 # Plan: Shipped prose security read and risk list
 
-**Source proposal**: [Template scan and risk list](../proposals/archive/2026-11-10-claude-template-scan-and-risk-list.md)
-**Status**: ready-to-archive
+**Source proposal**: [Template scan and risk list](../../proposals/archive/2026-11-10-claude-template-scan-and-risk-list.md)
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-17
 **In brief**: Move template prose security review to the release sweep while retaining protections for code and installer structure.
@@ -191,7 +191,7 @@ No deferred implementation follow-ups remain. The release read and joined Group 
 
 **Closeout homes**:
 
-- The actual release-wide prose read belongs to the existing Maintainer-assigned [Sweep B procedure](../../docs/release-process.md#sweep-b-read-shipped-prose-on-the-release-candidate); it runs against the final candidate before the cut. Implementation did not perform this read.
+- The actual release-wide prose read belongs to the existing Maintainer-assigned [Sweep B procedure](../../../docs/release-process.md#sweep-b-read-shipped-prose-on-the-release-candidate); it runs against the final candidate before the cut. Implementation did not perform this read.
 - The joined Group 2 integration belongs to the arc owner after connected plans finish, under `dev/agent_collaboration.md` > "Plans and records". This plan does not wait for that integration.
 
 **Elapsed**: unknown. **Tokens**: unknown.
