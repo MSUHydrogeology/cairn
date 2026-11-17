@@ -179,7 +179,7 @@
     },
     {
       "dst": "dev/modules/testing-discipline.md",
-      "hash": "sha256:f180adc7c91f561ea0a828a084d80fe66e199b284f5a3531043841cd72d4391a",
+      "hash": "sha256:ded4d3323864a11c067c5ee7aa95959f36c87e78b1c1b2620eec4f972daecb57",
       "src": "modules/team-gated/testing-discipline.md",
       "unrecoverable_base": true,
       "verbatim": false
