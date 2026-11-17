@@ -14,8 +14,9 @@
 The security scanner blocks release checks because Pulse uses a standard XML
 reader. It identifies the reader's name without considering Pulse's existing
 checks that reject document definitions and entities, which can make XML unsafe.
-Proposed: add one explained exception in the existing scanner settings. No
-parser, tool, test or installed file changes.
+Proposed: add one explained exception in the existing scanner settings and fix
+file-name matching so the same exceptions work on Windows. Extend one existing
+check; no parser, tool or installed file changes.
 
 The exception covers this scanner rule throughout one file, including a future
 call added there. That is the tradeoff requiring your acceptance. The scanner
@@ -33,6 +34,9 @@ bounded reader and parser identical to their pre-extraction implementation in
 `8cec9b83^:tools/gauge.py`; shipping Pulse brought that call into the scanner.
 This assessment covers document-definition and entity expansion, not all XML
 resource-exhaustion risks.
+The first Security Review also identified a Windows defect: `_rel` returns
+backslash-separated relative paths there, while exception keys use forward
+slashes. Without correcting that, the exception would not match on Windows.
 
 ## Proposal
 
@@ -47,6 +51,16 @@ Update the adjacent comment describing the entries so it also names guarded
 XML parsing. Leave scanner targets, blocking severity, other findings,
 exception liveness, and Pulse's guards unchanged. Keep the expected frozen-file
 change with the existing release-cut baseline wait; it does not block archive.
+
+In `_rel`, replace only
+`str(Path(filename).resolve().relative_to(CAIRN_ROOT))` with
+`Path(filename).resolve().relative_to(CAIRN_ROOT).as_posix()`. Preserve resolution,
+repository containment and the outside-repository fallback. This uses the same
+forward-slash keys on every host; no new finding is allowed beyond those keys.
+Extend `test_a_live_allowlist_entry_passes` to exercise its public `run_bandit`
+route with both ordinary and Windows-style relative path representations. The
+Windows case must fail with the old conversion. This models path rendering;
+it does not claim a native Windows scanner run or full release record.
 
 The coordinator owns this post-archive repair. The ordinary and Security code
 reviews of the release-test changes must explicitly cover this correction too;
@@ -80,6 +94,9 @@ Use the existing public checks, with canonical Python 3.13:
 
 - `bootstrap/tests/test_security_lint.py::test_no_blocking_security_findings`;
 - `bootstrap/tests/test_security_check.py::test_run_bandit_clean_with_bandit_present`;
+- `bootstrap/tests/test_security_check.py::test_a_live_allowlist_entry_passes`,
+  extended as specified above, plus the existing stale-entry and unallowlisted
+  finding controls;
 - `bootstrap/tests/integration/test_gauge.py::test_invalid_xml_and_impossible_counts_fail_without_echoing_input`;
 - `bootstrap/tests/integration/test_gauge.py::test_utf16_and_nul_are_rejected_before_xml_parsing`.
 
@@ -101,7 +118,9 @@ that the exception is live rather than relying on an invented finding.
 - **S3:** The security-lint test and release command run Bandit over its existing
   targets, including shipped Pulse. No target is removed.
 - **S4:** Scanner errors, unrelated findings and stale allowances still fail;
-  this one matching path/rule is permitted.
+  this one matching path/rule is permitted. Separator conversion happens only
+  after the existing resolved-repository-relative operation succeeds; outside
+  paths retain their existing unmatched fallback.
 - **S5:** A future unsafe B314 call in this file would share the allowance;
   source review must reassess it. No general XML-safety claim is made.
 
@@ -116,7 +135,8 @@ scanner no longer reports the allowed finding while the gate passes.
 
 ## Scope delta
 
-**Scope delta**: preserved.
+**Scope delta**: preserved; expanded before Decision to correct Windows path
+matching identified by the first Security Review. No original outcome is lost.
 
 ## Assurance path
 
