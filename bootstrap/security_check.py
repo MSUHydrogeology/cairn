@@ -630,7 +630,19 @@ def _consume_suite_report(order: str) -> dict:
     return normalized
 
 
-def _join_local_records(record_paths: list[Path], head: str) -> int:
+def _tracked_test_files(head: str) -> set[str]:
+    """Return committed pytest files under bootstrap/tests at *head*."""
+    blobs = _committed_blobs(CAIRN_ROOT, head)
+    return {
+        rel for rel in blobs
+        if rel.startswith("bootstrap/tests/")
+        and rel.endswith(".py")
+        and (Path(rel).name.startswith("test_")
+             or Path(rel).name.endswith("_test.py"))
+    }
+
+
+def _join_local_records(record_paths: list[Path], head: str) -> dict[str, object]:
     if len(record_paths) != 2 or len({path.resolve() for path in record_paths}) != 2:
         raise ValueError("join requires two distinct local record files")
     records = [_validate_local_record(_load_strict_json(path), head)
@@ -642,7 +654,24 @@ def _join_local_records(record_paths: list[Path], head: str) -> int:
     if (mac["head"] != windows["head"]
             or mac["policy_id"] != windows["policy_id"]):
         raise ValueError("native records do not name the same commit and roster")
+    mac_excluded = mac["excluded"]
+    windows_excluded = windows["excluded"]
+    if mac_excluded != windows_excluded:
+        raise ValueError("native records disagree on excluded tests")
+    tracked = _tracked_test_files(head)
+    if not _RELEASE_EXCLUDED <= tracked:
+        raise ValueError("release exclusion list contains an untracked test file")
+    expected_files = tracked - _RELEASE_EXCLUDED
     for label in ("default", "seed-0"):
+        for record in (mac, windows):
+            collected_files = {
+                node.split("::", 1)[0]
+                for node in record["orders"][label]["collection_ids"]
+            }
+            if collected_files != expected_files:
+                raise ValueError(
+                    f"{record['platform']} {label} collected files differ "
+                    "from tracked release selection")
         mac_outcomes = {row["nodeid"]: row for row in mac["orders"][label]["outcomes"]}
         win_outcomes = {row["nodeid"]: row for row in windows["orders"][label]["outcomes"]}
         common = set(mac_outcomes) & set(win_outcomes)
@@ -654,7 +683,7 @@ def _join_local_records(record_paths: list[Path], head: str) -> int:
                 if outcomes[nodeid]["status"] != "PASS":
                     raise ValueError(
                         f"native counterpart did not pass {label}: {nodeid}")
-    return 0
+    return mac_excluded
 
 
 # ===========================================================================
@@ -1912,14 +1941,23 @@ def _run_join(record_paths: list[Path]) -> int:
         for path in record_paths:
             if not path.is_absolute() or path.resolve().is_relative_to(CAIRN_ROOT.resolve()):
                 raise ValueError("join records must be absolute paths outside the checkout")
-        _join_local_records(record_paths, head)
-    except (OSError, UnicodeError, ValueError, TypeError) as exc:
+        excluded = _join_local_records(record_paths, head)
+    except (_RepoStateError, OSError, UnicodeError, ValueError, TypeError) as exc:
         print(f"security_check: join refused ({exc}) -- FAIL CLOSED.",
               file=sys.stderr)
         return 1
     if repo_state_postflight(head) != 0:
         return 1
-    print(f"security_check: PASS -- Mac and Windows evidence joined at {head}.")
+    files = excluded["files"]
+    if files:
+        print(f"security_check: PASS (shipped-only) -- Mac and Windows evidence joined at {head}.")
+        print("NOT CERTIFIED (shipped-only release selection): "
+              f"{excluded['count']} tests in {len(files)} files were not run. "
+              "They run when their own files change.")
+        for path in files:
+            print(f"  {path}")
+    else:
+        print(f"security_check: PASS -- Mac and Windows evidence joined at {head}.")
     return 0
 
 

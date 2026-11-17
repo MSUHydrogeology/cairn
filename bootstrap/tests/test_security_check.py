@@ -537,6 +537,106 @@ def _synthetic_local_record(
     }
 
 
+def _track_synthetic_files(monkeypatch) -> set[str]:
+    """Give synthetic join records their matching tracked-file inventory."""
+    record = _synthetic_local_record("darwin", "c" * 40, "a" * 64)
+    files = {node.split("::", 1)[0]
+             for node in record["orders"]["default"]["collection_ids"]}
+    files.update(security_check._RELEASE_EXCLUDED)
+    monkeypatch.setattr(security_check, "_tracked_test_files",
+                        lambda _head: set(files))
+    return files
+
+
+# Declared exception (internal hook): reads the committed tree to isolate the
+# filename filter; public --join exercises this filter with the whole manifest.
+def test_tracked_test_file_filter_uses_only_committed_test_paths(
+        tmp_path, monkeypatch) -> None:
+    root = tmp_path / "candidate"
+    paths = {
+        "bootstrap/tests/nested/test_deep.py": "",
+        "bootstrap/tests/security/example_test.py": "",
+        "bootstrap/tests/_helper.py": "",
+        "bootstrap/tests/fixtures/sample_fixture.py": "",
+        "docs/test_document.py": "",
+    }
+    for rel, body in paths.items():
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(body, encoding="utf-8")
+    _setup_git("init", "-q", cwd=root)
+    _setup_git("add", "-A", cwd=root)
+    _setup_git("commit", "-q", "-m", "tracked test filter fixture", cwd=root)
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", root)
+    head = security_check._head_commit()
+    assert security_check._tracked_test_files(head) == {
+        "bootstrap/tests/nested/test_deep.py",
+        "bootstrap/tests/security/example_test.py",
+    }
+
+
+def test_join_reports_shipped_only_selection(
+        tmp_path, monkeypatch, capsys) -> None:
+    _pretend_python_313(monkeypatch)
+    _track_synthetic_files(monkeypatch)
+    head = "c" * 40
+    monkeypatch.setattr(security_check, "repo_state_preflight",
+                        lambda: (0, head))
+    monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
+    mac, windows = tmp_path / "mac.json", tmp_path / "windows.json"
+    mac.write_text(json.dumps(_synthetic_local_record("darwin", head, "a" * 64)),
+                   encoding="utf-8")
+    windows.write_text(json.dumps(_synthetic_local_record("win32", head, "b" * 64)),
+                       encoding="utf-8")
+
+    assert security_check.main(["--join", str(mac), str(windows)]) == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert any(line ==
+               f"security_check: PASS (shipped-only) -- Mac and Windows evidence joined at {head}."
+               for line in lines)
+    assert "NOT CERTIFIED (shipped-only release selection): 1020 tests in 16 files were not run. They run when their own files change." in lines
+    assert [line for line in lines if line.startswith("  bootstrap/tests/")] == [
+        f"  {path}" for path in sorted(security_check._RELEASE_EXCLUDED)
+    ]
+
+
+@pytest.mark.parametrize("fault", [
+    "tracked-uncollected", "collected-untracked", "listed-untracked",
+    "host-counts-differ",
+])
+def test_join_refuses_a_tracked_selection_mismatch(
+        tmp_path, monkeypatch, capsys, fault) -> None:
+    _pretend_python_313(monkeypatch)
+    tracked = _track_synthetic_files(monkeypatch)
+    head = "c" * 40
+    monkeypatch.setattr(security_check, "repo_state_preflight",
+                        lambda: (0, head))
+    monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
+    mac_record = _synthetic_local_record("darwin", head, "a" * 64)
+    windows_record = _synthetic_local_record("win32", head, "b" * 64)
+    if fault == "tracked-uncollected":
+        tracked.add("bootstrap/tests/test_tracked_extra.py")
+    elif fault == "collected-untracked":
+        node = "bootstrap/tests/test_untracked_extra.py::test_extra"
+        phases = {name: {"outcome": "passed", "wasxfail": False}
+                  for name in ("setup", "call", "teardown")}
+        for record in (mac_record, windows_record):
+            for order in record["orders"].values():
+                order["collection_ids"].append(node)
+                order["outcomes"].append({
+                    "nodeid": node, "status": "PASS", "phases": phases,
+                })
+    elif fault == "listed-untracked":
+        tracked.remove(sorted(security_check._RELEASE_EXCLUDED)[0])
+    elif fault == "host-counts-differ":
+        windows_record["excluded"]["count"] += 1
+    mac, windows = tmp_path / "mac.json", tmp_path / "windows.json"
+    mac.write_text(json.dumps(mac_record), encoding="utf-8")
+    windows.write_text(json.dumps(windows_record), encoding="utf-8")
+    assert security_check.main(["--join", str(mac), str(windows)]) == 1
+    assert "refused" in capsys.readouterr().err
+
+
 def _pretend_python_313(monkeypatch) -> None:
     """Exercise the strict 3.13 record path on any supported test interpreter."""
     from types import SimpleNamespace
@@ -630,6 +730,7 @@ def test_join_refuses_each_native_identity_missing_from_all_host_orders(
 
     _pretend_python_313(monkeypatch)
     head = "c" * 40
+    _track_synthetic_files(monkeypatch)
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, head))
     monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
@@ -683,6 +784,7 @@ def test_missing_native_roster_control_is_specific(
     """A valid pair passes; identical omissions fail only while roster is fixed."""
     _pretend_python_313(monkeypatch)
     head = "c" * 40
+    _track_synthetic_files(monkeypatch)
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, head))
     monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
@@ -742,6 +844,7 @@ def test_join_main_accepts_one_complete_native_record_per_host(
         tmp_path, monkeypatch, capsys) -> None:
     _pretend_python_313(monkeypatch)
     head = "c" * 40
+    _track_synthetic_files(monkeypatch)
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, head))
     monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
@@ -766,6 +869,7 @@ def test_public_join_accepts_real_git_object_formats(
     _setup_git("add", "tracked.py", cwd=root)
     _setup_git("commit", "-q", "-m", f"{object_format} fixture", cwd=root)
     monkeypatch.setattr(security_check, "CAIRN_ROOT", root)
+    _track_synthetic_files(monkeypatch)
     head = security_check._head_commit()
     assert len(head) == security_check._OBJECT_FORMAT_WIDTH[object_format]
 
@@ -792,6 +896,7 @@ def test_join_main_refuses_mutated_native_records(
         tmp_path, monkeypatch, capsys, fault) -> None:
     _pretend_python_313(monkeypatch)
     head = "c" * 40
+    _track_synthetic_files(monkeypatch)
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, head))
     monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
@@ -864,6 +969,7 @@ def test_join_accepts_only_zero_count_for_an_empty_exclusion_list(
     _pretend_python_313(monkeypatch)
     head = "c" * 40
     monkeypatch.setattr(security_check, "_RELEASE_EXCLUDED", frozenset())
+    _track_synthetic_files(monkeypatch)
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, head))
     monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
@@ -876,9 +982,14 @@ def test_join_accepts_only_zero_count_for_an_empty_exclusion_list(
     mac.write_text(json.dumps(mac_record), encoding="utf-8")
     windows.write_text(json.dumps(windows_record), encoding="utf-8")
     assert security_check.main(["--join", str(mac), str(windows)]) == 0
-    assert "PASS" in capsys.readouterr().out
+    empty_output = capsys.readouterr().out
+    assert "security_check: PASS --" in empty_output
+    assert "NOT CERTIFIED" not in empty_output
+    assert "shipped-only" not in empty_output
 
-    mac_record["excluded"] = {"files": [], "count": 1}
+    mac_record["excluded"] = {
+        "files": ["bootstrap/tests/test_fixture_nonempty.py"], "count": 1,
+    }
     mac.write_text(json.dumps(mac_record), encoding="utf-8")
     assert security_check.main(["--join", str(mac), str(windows)]) == 1
     assert "refused" in capsys.readouterr().err
@@ -888,6 +999,7 @@ def test_join_rejects_duplicate_json_keys_recursively(
         tmp_path, monkeypatch, capsys) -> None:
     _pretend_python_313(monkeypatch)
     head = "c" * 40
+    _track_synthetic_files(monkeypatch)
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, head))
     mac = tmp_path / "mac.json"
@@ -1088,7 +1200,9 @@ def test_committed_fixture_connects_real_record_and_join_entrypoints(
              else [counterpart_path, local_path])
     assert security_check.main(["--join", *(str(path) for path in paths)]) == 0
     joined = capfd.readouterr().out
-    assert "PASS" in joined and head in joined
+    assert f"PASS (shipped-only) -- Mac and Windows evidence joined at {head}." in joined
+    assert "NOT CERTIFIED (shipped-only release selection): 2 tests in 1 files were not run." in joined
+    assert f"  {fixture_excluded}" in joined
 
 
 # ---------------------------------------------------------------------------
