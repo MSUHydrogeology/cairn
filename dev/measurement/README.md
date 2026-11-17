@@ -91,6 +91,21 @@ them.
   a sanitized `meter.json` aggregate under each project's `dev/measurement/`
   folder. `rebuild --json` uses the same
   explicit refresh path. These commands are not scheduled or background work.
+  Counting starts when the Meter first runs for a source: it records where
+  each existing log ends and counts nothing before that, and `rebuild` does
+  not back-fill history. Each later run reads only what a log has gained;
+  Codex logs are read again from their first line when they grow, because their
+  lines depend on earlier lines. Individual usage events are kept for up to
+  14 days (fewer when more than 50,000 would pile up); older ones are folded
+  into daily totals, which lose the per-artifact split. A run that stopped at
+  its read limit prints `meter partial: catching_up` and exits 5; run `refresh`
+  again until it prints `ok`. A Codex log over 512 MiB is skipped each run and
+  the run prints `meter partial: source_too_large`. While the receipt is not
+  `ok` or `disabled`, `python tools/session.py session-end --handoff` skips
+  both prunes and exits 5. The per-project summary lists `incomplete` among
+  its coverage reasons and the pulse report prints `INCOMPLETE` beside the
+  supplied usage. An older ledger is refused with `ledger_old_schema`; move
+  `~/.cairn/meter/ledger.json` aside to start a new one.
   Missing configuration stays disabled, and invalid or unsupported privacy
   state fails closed as unavailable. Aggregate coverage remains globally
   unknown; the output does not claim complete project history.
