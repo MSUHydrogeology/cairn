@@ -706,3 +706,29 @@ checks. **Not covered / low confidence:** no test reruns, private logs, VM acces
 broad suite, mutation inventory, unrelated prior repair range or new concurrency
 proof. Existing native results are author-reported evidence, not my measurements.
 **Elapsed:** approximately 7 minutes. **Tokens:** unknown.
+
+## Ordinary code review -- Codex Terra, Reviewer (Medium) -- 2026-11-17
+
+**Reviewed commits**: `63d0704a`, with the test correction at `7c77da3d`.
+**Verdict**: ACCEPT; no unresolved findings.
+
+1. **Should this happen?** Yes. The receipt repair accepts the platform's one
+   final CR-LF pair while preserving the existing closed receipt checks.
+   Binary ledger I/O restores byte-exact append and snapshot comparison. The
+   fixture changes preserve their existing assertions and use portable paths,
+   explicit UTF-8 and the existing worker-binding helper.
+2. **Best alternative.** Reuse public handoff coverage rather than retaining
+   another test of a private receipt helper. I requested that small correction;
+   `7c77da3d` removes it. The existing public malformed-receipt checks remain.
+3. **What would show it wrong?** A valid Windows handoff that still skips
+   pruning, or a retained ledger line changed by pruning. The implementer's
+   native public handoff and ledger checks pass; I read the exact changed
+   branches and the public refusal tests rather than repeating those runs.
+
+The impossible Windows filename remains a platform skip, not a claimed pass.
+The missing Git metadata was a validation-copy problem and needs no product
+change. The wider Mac hook-route failure and VM permission refusal remain
+separate named follow-ups on `dev/PLANNING.md`; this pass does not clear them.
+Security is independently covered by `f8d171fd`. No suite or mutation inventory
+was run by this reviewer. Elapsed: approximately seven minutes across review
+and disposition; tokens unknown.
