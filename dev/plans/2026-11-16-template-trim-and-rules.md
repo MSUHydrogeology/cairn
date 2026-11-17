@@ -763,10 +763,10 @@ Correction checks: claim and link checks on the five changed prose files, snippe
 
 Remaining: targeted Security re-review of the correction. Home: this plan's code review before archive.
 
-Remaining: grouped Human baseline re-anchor and release certification, including native Windows. Home: `dev/PLANNING.md` Waiting on Maintainer and `docs/release-process.md`.
+Remaining: grouped Human baseline re-anchor and release certification, including native Windows. Home: `dev/PLANNING.md` > Waiting on you > Completed repairs awaiting the trust operation; `docs/release-process.md` for release certification.
 
-Remaining: one joined Group 2 integration on the combined revision. Home: `dev/PLANNING.md` Sequence, arc owner.
+Remaining: one joined Group 2 integration on the combined revision. Home: `dev/PLANNING.md` > v0.8 Sequence; Root coordinator.
 
-Remaining: upgrade warning about moving local rule lines before merging. Home: coordinator's `CHANGELOG.md` release entry, as specified in this plan's Upgrade note.
+Remaining: upgrade warning about moving local rule lines before merging. Home: Root coordinator's `CHANGELOG.md` > Unreleased > Changed entry.
 
 Not covered: whole suite, security family, native Windows, desktop-app behavior and a real adopter upgrade merge. Home: release certification and joined Group 2 integration above; the real-adopter merge is not claimed by the fixture.
