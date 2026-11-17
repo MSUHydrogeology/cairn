@@ -1762,6 +1762,8 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
                 "ctime_ns": before["ctime_ns"],
             }
             initial_size = before["size"]
+            if self.resume is not None and not self.reread:
+                self.end_offset = self.resume["offset"]
             if self.tail:
                 offset, digest, tail_reason = self._windows_tail(file_handle, initial_size)
                 if tail_reason is not None:
@@ -1784,25 +1786,35 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
                         return
                     if resume["offset"] and not self.reread:
                         window_size = min(MAX_LINE + 1, resume["offset"])
-                        try:
-                            window = self._windows_read_at(
-                                file_handle, resume["offset"] - window_size, window_size)
-                        except (Unavailable, OSError, ValueError, TypeError, AttributeError):
-                            reason = "source_read_unavailable"
-                            return
-                        verdict = _resume_window_verdict(
-                            window, resume["offset"], resume["digest"])
-                        if verdict is not None:
-                            self.resume_failure = verdict
-                            self._capture_windows_final(file_handle)
-                            reason = None
-                            return
-                if self.resume is not None and self.reread:
+                        if window_size > self.budget:
+                            self.limit_stop = True
+                        else:
+                            try:
+                                window = self._windows_read_at(
+                                    file_handle, resume["offset"] - window_size, window_size)
+                            except (Unavailable, OSError, ValueError, TypeError, AttributeError):
+                                reason = "source_read_unavailable"
+                                return
+                            verdict = _resume_window_verdict(
+                                window, resume["offset"], resume["digest"])
+                            if verdict is not None:
+                                self.resume_failure = verdict
+                                self._capture_windows_final(file_handle)
+                                reason = None
+                                return
+                if self.resume is not None and self.reread and resume["offset"] == 0:
+                    self.checkpoint_line = 0
+                if self.limit_stop:
+                    position = resume["offset"]
+                elif self.resume is not None and self.reread:
                     api.seek_to(file_handle, 0)
                     position = 0
                 elif self.resume is not None:
                     api.seek_to(file_handle, resume["offset"])
                     position = resume["offset"]
+                elif self.piece:
+                    api.seek_to(file_handle, 0)
+                    position = 0
                 else:
                     api.seek_zero(file_handle)
                     position = 0
@@ -1810,7 +1822,7 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
                 line_count = 0
                 line_start = position
                 max_lines = self.max_lines if self.max_lines is not None else MAX_BATCH_LINES
-                while position < initial_size:
+                while not self.limit_stop and position < initial_size:
                     if self.piece and (self.bytes_read >= self.budget
                                        or line_count >= max_lines):
                         self.limit_stop = True
@@ -1844,6 +1856,9 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
                             break
                         line_count += 1
                         self.complete_lines = line_count
+                        if not self.piece and line_count > MAX_BATCH_LINES:
+                            reason = "source_budget_exceeded"
+                            return
                         self.end_offset = line_start + len(line)
                         self.tail_digest = hashlib.sha256(line).hexdigest()
                         if (self.resume is not None and self.reread
@@ -1877,11 +1892,13 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
                 reason = "source_read_unavailable"
                 return
             if (before["identity"] != after["identity"]
-                    or after["size"] < initial_size):
+                    or after["size"] < initial_size
+                    or before["created"] != after["created"]):
                 reason = "source_changed"
                 return
-            if not self.piece and (after["size"] != initial_size
-                                   or self.bytes_read != initial_size):
+            if not self.piece and (
+                    _windows_stable_info(before) != _windows_stable_info(after)
+                    or self.bytes_read != initial_size):
                 reason = "source_changed"
                 return
             current_volume = api.info(root_handles[0])
@@ -1909,7 +1926,10 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
                 named_info = api.info(named)
                 api.check_acl(named, self.user_sid, "ancestor")
                 if (named_info["identity"] != before["identity"]
-                        or named_info["size"] < initial_size):
+                        or named_info["size"] < initial_size
+                        or named_info["created"] != before["created"]
+                        or (not self.piece and _windows_stable_info(named_info)
+                            != _windows_stable_info(before))):
                     reason = "source_changed"
                     return
             finally:
@@ -4068,7 +4088,8 @@ def _is_fork_parent(batch, fork):
             and batch.get("source_header_key") == fork["parent_header_key"])
 
 
-def _read_fork_parents(source, config, files, previous, source_batches, spent):
+def _read_fork_parents(source, config, files, previous, source_batches, spent, *,
+                       windows_api=None, windows_user_sid=None):
     """Read, as context only, the parents of this source's fork children when no
     log of the run supplies them (plan D8).
 
@@ -4103,7 +4124,9 @@ def _read_fork_parents(source, config, files, previous, source_batches, spent):
                 short = True
                 continue
             budget = min(MAX_REREAD_BYTES, left)
-            stream, parent = _read_codex_log(source, relative, config, budget)
+            stream, parent = _read_codex_log(
+                source, relative, config, budget, windows_api=windows_api,
+                windows_user_sid=windows_user_sid)
             used += stream.bytes_read
             if stream.terminal_reason is not None:
                 raise Unavailable(stream.terminal_reason)
@@ -4297,10 +4320,11 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                 if not resumed:
                     batch["started_at"] = started_at
                 batches.append(batch)
-            if not windows and source["tool"] == "codex":
+            if source["tool"] == "codex":
                 parents, dropped, used = _read_fork_parents(
                     source, config, files, previous, batches[first_batch:],
-                    total_bytes)
+                    total_bytes, windows_api=windows_api,
+                    windows_user_sid=windows_user_sid)
                 total_bytes += used
                 context_batches.extend(parents)
                 if dropped:

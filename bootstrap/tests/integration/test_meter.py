@@ -271,6 +271,9 @@ class SyntheticWindowsStreamAPI:
         self.grow_on_read = False
         self.fail_seek = False
         self.fail_file_info = False
+        self.read_calls = 0
+        self.drift_file_created = False
+        self.drift_file_written = False
         self.entry_file_id = 4
         self.offsets = {}
         self.paths = {}
@@ -331,14 +334,18 @@ class SyntheticWindowsStreamAPI:
                                   "source": 3, "file": 4}[path]),
                 "size": len(self.content) if is_file else 0,
                 "directory": not is_file, "links": 1,
-                "created": 11, "accessed": self.accessed,
-                "written": self.directory_written, "changed": 41,
-                "mtime_ns": 3100, "ctime_ns": 4100}
+                "created": 12 if is_file and self.drift_file_created and self.read_calls else 11,
+                "accessed": self.accessed,
+                "written": (self.directory_written + 1
+                            if is_file and self.drift_file_written and self.read_calls
+                            else self.directory_written),
+                "changed": 41, "mtime_ns": 3100, "ctime_ns": 4100}
 
     def check_acl(self, handle, user_sid, role):
         assert user_sid == b"synthetic-user-sid"
 
     def read_file(self, handle, buffer, size, received, overlapped):
+        self.read_calls += 1
         start = self.offsets[handle]
         count = min(size, len(self.content) - start)
         if count:
@@ -6581,6 +6588,99 @@ def test_windows_stream_supports_tail_resume_pieces_growth_and_reread():
     assert reread.checkpoint_line == 1 and reread.resume_failure is None
 
 
+@pytest.mark.parametrize("case", [
+    "resume-window-budget", "zero-offset-reread", "fresh-piece-seek",
+    "default-line-cap", "default-metadata", "piece-created-time",
+    "piece-growth-metadata",
+])
+def test_windows_reader_preserves_default_and_piece_parity(case, monkeypatch):
+    api = SyntheticWindowsStreamAPI(b"one\ntwo\n")
+    kwargs = {"windows_api": api, "windows_user_sid": b"synthetic-user-sid"}
+    if case == "resume-window-budget":
+        stream = meter._iter_approved_lines(
+            r"C:\synthetic\source", "session.jsonl", 3, piece=True,
+            resume={"dev": 7, "ino": 4, "offset": 4,
+                    "digest": sha256_of(b"one\n")}, **kwargs)
+        assert list(stream) == []
+        assert stream.limit_stop and stream.bytes_read == 0 and api.read_calls == 0
+        assert stream.terminal_reason is None
+    elif case == "zero-offset-reread":
+        stream = meter._iter_approved_lines(
+            r"C:\synthetic\source", "session.jsonl", 100, piece=True,
+            reread=True, resume={"dev": 7, "ino": 4, "offset": 0,
+                                "digest": None}, **kwargs)
+        assert list(stream) == [b"one\n", b"two\n"]
+        assert stream.checkpoint_line == 0 and stream.resume_failure is None
+    elif case == "fresh-piece-seek":
+        api.fail_seek = True
+        stream = meter._iter_approved_lines(
+            r"C:\synthetic\source", "session.jsonl", 100, piece=True, **kwargs)
+        assert list(stream) == []
+        assert stream.terminal_reason == "source_read_unavailable"
+    elif case == "default-line-cap":
+        monkeypatch.setattr(meter, "MAX_BATCH_LINES", 1)
+        stream = meter._iter_approved_lines(
+            r"C:\synthetic\source", "session.jsonl", windows_api=api,
+            windows_user_sid=b"synthetic-user-sid")
+        assert list(stream) == [b"one\n"]
+        assert stream.terminal_reason == "source_budget_exceeded"
+    elif case == "default-metadata":
+        api.drift_file_written = True
+        stream = meter._iter_approved_lines(
+            r"C:\synthetic\source", "session.jsonl", windows_api=api,
+            windows_user_sid=b"synthetic-user-sid")
+        assert list(stream) == [b"one\n", b"two\n"]
+        assert stream.terminal_reason == "source_changed"
+    elif case == "piece-created-time":
+        api.drift_file_created = True
+        stream = meter._iter_approved_lines(
+            r"C:\synthetic\source", "session.jsonl", 100, piece=True, **kwargs)
+        assert list(stream) == [b"one\n", b"two\n"]
+        assert stream.terminal_reason == "source_changed"
+    else:
+        api.drift_file_written = True
+        api.grow_on_read = True
+        stream = meter._iter_approved_lines(
+            r"C:\synthetic\source", "session.jsonl", 100, piece=True, **kwargs)
+        assert list(stream) == [b"one\n", b"two\n"]
+        assert stream.terminal_reason is None
+        assert stream.final_identity["size"] > len(b"one\ntwo\n")
+
+
+def test_windows_fork_parent_context_passes_the_native_reader(monkeypatch):
+    api = object()
+    sid = b"synthetic-user-sid"
+    parent_key = "a" * 64
+    parent_file_key = meter._digest("cursor", "source", "parent.jsonl")
+    cursor = {"source_alias": "source", "file_key": parent_file_key,
+              "owner_key": parent_key}
+    child = {"file_key": "child-file",
+             "fork_evidence": {"source_aliases": ["source"],
+                               "parent_key": parent_key, "session_key": "b" * 64,
+                               "parent_header_key": "c" * 64}}
+    parent = {"source_header_valid": True, "source_owner_key": parent_key,
+              "source_session_key": "b" * 64, "source_header_key": "c" * 64,
+              "fork_evidence": None, "events": [], "issues": []}
+    called = {}
+
+    def read_codex(_source, relative, _config, _budget, **kwargs):
+        called.update(relative=relative, **kwargs)
+        return (SimpleNamespace(bytes_read=4, terminal_reason=None, limit_stop=False,
+                                open_identity={"dev": 7, "ino": 8},
+                                final_identity={"dev": 7, "ino": 8}), parent)
+
+    monkeypatch.setattr(meter, "_read_codex_log", read_codex)
+    contexts, dropped, used = meter._read_fork_parents(
+        {"alias": "source"}, {}, [("parent.jsonl", {"size": 4, "dev": 7,
+                                                           "ino": 8})],
+        {parent_file_key: cursor}, [child], 0,
+        windows_api=api, windows_user_sid=sid)
+    assert called == {"relative": "parent.jsonl", "windows_api": api,
+                      "windows_user_sid": sid}
+    assert len(contexts) == 1 and contexts[0]["context_only"]
+    assert dropped == set() and used == 4
+
+
 @pytest.mark.parametrize("resume, expected", [
     ({"dev": 7, "ino": 9, "offset": 4, "digest": sha256_of(b"one\n")},
      "file_replaced"),
@@ -6676,6 +6776,40 @@ def test_windows_start_scan_bookmarks_existing_log_without_counting_it(
     assert cursor["line"] == 0 and cursor["offset"] == len(b"".join(encoded(records)))
     assert cursor["digest"] == sha256_of(encoded(records)[-1])
     assert cursor["owner_key"] == meter._digest("codex", "019a0000-0000-7000-8000-000000000001")
+
+
+def test_windows_scan_preserves_bookmark_when_resume_window_exceeds_run_budget(monkeypatch):
+    from pathlib import PureWindowsPath
+
+    monkeypatch.setattr(meter, "Path", PureWindowsPath)
+    monkeypatch.setattr(meter, "os", SimpleNamespace(
+        name="nt", path=SimpleNamespace(abspath=lambda value: value)))
+    config = {
+        "version": 1, "enabled": True,
+        "sources": [{"alias": "source", "tool": "claude",
+                     "root": r"C:\synthetic\source"}],
+        "projects": [], "requested_accounts": {},
+    }
+    api = SyntheticWindowsStreamAPI(claude_lines("first"))
+    first = scan_started(config, windows_api=api,
+                         windows_user_sid=b"synthetic-user-sid")
+    cursor, = first[1]
+    assert first[0] == [] and cursor["offset"] == len(api.content)
+
+    api.content += claude_lines("second")
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", 3)
+    second = meter._scan_approved_sources(
+        config, [cursor], starts=[{"source_alias": "source",
+                                  "started_at": CLOCK_STAMP}], now=CLOCK,
+        windows_api=api, windows_user_sid=b"synthetic-user-sid")
+
+    assert second[0] == []
+    deferred, = second[1]
+    assert (deferred["offset"], deferred["digest"], deferred["line"],
+            deferred["generation"], deferred["size"]) == (
+                cursor["offset"], cursor["digest"], cursor["line"],
+                cursor["generation"], cursor["offset"])
+    assert "catching_up" in second[2]
 
 
 def test_windows_codex_scan_re_reads_from_bookmark_and_counts_only_growth(monkeypatch):
