@@ -107,3 +107,24 @@ Reviewed commit: 52288dfef98ee3ddd2508dabb5e21a4d52faa645
 **Tokens**: unknown
 
 The candidate-binding finding is closed: C2 requires both scans in a fresh, clean detached candidate checkout, records identity and results, and conditions carried results on byte equality of scanned content and relevant scanner inputs. No new defect appeared in the changed text. Compared the revision with 62105804 and the prior review; did not repeat the full review or run scanners or a release sweep.
+
+## Plan review -- Sol High, targeted pass 2 -- 2026-11-17
+
+Reviewed commit: 52288dfef98ee3ddd2508dabb5e21a4d52faa645
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the sole finding is closed by explicit candidate-matched scans and recorded identity. -- revised C2
+2. **Best alternative.** The existing detached-checkout practice and release evidence suffice; no additional mechanism is needed. -- C2; author Response
+3. **What would show it wrong?** Different scanned bytes or scanner inputs carried as candidate results would violate the new equality condition. -- C2, changed-candidate and carryover requirements
+
+Both commands must now run from a fresh, clean detached candidate checkout, including candidate scanner code, roots and policy inputs. C2 requires HEAD and cleanliness verification, recorded identity/results, and byte equality of scanned content and relevant scanner inputs before carryover. The accepted checkout-exposure tradeoff and other duties remain intact.
+
+**Coverage:** Targeted diff against the prior review only; no new blocker in that change. No repeated full review, scanner execution, private input, tests or release sweep. Implementation and release evidence remain due.
