@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-git-attributes-file.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **In brief**: New Cairn installs add a root `.gitattributes` so text files keep the same line endings on every machine, which stops a Windows checkout from silently differing from the repository, and an existing `.gitattributes` is never replaced.
@@ -47,7 +47,7 @@ The accepted proposal (Decision 2026-11-16, standard tier with plan and Security
 
 Descriptive layer only: `bootstrap/BOOTSTRAP.md`, `bootstrap/UPGRADE.md`, `docs/quickstart.md`. The install table gains one row; `AGENTS.md` and `RULES.md` do not change.
 
-Proposed paths:
+Delivered paths:
 - `templates/core/gitattributes.txt`
 - `bootstrap/tests/test_gitattributes_install.py`
 - `dev/measurement/windows-git-attributes-run.md`
@@ -275,3 +275,51 @@ Conclusion: all five notes are non-blocking and all are folded in with 77 added 
 | S1 (`--init-lock` records yours) | Accepted as one sentence, no code change (`upgrade.py:1964-1967`, `lockfile.py:486-491`). | C4, UPGRADE.md block |
 
 Additions beyond the notes: none; the Length line's counts were remeasured.
+
+## Implementation
+
+Implementation began while this header still said `ready-to-implement`; these
+status changes record the actual work afterward and are not backdated.
+
+- **C1 — `ac76f0c8`:** template, verbatim mapping, one-path living-state and
+  lockfile handling. T1, T2 and T4 passed; initial T1/T2 failures exposed the
+  missing install behavior. Elapsed and tokens: unknown.
+- **C2 — `1e527a17`:** T3, T5 and T6 passed with the C1 implementation.
+  Elapsed and tokens: unknown.
+- **C3 — `a38c32d1`:** bounded index count and report. The four T7 cases and
+  T1–T6 passed; the first T7 run failed on the two expected missing notes.
+  Elapsed and tokens: unknown.
+- **C4 — `8bc30bc6`:** adopter guides and quickstart. The named quickstart
+  node passed; claim, link and snippet checks passed. The 15-file selector
+  output was recorded as candidate coverage and not run, pending the grouped
+  verification disposition. Pre-edit neutrality was not run; the after-edit
+  result was 0 failures and 43 informational findings. Elapsed and tokens:
+  unknown.
+- **C5 — `e24933cb`:** native Windows evidence is in
+  `dev/measurement/windows-git-attributes-run.md`; its focused file passed
+  10/10 with no skips and its control reproduced the CRLF checkout fault.
+  Elapsed and tokens: unknown.
+
+**Mutation controls.** In an isolated temporary snapshot, M1–M8 each made its
+targeted public check fail: M1/T4; M2 and M3/T2; M4/T1; M5/T5; M6/T6; M7/T7
+`crlf-in-index`; M8/T7 `own-file-kept`. Every changed source file was restored
+from its saved copy and `cmp` passed. M1/T4 failed at the lockfile-presence
+assertion when the exemption was broadened. The additional M4/T3 check failed
+at `fp.verbatim is True` when the mapping flag was false. No mutant survived.
+
+**Baseline and remaining work.** The post-C3 AST status adds the planned
+changes to `_LIVING_STATE_DSTS`, `_SKILLS_MAPPINGS`, `_install_one`,
+`print_report` and `write_install_lockfile`, and the new
+`_KEPT_EXISTING_DSTS` and `_index_crlf_count` keys. The pre-existing Group 1
+AST and frozen-file results remain unpassed; no agent re-anchored them. The
+15-file mapped selection and its before/after controls remain pending the
+Maintainer's grouped verification disposition. Ordinary and Security review
+records are pending; the separate Maintainer re-anchor is not a plan blocker.
+
+**Benefit versus cost**: worth it — fresh checkouts keep consistent text line
+endings while adopter-owned attributes survive install, force and upgrade;
+measured focused test runtimes were 11.79 seconds on the host, 2.30 seconds for
+the quickstart node and 25.57 seconds on Windows, plus 12.6 seconds for M1–M8
+and 2.6 seconds for M4/T3. Setup and agent time are unknown. Remaining burden:
+grouped verification disposition and required reviews. Revisit after those
+records are complete; the Maintainer re-anchor remains separate.
