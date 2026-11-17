@@ -21,7 +21,7 @@
     },
     {
       "dst": ".agents/skills/session-start/SKILL.md",
-      "hash": "sha256:f6d40782ef207ef6665ffc7ef8d87cb0e2eb1b89a749df9b711289225cfa8770",
+      "hash": "sha256:50e3895e7496255c870541c1616b8f66d6c28380e91252c9336c2499627c34cf",
       "src": "skills/session-start/SKILL.md",
       "unrecoverable_base": true,
       "verbatim": false
