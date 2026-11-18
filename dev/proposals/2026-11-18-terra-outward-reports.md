@@ -1,7 +1,7 @@
 # Make outward report drafts usable
 
 **Author**: Terra (Implementation, Medium)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — a shipped file changes the install mapping
 **Plan review**: required(Internal + Internal Security Review)
@@ -84,3 +84,26 @@ Reviewed commit: `73c2a6c5723c6d6b1b50767ec97b54417b67e04e`
 **Blocking — preserve the full export boundary.** The proposal replaces the forms' protocol with a new source but names only unpublished data and credentials. Both existing forms also prohibit proprietary project or customer detail; the PR form applies the check to every changed file as well as its body. Preserve those duties and the final reread in the shared protocol and relevant forge fields, with a synthetic PR example covering its diff. The direction permits an agent to file after specific approval, so explain that intentional change from the forms' current human-submission rule. Evidence: `.github/ISSUE_TEMPLATE/foldback.md`, Export-safety affirmation; `.github/PULL_REQUEST_TEMPLATE/foldback.md`, Export-safety affirmation; `dev/PLANNING.md` Group 4, outward-report row.
 
 **Coverage.** Read the proposal, board row, existing draft and both forms; did not execute installation, file a report, or independently assess the security boundary. Security Review remains separate.
+
+## Review -- Sol (Security Review, High) -- 2026-11-18
+
+```text
+Reviewed commit: 73c2a6c5723c6d6b1b50767ec97b54417b67e04e
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Give adopters one installed protocol and an agent-facing route, with the full export boundary written into scope. Adding a core install row warrants the heavy lane. `install/_scaffold/config.py:559-565`, `dev/rules/protected-surfaces.md`.
+2. **Best alternative.** Keep each forge's native fields and point to one protocol from both forms and the installed collaboration guide. Use the dependency's form as field guidance after checking it against the local approval and privacy rules. `install/SAFETY.md:90-96`, `templates/core/dev/upstream/_template.md:40-54`.
+3. **What would show it wrong?** A public upgrade that writes through a linked destination, a broken forge pointer, or a synthetic report that reaches filing without approval of its recipient and contents would falsify delivery. `tests/test_upgrade_module_additions.py:1109-1141`, `install/SAFETY.md:90-96`.
+
+- **Blocking — name who files each report.** The current Cairn forms require the Maintainer to submit by hand. The board's #80 entry proposes an agent filing an individually approved issue. Write that distinction into the proposal and retain hand submission for Cairn pull requests unless a Decision changes it. Apply the approval to the actual report and destination before filing. `dev/PLANNING.md:99`, `.github/ISSUE_TEMPLATE/foldback.md:13-17`, `.github/PULL_REQUEST_TEMPLATE/foldback.md:8-12`.
+- **Blocking — preserve the publication check end to end.** Explicitly carry forward the final reread, proprietary-detail and unpublished-data checks, including the PR's full diff. Replace the fallback template's verbatim-traceback instruction with sanitized evidence before a draft enters Git. In the disposable smoke check, include synthetic sensitive content and verify the sanitized version is what reaches the Maintainer. `.github/ISSUE_TEMPLATE/foldback.md:69-83`, `.github/PULL_REQUEST_TEMPLATE/foldback.md:53-70`, `templates/core/dev/upstream/_template.md:40-42`.
+
+Coverage: committed workflow, mappings and named test paths. No installer, forge, filing, platform or suite execution.
