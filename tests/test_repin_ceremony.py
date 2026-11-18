@@ -1,4 +1,4 @@
-"""Tests for `scripts/repin.py ceremony`: the whole command, driven on a terminal.
+"""Tests for `release/repin.py ceremony`: the whole command, driven on a terminal.
 
 The bed is a scratch repository with its own signed anchor, the real checker,
 the real `reanchor.sh` and launcher, a throwaway key made in a scratch folder
@@ -16,6 +16,7 @@ Promises:
 - The new anchor moves only after the signature verifies against the roster, and the ceremony then reports done.
 - A stage two that does not move the anchor forward leaves the ceremony not done.
 - Signing tools run by absolute path, with a short fixed environment and no inherited steering variables.
+- Across the layout move, the prior verifier still reports protected removals, and unreviewed inputs refuse before candidate collection.
 """
 from __future__ import annotations
 
@@ -34,23 +35,23 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests import _ast_attest as A, _gate_manifest as GM
-from bootstrap.tests.test_repin import (  # noqa: F401 -- `template` is a fixture
+from tests import _ast_attest as A, _gate_manifest as GM
+from tests.test_repin import (  # noqa: F401 -- `template` is a fixture
     BASELINE, ENGINE, KNOWN_NEW, LISTED, MANIFEST, PY, REAL, Bed, _dump, a_copy_of_this_interpreter, run_mixed,
     run_pty, template)
 
 PASSPHRASE = "throwaway-passphrase-for-tests"
-CLOSURE = ["bootstrap/REANCHOR_RUNBOOK.md", "bootstrap/reanchor-launcher.template.sh", "bootstrap/reanchor.sh",
-           "bootstrap/tests/_gate_manifest.py",
-           "bootstrap/tests/_gate_preflight.py", "bootstrap/tests/_gate_reanchor.py",
-           "bootstrap/tests/_gate_transition.py", "bootstrap/tests/_oracle.py",
-           "bootstrap/tests/_oracle_activation.py", "bootstrap/tests/_oracle_trust.py",
-           "bootstrap/tests/fixtures/protected_test_roster.json",
+CLOSURE = ["release/REANCHOR_RUNBOOK.md", "release/reanchor-launcher.template.sh", "release/reanchor.sh",
+           "tests/_gate_manifest.py",
+           "tests/_gate_preflight.py", "tests/_gate_reanchor.py",
+           "tests/_gate_transition.py", "tests/_oracle.py",
+           "tests/_oracle_activation.py", "tests/_oracle_trust.py",
+           "tests/fixtures/protected_test_roster.json",
            "dev/.cairn/allowed_signers"]
-MAPS = "bootstrap/_scaffold/maps.py"
+MAPS = "install/_scaffold/maps.py"
 RECORD = "dev/ceremony-record.md"
-LAUNCHER_TEMPLATE = REAL / "bootstrap/reanchor-launcher.template.sh"
-_repin_spec = importlib.util.spec_from_file_location("repin_ceremony_tests", REAL / "scripts/repin.py")
+LAUNCHER_TEMPLATE = REAL / "release/reanchor-launcher.template.sh"
+_repin_spec = importlib.util.spec_from_file_location("repin_ceremony_tests", REAL / "release/repin.py")
 REPIN = importlib.util.module_from_spec(_repin_spec)
 _repin_spec.loader.exec_module(REPIN)
 
@@ -97,8 +98,8 @@ class CeremonyBed(Bed):
         sha = lambda b: hashlib.sha256(b).hexdigest()
         into = into or self.cdir
         rows = "".join(f"member {sha((self.repo / r).read_bytes())} {r}\n" for r in sorted(CLOSURE))
-        packet = (f"schema cairn-authorization-packet/v1\nprovenance {provenance}\nartifact bootstrap/reanchor.sh\n"
-                  f"artifact_sha256 {artifact_sha or sha((self.repo / 'bootstrap/reanchor.sh').read_bytes())}\n"
+        packet = (f"schema cairn-authorization-packet/v1\nprovenance {provenance}\nartifact release/reanchor.sh\n"
+                  f"artifact_sha256 {artifact_sha or sha((self.repo / 'release/reanchor.sh').read_bytes())}\n"
                   + rows)
         (into / "authorization-packet.txt").write_text(packet)
         launcher = LAUNCHER_TEMPLATE.read_text().replace("@PACKET_SHA256@", sha(packet.encode()))
@@ -144,7 +145,7 @@ class CeremonyBed(Bed):
         """The hand-made anchor the first ceremony starts from: unsigned, perhaps not pinning repin."""
         manifest = json.loads(self.read(MANIFEST))
         if drop_repin:
-            del manifest["frozen_files"]["scripts/repin.py"]
+            del manifest["frozen_files"]["release/repin.py"]
         self.write(MANIFEST, _dump(manifest))
         self.git("add", "-A")
         self.git("commit", "-q", "--allow-empty", "-m", "unsigned anchor")
@@ -179,10 +180,10 @@ def ceremony_template(template, tmp_path_factory):
     for rel in CLOSURE:
         if rel != "dev/.cairn/allowed_signers":
             bed.write(rel, (REAL / rel).read_bytes())
-    bed.write("bootstrap/reanchor-launcher.template.sh", LAUNCHER_TEMPLATE.read_bytes())
+    bed.write("release/reanchor-launcher.template.sh", LAUNCHER_TEMPLATE.read_bytes())
     bed.write("dev/.cairn/allowed_signers", f"m@example {pub[0]} {pub[1]}\n")
-    bed.write("bootstrap/tests/test_smoke.py", "def test_smoke():\n    assert True\n")
-    for rel in ("bootstrap/tests/test_repin.py", "bootstrap/tests/test_repin_ceremony.py"):
+    bed.write("tests/test_smoke.py", "def test_smoke():\n    assert True\n")
+    for rel in ("tests/test_repin.py", "tests/test_repin_ceremony.py"):
         bed.write(rel, (REAL / rel).read_bytes())
     bed.write(MAPS, "_MODULE_MAPPINGS = {}\n_SKILLS_MAPPINGS = {}\n_CORE_MAPPINGS = {}\n")
     bed.write(BASELINE, _dump({**A.digest_module(bed.repo / ENGINE), **A.digest_module(bed.repo / MAPS)}))
@@ -255,6 +256,203 @@ def full_verifier_anchor(bed):
     return head
 
 
+def _layout_bed(root):
+    """Generate a small prior-layout repository using a throwaway signer."""
+    bed = CeremonyBed(root)
+    bed.repo.mkdir()
+    bed.home.mkdir()
+    bed.git("init", "-q", "-b", "main")
+    sh("ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(bed.key),
+       cwd=root, env=bed.env)
+    bed.configure()
+    bed.git("config", "gpg.ssh.program", shutil.which("ssh-keygen"))
+    public = bed.key.with_suffix(".pub")
+    bed.write("dev/.cairn/allowed_signers",
+              "layout@fixture " + " ".join(public.read_text().split()[:2]) + "\n")
+    bed.write(".gitignore", "__pycache__/\n*.pyc\n.pytest_cache/\n")
+    pairs = {"bootstrap/" + current: current for current in LISTED if current.startswith("tests/")}
+    pairs.update({
+        "bootstrap/REANCHOR_RUNBOOK.md": "release/REANCHOR_RUNBOOK.md",
+        "bootstrap/reanchor-launcher.template.sh": "release/reanchor-launcher.template.sh",
+        "bootstrap/reanchor.sh": "release/reanchor.sh",
+        "scripts/reanchor_ceremony.py": "release/reanchor_ceremony.py",
+        "tools/session.py": "templates/skills/_lib/session.py",
+    })
+    for old, current in pairs.items():
+        raw = (REAL / current).read_bytes()
+        if old == "bootstrap/reanchor-launcher.template.sh":
+            legacy_members = {rel for rel, new in pairs.items() if new in CLOSURE}
+            legacy_members.update(("bootstrap/tests/fixtures/protected_test_roster.json",
+                                   "dev/.cairn/allowed_signers"))
+            raw = re.sub(rb"(?m)^EXPECTED_PATHS='[^']+'$",
+                         ("EXPECTED_PATHS='" + "\n".join(sorted(legacy_members)) + "\n'").encode(),
+                         raw)
+        elif old.startswith("bootstrap/tests/"):
+            source = raw.decode("utf-8")
+            source = re.sub(r"(?<!bootstrap/)tests/", "bootstrap/tests/", source)
+            source = source.replace('"tests"', '"bootstrap/tests"')
+            source = source.replace("tests._gate_manifest", "bootstrap.tests._gate_manifest")
+            source = source.replace("from tests import", "from bootstrap.tests import")
+            for legacy, moved in pairs.items():
+                if not moved.startswith("tests/"):
+                    source = source.replace(moved, legacy)
+            raw = source.encode("utf-8")
+        bed.write(old, raw)
+
+    old_roster = "bootstrap/tests/fixtures/protected_test_roster.json"
+    new_roster = "tests/fixtures/protected_test_roster.json"
+    retained = "bootstrap/tests/test_layout_retained.py"
+    removed = "bootstrap/tests/test_layout_removed.py"
+    roster = {"protected_python_paths": sorted((retained, removed)),
+              "protected_fixture_paths": [], "preserved_non_test_frozen_paths": []}
+    bed.write(old_roster, _dump(roster))
+    for rel in (retained, removed):
+        bed.write(rel, "def test_layout_probe():\n    pass\n")
+    legacy_outputs = {"bootstrap/" + path: path for path in (BASELINE, KNOWN_NEW, MANIFEST)}
+    legacy_outputs[ENGINE.replace("install/", "bootstrap/", 1)] = ENGINE
+    bed.write("bootstrap/" + BASELINE, "{}\n")
+    bed.write("bootstrap/" + KNOWN_NEW, "{}\n")
+    bed.write("dev/.cairn/cairn-lock.yml", "{}\n")
+    bed.write(ENGINE.replace("install/", "bootstrap/", 1), "x = 1\n")
+    frozen = {path: hashlib.sha256((bed.repo / path).read_bytes()).hexdigest()
+              for path in (*pairs, retained, removed, old_roster)}
+    bed.write("bootstrap/" + MANIFEST, _dump({
+        "schema": "cairn-gate-manifest/v2",
+        "object_format": "sha1",
+        "interpreter": {"version_info": list(sys.version_info[:3])},
+        "gate_commands": [],
+        "collection": {"node_count": 2, "node_ids": sorted(
+            rel + "::test_layout_probe" for rel in (retained, removed)),
+            "skip_xfail_marked": []},
+        "frozen_files": frozen, "cascade_mutable": {}, "phase_mutable": {},
+        "mapping_symbols": {},
+        "protected_roster": {**roster, "path": old_roster, "sha256": frozen[old_roster]},
+    }))
+    bed.sign = True
+    prior = bed.commit("signed disposable prior layout")
+    bed.git("update-ref", "refs/cairn/gate-anchor", prior)
+    bed.sign = False
+    fingerprint = sh("ssh-keygen", "-lf", str(public), cwd=root, env=bed.env).stdout.split()[1]
+    sh("ssh-keygen", "-q", "-p", "-P", "", "-N", PASSPHRASE, "-f", str(bed.key),
+       cwd=root, env=bed.env)
+    key_away = root / "key-away"
+    bed.key.rename(key_away)
+
+    bed.git("rm", "-qr", "--", "bootstrap", "scripts", "tools")
+    current_files = (set(pairs.values()) - {"templates/skills/_lib/session.py"}) | {
+        "release/repin.py", "install/_scaffold/layout_catalog.py",
+        "install/_scaffold/layout_migration.py", "dev/tools/session.py",
+    }
+    for path in current_files:
+        bed.write(path, (REAL / path).read_bytes())
+    for old, relocated in legacy_outputs.items():
+        raw = bed.git("show", f"{prior}:{old}", text=False).stdout
+        bed.write(relocated, raw)
+    bed.write(new_roster, _dump({
+        **roster, "protected_python_paths": [
+            path.removeprefix("bootstrap/") for path in roster["protected_python_paths"]],
+    }))
+    bed.write("tests/conftest.py", "# One disposable test.\n")
+    marker = root / "candidate-imported"
+    live_test = retained.removeprefix("bootstrap/")
+    bed.write(live_test,
+              f"from pathlib import Path\nPath({str(marker)!r}).touch()\n"
+              "def test_layout_probe():\n    pass\n")
+    candidate = bed.commit("unsigned relocated candidate")
+    return bed, prior, candidate, fingerprint, key_away, marker, live_test
+
+
+def test_reviewed_layout_reaches_stage_one_without_signing(tmp_path):
+    """The public moved-layout route verifies and collects before any cut."""
+    bed, prior, candidate, fingerprint, key_away, marker, live_test = _layout_bed(tmp_path)
+    evidence = bed.root / "verifier-evidence"
+    script = bed.repo / "release/repin.py"
+    argv = [PY, "-I", "-B", str(script)]
+
+    def command(verb, *args, answer=None, code=0):
+        result = subprocess.run(
+            [*argv, verb, *map(str, args)], cwd=bed.repo, env=bed.env,
+            input=answer, text=True, capture_output=True, check=False)
+        assert result.returncode == code, result.stdout + result.stderr
+        return result
+
+    signer = ("--expected-fingerprint", fingerprint)
+    command("prepare-verifier", "--trusted-repo", bed.repo, "--evidence-dir", evidence, *signer)
+    packet = evidence / "verifier-evidence.json"
+    raw = packet.read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    verify = ("--evidence-dir", evidence, *signer)
+    review = ("--reviewed-layout-sha256", digest)
+    collect = ("--operator-confirms-key-away",)
+
+    refusal = command("verify-candidate", *verify, "--reviewed-layout-sha256", "0" * 64,
+                      *collect, answer="YES\n", code=2)
+    assert "independently reviewed evidence digest" in refusal.stdout + refusal.stderr
+    assert not marker.exists()
+    command("verify-candidate", *verify, *review, "--layout-static-only")
+    assert not marker.exists()
+    for rel in ("tests/_gate_preflight.py", live_test):
+        member = evidence / "candidate" / rel
+        exact = member.read_bytes()
+        member.write_bytes(exact + b"# substituted\n")
+        refusal = command("verify-candidate", *verify, *review, *collect, answer="YES\n", code=2)
+        assert f"candidate worktree bytes differ from raw C object {rel}" in refusal.stdout + refusal.stderr
+        assert not marker.exists()
+        member.write_bytes(exact)
+    for key, message in (("preparer_sha256", "the preparation script changed"),
+                         ("python_sha256", "the reviewed Python executable differs")):
+        mutated = _dump({**json.loads(raw), key: "0" * 64}).encode()
+        packet.write_bytes(mutated)
+        refusal = command("verify-candidate", *verify, "--reviewed-layout-sha256",
+                          hashlib.sha256(mutated).hexdigest(), *collect, answer="YES\n", code=2)
+        assert message in refusal.stdout + refusal.stderr
+        assert not marker.exists()
+    packet.write_bytes(raw)
+
+    command("verify-candidate", *verify, *review, *collect, answer="YES\n", code=1)
+    binding_path = evidence / "verifier-report-binding.json"
+    binding_raw = binding_path.read_bytes()
+    binding = json.loads(binding_raw)
+    capture = json.loads(Path(binding["collection_path"]).read_bytes())
+    assert marker.exists() and binding["candidate"] == candidate
+    assert capture["raw_node_ids"] == [live_test + "::test_layout_probe"]
+    assert capture["node_ids"] == ["bootstrap/" + live_test + "::test_layout_probe"]
+    assert binding["exit"] == 1 and binding["missing_protected_paths"] == [
+        "bootstrap/tests/test_layout_removed.py"]
+    assert any(hold.startswith("COLLECTION-DROPPED:") for hold in binding["holds"])
+
+    layout = ("--layout-evidence-dir", evidence, *review, *signer,
+              "--ceremony-dir", bed.cdir)
+    command("transition-packet", *layout)
+    reader = bed.root / "reader.md"
+    command("prepare-reader", *layout, "--output", reader)
+    bed.write(RECORD, reader.read_bytes())
+    tip = bed.commit("independent reader record alone")
+    dispositions = bed.root / "dispositions.json"
+    dispositions.write_text(_dump({**binding, "items": [
+        {"item": item, "disposition": "proceed", "reason": "disposable fixture"}
+        for item in binding["holds"]]}))
+    key_away.rename(bed.key)
+    options = ["ceremony", "--transition", *map(str, layout),
+               "--values", str(bed.values), "--verifier-report-sha256",
+               hashlib.sha256(binding_raw).hexdigest(),
+               "--verifier-dispositions", str(dispositions)]
+    driver = ("import runpy,sys; f=sys.argv.pop(1); "
+              "raise SystemExit(runpy.run_path(f)['main'](launchctl=lambda:None))")
+    code, out = run_pty(
+        [PY, "-I", "-B", "-c", driver, str(script), *options],
+        [("Paste the launcher digest", bed.packet_and_launcher()[1]),
+         ("Do the two digests match", "yes"), ("Does Summary 2", "no")],
+        env=bed.env, cwd=bed.repo, timeout=60,
+    )
+    package = bed.cdir / "package.json"
+    assert code == 2 and package.exists(), out
+    assert "Does Summary 2" in out and "Enter passphrase for" not in out
+    assert json.loads(package.read_bytes())["candidate_head"] == tip
+    assert bed.git("rev-parse", "HEAD").stdout.strip() == tip
+    assert anchor_of(bed) == prior
+
+
 HOOK = """
 import json
 LOG = open({log!r}, "a", buffering=1)
@@ -283,7 +481,7 @@ def drive(bed, answers, *, launchctl=None, extra=(), values=None, timeout=240, e
 import importlib.util, sys, tempfile
 sys.pycache_prefix = tempfile.mkdtemp()
 {hook}
-spec = importlib.util.spec_from_file_location("repin", {str(bed.repo / 'scripts/repin.py')!r})
+spec = importlib.util.spec_from_file_location("repin", {str(bed.repo / 'release/repin.py')!r})
 R = importlib.util.module_from_spec(spec); sys.modules["repin"] = R; spec.loader.exec_module(R)
 {patch}
 sys.exit(R.main({argv!r}, launchctl=lambda: {launchctl!r}))
@@ -370,7 +568,7 @@ def test_only_the_word_yes_counts_at_every_question(cbed, question, reply):
 
 
 def test_a_pipe_on_stdin_refuses_the_ceremony(cbed):
-    code, out = run_mixed([PY, str(cbed.repo / "scripts/repin.py"), "ceremony", "--values", str(cbed.values),
+    code, out = run_mixed([PY, str(cbed.repo / "release/repin.py"), "ceremony", "--values", str(cbed.values),
                            "--ceremony-dir", str(cbed.cdir)], tty_in=False, tty_out=True, env=cbed.env, cwd=cbed.repo)
     assert code == 2 and "must both be a terminal" in out
 
@@ -432,8 +630,8 @@ def test_a_roster_that_differs_from_the_packets_row_refuses(cbed):
 
 
 def test_a_launcher_template_that_drops_a_closure_line_refuses(cbed):
-    template = "bootstrap/reanchor-launcher.template.sh"
-    cbed.write(template, cbed.read(template).replace("bootstrap/tests/_oracle_trust.py\n", "", 1))
+    template = "release/reanchor-launcher.template.sh"
+    cbed.write(template, cbed.read(template).replace("tests/_oracle_trust.py\n", "", 1))
     cbed.commit("drop a closure line from the template")
     code, out = full_run(cbed)
     assert code == 2
@@ -463,16 +661,16 @@ def test_a_package_rewritten_between_the_report_and_the_yes_refuses(cbed):
 
 
 def test_an_edited_listed_file_refuses_and_names_the_by_hand_runbook(cbed):
-    ceremony_script = "scripts/reanchor_ceremony.py"
+    ceremony_script = "release/reanchor_ceremony.py"
     cbed.write(ceremony_script, cbed.read(ceremony_script) + "\n# edited\n")
     cbed.commit("edit a listed file")
     code, out = full_run(cbed)
-    assert code == 2 and "bootstrap/REANCHOR_RUNBOOK.md" in out and ceremony_script in out
+    assert code == 2 and "release/REANCHOR_RUNBOOK.md" in out and ceremony_script in out
     assert "Paste the launcher digest" not in out
 
 
 def test_an_edited_repin_refuses_ceremony_without_first_run(cbed):
-    cbed.write("scripts/repin.py", cbed.read("scripts/repin.py") + "\n# edited after anchoring\n")
+    cbed.write("release/repin.py", cbed.read("release/repin.py") + "\n# edited after anchoring\n")
     cbed.commit("edit repin")
     code, out = full_run(cbed)
     assert code == 2
@@ -517,8 +715,8 @@ def test_a_reviewed_commit_that_is_not_an_ancestor_refuses(cbed):
     refused_early(out, "is not a commit that is an ancestor of HEAD")
 
 
-@pytest.mark.parametrize("rel", ["scripts/repin.py", "bootstrap/tests/test_repin.py",
-                                 "bootstrap/tests/test_repin_ceremony.py"])
+@pytest.mark.parametrize("rel", ["release/repin.py", "tests/test_repin.py",
+                                 "tests/test_repin_ceremony.py"])
 def test_a_change_to_repin_or_either_test_file_after_review_refuses_first_run(cbed, rel):
     reviewed = first_run_bed(cbed)
     cbed.write(rel, cbed.read(rel) + "\n# edited after review\n")
@@ -620,7 +818,7 @@ def stop_after_pin(cbed, reply="yes"):
     cbed.write(RECORD, inputs.read_text())
     cbed.git("add", RECORD)
     cbed.git("commit", "-q", "-m", "reader record", "--", RECORD)
-    return run_pty([PY, str(cbed.repo / "scripts/repin.py"), "apply-reviewed-pin",
+    return run_pty([PY, str(cbed.repo / "release/repin.py"), "apply-reviewed-pin",
                     "--ceremony-dir", str(cbed.cdir)], [("Write these files?", reply)],
                    env=cbed.env, cwd=cbed.repo)
 
@@ -648,7 +846,7 @@ def rerun_check(cbed, first_run=False):
 ctx = R.boot(REPO, TMP)
 outcome(lambda: R.check_stop_records(ctx, CDIR, {first_run!r}))
 """
-    from bootstrap.tests.test_repin import snippet
+    from tests.test_repin import snippet
     return snippet(cbed, code)[1]
 
 
@@ -897,7 +1095,7 @@ def test_signing_tools_resolve_by_absolute_path(cbed):
     # control: a bare-name call does run the decoy, so the decoy can fire
     subprocess.run(["ssh-add"], env={"PATH": str(decoys)}, check=False)
     assert (cbed.root / "decoy-ssh-add").exists()
-    src = (REAL / "scripts/repin.py").read_text()
+    src = (REAL / "release/repin.py").read_text()
     for const, path in (("KEYGEN", "/usr/bin/ssh-keygen"), ("SSHADD", "/usr/bin/ssh-add"),
                         ("LAUNCHCTL", "/bin/launchctl"), ("SH", "/bin/sh")):
         assert f'"{path}"' in src and re.search(rf"\b{const}\b", src)
@@ -938,7 +1136,7 @@ def test_the_typed_passphrase_appears_nowhere_the_script_writes(cbed):
 
 
 def signing_region():
-    src = (REAL / "scripts/repin.py").read_text()
+    src = (REAL / "release/repin.py").read_text()
     return src[src.index("# 8-9. (signing path)"):src.index("# 10-11. (end of signing path)")]
 
 
@@ -975,12 +1173,12 @@ def test_stage_two_without_a_terminal_cannot_sign(cbed):
 
 
 def test_ceremony_help_lists_no_test_seam(cbed):
-    out = subprocess.run([PY, str(cbed.repo / "scripts/repin.py"), "ceremony", "--help"], env=cbed.env,
+    out = subprocess.run([PY, str(cbed.repo / "release/repin.py"), "ceremony", "--help"], env=cbed.env,
                          capture_output=True, text=True).stdout.lower()
     assert "--values" in out and not any(w in out for w in ("seam", "launchctl", "--test", "inject", "fake", "mock"))
 
 
-@pytest.mark.parametrize("subdir", ["scripts", "bootstrap/tests", "."])
+@pytest.mark.parametrize("subdir", ["release", "tests", "."])
 def test_a_committed_module_named_like_the_standard_library_does_not_run_in_a_ceremony(cbed, subdir):
     """Stops at the digest question: candidate code runs later, at stage 1, and may legitimately
     import a committed module; what is checked here is `repin`'s own process."""
@@ -990,7 +1188,7 @@ def test_a_committed_module_named_like_the_standard_library_does_not_run_in_a_ce
     code, out = drive(cbed, [("Paste the launcher digest", "0" * 64)])
     assert code == 2 and "not the one in the record" in out, out
     assert not list(cbed.root.glob("ran-*"))
-    if subdir == "scripts":                       # nothing in scripts/ is imported by stage 1's collection
+    if subdir == "release":                       # nothing in release/ is imported by stage 1's collection
         code, out = full_run(cbed)
         assert code == 0, out
         assert not list(cbed.root.glob("ran-*"))
@@ -1021,7 +1219,7 @@ for name, commit, roster, fp in {[("good", anchor, str(pinned), fingerprint), ("
                                    ("candidate roster, its own key", stranger, str(roster_with_stranger), stranger_fp)]!r}:
     print("VERDICT", name, R.verify_checkpoint(REPO, commit, Path(roster), fp)[0])
 """
-    from bootstrap.tests.test_repin import snippet
+    from tests.test_repin import snippet
     out = snippet(cbed, code)[1]
     verdicts = dict(re.findall(r"VERDICT (.+) (True|False)", out))
     assert verdicts == {"good": "True", "unsigned": "False", "outside": "False", "candidate roster": "False",
@@ -1300,7 +1498,7 @@ def test_packet_writes_the_same_bytes_as_the_test_helper_on_the_same_tree(cbed):
 def test_packet_refuses_a_ceremony_that_changes_an_authority_file_and_writes_nothing(cbed):
     ok, control = packet_into(cbed, "control")                      # control: the unchanged tree writes
     assert control.returncode == 0 and len(list(ok.iterdir())) == 2
-    cbed.write("bootstrap/REANCHOR_RUNBOOK.md", cbed.read("bootstrap/REANCHOR_RUNBOOK.md") + "\nchanged\n")
+    cbed.write("release/REANCHOR_RUNBOOK.md", cbed.read("release/REANCHOR_RUNBOOK.md") + "\nchanged\n")
     cbed.commit("a transition")
     out, r = packet_into(cbed)
     assert r.returncode == 2 and "transition ceremony" in r.stderr, r.stdout + r.stderr
@@ -1374,7 +1572,7 @@ def test_a_record_commit_that_changes_another_path_refuses(cbed):
 
 
 @pytest.mark.parametrize("part,damage", [("packet", {"packet": "0" * 64}), ("launcher", {"launcher": "1" * 64}),
-                                         ("a member", {"members": {"bootstrap/reanchor.sh": "2" * 64}})])
+                                         ("a member", {"members": {"release/reanchor.sh": "2" * 64}})])
 def test_a_record_that_names_other_digests_refuses(cbed, part, damage):
     record_refusal(cbed, "differ from the ones dev/ceremony-record.md names", record=damage)
 
@@ -1388,7 +1586,7 @@ RUNBOOK_TOOLS = ("env", "git", "python", "mktemp", "mkdir", "shasum", "sort", "c
 
 
 def runbook_page() -> str:
-    parts = (REAL / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8").split(RUNBOOK_PAGE_END)
+    parts = (REAL / "release/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8").split(RUNBOOK_PAGE_END)
     assert len(parts) == 2, "the runbook must carry its end-of-page marker exactly once"
     return parts[0]
 
@@ -1432,7 +1630,7 @@ def test_driver_shows_the_reviewed_tools_and_package(cbed, tmp_path):
 
 
 def checker_digest(bed):
-    from bootstrap.tests import _gate_preflight as P
+    from tests import _gate_preflight as P
     anchor = bed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
     return P.scan_digest(P.range_scan(anchor, bed.git("rev-parse", "HEAD").stdout.strip(), repo=bed.repo))
 
@@ -1473,16 +1671,16 @@ def test_a_candidate_checker_that_hides_the_scan_cannot_change_what_the_page_pri
     """E7 runs the anchor's own code. A candidate whose checker lies about the digest does not move
     it; the control runs the candidate's checker directly and sees the lie."""
     guard = 'if __name__ == "__main__":'
-    source = cbed.read("bootstrap/tests/_gate_preflight.py")
+    source = cbed.read("tests/_gate_preflight.py")
     assert source.count(guard) == 1
-    cbed.write("bootstrap/tests/_gate_preflight.py",
+    cbed.write("tests/_gate_preflight.py",
                source.replace(guard, "scan_digest = lambda scan: '0' * 64\n\n" + guard))
     cbed.commit("a checker that hides the scan")
     cbed.make_packet()
     honest = checker_digest(cbed)
     ran = run_prior_scan(cbed)
     assert ran.returncode == 0 and ran.stdout.splitlines()[-1] == honest != "0" * 64, ran
-    direct = subprocess.run([sys.executable, "-E", "-s", str(cbed.repo / "bootstrap/tests/_gate_preflight.py"),
+    direct = subprocess.run([sys.executable, "-E", "-s", str(cbed.repo / "tests/_gate_preflight.py"),
                              "scan-digest", "--repo", str(cbed.repo)], capture_output=True, text=True)
     assert direct.stdout.strip() == "0" * 64, "the control did not see the lie, so the node proves nothing"
 
@@ -1494,18 +1692,18 @@ def test_a_replace_entry_or_a_filter_in_the_repository_cannot_change_the_checker
     spellings and show each one was effective."""
     cbed.add_record()
     honest = checker_digest(cbed)
-    checker = "bootstrap/tests/_gate_preflight.py"
+    checker = "tests/_gate_preflight.py"
     evil = cbed.git("hash-object", "-w", "--stdin", input="print('EVIL-CHECKER')\n").stdout.strip()
     anchor_blob = cbed.git("rev-parse", f"refs/cairn/gate-anchor:{checker}").stdout.strip()
     cbed.git("replace", anchor_blob, evil)
     marker = tmp_path / "filter-ran"
     (cbed.repo / ".git/info").mkdir(exist_ok=True)
-    (cbed.repo / ".git/info/attributes").write_text("bootstrap/** filter=evil\n")
+    (cbed.repo / ".git/info/attributes").write_text("tests/** filter=evil\n")
     cbed.git("config", "filter.evil.smudge", f"sh -c 'echo ran > {marker}; echo print\\(1\\)'")
     cbed.git("config", "filter.evil.clean", "cat")
     assert "EVIL-CHECKER" in cbed.git("cat-file", "blob", f"refs/cairn/gate-anchor:{checker}").stdout, (
         "the control: plain git returns the substitute")
-    subprocess.run(["git", "-C", str(cbed.repo), "archive", "refs/cairn/gate-anchor", "bootstrap"],
+    subprocess.run(["git", "-C", str(cbed.repo), "archive", "refs/cairn/gate-anchor", "tests"],
                    capture_output=True, check=True)
     assert marker.exists(), "the control: `git archive` runs the filter in this repository"
     marker.unlink()
@@ -1565,7 +1763,7 @@ def test_a_replace_entry_cannot_make_a_tampered_launcher_equal_the_reviewed_temp
     template's blob for the tampered launcher's bytes makes the old command say SAME (the control);
     the page's command reads the real blob and says DIFFERENT."""
     cbed.add_record()
-    template = "bootstrap/reanchor-launcher.template.sh"
+    template = "release/reanchor-launcher.template.sh"
     launcher = cbed.cdir / "reanchor-launcher.sh"
     packet = cbed.cdir / "authorization-packet.txt"
     slot = hashlib.sha256(packet.read_bytes()).hexdigest()
@@ -1589,14 +1787,14 @@ def test_driver_refuses_damaged_reader_bindings(cbed, damage):
     if damage == "packet":
         cbed.add_record(packet="f" * 64)
     elif damage == "member":
-        cbed.add_record(members={"bootstrap/tests/_oracle.py": "e" * 64})
+        cbed.add_record(members={"tests/_oracle.py": "e" * 64})
     elif damage == "extra path":
         cbed.add_record(also={"slipped-in.txt": "x\n"})
     elif damage == "wrong parent":
         cbed.add_record(read="1" * 40)
     elif damage == "template":
         cbed.add_record()
-        template = "bootstrap/reanchor-launcher.template.sh"
+        template = "release/reanchor-launcher.template.sh"
         cbed.write(template, cbed.read(template) + "#\n")
         cbed.commit("the candidate's launcher template differs from the one read")
     else:
@@ -1770,7 +1968,7 @@ def _run_record_check_in_child(cbed, tmp_path):
     """Keep the real checked imports and record checks in a dedicated process."""
     cbed.add_record()
     packet_digest, launcher_digest = cbed.packet_and_launcher()
-    template = cbed.repo / "bootstrap/reanchor-launcher.template.sh"
+    template = cbed.repo / "release/reanchor-launcher.template.sh"
     record = cbed.repo / RECORD
     code = (
         "import importlib.util, sys\n"
@@ -1789,7 +1987,7 @@ def _run_record_check_in_child(cbed, tmp_path):
     )
     child = subprocess.run(
         [sys.executable, "-I", "-c", code, str(cbed.repo), str(tmp_path),
-         str(REAL / "scripts/repin.py"), packet_digest, launcher_digest,
+         str(REAL / "release/repin.py"), packet_digest, launcher_digest,
          str(record), str(template)],
         cwd=REAL, env=dict(os.environ), capture_output=True, text=True, timeout=240,
     )
@@ -1804,14 +2002,14 @@ def test_inherited_child_marker_does_not_bypass_record_check_isolation(
     cbed, tmp_path, monkeypatch
 ):
     monkeypatch.setenv("CAIRN_REPIN_RECORD_CHECK_CHILD", "1")
-    package = sys.modules["bootstrap.tests"]
-    manifest_module = sys.modules["bootstrap.tests._gate_manifest"]
+    package = sys.modules["tests"]
+    manifest_module = sys.modules["tests._gate_manifest"]
     assert manifest_module is GM
     assert getattr(package, "_gate_manifest") is manifest_module
 
     _run_record_check_in_child(cbed, tmp_path)
 
-    assert sys.modules["bootstrap.tests._gate_manifest"] is manifest_module
+    assert sys.modules["tests._gate_manifest"] is manifest_module
     assert getattr(package, "_gate_manifest") is manifest_module
 
 
@@ -1824,7 +2022,7 @@ def test_prepare_and_run_verifier_binds_signed_prior_to_raw_candidate(cbed, tmp_
     prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
     candidate = cbed.git("rev-parse", "HEAD").stdout.strip()
     prepared = subprocess.run(
-        [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+        [sys.executable, str(REAL / "release/repin.py"), "prepare-verifier",
          "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
          "--candidate", candidate, "--trusted-ref", "refs/cairn/gate-anchor",
          "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence)],
@@ -1834,9 +2032,9 @@ def test_prepare_and_run_verifier_binds_signed_prior_to_raw_candidate(cbed, tmp_
     assert packet["signer_fingerprint"] == packet["expected_fingerprint"] == fingerprint
     assert packet["candidate"] == candidate
     assert packet["verifier_sha256"] == hashlib.sha256(
-        (evidence / "prior/bootstrap/tests/_gate_manifest.py").read_bytes()).hexdigest()
+        (evidence / "prior/tests/_gate_manifest.py").read_bytes()).hexdigest()
     checked = subprocess.run(
-        [sys.executable, str(REAL / "scripts/repin.py"), "verify-candidate",
+        [sys.executable, str(REAL / "release/repin.py"), "verify-candidate",
          "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
          "--operator-confirms-key-away"], cwd=REAL, input="YES\n", capture_output=True,
         text=True, check=False)
@@ -1857,7 +2055,7 @@ def test_prepare_and_run_verifier_binds_signed_prior_to_raw_candidate(cbed, tmp_
     assert binding["collection_result_sha256"] == hashlib.sha256(semantic).hexdigest()
     assert binding["collection_node_count"] == len(collection["node_ids"]) > 0
     direct_argv = [packet["python"], "-I", "-E", "-s",
-                   str(evidence / "prior/bootstrap/tests/_gate_manifest.py"), "verify",
+                   str(evidence / "prior/tests/_gate_manifest.py"), "verify",
                    "--target-repo", packet["target"], "--manifest",
                    str(evidence / "prior/gate_manifest.json"), "--anchor-ref", prior,
                    "--require-anchor", "--trusted-repo", str(cbed.repo),
@@ -1875,7 +2073,7 @@ def test_prior_verifier_refuses_wrong_independent_fingerprint_before_collection(
     candidate = cbed.git("rev-parse", "HEAD").stdout.strip()
     wrong = "SHA256:" + "A" * 43
     result = subprocess.run(
-        [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+        [sys.executable, str(REAL / "release/repin.py"), "prepare-verifier",
          "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
          "--candidate", candidate, "--trusted-ref", "refs/cairn/gate-anchor",
          "--expected-fingerprint", wrong, "--evidence-dir", str(evidence)],
@@ -1886,7 +2084,7 @@ def test_prior_verifier_refuses_wrong_independent_fingerprint_before_collection(
 
 
 @pytest.mark.parametrize("relative,needle", [
-    ("prior/bootstrap/tests/_gate_manifest.py", "prior verifier evidence changed at"),
+    ("prior/tests/_gate_manifest.py", "prior verifier evidence changed at"),
     ("verifier-observer.py", "collection observer differs from the reviewed preparation code"),
 ])
 def test_prior_tool_or_observer_tamper_refuses_before_key_confirmation(cbed, tmp_path, relative, needle):
@@ -1896,7 +2094,7 @@ def test_prior_tool_or_observer_tamper_refuses_before_key_confirmation(cbed, tmp
     prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
     candidate = cbed.git("rev-parse", "HEAD").stdout.strip()
     prepared = subprocess.run(
-        [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+        [sys.executable, str(REAL / "release/repin.py"), "prepare-verifier",
          "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
          "--candidate", candidate, "--trusted-ref", "refs/cairn/gate-anchor",
          "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence)],
@@ -1905,7 +2103,7 @@ def test_prior_tool_or_observer_tamper_refuses_before_key_confirmation(cbed, tmp
     target = evidence / relative
     target.write_bytes(target.read_bytes() + b"\n# tampered after preparation\n")
     checked = subprocess.run(
-        [sys.executable, str(REAL / "scripts/repin.py"), "verify-candidate",
+        [sys.executable, str(REAL / "release/repin.py"), "verify-candidate",
          "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
          "--operator-confirms-key-away"], cwd=REAL, input="NO\n", capture_output=True,
         text=True, check=False)
@@ -1920,17 +2118,17 @@ def test_prepared_candidate_tamper_refuses_before_key_confirmation(cbed, tmp_pat
     prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
     candidate = cbed.git("rev-parse", "HEAD").stdout.strip()
     prepared = subprocess.run(
-        [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+        [sys.executable, str(REAL / "release/repin.py"), "prepare-verifier",
          "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
          "--candidate", candidate, "--trusted-ref", "refs/cairn/gate-anchor",
          "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence)],
         cwd=REAL, capture_output=True, text=True, check=False)
     assert prepared.returncode == 0, (prepared.stdout, prepared.stderr)
     target = Path(json.loads((evidence / "verifier-evidence.json").read_text())["target"])
-    changed = target / "bootstrap/tests/test_smoke.py"
+    changed = target / "tests/test_smoke.py"
     changed.write_text(changed.read_text() + "\n# tampered after preparation\n")
     checked = subprocess.run(
-        [sys.executable, str(REAL / "scripts/repin.py"), "verify-candidate",
+        [sys.executable, str(REAL / "release/repin.py"), "verify-candidate",
          "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
          "--operator-confirms-key-away"], cwd=REAL, input="NO\n", capture_output=True,
         text=True, check=False)
@@ -1945,17 +2143,17 @@ def test_hold_dispositions_bind_every_exact_item_to_the_report(cbed, tmp_path):
     fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
                                  capture_output=True, text=True, check=True).stdout.split()[1]
     prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
-    damaged = cbed.read("bootstrap/tests/_gate_manifest.py") + "\n# reviewed candidate change\n"
-    cbed.write("bootstrap/tests/_gate_manifest.py", damaged)
+    damaged = cbed.read("tests/_gate_manifest.py") + "\n# reviewed candidate change\n"
+    cbed.write("tests/_gate_manifest.py", damaged)
     candidate = cbed.commit("candidate changes prior verifier bytes")
     prepared = subprocess.run(
-        [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+        [sys.executable, str(REAL / "release/repin.py"), "prepare-verifier",
          "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
          "--candidate", candidate, "--trusted-ref", "refs/cairn/gate-anchor",
          "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence)],
         cwd=REAL, capture_output=True, text=True, check=False)
     assert prepared.returncode == 0, (prepared.stdout, prepared.stderr)
-    argv = [sys.executable, str(REAL / "scripts/repin.py"), "verify-candidate",
+    argv = [sys.executable, str(REAL / "release/repin.py"), "verify-candidate",
             "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
             "--operator-confirms-key-away"]
     first = subprocess.run(argv, cwd=REAL, input="YES\n", capture_output=True,
@@ -1967,7 +2165,7 @@ def test_hold_dispositions_bind_every_exact_item_to_the_report(cbed, tmp_path):
     evidence_packet = json.loads((evidence / "verifier-evidence.json").read_text())
     direct = subprocess.run(
         [evidence_packet["python"], "-I", "-E", "-s",
-         str(evidence / "prior/bootstrap/tests/_gate_manifest.py"), "verify",
+         str(evidence / "prior/tests/_gate_manifest.py"), "verify",
          "--target-repo", evidence_packet["target"], "--manifest",
          str(evidence / "prior/gate_manifest.json"), "--anchor-ref", prior,
          "--require-anchor", "--trusted-repo", str(cbed.repo), "--trusted-ref", prior],
@@ -1977,7 +2175,7 @@ def test_hold_dispositions_bind_every_exact_item_to_the_report(cbed, tmp_path):
     assert direct.stdout + direct.stderr == (evidence / "verifier-report.txt").read_text()
     template = next(evidence.glob("verifier-dispositions-*.json"))
     items = json.loads(template.read_text())
-    assert items["holds"] and any("FROZEN-MODIFIED: bootstrap/tests/_gate_manifest.py" in h
+    assert items["holds"] and any("FROZEN-MODIFIED: tests/_gate_manifest.py" in h
                                   for h in items["holds"])
     for disposition in ("proceed", "stop", "defer", "mixed"):
         for index, item in enumerate(items["items"]):
@@ -2002,26 +2200,26 @@ def test_verifier_binds_added_collection_nodes_as_ordinary_notes(cbed, tmp_path)
     fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
                                  capture_output=True, text=True, check=True).stdout.split()[1]
     prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
-    cbed.write("bootstrap/tests/test_added_ordinary.py", "def test_added_ordinary_node():\n    assert True\n")
+    cbed.write("tests/test_added_ordinary.py", "def test_added_ordinary_node():\n    assert True\n")
     candidate = cbed.commit("add ordinary test")
     prepared = subprocess.run(
-        [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+        [sys.executable, str(REAL / "release/repin.py"), "prepare-verifier",
          "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
          "--candidate", candidate, "--trusted-ref", "refs/cairn/gate-anchor",
          "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence)],
         cwd=REAL, capture_output=True, text=True, check=False)
     assert prepared.returncode == 0, (prepared.stdout, prepared.stderr)
     checked = subprocess.run(
-        [sys.executable, str(REAL / "scripts/repin.py"), "verify-candidate",
+        [sys.executable, str(REAL / "release/repin.py"), "verify-candidate",
          "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
          "--operator-confirms-key-away"], cwd=REAL, input="YES\n", capture_output=True,
         text=True, check=False)
     assert checked.returncode == 0, (checked.stdout, checked.stderr)
     binding = json.loads((evidence / "verifier-report-binding.json").read_text())
     collection = json.loads(Path(binding["collection_path"]).read_text())
-    assert "bootstrap/tests/test_added_ordinary.py::test_added_ordinary_node" in collection["node_ids"]
+    assert "tests/test_added_ordinary.py::test_added_ordinary_node" in collection["node_ids"]
     report = (evidence / "verifier-report.txt").read_text()
-    assert "COLLECTION-ADDED: bootstrap/tests/test_added_ordinary.py::test_added_ordinary_node" in report
+    assert "COLLECTION-ADDED: tests/test_added_ordinary.py::test_added_ordinary_node" in report
     assert binding["collection_node_count"] == len(collection["node_ids"])
 
 
@@ -2031,27 +2229,27 @@ def test_verifier_binds_new_skip_marker_as_a_hold(cbed, tmp_path):
     fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
                                  capture_output=True, text=True, check=True).stdout.split()[1]
     prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
-    cbed.write("bootstrap/tests/test_smoke.py",
+    cbed.write("tests/test_smoke.py",
                "import pytest\n@pytest.mark.skip(reason='new protected marker')\ndef test_smoke():\n    assert True\n")
     candidate = cbed.commit("add protected skip marker")
     prepared = subprocess.run(
-        [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+        [sys.executable, str(REAL / "release/repin.py"), "prepare-verifier",
          "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
          "--candidate", candidate, "--trusted-ref", "refs/cairn/gate-anchor",
          "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence)],
         cwd=REAL, capture_output=True, text=True, check=False)
     assert prepared.returncode == 0, (prepared.stdout, prepared.stderr)
     checked = subprocess.run(
-        [sys.executable, str(REAL / "scripts/repin.py"), "verify-candidate",
+        [sys.executable, str(REAL / "release/repin.py"), "verify-candidate",
          "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
          "--operator-confirms-key-away"], cwd=REAL, input="YES\n", capture_output=True,
         text=True, check=False)
     assert checked.returncode == 1
     binding = json.loads((evidence / "verifier-report-binding.json").read_text())
     collection = json.loads(Path(binding["collection_path"]).read_text())
-    assert "bootstrap/tests/test_smoke.py::test_smoke" in collection["skip_xfail_marked"]
+    assert "tests/test_smoke.py::test_smoke" in collection["skip_xfail_marked"]
     report = (evidence / "verifier-report.txt").read_text()
-    assert "SKIP-XFAIL-NEW: bootstrap/tests/test_smoke.py::test_smoke" in report
+    assert "SKIP-XFAIL-NEW: tests/test_smoke.py::test_smoke" in report
 
 
 def test_collection_capture_rejects_stale_malformed_duplicate_and_error_records():
@@ -2109,7 +2307,7 @@ def test_prepared_verifier_refuses_untrusted_evidence_before_collection(cbed, tm
     prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
     candidate = cbed.git("rev-parse", "HEAD").stdout.strip()
     evidence = tmp_path / "evidence"
-    prepare = [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+    prepare = [sys.executable, str(REAL / "release/repin.py"), "prepare-verifier",
                "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
                "--candidate", candidate, "--trusted-ref", prior,
                "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence)]
@@ -2121,9 +2319,9 @@ def test_prepared_verifier_refuses_untrusted_evidence_before_collection(cbed, tm
     sentinel.write_bytes(b"do not delete")
     if alteration == "ignored":
         # Git ignores this file, but Python could import it during collection.
-        (evidence / "candidate" / "bootstrap" / "tests" / "unexpected.pyc").write_bytes(b"ignored")
+        (evidence / "candidate" / "tests" / "unexpected.pyc").write_bytes(b"ignored")
     elif alteration == "dependency":
-        del packet["prior_dependencies"]["bootstrap/tests/_gate_manifest.py"]
+        del packet["prior_dependencies"]["tests/_gate_manifest.py"]
         packet_path.write_text(json.dumps(packet))
     elif alteration == "python":
         packet["python"] = str(sentinel)
@@ -2140,7 +2338,7 @@ def test_prepared_verifier_refuses_untrusted_evidence_before_collection(cbed, tm
         link = tmp_path / "linked-evidence"
         link.symlink_to(evidence, target_is_directory=True)
         evidence = link
-    result = subprocess.run([sys.executable, str(REAL / "scripts/repin.py"), "verify-candidate",
+    result = subprocess.run([sys.executable, str(REAL / "release/repin.py"), "verify-candidate",
                              "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
                              "--operator-confirms-key-away"], cwd=REAL, input="YES\n",
                             capture_output=True, text=True)
@@ -2152,8 +2350,8 @@ def test_prepared_verifier_refuses_untrusted_evidence_before_collection(cbed, tm
 def test_transition_packet_uses_signed_prior_authority_and_preserves_ordinary_refusal(cbed):
     fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
                                  capture_output=True, text=True, check=True).stdout.split()[1]
-    cbed.write("bootstrap/tests/_gate_manifest.py",
-               cbed.read("bootstrap/tests/_gate_manifest.py") + "\n# changed candidate checker\n")
+    cbed.write("tests/_gate_manifest.py",
+               cbed.read("tests/_gate_manifest.py") + "\n# changed candidate checker\n")
     cbed.commit("changed authority")
     ordinary, refused = packet_into(cbed, "ordinary")
     assert refused.returncode == 2 and not list(ordinary.iterdir())
@@ -2166,7 +2364,7 @@ def test_transition_packet_uses_signed_prior_authority_and_preserves_ordinary_re
                     "--expected-fingerprint", fingerprint)
     assert made.returncode == 0, made.stdout + made.stderr
     assert len(list(out.iterdir())) == 2
-    assert hashlib.sha256(cbed.read("bootstrap/tests/_gate_manifest.py").encode()).hexdigest() in (out / "authorization-packet.txt").read_text()
+    assert hashlib.sha256(cbed.read("tests/_gate_manifest.py").encode()).hexdigest() in (out / "authorization-packet.txt").read_text()
     inputs = cbed.root / "transition-reader-inputs"
     prepared = cbed.run("prepare-reader", "--ceremony-dir", str(out), "--output", str(inputs),
                         "--expected-fingerprint", fingerprint)
@@ -2178,8 +2376,8 @@ def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anch
     """Transition authority first, then review an AST deletion and rerun fresh."""
     fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
                                  capture_output=True, text=True, check=True).stdout.split()[1]
-    preflight = cbed.read("bootstrap/tests/_gate_preflight.py")
-    cbed.write("bootstrap/tests/_gate_preflight.py",
+    preflight = cbed.read("tests/_gate_preflight.py")
+    cbed.write("tests/_gate_preflight.py",
                preflight + "\n# reviewed scratch authority change\n")
     cbed.commit("change the scratch verifier")
     (cbed.cdir / "authorization-packet.txt").unlink()
@@ -2229,7 +2427,7 @@ def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anch
     cbed.write(RECORD, ast_reader.read_text())
     cbed.git("commit", "-q", "-m", "reader records AST deletion", "--", RECORD)
     read_tip = cbed.git("rev-parse", "HEAD").stdout.strip()
-    command = [PY, str(cbed.repo / "scripts/repin.py"), "apply-reviewed-pin",
+    command = [PY, str(cbed.repo / "release/repin.py"), "apply-reviewed-pin",
                "--ceremony-dir", str(cbed.cdir)]
     code, stopped = run_pty(command, [("Write these files?", "yes")],
                             env=cbed.env, cwd=cbed.repo)
@@ -2238,7 +2436,7 @@ def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anch
     assert "Purpose: apply the already reviewed pin transaction" in stopped
     assert cbed.git("rev-parse", "HEAD").stdout.strip() == read_tip
     assert missing not in json.loads(cbed.read(BASELINE))
-    commit_cmd = [PY, str(cbed.repo / "scripts/repin.py"), "commit-reviewed-pin",
+    commit_cmd = [PY, str(cbed.repo / "release/repin.py"), "commit-reviewed-pin",
                   "--ceremony-dir", str(cbed.cdir)]
     denied, refusal = run_pty(commit_cmd, [("Commit these files?", "no")], env=cbed.env, cwd=cbed.repo)
     assert denied == 2 and "No commit was made" in refusal
@@ -2270,7 +2468,7 @@ def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anch
     assert "follows configured hooks and commit-signing policy" in signed_output
     assert "does not sign" not in signed_output
     assert cbed.git("rev-parse", "HEAD").stdout.strip() == read_tip
-    runbook = (REAL / "bootstrap/REANCHOR_RUNBOOK.md").read_text()
+    runbook = (REAL / "release/REANCHOR_RUNBOOK.md").read_text()
     assert "following configured hooks and commit-signing policy" in runbook
     assert "Neither signs or moves a ref." not in runbook
     cbed.git("config", "commit.gpgsign", "false")
@@ -2306,7 +2504,7 @@ def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anch
 
 def test_documented_verifier_then_ceremony_on_disposable_authority(cbed):
     full_verifier_anchor(cbed)
-    cbed.write("bootstrap/tests/test_workflow_candidate.py", "def test_candidate():\n    pass\n")
+    cbed.write("tests/test_workflow_candidate.py", "def test_candidate():\n    pass\n")
     cbed.commit("candidate change")
     cbed.make_packet()
     cbed.ensure_record()
@@ -2316,7 +2514,7 @@ def test_documented_verifier_then_ceremony_on_disposable_authority(cbed):
     prepared = cbed.run("prepare-verifier", "--trusted-repo", str(cbed.repo),
                         "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence))
     assert prepared.returncode == 0, prepared.stdout + prepared.stderr
-    checked = subprocess.run([PY, str(cbed.repo / "scripts/repin.py"), "verify-candidate",
+    checked = subprocess.run([PY, str(cbed.repo / "release/repin.py"), "verify-candidate",
                               "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
                               "--operator-confirms-key-away"], cwd=cbed.repo, env=cbed.env,
                              input="YES\n", capture_output=True, text=True)
@@ -2386,7 +2584,7 @@ def test_reviewed_ast_transaction_requires_record_before_write_and_stops(cbed):
     assert prepared.returncode == 0, prepared.stdout + prepared.stderr
     assert "ast-transaction-sha256 " + digest in inputs.read_text()
     # Without a reader's record there is no write, even if the operator answers yes.
-    cmd = [PY, str(cbed.repo / "scripts/repin.py"), "apply-reviewed-pin", "--ceremony-dir", str(cbed.cdir)]
+    cmd = [PY, str(cbed.repo / "release/repin.py"), "apply-reviewed-pin", "--ceremony-dir", str(cbed.cdir)]
     code, out = run_pty(cmd, [("Write these files?", "yes")], env=cbed.env, cwd=cbed.repo)
     assert code == 2 and cbed.git("rev-parse", "HEAD").stdout.strip() == read_commit
     assert cbed.git("status", "--porcelain").stdout == ""
@@ -2433,7 +2631,7 @@ def test_reviewed_symbol_deletion_is_exactly_named_recorded_and_written(cbed):
     cbed.write(RECORD, inputs.read_text())
     cbed.git("add", RECORD)
     cbed.git("commit", "-q", "-m", "reader record", "--", RECORD)
-    cmd = [PY, str(cbed.repo / "scripts/repin.py"), "apply-reviewed-pin", "--ceremony-dir", str(cbed.cdir)]
+    cmd = [PY, str(cbed.repo / "release/repin.py"), "apply-reviewed-pin", "--ceremony-dir", str(cbed.cdir)]
     (cbed.cdir / REPIN.TXN_NAME).write_bytes(raw + b" ")
     code, out = run_pty(cmd, [("Write these files?", "yes")], env=cbed.env, cwd=cbed.repo)
     assert code == 2 and "does not bind this exact AST transaction" in out

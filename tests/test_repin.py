@@ -1,4 +1,4 @@
-"""Tests for `scripts/repin.py`: the re-pin and re-anchor ceremony, run through its commands.
+"""Tests for `release/repin.py`: the re-pin and re-anchor ceremony, run through its commands.
 
 Promises:
 - `status` reads and writes nothing; it shows what the AST pin and gate manifest owe and whether repin is itself anchored.
@@ -9,7 +9,7 @@ Promises:
 - The apply step prints every changed key, writes only after the exact word yes, makes no commit and never pushes.
 - A write refuses when a target, transaction or review input changes after review, and names what it already replaced when a later replace fails.
 - The package digest is computed over tracked bytes, ignores kept records, and is the same in a detached checkout.
-Sources: `scripts/repin.py` module docstring; `scripts/repin.py --help` (the `status`, `package`, `packet` and `apply-reviewed-pin` subcommands, lines 2641-2664).
+Sources: `release/repin.py` module docstring; `release/repin.py --help` (the `status`, `package`, `packet` and `apply-reviewed-pin` subcommands, lines 2641-2664).
 
 Every test runs against a scratch repository that has its own anchor
 (`refs/cairn/gate-anchor`) pinning its own copies of the gate files, with
@@ -37,26 +37,26 @@ from unittest.mock import patch
 
 import pytest
 
-from bootstrap.tests import _ast_attest as A
-from bootstrap.tests import _gate_manifest as GM
-from bootstrap.tests import _gate_preflight as GP
-from scripts import repin as RP
+from tests import _ast_attest as A
+from tests import _gate_manifest as GM
+from tests import _gate_preflight as GP
+from release import repin as RP
 
-REAL = Path(__file__).resolve().parents[2]
+REAL = Path(__file__).resolve().parent.parent
 PY = sys.executable
 
 #: The files whose bytes must equal the anchor's before `repin` imports anything.
 #: Retyped here so the test, not a shared constant, states the contract.
-LISTED = ["bootstrap/tests/__init__.py", "bootstrap/tests/_ast_attest.py",
-          "bootstrap/tests/_gate_manifest.py", "bootstrap/tests/_gate_preflight.py",
-          "bootstrap/tests/_gate_reanchor.py", "bootstrap/tests/_gate_transition.py",
-          "bootstrap/tests/_oracle.py", "bootstrap/tests/_oracle_activation.py",
-          "bootstrap/tests/_oracle_trust.py", "scripts/reanchor_ceremony.py"]
-SESSION = ["tools/session.py", "templates/skills/_lib/session.py"]
-ENGINE = "bootstrap/_scaffold/mod.py"
-BASELINE = "bootstrap/tests/fixtures/scaffold_ast_baseline.json"
-KNOWN_NEW = "bootstrap/tests/fixtures/scaffold_ast_known_new.json"
-MANIFEST = "bootstrap/tests/fixtures/gate_manifest.json"
+LISTED = ["tests/__init__.py", "tests/_ast_attest.py",
+          "tests/_gate_manifest.py", "tests/_gate_preflight.py",
+          "tests/_gate_reanchor.py", "tests/_gate_transition.py",
+          "tests/_oracle.py", "tests/_oracle_activation.py",
+          "tests/_oracle_trust.py", "release/reanchor_ceremony.py"]
+SESSION = ["dev/tools/session.py", "templates/skills/_lib/session.py"]
+ENGINE = "install/_scaffold/mod.py"
+BASELINE = "tests/fixtures/scaffold_ast_baseline.json"
+KNOWN_NEW = "tests/fixtures/scaffold_ast_known_new.json"
+MANIFEST = "tests/fixtures/gate_manifest.json"
 
 
 def _dump(obj) -> str:
@@ -113,7 +113,7 @@ class Bed:
         return head
 
     def run(self, *args, cwd=None, stdin=subprocess.DEVNULL):
-        return subprocess.run([PY, str(self.repo / "scripts/repin.py"), *args],
+        return subprocess.run([PY, str(self.repo / "release/repin.py"), *args],
                               cwd=cwd or self.repo, env=self.env, stdin=stdin,
                               capture_output=True, text=True, check=False)
 
@@ -141,7 +141,7 @@ def template(tmp_path_factory):
     (bed.repo).mkdir()
     (bed.home).mkdir()
     bed.git("init", "-q", "-b", "main")
-    for rel in [*LISTED, *SESSION, "scripts/repin.py"]:
+    for rel in [*LISTED, *SESSION, "release/repin.py"]:
         bed.write(rel, (REAL / rel).read_bytes())
     bed.write(GM._PROTECTED_ROSTER_REL,
               (REAL / GM._PROTECTED_ROSTER_REL).read_bytes())
@@ -183,9 +183,9 @@ def test_the_extraction_ignores_gitattributes(bed):
     one; the tree is read from raw objects, so neither can shrink what is checked."""
     control = ok(bed.run("status"))
     assert "over 1 committed engine modules" in control
-    bed.write(".gitattributes", f"{ENGINE} export-ignore\nscripts/reanchor_ceremony.py export-subst\n")
-    bed.write("scripts/reanchor_ceremony.py",
-              bed.read("scripts/reanchor_ceremony.py") + "\n# $Format:%H$\n")
+    bed.write(".gitattributes", f"{ENGINE} export-ignore\nrelease/reanchor_ceremony.py export-subst\n")
+    bed.write("release/reanchor_ceremony.py",
+              bed.read("release/reanchor_ceremony.py") + "\n# $Format:%H$\n")
     bed.pin()
     archived = bed.git("archive", "HEAD", "--format=tar", text=False).stdout
     with tarfile.open(fileobj=io.BytesIO(archived)) as tar:
@@ -246,7 +246,7 @@ def test_forward_guided_ast_correction_needs_no_anchor_and_commits_only_reviewed
         assert result.returncode == 0, result.stdout + result.stderr
     bed.git("config", "user.name", "scratch")
     bed.git("config", "user.email", "scratch@example.invalid")
-    code, out = run_pty([PY, str(bed.repo / "scripts/repin.py"), "forward-guide",
+    code, out = run_pty([PY, str(bed.repo / "release/repin.py"), "forward-guide",
                          "--evidence-dir", str(evidence)],
                         [("Apply this reviewed correction?", "yes"),
                          ("Commit exactly these reviewed paths?", "yes")],
@@ -259,7 +259,7 @@ def test_forward_guided_ast_correction_needs_no_anchor_and_commits_only_reviewed
     changed = bed.git("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD").stdout.splitlines()
     assert changed == [BASELINE]
     base = json.loads(bed.read(BASELINE))
-    merged, _ = A._merge_current(sorted((bed.repo / "bootstrap/_scaffold").glob("*.py")))
+    merged, _ = A._merge_current(sorted((bed.repo / "install/_scaffold").glob("*.py")))
     _problems, changed_symbols, missing, duplicates, _new = A._classify(base, merged)
     assert not changed_symbols and not missing and not duplicates
 
@@ -376,14 +376,14 @@ def test_forward_guide_refuses_review_binding_and_fixture_mutation(bed, tmp_path
                        "--coverage", "read packet, not host signing key").returncode == 0
     review_path = evidence / "ordinary-review.txt"
     review_path.write_text(review_path.read_text().replace("packet-sha256:", "changed-packet-sha256:"))
-    code, out = run_pty([PY, str(bed.repo / "scripts/repin.py"), "forward-guide",
+    code, out = run_pty([PY, str(bed.repo / "release/repin.py"), "forward-guide",
                          "--evidence-dir", str(evidence)], env=bed.env, cwd=bed.repo, timeout=8)
     assert code == 2 and "review is missing or bound" in out
     assert bed.git("status", "--porcelain").stdout == ""
 
     review_path.write_text(review_path.read_text().replace("changed-packet-sha256:", "packet-sha256:"))
     bed.write(BASELINE, "{}\n")
-    code, out = run_pty([PY, str(bed.repo / "scripts/repin.py"), "forward-guide",
+    code, out = run_pty([PY, str(bed.repo / "release/repin.py"), "forward-guide",
                          "--evidence-dir", str(evidence)], env=bed.env, cwd=bed.repo, timeout=8)
     assert code == 2 and "neither the reviewed preimage nor reviewed output" in out
     assert bed.read(BASELINE) == "{}\n"
@@ -424,7 +424,7 @@ def test_forward_guide_refuses_changes_during_approval(bed, tmp_path, changed):
             bed.write(BASELINE, "{}\n")
         return "yes"
 
-    code, out = run_pty([PY, str(bed.repo / "scripts/repin.py"), "forward-guide",
+    code, out = run_pty([PY, str(bed.repo / "release/repin.py"), "forward-guide",
                          "--evidence-dir", str(evidence)],
                         [("Apply this reviewed correction?", change_and_approve)],
                         env=bed.env, cwd=bed.repo, timeout=8)
@@ -480,9 +480,9 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     assert generated.returncode == 0, generated.stderr
     public_key = key.with_suffix(".pub").read_text().split()
     signer_roster_rel = "dev/.cairn/allowed_signers"
-    ast_engine = "bootstrap/_scaffold/install.py"
+    ast_engine = "install/_scaffold/install.py"
     (repo / signer_roster_rel).write_text(f"scratch@example.invalid {public_key[0]} {public_key[1]}\n")
-    candidate_paths = ("scripts/repin.py", "bootstrap/tests/test_repin.py",
+    candidate_paths = ("release/repin.py", "tests/test_repin.py",
                        "dev/plans/archive/2026-10-29-forward-trust-baseline.md",
                        signer_roster_rel, ast_engine)
     for relative in candidate_paths:
@@ -493,7 +493,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     with (repo / ast_engine).open("ab") as engine:
         engine.write(b"\n\ndef scratch_baseline_candidate():\n    return 'prepared'\n")
     credential_marker = tmp_path / "candidate-saw-credential"
-    sentinel = repo / "bootstrap/tests/test_baseline_collection_environment.py"
+    sentinel = repo / "tests/test_baseline_collection_environment.py"
     sentinel.write_text(
         "import os\n"
         f"marker = {str(credential_marker)!r}\n"
@@ -519,7 +519,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
                                      "roster_sha256": RP.sha(roster.read_bytes()),
                                      "reviewer": "scratch", "reviewed": True}))
     pending = tmp_path / "pending-baseline-package"
-    missing = subprocess.run([PY, str(repo / "scripts/repin.py"), "baseline-prepare",
+    missing = subprocess.run([PY, str(repo / "release/repin.py"), "baseline-prepare",
                               "--candidate", candidate, "--approved-roster", str(roster),
                               "--reader-record", str(missing_reader), "--output-dir", str(pending)],
                              cwd=repo, env=git_env, capture_output=True, text=True, check=False)
@@ -528,7 +528,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     assert not pending.exists()
     pending_reader = tmp_path / "pending-reader.json"
     reader_refusal = subprocess.run(
-        [PY, str(repo / "scripts/repin.py"), "baseline-reader-inputs", "--candidate", candidate,
+        [PY, str(repo / "release/repin.py"), "baseline-reader-inputs", "--candidate", candidate,
          "--approved-roster", str(roster), "--output", str(pending_reader)],
         cwd=repo, env=git_env, capture_output=True, text=True, check=False)
     assert reader_refusal.returncode == 2
@@ -538,13 +538,13 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     initial_tree = tmp_path / "ast-input"
     ents = RP.extract(repo, candidate, initial_tree)
     engine = sorted(path for _mode, _oid, path in ents
-                    if path.startswith("bootstrap/_scaffold/") and path.endswith(".py"))
+                    if path.startswith("install/_scaffold/") and path.endswith(".py"))
     txn = RP.build_transaction({"repo": repo, "head": candidate, "anchor": "no-predecessor",
                                  "ext": initial_tree, "tmp": tmp_path, "ents": ents,
                                  "engine": engine, "closure_changed": [],
                                  "baseline_mode": True,
                                  "session_oid": RP.git_text(repo, "rev-parse",
-                                                            f"{candidate}:tools/session.py")},
+                                                            f"{candidate}:dev/tools/session.py")},
                                baseline=True)
     assert txn is not None and txn["outputs"]
     for relative, output_row in txn["outputs"].items():
@@ -564,7 +564,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
                   "GPG_AGENT_INFO": "/tmp/unavailable-gpg-agent",
                   "AWS_SECRET_ACCESS_KEY": "must-not-reach-candidate"}
     prepared_reader = subprocess.run(
-        [PY, str(repo / "scripts/repin.py"), "baseline-reader-inputs", "--candidate", candidate,
+        [PY, str(repo / "release/repin.py"), "baseline-reader-inputs", "--candidate", candidate,
          "--approved-roster", str(roster), "--output", str(reader)],
         cwd=repo, env=reader_env, capture_output=True, text=True, check=False)
     assert prepared_reader.returncode == 0, prepared_reader.stdout + prepared_reader.stderr
@@ -575,7 +575,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     assert not credential_marker.exists(), "reader-input collection inherited a signing credential"
     output = tmp_path / "baseline-package"
     refs_before = RP.git(repo, "for-each-ref", "--format=%(refname) %(objectname)").decode()
-    result = subprocess.run([PY, str(repo / "scripts/repin.py"), "baseline-prepare",
+    result = subprocess.run([PY, str(repo / "release/repin.py"), "baseline-prepare",
                              "--candidate", candidate, "--approved-roster", str(roster),
                              "--reader-record", str(reader), "--output-dir", str(output)],
                             cwd=repo,
@@ -612,7 +612,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
                                 capture_output=True, text=True, check=True).stdout.strip()
     package_path = output / "baseline-package.json"
     package_digest = RP.sha(package_path.read_bytes())
-    ordinary = subprocess.run([PY, str(repo / "scripts/repin.py"), "status"], cwd=repo,
+    ordinary = subprocess.run([PY, str(repo / "release/repin.py"), "status"], cwd=repo,
                               env=install_env, capture_output=True, text=True, check=False)
     assert ordinary.returncode == 2 and "does not resolve" in ordinary.stderr
     assert RP.git(repo, "for-each-ref", "--format=%(refname) %(objectname)").decode() == refs_before_install
@@ -620,7 +620,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     def invoke_install(*, approved=roster, record=reader, expected=fingerprint,
                        package_path=output):
         return subprocess.run(
-            [PY, str(repo / "scripts/repin.py"), "baseline-install", "--candidate", candidate,
+            [PY, str(repo / "release/repin.py"), "baseline-install", "--candidate", candidate,
              "--package-dir", str(package_path), "--approved-roster", str(approved),
              "--reader-record", str(record), "--signing-key", str(key.with_suffix(".pub")),
              "--expected-fingerprint", expected, "--confirm-package-sha256", package_digest],
@@ -631,7 +631,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
         assert RP.git(repo, "for-each-ref", "--format=%(refname) %(objectname)").decode() == refs_before_install
 
     missing = subprocess.run(
-        [PY, str(repo / "scripts/repin.py"), "baseline-install", "--candidate", candidate,
+        [PY, str(repo / "release/repin.py"), "baseline-install", "--candidate", candidate,
          "--package-dir", str(output), "--approved-roster", str(roster),
          "--signing-key", str(key.with_suffix(".pub")), "--expected-fingerprint", fingerprint,
          "--confirm-package-sha256", package_digest],
@@ -667,10 +667,10 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
 
     # A mode change hidden from status still cannot substitute the executing
     # installer for the bytes committed at the reviewed candidate.
-    installer_path = repo / "scripts/repin.py"
+    installer_path = repo / "release/repin.py"
     installer_bytes = installer_path.read_bytes()
     subprocess.run(["git", "-C", str(repo), "update-index", "--assume-unchanged",
-                    "scripts/repin.py"], env=git_env, check=True)
+                    "release/repin.py"], env=git_env, check=True)
     try:
         installer_path.write_bytes(installer_bytes + b"\n# substituted executing bytes\n")
         changed = invoke_install()
@@ -678,7 +678,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     finally:
         installer_path.write_bytes(installer_bytes)
         subprocess.run(["git", "-C", str(repo), "update-index", "--no-assume-unchanged",
-                        "scripts/repin.py"], env=git_env, check=True)
+                        "release/repin.py"], env=git_env, check=True)
 
     wrong_fingerprint = "SHA256:" + "A" * 43
     assert_refusal_without_move(invoke_install(expected=wrong_fingerprint), "does not match")
@@ -691,7 +691,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
 
     def load_with_anchor_race(ext, session_path):
         made = original_loader(ext, session_path)
-        preflight = __import__("sys").modules["bootstrap.tests._gate_preflight"]
+        preflight = __import__("sys").modules["tests._gate_preflight"]
         advance = preflight._advance_both_refs
 
         def race_before_transaction(target_repo, branch, new, *, branch_old, anchor_old):
@@ -720,7 +720,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
 
     def load_with_branch_race(ext, session_path):
         made = original_loader(ext, session_path)
-        preflight = __import__("sys").modules["bootstrap.tests._gate_preflight"]
+        preflight = __import__("sys").modules["tests._gate_preflight"]
         advance = preflight._advance_both_refs
 
         def race_before_transaction(target_repo, branch, new, *, branch_old, anchor_old):
@@ -764,7 +764,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     assert anchor == new
 
     def verify_installed_baseline(*, collect=False):
-        args = [PY, "-m", "bootstrap.tests._gate_manifest", "verify",
+        args = [PY, "-m", "tests._gate_manifest", "verify",
                 "--target-repo", str(repo), "--anchor-ref", new]
         if not collect:
             args.append("--no-collect")
@@ -774,11 +774,11 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     intact = verify_installed_baseline()
     assert intact.returncode == 0, intact.stdout + intact.stderr
 
-    protected_test = repo / "bootstrap/tests/test_repin.py"
+    protected_test = repo / "tests/test_repin.py"
     protected_original = protected_test.read_bytes()
     protected_test.write_bytes(protected_original + b"\n# scratch protected-byte loss\n")
     byte_loss = verify_installed_baseline()
-    assert byte_loss.returncode == 1 and "FROZEN-MODIFIED: bootstrap/tests/test_repin.py" in byte_loss.stderr
+    assert byte_loss.returncode == 1 and "FROZEN-MODIFIED: tests/test_repin.py" in byte_loss.stderr
     protected_test.write_bytes(protected_original)
 
     tree = ast.parse(protected_original.decode("utf-8"))
@@ -790,26 +790,26 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     del lines[start - 1:target.end_lineno]
     protected_test.write_text("".join(lines), encoding="utf-8")
     node_loss = verify_installed_baseline(collect=True)
-    assert node_loss.returncode == 1 and f"COLLECTION-DROPPED: bootstrap/tests/test_repin.py::{removed_name}" in node_loss.stderr
+    assert node_loss.returncode == 1 and f"COLLECTION-DROPPED: tests/test_repin.py::{removed_name}" in node_loss.stderr
     protected_test.write_bytes(protected_original)
 
     protected_test.write_bytes(protected_original + b"\npytestmark = pytest.mark.skip('scratch new protected marker')\n")
     marker_loss = verify_installed_baseline(collect=True)
-    assert marker_loss.returncode == 1 and "SKIP-XFAIL-NEW: bootstrap/tests/test_repin.py::" in marker_loss.stderr
+    assert marker_loss.returncode == 1 and "SKIP-XFAIL-NEW: tests/test_repin.py::" in marker_loss.stderr
     protected_test.write_bytes(protected_original)
 
-    ordinary_test = repo / "bootstrap/tests/test_baseline_ordinary_added.py"
+    ordinary_test = repo / "tests/test_baseline_ordinary_added.py"
     ordinary_test.write_text("def test_new_ordinary_baseline_node():\n    assert True\n", encoding="utf-8")
     ordinary = verify_installed_baseline(collect=True)
     assert ordinary.returncode == 0, ordinary.stdout + ordinary.stderr
-    assert "UNPROTECTED-NEW: bootstrap/tests/test_baseline_ordinary_added.py" in ordinary.stderr
-    assert "COLLECTION-ADDED: bootstrap/tests/test_baseline_ordinary_added.py::test_new_ordinary_baseline_node" in ordinary.stderr
+    assert "UNPROTECTED-NEW: tests/test_baseline_ordinary_added.py" in ordinary.stderr
+    assert "COLLECTION-ADDED: tests/test_baseline_ordinary_added.py::test_new_ordinary_baseline_node" in ordinary.stderr
 
 
 def test_a_case_colliding_tree_refuses_before_import(bed):
     """Two tree names that are one file on a case-insensitive disk leave the
     bytes written last under the imported name; the tree is refused."""
-    twin = "bootstrap/tests/_GATE_MANIFEST.py"
+    twin = "tests/_GATE_MANIFEST.py"
     blob = bed.git("hash-object", "-w", "--stdin", input="x = 1\n").stdout.strip()
     bed.git("update-index", "--add", "--cacheinfo", f"100644,{blob},{twin}")
     bed.git("commit", "-q", "-m", "collide")
@@ -831,27 +831,27 @@ def test_each_imported_file_is_byte_compared_with_the_anchor_before_import(bed, 
 
 
 def test_a_tracked_compiled_file_refuses(bed):
-    bed.write("scripts/__pycache__/stale.cpython-313.pyc", b"\0")
+    bed.write("release/__pycache__/stale.cpython-313.pyc", b"\0")
     bed.commit("track a compiled file")
     refused(bed.run("status"), "compiled file is tracked")
-    bed.git("rm", "-q", "-r", "scripts/__pycache__")
+    bed.git("rm", "-q", "-r", "release/__pycache__")
     bed.git("commit", "-q", "-m", "untrack")
     ok(bed.run("status"))
 
 
 def test_a_loaded_local_module_outside_the_list_refuses(bed):
     """A listed module that imports an unlisted local module is seen loaded and refused."""
-    twin = "bootstrap/tests/_oracle_trust.py"
-    bed.write("bootstrap/tests/planted.py", "VALUE = 1\n")
+    twin = "tests/_oracle_trust.py"
+    bed.write("tests/planted.py", "VALUE = 1\n")
     bed.pin()
     ok(bed.run("status"))
-    bed.write(twin, bed.read(twin) + "\nfrom bootstrap.tests import planted\n")
+    bed.write(twin, bed.read(twin) + "\nfrom tests import planted\n")
     bed.pin()
-    refused(bed.run("status"), "bootstrap.tests.planted")
+    refused(bed.run("status"), "tests.planted")
 
 
 @pytest.mark.parametrize("verb", ["status", "package"])
-@pytest.mark.parametrize("subdir", ["scripts", "bootstrap/tests", "."])
+@pytest.mark.parametrize("subdir", ["release", "tests", "."])
 def test_a_committed_module_named_like_the_standard_library_does_not_run(bed, subdir, verb):
     # `tarfile` and `base64` are imported only after the extraction joins the
     # search path, so they are the names an inserted path would let win.
@@ -869,10 +869,10 @@ def test_a_committed_module_named_like_the_standard_library_does_not_run(bed, su
 
 
 @pytest.mark.parametrize("verb", ["status", "package", "ceremony"])
-@pytest.mark.parametrize("shape,bare_import", [("bootstrap/__init__.py", "bootstrap"), ("scripts/__init__.py", "scripts"),
-                                               ("scripts.py", "scripts"), ("bootstrap.py", "bootstrap")])
+@pytest.mark.parametrize("shape,bare_import", [("install/__init__.py", "install"), ("release/__init__.py", "release"),
+                                               ("release.py", "release"), ("install.py", "install")])
 def test_a_committed_parent_package_or_module_does_not_run_and_cannot_hide(bed, shape, bare_import, verb):
-    """`bootstrap` and `scripts` are plain folders in the commit.  Whatever a tracked
+    """The checkout cannot provide extra package initializers or shadow modules. Whatever a tracked
     `__init__.py` or same-named module holds runs only if the import system finds it, and
     `repin` never puts the extraction on its search path.  The payload also blanks its own
     `__file__`, the way a check that trusts the module's word about itself is beaten."""
@@ -895,8 +895,8 @@ def test_a_committed_parent_package_or_module_does_not_run_and_cannot_hide(bed, 
 def test_a_module_loaded_outside_the_list_is_refused_even_when_it_blanks_its_own_file_and_spec(bed, hide):
     """The post-import check reads where the import system loaded a module from, not what
     the module says about itself."""
-    twin = "bootstrap/tests/_oracle_trust.py"
-    bed.write("bootstrap/tests/planted.py", f"VALUE = 1\n{hide}\n")
+    twin = "tests/_oracle_trust.py"
+    bed.write("tests/planted.py", f"VALUE = 1\n{hide}\n")
     bed.write(twin, bed.read(twin) + "\nimport importlib.util as _u, sys as _s\n"
               "_sp = _u.spec_from_file_location('planted', __file__.replace('_oracle_trust.py', 'planted.py'))\n"
               "_m = _u.module_from_spec(_sp)\n_s.modules['planted'] = _m\n_sp.loader.exec_module(_m)\n")
@@ -908,10 +908,10 @@ def test_the_extraction_is_never_on_the_search_path_of_a_pinned_module(bed):
     """A pinned module that does a bare `import planted` finds nothing: if any folder of the
     extraction were searched, a committed `planted.py` would run before the post-import
     check could refuse it.  The file is committed in every folder an import could reach."""
-    folders = ("", "scripts/", "bootstrap/", "bootstrap/tests/")
+    folders = ("", "release/", "install/", "tests/")
     for folder in folders:
         bed.write(f"{folder}planted.py", marker_code(bed.marker()))
-    twin = "bootstrap/tests/_oracle.py"
+    twin = "tests/_oracle.py"
     bed.write(twin, bed.read(twin) + "\nimport planted\n")
     bed.pin()
     refused(bed.run("status"), "outside the checked list")
@@ -1006,13 +1006,13 @@ def test_a_planted_compiled_file_in_the_working_tree_does_not_run(bed):
     import py_compile
     src = bed.root / "evil.py"
     src.write_text(marker_code(bed.marker()))
-    cache = bed.repo / "bootstrap/tests/__pycache__"
+    cache = bed.repo / "tests/__pycache__"
     cache.mkdir()
     py_compile.compile(str(src), cfile=str(cache / f"_gate_manifest.{sys.implementation.cache_tag}.pyc"),
                        invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)
     ok(bed.run("status"))
     assert not bed.marker().exists()
-    subprocess.run([PY, "-c", "import sys; sys.path.insert(0, 'bootstrap/tests'); import _gate_manifest"],
+    subprocess.run([PY, "-c", "import sys; sys.path.insert(0, 'tests'); import _gate_manifest"],
                    cwd=bed.repo, env=bed.env, check=False)
     assert bed.marker().exists(), "the control is wrong: the planted file should run unprotected"
 
@@ -1027,7 +1027,7 @@ def test_an_edited_session_module_at_head_does_not_run(bed):
     assert not bed.marker().exists()
     assert "\x1b" not in out and "\r" not in out
     assert "\\x1b[31m\\x0dspoof" in out
-    anchored = bed.git("rev-parse", "refs/cairn/gate-anchor:tools/session.py").stdout.strip()
+    anchored = bed.git("rev-parse", "refs/cairn/gate-anchor:dev/tools/session.py").stdout.strip()
     assert anchored in out, "the first screen does not name the anchor's encoder blob"
 
 
@@ -1053,7 +1053,7 @@ def test_status_writes_nothing(bed):
 
 
 def test_an_untracked_engine_module_is_absent_until_committed(bed):
-    bed.write("bootstrap/_scaffold/extra.py", "def extra():\n    return 3\n")
+    bed.write("install/_scaffold/extra.py", "def extra():\n    return 3\n")
     assert "over 1 committed engine modules" in ok(bed.run("status"))
     bed.commit("add extra")
     out = ok(bed.run("status"))
@@ -1065,7 +1065,7 @@ def test_head_moving_during_a_run_refuses(bed):
 import importlib.util, subprocess, sys, tempfile
 from pathlib import Path
 sys.pycache_prefix = tempfile.mkdtemp()
-spec = importlib.util.spec_from_file_location("repin", {str(bed.repo / 'scripts/repin.py')!r})
+spec = importlib.util.spec_from_file_location("repin", {str(bed.repo / 'release/repin.py')!r})
 R = importlib.util.module_from_spec(spec); sys.modules["repin"] = R; spec.loader.exec_module(R)
 ctx = R.boot(Path({str(bed.repo)!r}), Path(tempfile.mkdtemp()))
 R.check_head(ctx)
@@ -1096,16 +1096,16 @@ def test_provenance_names_the_plan_a_commit_message_cites(bed):
     assert "Commits since the last pin that touched those files: 2" in out
 
 
-@pytest.mark.parametrize("name,state", [("anchored", "scripts/repin.py: anchored"),
-                                        ("edited", "scripts/repin.py: differs from the anchor"),
-                                        ("unpinned", "scripts/repin.py: no anchored entry")])
+@pytest.mark.parametrize("name,state", [("anchored", "release/repin.py: anchored"),
+                                        ("edited", "release/repin.py: differs from the anchor"),
+                                        ("unpinned", "release/repin.py: no anchored entry")])
 def test_status_says_whether_repin_itself_is_anchored(bed, name, state):
     if name == "edited":
-        bed.write("scripts/repin.py", bed.read("scripts/repin.py") + "\n# an edit\n")
+        bed.write("release/repin.py", bed.read("release/repin.py") + "\n# an edit\n")
         bed.commit("edit repin")
     if name == "unpinned":
         manifest = json.loads(bed.read(MANIFEST))
-        del manifest["frozen_files"]["scripts/repin.py"]
+        del manifest["frozen_files"]["release/repin.py"]
         bed.write(MANIFEST, _dump(manifest))
         bed.commit("manifest without repin")
         bed.git("update-ref", "refs/cairn/gate-anchor", "HEAD")
@@ -1114,14 +1114,14 @@ def test_status_says_whether_repin_itself_is_anchored(bed, name, state):
 
 def test_status_shows_a_closure_member_that_differs_from_the_anchor(bed):
     assert "closure  0 of 12 authority files differ" in ok(bed.run("status"))
-    bed.write("bootstrap/REANCHOR_RUNBOOK.md", "# runbook\n")
-    bed.write("bootstrap/reanchor.sh", "#!/bin/sh\n")
+    bed.write("release/REANCHOR_RUNBOOK.md", "# runbook\n")
+    bed.write("release/reanchor.sh", "#!/bin/sh\n")
     bed.write("dev/.cairn/allowed_signers", "x ssh-ed25519 AAAA\n")
     bed.pin("closure files appear")
-    bed.write("bootstrap/REANCHOR_RUNBOOK.md", "# runbook, edited\n")
+    bed.write("release/REANCHOR_RUNBOOK.md", "# runbook, edited\n")
     bed.commit("edit the runbook")
     out = ok(bed.run("status"))
-    assert "closure  1 of 12 authority files differ" in out and "bootstrap/REANCHOR_RUNBOOK.md" in out
+    assert "closure  1 of 12 authority files differ" in out and "release/REANCHOR_RUNBOOK.md" in out
 
 
 def test_a_different_interpreter_minor_is_shown(bed):
@@ -1138,7 +1138,7 @@ def test_an_ast_pin_owed_lists_every_changed_symbol(bed):
     bed.write(ENGINE, "def f():\n    return 2\n")
     bed.commit("change f")
     out = ok(bed.run("status"))
-    assert re.search(r"CHANGED  FunctionDef:f  in bootstrap/_scaffold/mod.py  \w{16} -> \w{16}", out)
+    assert re.search(r"CHANGED  FunctionDef:f  in install/_scaffold/mod.py  \w{16} -> \w{16}", out)
     assert "pin owed: yes" in out
 
 
@@ -1149,31 +1149,31 @@ def test_an_ast_pin_owed_lists_every_changed_symbol(bed):
 def test_manifest_status_lists_drift_and_says_it_skips_collection(bed):
     out = ok(bed.run("status"))
     assert "FROZEN-MODIFIED: 0" in out and "FROZEN-MISSING: 0" in out and "FROZEN-NEW: 0" in out
-    bed.write("scripts/old_check.py", "A = 1\n")
+    bed.write("release/old_check.py", "A = 1\n")
     bed.pin()
-    bed.git("rm", "-q", "scripts/old_check.py")
-    bed.write("bootstrap/tests/test_new_thing.py", "def test_x():\n    pass\n")
-    bed.write("bootstrap/tests/fixtures/extra.json", "{}\n")
+    bed.git("rm", "-q", "release/old_check.py")
+    bed.write("tests/test_new_thing.py", "def test_x():\n    pass\n")
+    bed.write("tests/fixtures/extra.json", "{}\n")
     bed.commit("drift")
     out = ok(bed.run("status"))
-    assert "FROZEN-MISSING: 1" in out and "scripts/old_check.py" in out
-    assert "FROZEN-NEW: 2" in out and "bootstrap/tests/test_new_thing.py" in out
+    assert "FROZEN-MISSING: 1" in out and "release/old_check.py" in out
+    assert "FROZEN-NEW: 2" in out and "tests/test_new_thing.py" in out
     assert "does not check test collection" in out
 
 
 def test_manifest_status_lists_a_modified_frozen_file(bed):
-    bed.write("scripts/check_thing.py", "A = 1\n")
+    bed.write("release/check_thing.py", "A = 1\n")
     bed.pin()
-    bed.write("scripts/check_thing.py", "A = 2\n")
+    bed.write("release/check_thing.py", "A = 2\n")
     bed.commit("edit a frozen file")
     out = ok(bed.run("status"))
-    assert "FROZEN-MODIFIED: 1" in out and "scripts/check_thing.py" in out
+    assert "FROZEN-MODIFIED: 1" in out and "release/check_thing.py" in out
 
 
 def test_dropped_nodes_with_a_surviving_file_print_first(bed, tmp_path):
     saved = tmp_path / "verify.txt"
-    saved.write_text("  COLLECTION-DROPPED: bootstrap/tests/gone_file.py::test_a (reduced)\n"
-                     "  COLLECTION-DROPPED: bootstrap/tests/_gate_manifest.py::test_b (reduced)\n")
+    saved.write_text("  COLLECTION-DROPPED: tests/gone_file.py::test_a (reduced)\n"
+                     "  COLLECTION-DROPPED: tests/_gate_manifest.py::test_b (reduced)\n")
     out = ok(bed.run("status", "--dropped-from", str(saved)))
     tail = out[out.index("Dropped test nodes"):]
     assert tail.index("_gate_manifest.py::test_b") < tail.index("gone_file.py::test_a")
@@ -1276,7 +1276,7 @@ def prelude(bed):
 import importlib.util, json, os, sys, tempfile
 from pathlib import Path
 sys.pycache_prefix = tempfile.mkdtemp()
-spec = importlib.util.spec_from_file_location("repin", {str(bed.repo / 'scripts/repin.py')!r})
+spec = importlib.util.spec_from_file_location("repin", {str(bed.repo / 'release/repin.py')!r})
 R = importlib.util.module_from_spec(spec); sys.modules["repin"] = R; spec.loader.exec_module(R)
 REPO, CDIR, TMP = Path({str(bed.repo)!r}), Path({str(bed.root / 'ceremony')!r}), Path(tempfile.mkdtemp())
 CDIR.mkdir(exist_ok=True)
@@ -1376,9 +1376,9 @@ def test_a_dirty_tracked_file_refuses_before_any_write(bed):
     before = reads(bed)
     assert "RESULT: ok" in snippet(bed, APPLY, YES)[1]
     bed.write(BASELINE, before.decode())
-    bed.write("scripts/reanchor_ceremony.py", bed.read("scripts/reanchor_ceremony.py") + "\n# local edit\n")
+    bed.write("release/reanchor_ceremony.py", bed.read("release/reanchor_ceremony.py") + "\n# local edit\n")
     out = snippet(bed, APPLY, YES)[1]
-    assert "tracked files differ from HEAD: scripts/reanchor_ceremony.py" in out
+    assert "tracked files differ from HEAD: release/reanchor_ceremony.py" in out
     assert reads(bed) == before
 
 
@@ -1415,7 +1415,7 @@ def test_head_moving_between_package_and_write_refuses(bed):
         return "yes"
     code, out = snippet(bed, APPLY, [("type the word yes", move_head)])
     assert "HEAD moved" in out and reads(bed) == before
-    assert not list((bed.repo / "bootstrap/tests/fixtures").glob("*.tmp"))
+    assert not list((bed.repo / "tests/fixtures").glob("*.tmp"))
 
 
 def test_a_file_changed_while_the_question_was_open_refuses(bed):
@@ -1427,12 +1427,12 @@ def test_a_file_changed_while_the_question_was_open_refuses(bed):
     code, out = snippet(bed, APPLY, [("type the word yes", edit_the_target)])
     assert "changed while you were reading" in out
     assert reads(bed) == (bed.read(BASELINE)).encode()
-    assert not list((bed.repo / "bootstrap/tests/fixtures").glob("*.tmp")), "a temporary file was left"
+    assert not list((bed.repo / "tests/fixtures").glob("*.tmp")), "a temporary file was left"
 
 
 def test_a_transaction_naming_the_gate_manifest_or_any_other_path_refuses(bed):
     owe_a_pin(bed)
-    for victim in (MANIFEST, "scripts/repin.py", "../outside.json"):
+    for victim in (MANIFEST, "release/repin.py", "../outside.json"):
         code = f"""
 ctx, raw = packaged()
 txn = json.loads(raw)
@@ -1545,7 +1545,7 @@ def sneaky(src, dst):
     real(src, dst)
     if not seen and str(dst).endswith("scaffold_ast_baseline.json"):
         seen.append(dst)
-        later = REPO / "bootstrap/tests/fixtures/scaffold_ast_known_new.json"
+        later = REPO / "tests/fixtures/scaffold_ast_known_new.json"
         later.write_bytes(later.read_bytes() + b" ")
 R.os.replace = sneaky
 """ + APPLY
@@ -1575,7 +1575,7 @@ def test_a_symlinked_target_or_parent_is_not_followed(bed):
     owe_a_pin(bed)
     outside = bed.root / "outside.json"
     outside.write_text("untouched")
-    fixtures = bed.repo / "bootstrap/tests/fixtures"
+    fixtures = bed.repo / "tests/fixtures"
     skip_checks = "R.check_preconditions = lambda ctx: None\n"
     original = reads(bed)
     # target is a symlink
@@ -1587,7 +1587,7 @@ def test_a_symlinked_target_or_parent_is_not_followed(bed):
     (fixtures / "scaffold_ast_baseline.json").unlink()
     (bed.root / "kept.json").rename(fixtures / "scaffold_ast_baseline.json")
     shutil.move(str(fixtures), str(bed.root / "moved_fixtures"))
-    (bed.repo / "bootstrap/tests/fixtures").symlink_to(bed.root / "moved_fixtures")
+    (bed.repo / "tests/fixtures").symlink_to(bed.root / "moved_fixtures")
     out = snippet(bed, skip_checks + "ctx = R.boot(REPO, TMP)\nraw = R.package(ctx, CDIR)\noutcome(lambda: R.apply_pin(ctx, CDIR, raw))\n", YES)[1]
     assert "no link in its path" in out
     assert (bed.root / "moved_fixtures/scaffold_ast_baseline.json").read_bytes() == original
@@ -1596,7 +1596,7 @@ def test_a_symlinked_target_or_parent_is_not_followed(bed):
 def test_a_directory_in_place_of_an_output_is_a_refusal_and_not_a_crash(bed):
     owe_a_pin(bed)
     code = ("R.check_preconditions = lambda ctx: None\nctx = R.boot(REPO, TMP)\nraw = R.package(ctx, CDIR)\n"
-            "p = REPO / 'bootstrap/tests/fixtures/scaffold_ast_baseline.json'\np.unlink()\np.mkdir()\n"
+            "p = REPO / 'tests/fixtures/scaffold_ast_baseline.json'\np.unlink()\np.mkdir()\n"
             "outcome(lambda: R.apply_pin(ctx, CDIR, raw))\n")
     out = snippet(bed, code, YES)[1]
     assert "RESULT: refused: " in out and "Traceback" not in out, out
@@ -1629,7 +1629,7 @@ R.os.replace = flaky
     out = snippet(bed, code, YES)[1]
     assert "Already replaced:" in out and f"git restore --source={head} --" in out
     assert reads(bed, BASELINE) != before[BASELINE] and reads(bed, KNOWN_NEW) == before[KNOWN_NEW]
-    assert not list((bed.repo / "bootstrap/tests/fixtures").glob("*.tmp"))
+    assert not list((bed.repo / "tests/fixtures").glob("*.tmp"))
 
 
 def test_an_extra_changed_path_after_the_write_refuses_and_prints_the_undo_line(bed):
@@ -1671,7 +1671,7 @@ def test_a_missing_or_duplicated_symbol_is_a_review_item_never_a_pin(bed, break_
         owe_a_pin(bed, "def renamed():\n    return 1\n")
     else:
         owe_a_pin(bed)
-        bed.write("bootstrap/_scaffold/second.py", "def f():\n    return 1\n")
+        bed.write("install/_scaffold/second.py", "def f():\n    return 1\n")
         bed.commit("define f twice")
     out = bed.run("package")
     assert out.returncode == 2 and "missing or defined twice" in out.stderr, out.stdout + out.stderr
@@ -1685,13 +1685,13 @@ def test_a_pin_owed_to_a_plain_change_packages(bed):
 
 
 def test_a_closure_member_change_refuses_an_ast_pin(bed):
-    for rel, text in [("bootstrap/REANCHOR_RUNBOOK.md", "# runbook\n"), ("bootstrap/reanchor.sh", "#!/bin/sh\n"),
+    for rel, text in [("release/REANCHOR_RUNBOOK.md", "# runbook\n"), ("release/reanchor.sh", "#!/bin/sh\n"),
                       ("dev/.cairn/allowed_signers", "x ssh-ed25519 AAAA\n")]:
         bed.write(rel, text)
     bed.pin("closure files appear")
     owe_a_pin(bed)
     assert "differ" not in ok(bed.run("package")).split("closure")[0]
-    bed.write("bootstrap/REANCHOR_RUNBOOK.md", "# runbook, edited\n")
+    bed.write("release/REANCHOR_RUNBOOK.md", "# runbook, edited\n")
     bed.commit("edit the runbook")
     r = bed.run("package")
     assert r.returncode == 2 and "transition ceremony, not an AST pin" in r.stderr
@@ -1753,7 +1753,7 @@ def test_package_writes_only_into_the_ceremony_folder(bed):
 # --------------------------------------------------------------------------
 
 LOCKFILE = "dev/.cairn/cairn-lock.yml"
-CONFIG = "bootstrap/_scaffold/config.py"
+CONFIG = "install/_scaffold/config.py"
 
 
 def lock_bed(bed, *, marker=None, template_text="verbatim\n", installed_text="verbatim\n"):
