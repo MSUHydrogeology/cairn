@@ -1,7 +1,7 @@
 # Ship the existing measurement tools to adopters
 
 **Author**: Terra (Implementation)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -13,7 +13,7 @@
 
 ## Decision summary
 
-Ship two commands that help keep instructions small and published numbers current. The documentation-plan module gains a token-estimate command. Claim-check gains a count-checking command, its support code and an empty settings file for count definitions. For example, an adopter can register the number of files in a directory and check an annotated claim after the directory changes. Both guides gain a usage paragraph. The settings survive upgrades, and the shipped Python stays under integrity checking. Cairn must maintain four added files in the install and upgrade records. Adopters who use the checker review definitions in Git. Token estimates are approximate. Counts come from the adopter project, and history counts need supported Git.
+Ship two commands that help keep instructions small and published numbers current. The documentation-plan module gains a token-estimate command. Claim-check gains a count-checking command, its support code and an empty settings file. For example, an adopter can name a count of documentation files `docs-files` in both the settings and the annotation beside the published number. Both guides gain a usage paragraph. The settings survive upgrades, and the shipped Python stays under integrity checking. Cairn must maintain four added files in the install and upgrade records. Adopters review definitions in Git. Token estimates are approximate. Counts come from the adopter project, and history counts need supported Git.
 
 ## Context
 
@@ -23,9 +23,11 @@ Ship two commands that help keep instructions small and published numbers curren
 
 Deliver in v0.8 through the existing module install and upgrade paths. Adapt the current commands and reuse their parsing and measurement code while preserving Cairn's internal entry points, definitions, preset count and audit report. The installed estimator uses the standard-library characters-divided-by-four estimate, labelled in text and JSON. It detects common always-loaded files at the installed project root or accepts a list from the operator. Keep warnings by default and strict caps opt-in.
 
-Seed `dev/.cairn/measurements.json` with an empty object. Read it as data at that fixed location and refuse links that escape the project. Each key selects a dated snapshot or a count of lines, files, Python definitions or commits in a Git revision range. Reject invalid types, unknown fields and duplicate keys. A document annotation only selects a key. Default to the project root above the installed `dev/tools/` directory. A definition may select a project-relative subdirectory as its root. Check containment before reporting an absent root as a skip. Refuse file targets or inspected descendants that resolve outside the selected root. Use a fixed, bounded offline Git read after confirming that the selected root is the worktree root. Treat the validated range only as revisions. The existing helper requires Git 2.45 or later for history reads. Cairn's project-specific preset module count and sibling-checkout measurements stay internal.
+Seed `dev/.cairn/measurements.json` with an empty object. Read it as data at that fixed location and refuse links that escape the project. Each key selects a dated snapshot or a count of lines, files, Python definitions or commits in a Git revision range. Reject invalid types, unknown fields and duplicate keys. A whole key in either input must match the inherited grammar `[\w-]+`, allowing one or more Unicode alphanumeric characters, underscores or hyphens. An annotation supplies only a key. Treat an HTML comment beginning with `verify:` after optional whitespace as an attempted check. Fail malformed or unclosed markers and markers without a preceding number on the same line.
 
-Manage only the JSON file as mergeable project state through the existing lock and baseline rules. Manage all three Python files as integrity-checked sources. Reuse the existing caller-pinned helper binding at `dev/tools/git_read.py`, with its unconditional owner and no fallback path. Add each command's purpose, invocation and limits to its module guide. The checker reports zero checks explicitly when the named files contain no annotations, reports skips separately and fails on unknown keys.
+Default to the project root above `dev/tools/`. A definition may select a project-relative subdirectory. Check containment before reporting an absent root as a skip. Refuse file targets and child links that resolve outside the selected root. For a Git count, confirm the resolved Git worktree root equals the selected root. Use the existing bounded offline read, reject option-shaped ranges and put the validated range before a final `--` so Git reads revisions only. History reads require Git 2.45 or later. Cairn's preset module count and sibling-checkout measurements stay internal.
+
+Use existing lock and baseline rules to keep the JSON mergeable and all shipped Python integrity-checked. Reuse the pinned helper at `dev/tools/git_read.py` under its unconditional owner with no fallback path. Document each command's use and limits. Report zero checks when there are no markers. Report skips separately with exit 3 when there are no failures. An unknown key fails.
 
 | Module | Source | Installed path |
 |---|---|---|
@@ -60,7 +62,7 @@ Update the installed module guides, published install inventory, tool descriptio
 
 ### Tests required
 
-Use public install, upgrade and integrity commands to check the empty seed, definition preservation and rejection of changed support. Extend `tests/test_manifest.py` and `tests/test_upgrade_module_additions.py`. Through the installed checker, exercise zero checks, match, drift, skip, unknown key, invalid definition, path escape, Git count and rejection of changed helper bytes. Test explicit token files, labelled output and strict caps. Map affected nodes in the plan, including `tests/test_verify_counts.py` where behavior is shared.
+Use public install, upgrade and integrity commands to check the empty seed, definition preservation and rejection of changed support. Extend `tests/test_manifest.py` and `tests/test_upgrade_module_additions.py`. Through the installed checker, exercise zero checks, match, drift, exit 3 for an absent contained root, unknown key, invalid definition, direct and child-link escapes, a valid Git count and rejection of changed helper bytes. Reject `docs.files` as a definition key. With a valid registry, also fail a document whose only marker uses `docs.files`. A range with missing revisions must fail even if a file has that name. Test explicit token files, labelled estimates and strict caps. Map affected nodes in the plan, including `tests/test_verify_counts.py`.
 
 ### Examples / smoke checks
 
@@ -70,8 +72,8 @@ Run both commands from outside a disposable install. Check the installed roster 
 
 - **S1:** The operator chooses the modules, install target and input files. The project maintains the JSON definitions. Document authors supply numbers and keys. For snapshots, the reviewed definition supplies the frozen value and date.
 - **S2:** Change a cited count to provoke drift. Add an unknown key, supply an escaping target or alter a pinned helper byte to provoke failure. Registry edits must pass integrity verification while a support code edit fails.
-- **S3:** Run `python dev/tools/verify_counts.py <file> ...`. The guide will say “The command checks annotations in the named files. The registry starts empty. With no annotations, the command reports zero checks.”
-- **S4:** An invalid or missing registry, unknown key, or measurement error fails. An absent contained root skips visibly. Zero annotations report zero checks. Install collision and customization protections still apply.
+- **S3:** Run `python dev/tools/verify_counts.py <file> ...`. The guide will say “The registry starts empty. The command checks markers in the named files. Malformed markers fail. With no markers, it reports zero checks.”
+- **S4:** An invalid or missing registry, malformed marker, unknown key or measurement error fails. An absent contained root skips visibly with nonzero status. Install collision and customization protections still apply.
 - **S5:** A registry editor can change what a key counts, including its date and value for a snapshot, so the adopter reviews definitions in Git. The checker dispatches only the fixed operations. The operator still trusts the installed Python entry point and host Git.
 
 ### Independent scientific check
@@ -169,3 +171,17 @@ Reviewed commit: 1a760b4732bb7af7d55bc7b3dae91d9185c27b0c
 - **Non-blocking — carry these checks into the plan.** Keep skips nonzero. In Git 2.53.0, `log --oneline missing-left..missing-right` returned a commit for a file with that name. Appending `--` made the same input fail. Check that the revision-only call rejects that file, and compare the resolved Git top level with the selected root. The probe distinguished a linked worktree from a plain subdirectory. -- `tests/verify_counts.py:191-197`, `tests/measurements.py:253-268`, `install/_scaffold/install.py:487-511`
 
 Coverage: the new data boundary and a disposable Git probe. The earlier ordinary review still covers the shipping goals. Installed commands, upgrades, other platforms and suites were outside this pass.
+
+## Response -- Sol (Strategy, High) -- 2026-11-18
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+- **Key grammar and malformed markers:** accepted. Both inputs use the inherited key grammar in `tests/verify_counts.py:63`. The proposal pairs a valid key example with negative checks for a dotted key in the registry and a dotted marker in a document. A malformed marker fails even if the file contains no valid annotations, reserving zero checks for files with no markers.
+- **Git, links and skips:** carried into the plan requirements. History selects the resolved worktree root and leaves Git's path list empty. The plan must exercise a filename that matches an invalid revision range, an escaping child link and a visible skip with exit 3.
+
+This resolves how the reviewed registry reaches the existing operations. I read the inherited parser and exit status. I did not repeat the Git probe or run the proposed installed checks.
+
+### Withdrawn / superseded commitments
+
+None.
