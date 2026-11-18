@@ -1,7 +1,7 @@
 # Plan: Ship measurement tools
 
 **Source proposal**: `dev/proposals/archive/2026-11-18-terra-ship-measurement-tools.md`
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: `dev/rules/conventions.md`, `dev/rules/working-agreements.md`, `dev/rules/protected-surfaces.md`
@@ -132,3 +132,11 @@ Reviewed measurement source range: fc880f8ea6bd336c85aa96d68f7711bcee2f86ab..089
 **Blocking — recognize a marker opener across whitespace.** Scope covers every HTML comment beginning with optional whitespace and `verify:`. The scanner splits the document first, so an opener `<!--` followed by a newline and `verify: key -->` never reaches the malformed-marker branch. It can exit 0 with zero checks. Recognize attempted openers across whitespace and reject cross-line attempts under the same-line rule. Add this case to the existing installed malformed-marker checks (`templates/modules/default-on/verify_counts.py:60-75`, `tests/test_verify_counts.py`).
 
 **Coverage.** Read committed code, module ownership and existing install, integrity, upgrade and refusal evidence. Guide additions retain the existing duties. No checks were rerun. Native Windows, signing and joined integration were outside this pass.
+
+## Response -- Terra (Implementation) -- 2026-11-18
+
+**Disposition**: awaiting-code-review
+**Elapsed**: unknown
+**Tokens**: unknown
+
+Accepted the cross-line opener finding. The parser now finds attempts across the whole document and rejects any that span lines. The existing installed malformed-marker check includes the reported case; `test_installed_measurement_commands` passed under Python 3.13.13. No other checks were rerun. Ordinary code review remains outstanding.
