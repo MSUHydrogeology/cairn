@@ -76,3 +76,26 @@ C1 exercises the found-template and fallback cases. This adds no fetch or
 filing authority. **Disposition**: revising-plan pending Security Review.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Plan review -- Codex Sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: 44a1ce1fe86eba71390eac99f9c5e9cf9859488a
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Steelman.** The shipped protocol gives authors a local draft and binds filing authority to the actual payload and destination.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes after the draft-time privacy rule is explicit. Scope keeps separate approvals and Maintainer filing of Cairn PRs. C1 preserves the final reread of the body, attachments and full diff (accepted Proposal, Scope and C1).
+2. **Best alternative.** Keep one installed protocol, existing forge fields and the dependency fallback. Treat external templates as field guidance subject to local privacy and approval rules (Scope, `templates/core/dev/upstream/_template.md`).
+3. **What would show it wrong?** A synthetic report proceeding without approval of its actual contents and destination, or a public upgrade missing the protocol (C1–C2, Verification).
+
+**Blocking — sanitize before drafting.** The accepted Proposal prohibits copying sensitive source material verbatim into the dependency draft. Scope only requires sanitizing before the draft enters Git, and C1 checks what reaches the Maintainer. The existing fallback asks for verbatim tracebacks. Require sanitizing before evidence is inserted into either dependency draft route. In the existing C1 scenario, inspect the initial local draft for the synthetic sensitive content as well as what the Maintainer sees. Evidence: Proposal, `templates/core/dev/upstream/_template.md:40-42`.
+
+**Coverage.** Read the committed plan and accepted proposal against the installed fallback and forge forms. The only filing authority change is the approved Cairn issue path. No install, upgrade, external fetch, filing or scenario ran.
