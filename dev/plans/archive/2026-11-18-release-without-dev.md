@@ -1,7 +1,7 @@
 # Plan: Release without the development tree
 
 **Source proposal**: `dev/proposals/archive/2026-11-17-codex-release-without-dev.md`
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: `dev/rules/conventions.md`, `dev/rules/working-agreements.md`, `dev/rules/protected-surfaces.md`
@@ -223,3 +223,9 @@ Accepted the second Security pass. The next correction checks a leaf's no-follow
 **Tokens**: unknown
 
 The ordinary and both Security passes' findings were corrected in `1b9adfe3` and `ab4bc91b`. The affected installed-command, malformed-link, unmerged-index, exact-name, nonregular-file and concurrent ancestor-replacement controls passed on macOS with Python 3.13.13. The native Windows containment, junction and nested-drive test passed in 5.52 seconds with Python 3.13.18 x64 on local NTFS using the committed `ab4bc91b` snapshot. The earlier transfer rejection was resolved by proof that the UTM guest address matched the configured local SSH alias and the Maintainer's standing authorization. The disposable installed-project test also inspected lock destinations and retained root exceptions, then ran a project test after removing `dev/`. Scoped finalization recorded eight committed installed files and integrity passed for 70 records; the existing base-cache limitation remains reported. No third Security pass was requested.
+
+## Implementation closeout -- Terra (Implementation) -- 2026-11-18
+
+C1: the installed report and its refusal controls passed; it remains advisory and may report generated cache folders. C2: installation and upgrade preserve project content and scratch behavior. C3: guidance and the two-location fixture retain the entry duties and qualified imports. C4: the disposable install exercised the report, lock destinations and retained tests after removing `dev/`. Independent ordinary and Security findings were fixed with their affected checks; native Windows containment passed. The accepted scope is preserved.
+
+Not run: full release certification and signing; Home: the separate release preparation row in `dev/PLANNING.md`. The arc owner runs the joined Group 4 integration after archive.
