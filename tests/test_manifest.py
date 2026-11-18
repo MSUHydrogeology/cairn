@@ -70,6 +70,13 @@ class TestInstallManifest:
             for spec in specs:
                 assert spec.dst in dsts, f"module dst missing: {spec.dst}"
 
+    def test_measurement_module_ownership(self) -> None:
+        entries = {dst: (src, verbatim) for src, dst, verbatim in install_manifest(["claim-check", "documentation-plan"])}
+        assert entries["dev/tools/token_budget.py"][1] is True
+        assert entries["dev/tools/verify_counts.py"][1] is True
+        assert entries["dev/tools/measurements.py"][1] is True
+        assert entries["dev/.cairn/measurements.json"][1] is False
+
     def test_manifest_sources_all_exist(self) -> None:
         for src, dst, _v in install_manifest():
             assert (TEMPLATES_ROOT / src).is_file(), (

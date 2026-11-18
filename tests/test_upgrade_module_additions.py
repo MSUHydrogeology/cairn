@@ -1344,3 +1344,22 @@ def test_plan_points_to_stage_without_a_live_digest(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "upgrade --stage" in out
     assert _printed_triple_for(out, collide) is None      # no copyable triple
+
+
+def test_measurement_registry_survives_upgrade_and_support_is_checked(tmp_path: Path):
+    from install.verify_integrity import main as verify
+
+    target = tmp_path.resolve()
+    _install(target)
+    registry = target / "dev/.cairn/measurements.json"
+    edited = '{"example":{"kind":"snapshot","value":1,"as_of":"2026-01-01"}}\n'
+    registry.write_text(edited)
+    assert verify(["--target", str(target)]) == 0
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--stage"]) == 0
+    assert s.main(base + ["--apply"]) == 0
+    assert registry.read_text() == edited
+    assert verify(["--target", str(target)]) == 0
+    support = target / "dev/tools/measurements.py"
+    support.write_text(support.read_text() + "\n# altered\n")
+    assert verify(["--target", str(target)]) != 0

@@ -821,3 +821,103 @@ class TestMeasurementsPhysicalBinding:
         _assert_bound_member_mutation(
             tmp_path, "scripts/measurements.py", mutation,
         )
+
+
+def test_installed_measurement_commands(tmp_path: Path):
+    """Installed commands enforce the registry and measurement promises."""
+    from install.scaffold import main as scaffold_main
+
+    project = tmp_path / "project"
+    project.mkdir()
+    profile = tmp_path / "profile.yml"
+    profile.write_text("project_name: Measurements\ntest_command: pytest\nmodules:\n  - claim-check\n  - documentation-plan\n")
+    assert scaffold_main(["--config", str(profile), "--target", str(project),
+                          "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
+    registry = project / "dev/.cairn/measurements.json"
+    document = project / "claims.md"
+    verifier = project / "dev/tools/verify_counts.py"
+    token = project / "dev/tools/token_budget.py"
+
+    def run(*args):
+        return subprocess.run([sys.executable, *map(str, args)], cwd=tmp_path,
+                              text=True, capture_output=True)
+
+    document.write_text("No claims.\n")
+    assert "0 ok" in run(verifier, document).stdout
+    registry.write_text(json.dumps({"lines": {"kind": "invariant", "fn": "count_lines", "target": "claims.md"}}))
+    document.write_text("1 <!-- verify: lines -->\n")
+    assert run(verifier, document).returncode == 0
+    document.write_text("2 <!-- verify: lines -->\n")
+    assert run(verifier, document).returncode == 1
+    for marker in ("2 <!-- verify: docs.files -->", "<!-- verify: lines", "<!-- verify: lines -->"):
+        document.write_text(marker)
+        assert run(verifier, document).returncode == 1
+    document.write_text("1 <!-- verify: lines -->\n")
+    registry.write_text(json.dumps({"bad.key": {"kind": "snapshot", "value": 1, "as_of": "2026-01-01"}}))
+    assert run(verifier, document).returncode == 1
+    registry.write_text(json.dumps({"lines": {"kind": "invariant", "fn": "count_lines", "target": "x", "root": "absent"}}))
+    assert run(verifier, document).returncode == 3
+    registry.write_text(json.dumps({"lines": {"kind": "invariant", "fn": "count_lines", "target": "../outside"}}))
+    assert run(verifier, document).returncode == 1
+    document.write_text("1 <!-- verify: unknown -->\n")
+    assert run(verifier, document).returncode == 1
+    registry.write_text('{"item":{},"item":{}}')
+    assert run(verifier, document).returncode == 1
+    document.write_text("No markers.\n")
+    registry.unlink()
+    assert run(verifier, document).returncode == 1
+    outside = tmp_path / "outside.json"
+    outside.write_text("{}")
+    registry.symlink_to(outside)
+    assert run(verifier, document).returncode == 1
+    registry.unlink()
+    registry.write_text("{")
+    assert run(verifier, document).returncode == 1
+    report = run(token, "--json")
+    assert report.returncode == 0 and "estimate" in json.loads(report.stdout)["estimator"]
+    assert run(token, project / "AGENTS.md", "--cap", "0").returncode == 0
+    assert run(token, project / "AGENTS.md", "--cap", "0", "--strict").returncode == 1
+
+
+def test_installed_measurement_security_and_history(tmp_path: Path):
+    from install.scaffold import main as scaffold_main
+
+    project = tmp_path / "project"
+    project.mkdir()
+    profile = tmp_path / "profile.yml"
+    profile.write_text("project_name: Measurements\ntest_command: pytest\nmodules:\n  - claim-check\n")
+    assert scaffold_main(["--config", str(profile), "--target", str(project),
+                          "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
+    _seed_binding_repo(project)
+    registry = project / "dev/.cairn/measurements.json"
+    document = project / "claims.md"
+    verifier = project / "dev/tools/verify_counts.py"
+
+    def check(entry, claim="1 <!-- verify: item -->\n"):
+        registry.write_text(json.dumps({"item": entry}))
+        document.write_text(claim)
+        return subprocess.run([sys.executable, str(verifier), str(document)],
+                              cwd=tmp_path, text=True, capture_output=True)
+
+    def invariant(fn, target, **extra):
+        return {"kind": "invariant", "fn": fn, "target": target, **extra}
+
+    assert check({"kind": "snapshot", "value": 5, "as_of": "2026-01-01"},
+                 "as of 2026-01-01: 5 <!-- verify: item -->\n").returncode == 0
+    source = project / "sample.py"
+    source.write_text("def f():\n    pass\n")
+    assert check(invariant("count_defs", "sample.py")).returncode == 0
+    folder = project / "folder"
+    folder.mkdir()
+    (folder / "one").write_text("x")
+    assert check(invariant("count_files", "folder")).returncode == 0
+    (folder / "escape").symlink_to(tmp_path / "outside")
+    assert check(invariant("count_files", "folder")).returncode == 1
+    assert check(invariant("count_lines", "x", root="../absent")).returncode == 1
+    assert check(invariant("git_commits_in_range", "HEAD~1..HEAD")).returncode == 0
+    (project / "missing-left..missing-right").write_text("x")
+    assert check(invariant("git_commits_in_range", "missing-left..missing-right")).returncode == 1
+    assert check(invariant("git_commits_in_range", "HEAD~1..HEAD", root="folder")).returncode == 1
+    helper = project / "dev/tools/git_read.py"
+    helper.write_bytes(helper.read_bytes() + b"\n# altered\n")
+    assert check(invariant("count_defs", "sample.py")).returncode == 1

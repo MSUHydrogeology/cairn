@@ -1,3 +1,4 @@
+<!-- claim-check-allow: dev/.cairn/measurements.json -->
 # Tool usage — worked examples
 
 Cairn ships Python tools and scripts that use only the standard library.
@@ -90,6 +91,15 @@ or line range, list a planned or external path under a
 `Proposed/Untracked/External-repo paths:` line in the document, or declare a
 document-scoped path exemption in `dev/.cairn/claim-check-allow.json` (or a
 one-off `<!-- claim-check-allow: <glob> -->` directive).
+
+## Measurement tools *(default-on)*
+
+`python dev/tools/token_budget.py` estimates always-loaded text with a labelled
+characters/4 approximation; name files explicitly or use project-root
+analysis. `--cap N` warns and `--strict` makes exceeding it fail.
+`python dev/tools/verify_counts.py <file> ...` checks key-only annotations
+against the project's editable `dev/.cairn/measurements.json` registry. The
+claim-check module guide describes definitions, dates, skips and Git limits.
 
 ## dev/tools/intent.py — claim work before editing *(team-gated: coordination-tiers)*
 

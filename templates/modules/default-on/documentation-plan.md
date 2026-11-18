@@ -182,3 +182,10 @@ Cairn's own self-hosted instance of this procedure lives at
 `cairn/docs/DOCUMENTATION_PLAN.md` (Cairn IS its own first
 adopter; dogfooding the module on the Cairn tree validates the
 discipline before it ships to other adopters).
+
+## Estimate always-loaded text
+
+Run `python dev/tools/token_budget.py` to estimate common always-loaded files
+at the installed project root, or name files explicitly. The text and `--json`
+output label the characters-divided-by-four result as an approximation.
+`--cap N` warns when the estimate exceeds N; add `--strict` to fail instead.

@@ -1046,6 +1046,12 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/claim-check.md"),
         InstallSpec("default-on/claim_check.py",
                     "dev/tools/claim_check.py", verbatim=True),
+        InstallSpec("default-on/verify_counts.py",
+                    "dev/tools/verify_counts.py", verbatim=True),
+        InstallSpec("default-on/measurements.py",
+                    "dev/tools/measurements.py", verbatim=True),
+        InstallSpec("default-on/measurements.json",
+                    "dev/.cairn/measurements.json"),
         # Fold 1 (foldback-drain-tooling): stem-resolution checker.
         # Complements claim_check.py (repo-path/line-bounds) and link_check.py
         # (markdown links) -- verifies that every backticked date-prefixed stem
@@ -1103,6 +1109,8 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     "documentation-plan": [
         InstallSpec("default-on/documentation-plan.md",
                     "dev/modules/documentation-plan.md"),
+        InstallSpec("default-on/token_budget.py",
+                    "dev/tools/token_budget.py", verbatim=True),
         InstallSpec("default-on/documentation_plan_template.md",
                     "docs/DOCUMENTATION_PLAN.md"),
         InstallSpec("default-on/scanner-check-allow.json",

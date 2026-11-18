@@ -212,6 +212,7 @@ _LIVING_STATE_DSTS: frozenset[str] = frozenset({
     # verify_integrity never flags an adopter edit as tampering, and the
     # lockfile divergence check does not prevent writing on first-fill.
     "dev/.cairn/model-selection-mapping.yml",
+    "dev/.cairn/measurements.json",
     # The two network-security capability
     # policies are adopter-filled configuration.  Each installs as an
     # unconfigured ``configured: false`` stub and is then filled in place with

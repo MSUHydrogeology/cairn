@@ -1,3 +1,4 @@
+<!-- claim-check-allow: dev/tools/verify_counts.py, dev/tools/measurements.py, dev/.cairn/measurements.json, dev/tools/token_budget.py -->
 # Templates
 
 `templates/` holds the **forkable files** that put the Cairn
@@ -145,9 +146,15 @@ hand, run `upgrade --adopt-module` for that module. First adoption appends its
 task at the end of the board and updates the inventory and lockfile; repeat
 adoption can update the inventory without changing the board.
 
+
+The claim-check module also installs `dev/tools/verify_counts.py`,
+`dev/tools/measurements.py` and the editable `dev/.cairn/measurements.json`
+registry. Documentation-plan installs `dev/tools/token_budget.py`.
+
 | Set | Module | Selected when |
 |-----|--------|---------------|
 | default-on | `claim-check` | default |
+
 | default-on | `reflections` | multi-agent adoptions; a solo, single-agent project may omit (the cross-agent handoff function disappears) |
 | default-on | `content-security` | default; explicit `modules_remove` opt-out for operator-attached-only workflows |
 | default-on | `security-verification` | default; installs the local evidence *route* — the dispatcher plus its source-owned registry, which ships **empty**, so an adopter with no admitted security capability gathers nothing and is told so |
