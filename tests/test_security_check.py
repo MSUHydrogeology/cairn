@@ -1,6 +1,6 @@
 """Tests for the fail-closed release security check (security-hardening Chunk 7).
 
-``bootstrap/security_check.py`` is the release-facing counterpart to the dev
+``install/security_check.py`` is the release-facing counterpart to the dev
 Bandit gate: where the gate *skips* when Bandit is absent locally, the
 release check **fails closed** -- release evidence must be unskippable.
 
@@ -34,8 +34,8 @@ from tests._repo_root import repository_root
 CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap import security_check  # noqa: E402
-from bootstrap.tests import security_manifest  # noqa: E402
+from install import security_check  # noqa: E402
+from tests import security_manifest  # noqa: E402
 
 
 def _bandit_available() -> bool:
@@ -267,14 +267,14 @@ def test_scan_targets_are_explicit_files_and_name_the_expected_executables() -> 
       ``scan_targets()`` is removed. Their oracle is path strings typed by a
       human, so there is no shared derivation with the subject.
     * **The real guard is elsewhere**: the on-disk oracle in
-      ``bootstrap/tests/test_security_lint.py``
+      ``tests/test_security_lint.py``
       (``test_every_templates_py_on_disk_is_release_scanned``), whose input
       ``scan_targets()`` never reads."""
     targets = set(security_check.scan_targets())
-    assert "bootstrap/scaffold.py" in targets
+    assert "install/scaffold.py" in targets
     # Cairn's own bootstrap security tooling is itself scanned.
-    assert "bootstrap/security_check.py" in targets
-    assert "bootstrap/verify_integrity.py" in targets
+    assert "install/security_check.py" in targets
+    assert "install/verify_integrity.py" in targets
     assert "templates/modules/team-gated/link_check.py" in targets
     # content_scan is single-sourced as the content-security module script.
     assert "templates/modules/team-gated/content_scan.py" in targets
@@ -444,7 +444,7 @@ def test_check_cairn_fails_closed_when_the_interpreter_cannot_be_spawned(
 
 def test_quality_gate_fails_closed_when_the_script_is_absent(
         tmp_path, monkeypatch, capsys) -> None:
-    (tmp_path / "scripts").mkdir()
+    (tmp_path / "tests").mkdir()
     monkeypatch.setattr(security_check, "CAIRN_ROOT", tmp_path)
     assert security_check.run_quality_gate() == 1
     assert "missing -- fail closed" in capsys.readouterr().err
@@ -495,7 +495,7 @@ def test_phase_interrupt_is_not_normalized(monkeypatch) -> None:
 
 def _synthetic_local_record(
         platform_name: str, head: str, nonce: str, *,
-        portable_id: str = "bootstrap/tests/test_probe.py::test_portable",
+        portable_id: str = "tests/test_probe.py::test_portable",
         excluded: dict | None = None) -> dict:
     host_tag = "nt" if platform_name == "win32" else "posix"
     os_name = "nt" if host_tag == "nt" else "posix"
@@ -556,10 +556,10 @@ def test_tracked_test_file_filter_uses_only_committed_test_paths(
         tmp_path, monkeypatch) -> None:
     root = tmp_path / "candidate"
     paths = {
-        "bootstrap/tests/nested/test_deep.py": "",
-        "bootstrap/tests/security/example_test.py": "",
-        "bootstrap/tests/_helper.py": "",
-        "bootstrap/tests/fixtures/sample_fixture.py": "",
+        "tests/nested/test_deep.py": "",
+        "tests/security/example_test.py": "",
+        "tests/_helper.py": "",
+        "tests/fixtures/sample_fixture.py": "",
         "docs/test_document.py": "",
     }
     for rel, body in paths.items():
@@ -572,8 +572,8 @@ def test_tracked_test_file_filter_uses_only_committed_test_paths(
     monkeypatch.setattr(security_check, "CAIRN_ROOT", root)
     head = security_check._head_commit()
     assert security_check._tracked_test_files(head) == {
-        "bootstrap/tests/nested/test_deep.py",
-        "bootstrap/tests/security/example_test.py",
+        "tests/nested/test_deep.py",
+        "tests/security/example_test.py",
     }
 
 
@@ -597,7 +597,7 @@ def test_join_reports_shipped_only_selection(
                f"security_check: PASS (shipped-only) -- Mac and Windows evidence joined at {head}."
                for line in lines)
     assert "NOT CERTIFIED (shipped-only release selection): 1020 tests in 16 files were not run. They run when their own files change." in lines
-    assert [line for line in lines if line.startswith("  bootstrap/tests/")] == [
+    assert [line for line in lines if line.startswith("  tests/")] == [
         f"  {path}" for path in sorted(security_check._RELEASE_EXCLUDED)
     ]
 
@@ -617,9 +617,9 @@ def test_join_refuses_a_tracked_selection_mismatch(
     mac_record = _synthetic_local_record("darwin", head, "a" * 64)
     windows_record = _synthetic_local_record("win32", head, "b" * 64)
     if fault == "tracked-uncollected":
-        tracked.add("bootstrap/tests/test_tracked_extra.py")
+        tracked.add("tests/test_tracked_extra.py")
     elif fault == "collected-untracked":
-        node = "bootstrap/tests/test_untracked_extra.py::test_extra"
+        node = "tests/test_untracked_extra.py::test_extra"
         phases = {name: {"outcome": "passed", "wasxfail": False}
                   for name in ("setup", "call", "teardown")}
         for record in (mac_record, windows_record):
@@ -655,10 +655,10 @@ def _pretend_python_313(monkeypatch) -> None:
 def test_excluded_test_measurement_counts_and_refuses_incomplete_files(
         tmp_path, monkeypatch) -> None:
     root = tmp_path / "candidate"
-    tests = root / "bootstrap" / "tests"
+    tests = root / "tests"
     tests.mkdir(parents=True)
-    one = "bootstrap/tests/test_excluded_one.py"
-    two = "bootstrap/tests/test_excluded_two.py"
+    one = "tests/test_excluded_one.py"
+    two = "tests/test_excluded_two.py"
     one_path, two_path = root / one, root / two
     one_path.write_text(
         "def test_first():\n    assert True\n\n"
@@ -688,7 +688,7 @@ def test_excluded_test_measurement_counts_and_refuses_incomplete_files(
         security_check._measure_excluded_tests(root)
 
     monkeypatch.setattr(security_check, "_RELEASE_EXCLUDED",
-                        frozenset({"bootstrap/tests/test_missing.py"}))
+                        frozenset({"tests/test_missing.py"}))
     with pytest.raises(ValueError, match="not a file"):
         security_check._measure_excluded_tests(root)
 
@@ -728,7 +728,7 @@ def test_join_refuses_each_native_identity_missing_from_all_host_orders(
     order or counterpart-set mismatch can explain refusal. These are
     record-validation runs, not suite executions.
     """
-    from bootstrap.tests import security_manifest
+    from tests import security_manifest
 
     _pretend_python_313(monkeypatch)
     head = "c" * 40
@@ -749,7 +749,7 @@ def test_join_refuses_each_native_identity_missing_from_all_host_orders(
     windows_record = _synthetic_local_record("win32", head, "b" * 64)
     records = {"posix": mac_record, "nt": windows_record}
     expected_collected = expected_ids | {
-        "bootstrap/tests/test_probe.py::test_portable"}
+        "tests/test_probe.py::test_portable"}
     for record in records.values():
         for order in record["orders"].values():
             assert set(order["collection_ids"]) == expected_collected
@@ -790,7 +790,7 @@ def test_missing_native_roster_control_is_specific(
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, head))
     monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
-    from bootstrap.tests import security_manifest
+    from tests import security_manifest
 
     host_tag, nodeid = security_manifest.NATIVE_ONLY_NODE_IDS[0]
     assert nodeid in security_manifest.validated_native_only_nodes()[host_tag]
@@ -941,7 +941,7 @@ def test_join_main_refuses_mutated_native_records(
         mac_record["excluded"]["files"].pop()
     elif fault == "shipped-file-added":
         mac_record["excluded"]["files"].append(
-            "bootstrap/tests/test_security_marker.py")
+            "tests/test_security_marker.py")
         mac_record["excluded"]["files"].sort()
     elif fault == "excluded-count-zero":
         mac_record["excluded"]["count"] = 0
@@ -990,7 +990,7 @@ def test_join_accepts_only_zero_count_for_an_empty_exclusion_list(
     assert "shipped-only" not in empty_output
 
     mac_record["excluded"] = {
-        "files": ["bootstrap/tests/test_fixture_nonempty.py"], "count": 1,
+        "files": ["tests/test_fixture_nonempty.py"], "count": 1,
     }
     mac.write_text(json.dumps(mac_record), encoding="utf-8")
     assert security_check.main(["--join", str(mac), str(windows)]) == 1
@@ -1082,8 +1082,8 @@ def test_committed_fixture_connects_real_record_and_join_entrypoints(
     from importlib.util import module_from_spec, spec_from_file_location
 
     root, fixture_policy_id, fixture_nodeids = _connected_runner_fixture(tmp_path)
-    fixture_excluded = "bootstrap/tests/test_security_fixture_excluded.py"
-    policy_path = root / "bootstrap" / "tests" / "security_manifest.py"
+    fixture_excluded = "tests/test_security_fixture_excluded.py"
+    policy_path = root / "tests" / "security_manifest.py"
     spec = spec_from_file_location("_connected_security_fixture_manifest", policy_path)
     assert spec is not None and spec.loader is not None
     fixture_manifest = module_from_spec(spec)
@@ -1106,7 +1106,7 @@ def test_committed_fixture_connects_real_record_and_join_entrypoints(
     # The real preflight refuses a byte change before any phase or record is
     # produced. Restore the exact committed bytes, then use the same entrypoint
     # for the positive connected run.
-    changed_fixture_test = root / "bootstrap" / "tests" / "test_security_fixture.py"
+    changed_fixture_test = root / "tests" / "test_security_fixture.py"
     committed_fixture_test = changed_fixture_test.read_bytes()
     changed_fixture_test.write_bytes(committed_fixture_test + b"# modified\n")
     refused_record = tmp_path / "dirty-record.json"
@@ -1127,7 +1127,7 @@ def test_committed_fixture_connects_real_record_and_join_entrypoints(
                 and command[2] == security_check._BOUND_HEAD_ARG
                 and not detached_mutations):
             checkout = Path(kwargs["cwd"])
-            path = checkout / "bootstrap" / "tests" / "test_security_fixture.py"
+            path = checkout / "tests" / "test_security_fixture.py"
             original = path.read_bytes()
             changed = original + b"# detached byte mutation\n"
             assert changed != original
@@ -1212,7 +1212,7 @@ def test_committed_fixture_connects_real_record_and_join_entrypoints(
 #
 # The subject here is a **conftest plugin**, so it can only be exercised by an
 # actual pytest session. Every test below copies the REAL
-# ``bootstrap/tests/conftest.py`` into a throwaway tree and runs a child
+# ``tests/conftest.py`` into a throwaway tree and runs a child
 # pytest over it: a re-implementation of the hooks in a fixture would be a
 # check verified by a second copy of the thing it judges.
 # ---------------------------------------------------------------------------
@@ -1238,7 +1238,7 @@ _MODULE_SKIP_AT_COLLECTION = (
 
 def _fixture_tree(tmp_path: Path, body: str) -> Path:
     """A throwaway tree carrying the real conftest plus one test module."""
-    tests = tmp_path / "bootstrap" / "tests"
+    tests = tmp_path / "tests"
     tests.mkdir(parents=True)
     shutil.copy(CAIRN_ROOT / "tests" / "conftest.py",
                 tests / "conftest.py")
@@ -1264,17 +1264,22 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
     with tarfile.open(fileobj=io.BytesIO(archive.stdout), mode="r:") as source:
         source.extractall(root, filter="data")
 
-    test_root = root / "bootstrap" / "tests"
+    test_root = root / "tests"
     conftest = (test_root / "conftest.py").read_bytes()
     manifest = (test_root / "security_manifest.py").read_text(encoding="utf-8")
     package_init = test_root / "__init__.py"
     init_bytes = package_init.read_bytes() if package_init.is_file() else None
     closure_paths = security_check._CEREMONY_CLOSURE_PY
     closure = {rel: (root / rel).read_bytes() for rel in closure_paths}
+    tools = {name: (test_root / name).read_bytes() for name in (
+        "check_cairn.py", "measurements.py", "verify_counts.py",
+        "quality_gate.py", "quality_gate_unused_def_whitelist.py",
+        "test_tiers.py", "test_tiers.json",
+    )}
 
-    posix_id = "bootstrap/tests/test_security_fixture.py::test_native_posix"
-    windows_id = "bootstrap/tests/test_security_fixture.py::test_native_windows"
-    portable_id = "bootstrap/tests/test_security_fixture.py::test_portable"
+    posix_id = "tests/test_security_fixture.py::test_native_posix"
+    windows_id = "tests/test_security_fixture.py::test_native_windows"
+    portable_id = "tests/test_security_fixture.py::test_portable"
     rows = (("nt", windows_id), ("posix", posix_id))
     canonical = "".join(f"{host}\t{node}\n" for host, node in rows)
     policy_id = "sha256:" + hashlib.sha256(canonical.encode("ascii")).hexdigest()
@@ -1295,8 +1300,8 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
                 + manifest[identity_end:])
     manifest += (
         '\nRELEASE_EXCLUDED_TESTS = '
-        '(("bootstrap/tests/test_security_fixture_excluded.py", '
-        '("scripts/x.py",), "Fixture."),)\n'
+        '(("tests/test_security_fixture_excluded.py", '
+        '("release/x.py",), "Fixture."),)\n'
     )
     old_count_guard = (
         'if len(grouped["nt"]) != 63 or len(grouped["posix"]) != 285:'
@@ -1313,6 +1318,8 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
     (test_root / "security_manifest.py").write_text(manifest, encoding="utf-8")
     if init_bytes is not None:
         (test_root / "__init__.py").write_bytes(init_bytes)
+    for name, data in tools.items():
+        (test_root / name).write_bytes(data)
     for rel, data in closure.items():
         path = root / rel
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -1351,7 +1358,7 @@ def _child_pytest(root: Path, token: str | None) -> subprocess.CompletedProcess:
     if token is not None:
         env[security_check.RELEASE_GATE_ENV] = token
     return subprocess.run(
-        [sys.executable, "-B", "-m", "pytest", "bootstrap/tests", "-q",
+        [sys.executable, "-B", "-m", "pytest", "tests", "-q",
          "-p", "no:cacheprovider"],
         cwd=str(root), env=env, capture_output=True, text=True, check=False,
     )
@@ -1360,7 +1367,7 @@ def _child_pytest(root: Path, token: str | None) -> subprocess.CompletedProcess:
 def _native_child_pytest(root: Path, env: dict[str, str],
                          *extra_args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "-B", "-m", "pytest", "bootstrap/tests", "-q",
+        [sys.executable, "-B", "-m", "pytest", "tests", "-q",
          "-p", "no:cacheprovider", *extra_args],
         cwd=str(root), env=env, capture_output=True, text=True, check=False,
     )
@@ -1369,11 +1376,11 @@ def _native_child_pytest(root: Path, env: dict[str, str],
 def _release_collection_fixture(tmp_path: Path, manifest_line: str) -> Path:
     root = _fixture_tree(tmp_path / "candidate", _CLEAN)
     shutil.copy(CAIRN_ROOT / "tests" / "security_manifest.py",
-                root / "bootstrap" / "tests" / "security_manifest.py")
-    manifest = root / "bootstrap" / "tests" / "security_manifest.py"
+                root / "tests" / "security_manifest.py")
+    manifest = root / "tests" / "security_manifest.py"
     with manifest.open("a", encoding="utf-8") as stream:
         stream.write("\n" + manifest_line + "\n")
-    tests = root / "bootstrap" / "tests"
+    tests = root / "tests"
     (tests / "test_fixture_excluded.py").write_text(
         "def test_excluded_failure_must_not_run():\n    assert False\n",
         encoding="utf-8")
@@ -1401,7 +1408,7 @@ def _strict_collection_env(report_dir: Path, *, full_suite: bool = False) -> dic
 
 def _collected_ids(output: str) -> set[str]:
     return {line.strip() for line in output.splitlines()
-            if line.strip().startswith("bootstrap/tests/") and "::" in line}
+            if line.strip().startswith("tests/") and "::" in line}
 
 
 def test_the_conftest_recognizes_the_same_token_pair() -> None:
@@ -1426,11 +1433,11 @@ def test_the_conftest_recognizes_the_same_token_pair() -> None:
 ], ids=["default-order", "seed-zero-order"])
 def test_strict_release_collection_ignores_exact_listed_file(
         tmp_path, seed, report_name) -> None:
-    excluded = "bootstrap/tests/test_fixture_excluded.py"
+    excluded = "tests/test_fixture_excluded.py"
     root = _release_collection_fixture(
         tmp_path,
-        'RELEASE_EXCLUDED_TESTS = (("bootstrap/tests/test_fixture_excluded.py", '
-        '("scripts/x.py",), "Fixture."),)',
+        'RELEASE_EXCLUDED_TESTS = (("tests/test_fixture_excluded.py", '
+        '("release/x.py",), "Fixture."),)',
     )
     env = _strict_collection_env(tmp_path / "reports")
     args = ["--collect-only"]
@@ -1443,17 +1450,17 @@ def test_strict_release_collection_ignores_exact_listed_file(
     assert not any(node.startswith(excluded + "::") for node in ids)
     assert not any(node.startswith(excluded + "::")
                    for node in report["collection_input_ids"])
-    assert any(node.startswith("bootstrap/tests/test_fixture_kept.py::")
+    assert any(node.startswith("tests/test_fixture_kept.py::")
                for node in ids)
 
 
 def test_strict_release_collection_ignores_broad_override(
         tmp_path) -> None:
-    excluded = "bootstrap/tests/test_fixture_excluded.py"
+    excluded = "tests/test_fixture_excluded.py"
     root = _release_collection_fixture(
         tmp_path,
-        'RELEASE_EXCLUDED_TESTS = (("bootstrap/tests/test_fixture_excluded.py", '
-        '("scripts/x.py",), "Fixture."),)',
+        'RELEASE_EXCLUDED_TESTS = (("tests/test_fixture_excluded.py", '
+        '("release/x.py",), "Fixture."),)',
     )
     env = _strict_collection_env(tmp_path / "reports", full_suite=True)
     proc = _native_child_pytest(root, env, "--collect-only")
@@ -1464,11 +1471,11 @@ def test_strict_release_collection_ignores_broad_override(
 
 @pytest.mark.parametrize("mode", ["release-token", "full-suite", "neither"])
 def test_non_strict_collection_keeps_listed_file(tmp_path, mode) -> None:
-    excluded = "bootstrap/tests/test_fixture_excluded.py"
+    excluded = "tests/test_fixture_excluded.py"
     root = _release_collection_fixture(
         tmp_path,
-        'RELEASE_EXCLUDED_TESTS = (("bootstrap/tests/test_fixture_excluded.py", '
-        '("scripts/x.py",), "Fixture."),)',
+        'RELEASE_EXCLUDED_TESTS = (("tests/test_fixture_excluded.py", '
+        '("release/x.py",), "Fixture."),)',
     )
     env = dict(os.environ)
     env.pop("CAIRN_FULL_SUITE", None)
@@ -1492,13 +1499,13 @@ def test_strict_release_collection_accepts_empty_exclusion_list(tmp_path) -> Non
     proc = _native_child_pytest(root, env, "--collect-only")
     assert proc.returncode == 0, proc.stdout + proc.stderr
     assert any(node.startswith(
-        "bootstrap/tests/test_fixture_excluded.py::")
+        "tests/test_fixture_excluded.py::")
         for node in _collected_ids(proc.stdout))
 
 
 def test_strict_release_collection_refuses_malformed_exclusion_list(tmp_path) -> None:
     root = _release_collection_fixture(
-        tmp_path, 'RELEASE_EXCLUDED_TESTS = (("/x.py", ("scripts/x.py",), "Fixture."),)')
+        tmp_path, 'RELEASE_EXCLUDED_TESTS = (("/x.py", ("release/x.py",), "Fixture."),)')
     env = _strict_collection_env(tmp_path / "reports")
     proc = _native_child_pytest(root, env, "--collect-only")
     assert proc.returncode != 0
@@ -1524,7 +1531,7 @@ def test_release_mode_refuses_incomplete_evidence(tmp_path, body, label) -> None
 def test_release_mode_refuses_collection_time_skips(tmp_path, body) -> None:
     """Collection reports do not pass through runtest_logreport."""
     root = _fixture_tree(tmp_path, body)
-    tests = root / "bootstrap" / "tests"
+    tests = root / "tests"
     (tests / "test_passing_control.py").write_text(
         _CLEAN, encoding="utf-8")
     proc = _child_pytest(root, security_check.RELEASE_GATE_VALUE)
@@ -1540,7 +1547,7 @@ def test_release_mode_refuses_collection_time_skips(tmp_path, body) -> None:
 def test_collection_time_skips_remain_ordinary_without_the_token(
         tmp_path, body) -> None:
     root = _fixture_tree(tmp_path, body)
-    tests = root / "bootstrap" / "tests"
+    tests = root / "tests"
     (tests / "test_passing_control.py").write_text(
         _CLEAN, encoding="utf-8")
     proc = _child_pytest(root, None)
@@ -1586,7 +1593,7 @@ def test_native_context_writes_external_report_for_actual_order(
         tmp_path, seed, order, report_name, head) -> None:
     root = _fixture_tree(tmp_path / "candidate", _CLEAN)
     shutil.copy(CAIRN_ROOT / "tests" / "security_manifest.py",
-                root / "bootstrap" / "tests" / "security_manifest.py")
+                root / "tests" / "security_manifest.py")
     report_dir = tmp_path.parent / f"{tmp_path.name}-reports"
     report_dir.mkdir()
     env = dict(os.environ)
@@ -1618,7 +1625,7 @@ def test_conftest_native_context_refuses_malformed_head(
         tmp_path, head: str) -> None:
     root = _fixture_tree(tmp_path / "candidate", _CLEAN)
     shutil.copy(CAIRN_ROOT / "tests" / "security_manifest.py",
-                root / "bootstrap" / "tests" / "security_manifest.py")
+                root / "tests" / "security_manifest.py")
     report_dir = tmp_path.parent / f"{tmp_path.name}-bad-head-reports"
     report_dir.mkdir()
     env = dict(os.environ)
@@ -1637,7 +1644,7 @@ def test_conftest_native_context_refuses_malformed_head(
 
 def test_fixed_policy_skips_only_exact_opposite_platform_ids(tmp_path) -> None:
     root = tmp_path / "candidate"
-    tests = root / "bootstrap" / "tests"
+    tests = root / "tests"
     tests.mkdir(parents=True)
     shutil.copy(CAIRN_ROOT / "tests" / "conftest.py",
                 tests / "conftest.py")
@@ -1658,7 +1665,7 @@ def test_fixed_policy_skips_only_exact_opposite_platform_ids(tmp_path) -> None:
     security_tests.mkdir()
     (security_tests / "test_git_interpreter_binding_portable.py").write_text(body)
     proc = subprocess.run(
-        [sys.executable, "-B", "-m", "pytest", "bootstrap/tests", "-q",
+        [sys.executable, "-B", "-m", "pytest", "tests", "-q",
          "-p", "no:cacheprovider"],
         cwd=str(root), capture_output=True, text=True, check=False,
     )
@@ -1698,10 +1705,8 @@ def test_release_mode_reports_skips_alongside_a_real_failure(tmp_path) -> None:
 def _quality_gate_tree(tmp_path: Path, body: str) -> Path:
     """A throwaway tree carrying the real conftest AND the real quality gate."""
     root = _fixture_tree(tmp_path, body)
-    scripts = root / "scripts"
-    scripts.mkdir()
     for name in ("quality_gate.py", "quality_gate_unused_def_whitelist.py"):
-        shutil.copy(CAIRN_ROOT / "scripts" / name, scripts / name)
+        shutil.copy(CAIRN_ROOT / "tests" / name, root / "tests" / name)
     return root
 
 
@@ -1712,8 +1717,8 @@ def test_the_release_token_survives_the_real_grandchild_launcher(
         tmp_path, monkeypatch, body, expect_refusal) -> None:
     """**The decisive half.** The chain under test is the real one:
 
-    ``security_check.run_quality_gate()`` -> ``scripts/quality_gate.py`` ->
-    ``pytest`` -> ``bootstrap/tests/conftest.py``
+    ``security_check.run_quality_gate()`` -> ``tests/quality_gate.py`` ->
+    ``pytest`` -> ``tests/conftest.py``
 
     The middle link launches pytest with an ``env=`` built as an **additive
     copy** of its own environment (``quality_gate.py``: ``env =
@@ -1779,7 +1784,7 @@ def _finding(rel: str, test_id: str, severity: str) -> dict:
 def test_a_live_allowlist_entry_passes(monkeypatch, capsys) -> None:
     """Direction 1: the entry names a MEDIUM+ finding the scan reports, so the
     suppression is doing work and the gate is clean."""
-    key = ("scripts/check_cairn.py", "B999")
+    key = ("tests/check_cairn.py", "B999")
     monkeypatch.setattr(security_check, "ALLOWLIST", {key: "fixture rationale"})
     _bandit_report(monkeypatch, [_finding(*key, "MEDIUM")])
     assert security_check.run_bandit() == 0
@@ -1819,13 +1824,13 @@ def test_an_absent_allowlist_entry_fails_closed(monkeypatch, capsys) -> None:
     """Direction 2, the one this chunk adds: the scan reports nothing at that
     (file, test_id), so the entry is a standing permission for a future finding
     and the gate refuses until it is deleted."""
-    key = ("scripts/check_cairn.py", "B999")
+    key = ("tests/check_cairn.py", "B999")
     monkeypatch.setattr(security_check, "ALLOWLIST", {key: "fixture rationale"})
     _bandit_report(monkeypatch, [])
     assert security_check.run_bandit() == 1
     err = capsys.readouterr().err
     assert "does not report at MEDIUM+" in err
-    assert "scripts/check_cairn.py  B999" in err
+    assert "tests/check_cairn.py  B999" in err
 
 
 def test_an_entry_matched_only_at_low_severity_is_not_live(monkeypatch,
@@ -1833,7 +1838,7 @@ def test_an_entry_matched_only_at_low_severity_is_not_live(monkeypatch,
     """The subtle half. An entry whose finding Bandit reports at LOW filters
     nothing -- ``blocking`` never consults the allowlist below MEDIUM -- so
     counting it live would be exactly the fail-open the rule closes."""
-    key = ("scripts/check_cairn.py", "B404")
+    key = ("tests/check_cairn.py", "B404")
     monkeypatch.setattr(security_check, "ALLOWLIST", {key: "fixture rationale"})
     _bandit_report(monkeypatch, [_finding(*key, "LOW")])
     assert security_check.run_bandit() == 1
@@ -1846,7 +1851,7 @@ def test_liveness_never_derives_from_a_partially_scanned_report(monkeypatch,
     'absent'. The ``errors`` branch returns first, so the refusal is the scan
     error -- not a stale-entry verdict computed over a report that is missing
     the file the entry names."""
-    key = ("scripts/check_cairn.py", "B999")
+    key = ("tests/check_cairn.py", "B999")
     monkeypatch.setattr(security_check, "ALLOWLIST", {key: "fixture rationale"})
 
     class _Proc:
@@ -1868,9 +1873,9 @@ def test_liveness_never_derives_from_a_partially_scanned_report(monkeypatch,
 def test_blocking_findings_and_stale_entries_are_reported_together(
         monkeypatch, capsys) -> None:
     """One run, a complete repair list -- the same posture as main()'s phases."""
-    stale = ("scripts/check_cairn.py", "B999")
+    stale = ("tests/check_cairn.py", "B999")
     monkeypatch.setattr(security_check, "ALLOWLIST", {stale: "fixture"})
-    _bandit_report(monkeypatch, [_finding("bootstrap/scaffold.py", "B888",
+    _bandit_report(monkeypatch, [_finding("install/scaffold.py", "B888",
                                           "HIGH")])
     assert security_check.run_bandit() == 1
     err = capsys.readouterr().err
@@ -1891,7 +1896,7 @@ def test_blocking_findings_and_stale_entries_are_reported_together(
 
 _WELL_FORMED_LOW = {
     "errors": [],
-    "results": [{"filename": "scripts/check_cairn.py", "test_id": "B404",
+    "results": [{"filename": "tests/check_cairn.py", "test_id": "B404",
                  "issue_severity": "LOW", "line_number": 1,
                  "issue_text": "subprocess import"}],
 }
@@ -2066,8 +2071,8 @@ def test_candidate_config_filters_ignored_files_and_environment_cannot_steer_the
         encoding="utf-8")
     hostile_command = f"{sys.executable} {hostile}"
 
-    (repo / "bootstrap").mkdir()
-    (repo / "bootstrap" / "security_check.py").write_text(
+    (repo / "install").mkdir()
+    (repo / "install" / "security_check.py").write_text(
         _CHILD_STUB, encoding="utf-8")
     if setup == "smudge-filter":
         (repo / ".gitattributes").write_text(

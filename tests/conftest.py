@@ -265,7 +265,7 @@ def pytest_ignore_collect(collection_path, config):
     """Ignore only exact reviewed files during strict release collection."""
     if _NATIVE_RUN_CONTEXT is None:
         return None
-    root = Path(__file__).resolve().parents[2]
+    root = _suite_root().parent
     try:
         relative = Path(collection_path).resolve().relative_to(root).as_posix()
     except ValueError:
@@ -549,7 +549,7 @@ def _initialize_native_run_context() -> None:
     if sys.platform not in {"darwin", "win32"}:
         raise pytest.UsageError(
             f"strict native evidence refuses unsupported platform {sys.platform}")
-    root = Path(__file__).resolve().parents[2]
+    root = _suite_root().parent
     paths = [Path(default_report), Path(seed0_report)]
     resolved = [path.resolve() for path in paths]
     if (any(not path.is_absolute() for path in paths)
