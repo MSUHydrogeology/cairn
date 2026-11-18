@@ -1,4 +1,4 @@
-<!-- The two `scripts/*_security.py` globs are ADOPTER-tree install destinations
+<!-- The two `dev/tools/*_security.py` globs are ADOPTER-tree install destinations
      of Rule 11's two team-gated modules. Cairn does not select those modules on
      itself, so the paths deliberately do not resolve here; the reviewed sources
      are `templates/modules/team-gated/api_access_security.py` and
@@ -10,6 +10,13 @@
      `templates/modules/default-on/run_security_verification.py`, which the
      Rule 7 self-check greps directly for exactly this reason. -->
 # SAFETY.md — bootstrap safety constraints (R-I)
+
+The following are adopter installation paths, with source templates described above.
+
+External-repo paths:
+- `dev/tools/run_security_verification.py`
+- `dev/tools/api_access_security.py`
+- `dev/tools/web_hosting_security.py`
 
 This document states the safety rules that govern every Cairn
 bootstrap run.  They are **non-negotiable** — they do not bend
@@ -244,9 +251,10 @@ than appends, while a swapped parent remains in the accepted window; and
 **fixed, script-relative** paths (a deliberate dogfood composition, not a
 dynamic-exec vector). See `../SECURITY.md` for the public statement.
 
-**The delete beside the write (Layer 4).** `upgrade --remove-retired` is the
-engine's only deletion of a project file, and it is held to the write's rules.
-It removes a file only if the path is on Cairn's own list, the bytes match a
+**The delete beside the write (Layer 4).** The engine deletes files through
+retired-file removal and verified layout retirement. Both retain the write's
+containment rules. `upgrade --remove-retired` removes a file only if the path
+is on Cairn's own list, the bytes match a
 digest on that row, and the project's last commit holds the same bytes
 (`_committed_copy_matches`, which runs `git cat-file` under a fixed command and
 environment so that no program named in the project's `.git/config` runs). The
@@ -260,6 +268,14 @@ path, and a folder swapped for a link between the check and the unlink can
 redirect it, which is the same accepted window as for the write. Windows also
 looks a bare `git` up in the current folder before `PATH`, and the scrubbed
 environment does not close that, so run the step from a folder you trust.
+
+Layout migration retires only the verified old copies after publishing the
+new lock and rechecking the destinations, profile, caches and old path bytes
+and identities. Its receipt binds the transaction, while Cairn's catalog and
+verified source establish ownership; editable project lock or stage data
+cannot supply a removal path. A mismatch refuses and preserves the receipt
+for retry. See `install/_scaffold/layout_migration.py` and the layout commands
+in `install/UPGRADE.md`.
 
 **The edit check beside it.** The check that stops `upgrade --apply` or a bare
 `--finalize` from overwriting a file with unsaved edits, and warns under

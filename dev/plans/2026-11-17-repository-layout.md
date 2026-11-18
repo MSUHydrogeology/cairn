@@ -53,7 +53,7 @@ checker's committed-child launch, imports, roster and closure paths, and
 operator commands. Follow the requirements consumers, including contributor,
 floor and security guidance, and update container consumers only where they
 read the moved file. In the contained recipe, use the absolute Dockerfile
-path in the same verified checkout as the build context. The pin verifier's
+path in the source context materialized from the verified commit. The pin verifier's
 dirty and untracked checks cover `install/container/Dockerfile`,
 `install/scaffold.py`, `install/_scaffold/`, `templates/` and `CITATION.cff`.
 Acceptance archives that set from the selected commit into each source
