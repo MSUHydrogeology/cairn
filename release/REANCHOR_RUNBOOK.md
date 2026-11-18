@@ -200,10 +200,12 @@ The separate v0.6 work-board item must authorize the exact candidate, package
 and signer, and the Maintainer alone performs that installation after its
 recorded certification and required release checks.
 
-The approved test roster is the exact C1c file
+The approved test roster is the layout-relocated C1c file
+`tests/fixtures/protected_test_roster.json` (1-to-1 relocation of
 `dev/plans/archive/2026-10-28-test-trust-boundary/c1b-roster-6cc95fa7.json`,
+SHA-256 `188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`),
 with SHA-256
-`188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`. Copy
+`098734196db5962be8a11850c7481abdf8a52d53cd0f1b0d7e177305356f82e6`. Copy
 those exact bytes to a plain file outside the checkout; the command refuses a
 roster supplied from inside the candidate repository. The candidate's roster
 must match them byte for byte.

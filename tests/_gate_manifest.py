@@ -78,7 +78,7 @@ _REPO = Path(__file__).resolve().parent.parent
 _MANIFEST_REL = "tests/fixtures/gate_manifest.json"
 _PROTECTED_ROSTER_REL = "tests/fixtures/protected_test_roster.json"
 _APPROVED_INITIAL_ROSTER_SHA256 = (
-    "188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4")
+    "098734196db5962be8a11850c7481abdf8a52d53cd0f1b0d7e177305356f82e6")
 _TESTDIR_REL = "tests"
 
 # Legitimately mutated by the cascade — EXCLUDED from frozen hashing; integrity
