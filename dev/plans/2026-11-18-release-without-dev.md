@@ -131,3 +131,24 @@ Implementation is in `d06c0fc4`, with the selected-input refusal control in the 
 
 **Elapsed**: unknown
 **Tokens**: unknown
+
+## Code review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+Reviewed commit: dd74d132744066d4cd3c841b51c7edaf2293002e
+Reviewed range: d06c0fc4^..dd74d132
+
+**Verdict**: REVISE
+**Bounding**: ACCEPTED -- the installed report controls in `tests/test_doc_drift_tools.py` cover the named clean, finding and incomplete paths; the joined integration is still pending.
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, but a malformed link can terminate the report without its promised result. -- Scope, C1; `templates/modules/team-gated/link_check.py`, `release_boundary`.
+2. **Best alternative.** Extending the installed checker and existing mappings keeps the advisory report with its established Git reader and installation path. -- `templates/modules/team-gated/link_check.py`, `_tracked_index_paths`; `install/_scaffold/config.py`.
+3. **What would show it wrong?** A kept Markdown file with `[x](http://[)` triggers `urlsplit`'s `ValueError`; an installed-command control should require a deterministic incomplete report and exit 2. -- `release_boundary`; `python -c 'from urllib.parse import urlsplit; urlsplit("http://[")'` raised `ValueError` under Python 3.12.
+
+**Blocking finding.** `urlsplit(target)` is outside the input-error handling. A malformed URL in any kept file aborts the command with a traceback, losing prior findings and the required status. Handle this input as incomplete and add the installed-command control above.
+
+**Rule retention.** The added release guidance preserves entry-file duties and the Operator stop; no removed test callers were found in the reviewed test diff.
+
+**Coverage.** Read the accepted scope, implementation, mapped controls, installer mappings and changed entry guidance; repeated the reuse search and checked its positive matches. The URL probe was a library-level check, not a replay of the installed command. Did not replay suites, inspect every installed folder, run native Windows, or perform Security Review. C4's installed-project integration and lock inspection remain pending; the implementation record does not claim they passed. No fenced chunk or deviation request appears in this range.
