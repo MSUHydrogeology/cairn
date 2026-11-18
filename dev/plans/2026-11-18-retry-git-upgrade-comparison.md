@@ -1,7 +1,7 @@
 # Plan: Retry the isolated Git upgrade comparison
 
 **Source proposal**: dev/proposals/archive/2026-11-18-terra-retry-git-upgrade-comparison.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/development-environment.md
