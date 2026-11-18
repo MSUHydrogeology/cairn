@@ -66,7 +66,7 @@
     },
     {
       "dst": "dev/agent_collaboration.md",
-      "hash": "sha256:2cef39b907b071d494f6481417b95dc2de30bad1a37011c006a9e622125063d0",
+      "hash": "sha256:dd274658b1d6d54fd52816f7881c5652c552a6402b2ebe01ad22a90d31967c0a",
       "src": "core/dev/agent_collaboration.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -208,7 +208,7 @@
     },
     {
       "dst": "dev/rules/README.md",
-      "hash": "sha256:0af1e4f0f6b3404f297f0f3b9c1a639c39564f193b38edcbda3428994e720ca3",
+      "hash": "sha256:3960b1d853cf37b4b1c9da79cf9921ad6157c49db5f03c07b2439cc7579736e7",
       "src": "core/dev/rules/README.md",
       "unrecoverable_base": true,
       "verbatim": false
