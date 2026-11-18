@@ -28,7 +28,7 @@
     },
     {
       "dst": "AGENTS.md",
-      "hash": "sha256:babd4db6d7dc38f98921be3be11fafc4fd1181153f5d440d6a8118c9c0e3dd65",
+      "hash": "sha256:8c2688c5500e8a8e2e2f64be8507e1d504d991ef3124c85154f7f0d726a30e5f",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -66,7 +66,7 @@
     },
     {
       "dst": "dev/agent_collaboration.md",
-      "hash": "sha256:607fab03da29ea5cd92cf4c144d7cc91768cd12530809a4b71161d0e703d549e",
+      "hash": "sha256:3eb744fcdacd18977e083ef91512ab506b3b62237d46f47abcee7c6071144e25",
       "src": "core/dev/agent_collaboration.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -80,7 +80,7 @@
     },
     {
       "dst": "dev/modules/claim-check.md",
-      "hash": "sha256:03dac0e5fcbdd9ac2b98af321c6b805e310c18244d7b8304c2554085c43faa21",
+      "hash": "sha256:86b45f5b6388f27bbb9c3e20fcf8329ac9ea070fb01efc9f5bf93648bfdf6d37",
       "src": "modules/default-on/claim-check.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -89,34 +89,34 @@
       "base_cache": "dev/.cairn/base/dev/modules/content-security.md",
       "base_hash": "sha256:be93184eb37dc179983ae6d4fd7b4935156bc1e527fe662f1d696a85a1f5ac0f",
       "dst": "dev/modules/content-security.md",
-      "hash": "sha256:030f15ca2eaf82954490ec1d6b4423ad92035d370c33b6783273477a3049b7b2",
+      "hash": "sha256:90a2d16a4705a26b1d47b22f16316ed62aa2c9cd6a585d33a880eeeaf9a9e46d",
       "src": "modules/team-gated/content-security.md",
       "verbatim": false
     },
     {
       "dst": "dev/modules/coordination-tiers.md",
-      "hash": "sha256:8cd5a90dee555cb637d75fd59f93f7e0d9e633e6f213f78444198925d017e95f",
+      "hash": "sha256:f3240d8c2c327828e52f3eab367fd166a3ff074eef4db33fbd1701edbeccc2c7",
       "src": "modules/team-gated/coordination-tiers.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/doc-drift-prevention.md",
-      "hash": "sha256:d523e0638e29ecc775b57f8113984e94aff1dc7b66452c55f8fe181816b4d9d9",
+      "hash": "sha256:b3697ba475b661cfdebb0fb02d66181d0501c613308d08b8ab0bc4e5dfde253f",
       "src": "modules/team-gated/doc-drift-prevention.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/documentation-plan.md",
-      "hash": "sha256:c10dc811d2ffa4fbe1e400434cabe78d8f7a6a0ba1a3506a93e9fd47be1a0b98",
+      "hash": "sha256:354e3949041e958f94204da527e4b138ccc8009a93323903e4872b333a03a89c",
       "src": "modules/default-on/documentation-plan.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/dual-review.md",
-      "hash": "sha256:b35fa2a580a666f15d87e6365b3c1180c30a3c1e01c2a00ffe5cb0b758bef9b2",
+      "hash": "sha256:a236e99d777bd847570db192b804e99038e1ae3e22a23b5af2b76817033dc959",
       "src": "modules/team-gated/dual-review.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -130,28 +130,28 @@
     },
     {
       "dst": "dev/modules/incident-trackers.md",
-      "hash": "sha256:bde3f3e1f02f18335fc0f65eedf18c4a11f28fe553b9e3d5cb24e2291668d5e1",
+      "hash": "sha256:66a5170722249cd0371af31822c87f94527787c2a00cee5d7aa9c1461efa0545",
       "src": "modules/default-on/incident-trackers.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/incident_log_template.md",
-      "hash": "sha256:13ad03aa5ccb6f532baf88c26d1dba039d05dc9f5242d44d5f5cfc6810b9c3e4",
+      "hash": "sha256:b45502e02abe3b0d961679d8dfb7d2b1cf914f84099289b24b07a097ec016a5c",
       "src": "modules/default-on/incident_log_template.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/issue-capture.md",
-      "hash": "sha256:b3f02f90a741133012994191dd26f9a9da484f88e5d0c45594a31db69fae74c4",
+      "hash": "sha256:bbcb8cc0c880af945bd89e0fb791383c01033a4d65e05661d5ae42fb9c5fe276",
       "src": "modules/team-gated/issue-capture.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/model-selection.md",
-      "hash": "sha256:5669c0607b30f74ee65d7d5546ab92862d261019f386c0e0775706101c7ec566",
+      "hash": "sha256:f60acd73535469df4003594baac7b27188f7e6f35666063c6dd7684a99add8b7",
       "src": "modules/team-gated/model-selection.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -160,27 +160,27 @@
       "base_cache": "dev/.cairn/base/dev/modules/portable-security-sweeps.md",
       "base_hash": "sha256:cba01db05f42625e3d1b2b65a494b7d878b0903ffcc2292befcbaf5fec30fb64",
       "dst": "dev/modules/portable-security-sweeps.md",
-      "hash": "sha256:b3e5efe034c3d40c9e1c543d2bfb628c5460d12167acf0b4446d49d01f4d066a",
+      "hash": "sha256:d9a3a6ccd892e9ad15ab7fd504910405ef76eb8d8876f638f9984676b5d9eb0b",
       "src": "modules/team-gated/portable-security-sweeps.md",
       "verbatim": false
     },
     {
       "dst": "dev/modules/reflections.md",
-      "hash": "sha256:996d0089f63e855513c88d23c599f2ad6214212a77e4defa06a26036756e72af",
+      "hash": "sha256:e944aed858d4beb822b5d7bf8191b3f1615ec0966d7d00756b015a12b3d56ee3",
       "src": "modules/default-on/reflections.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/security-review.md",
-      "hash": "sha256:2934017c8a44dad97dcf15154305efac9455fa4b2ea0dd6976f2ee85e7aaf800",
+      "hash": "sha256:fbe8abe5b4987b54066488d1ce07ca1e2315161507214a638436152b96980ecc",
       "src": "modules/team-gated/security-review.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/testing-discipline.md",
-      "hash": "sha256:ded4d3323864a11c067c5ee7aa95959f36c87e78b1c1b2620eec4f972daecb57",
+      "hash": "sha256:d7eb7c3532eee7c8ed4d6a2d5fcac42d2a5f835b2473dd33e6b984cf36d99e07",
       "src": "modules/team-gated/testing-discipline.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -215,21 +215,21 @@
     },
     {
       "dst": "dev/strategy/README.md",
-      "hash": "sha256:c52c55a71679bfe43a0714cc9937565b7376e16563d0bd73d27958d6e7cba5ee",
+      "hash": "sha256:c4874ddc49a575eeab8cfe4cac609fb2c6972652ab9e728d18aceeed3175d964",
       "src": "core/dev/strategy/README.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/strategy/_template.md",
-      "hash": "sha256:2cbfea23ffdab62621644af1fb869abdfba155f37c7055c83c3cc9729e12aa30",
+      "hash": "sha256:f9699299602cd19e02f7b5da541b65839aa82c0c145f9da51df314022b64f84a",
       "src": "core/dev/strategy/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/upstream/README.md",
-      "hash": "sha256:1e9e19cdadc25a955f65810e25724f1eb00d81e6493a99a4d1d400179a6c9412",
+      "hash": "sha256:42abd9efe9af917952b21c79cbfa9c72d63bf4c4561a315c29eaec61313fc4f2",
       "src": "core/dev/upstream/README.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -250,7 +250,7 @@
     },
     {
       "dst": "docs/DOCUMENTATION_PLAN.md",
-      "hash": "sha256:38dd5cf3be6a2c0a7fc5b2d6763c7112277e7605cde3c8339f93115ad6b7201a",
+      "hash": "sha256:8320199fcfe7c31fde3fda6fab7ec0b881aa0e60508c0c7ca7f67127b2dde4b3",
       "src": "modules/default-on/documentation_plan_template.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -418,7 +418,7 @@
     {
       "base_hash": "sha256:6c34ce1b7d714532ff9e30ed4cff5b9a4bde052d206de94123ef65d6bc676e0c",
       "dst": "dev/tools/_intent/conflict.py",
-      "hash": "sha256:6c34ce1b7d714532ff9e30ed4cff5b9a4bde052d206de94123ef65d6bc676e0c",
+      "hash": "sha256:00bef37dd8f4d9147b41b94ae9c80b9d54e08fba466b3b6358d91bc5ea1cdb4b",
       "layout_ancestry": "unknown",
       "layout_base_commit": "b0aafcf8d37d0482ec9600e10b104af4bbedeeb6",
       "layout_fork": false,
@@ -428,7 +428,7 @@
     {
       "base_hash": "sha256:9bb6e3541ccfe4b73dec86e79add52947812d358ac9fc190c58b974c267056b8",
       "dst": "dev/tools/_intent/hooks.py",
-      "hash": "sha256:9bb6e3541ccfe4b73dec86e79add52947812d358ac9fc190c58b974c267056b8",
+      "hash": "sha256:7a82b950cfce75398280bb6ebf0f7c94e52d762354ec28401357e6a4f95e9d80",
       "layout_ancestry": "unknown",
       "layout_base_commit": "b0aafcf8d37d0482ec9600e10b104af4bbedeeb6",
       "layout_fork": false,
@@ -573,7 +573,7 @@
     {
       "base_hash": "sha256:ebab8d9c067b3a5307743fe1b6fa66c5a381bfa05dfa8f5b2362d98d8dc896f6",
       "dst": "dev/tools/prose_roots.txt",
-      "hash": "sha256:1f2db4e72bdb388c61cbec62613ff49323cb5d20e055b21e85029892fd3141c6",
+      "hash": "sha256:f66f6ff9af3992486ab0bd8f56c5642aedc92d0b37787a2732fa14ee749d3c65",
       "layout_ancestry": "unknown",
       "layout_base_commit": "b0aafcf8d37d0482ec9600e10b104af4bbedeeb6",
       "layout_fork": true,
