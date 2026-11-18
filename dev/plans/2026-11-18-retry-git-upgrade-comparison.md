@@ -129,3 +129,21 @@ needed for reproducibility, not a separate evidence ledger.
 ## Verification
 
 Before implementation, map changed paths with `tests/tier_inventory.py`; use applicable claim, link, snippet, neutrality and `tests/check_cairn.py` prose gates and known-positive controls for negative searches. C1 uses the specified guest setup, read dependencies, privilege and cleanup proofs; startup alone does not satisfy its controls. C2 uses the old snapshot's `bootstrap/scaffold.py`, candidate `install/scaffold.py` and trusted Git. Retain the archived C1 controlled Git environment, empty hooks/templates, configuration checks, isolated home/temp, timeout/process-group handling and no execution of target-installed code. The driver uses temporary artifacts only; no permanent promise test is required solely for observations. Record elapsed time, tokens and all failures. Independent ordinary and Security code reviews follow; the arc owner runs one joined integration at the arc end.
+
+## Plan review -- gpt-6.1-terra, Reviewer -- 2026-11-18
+
+Reviewed commit: a1522c0fed2c3054d618a10a4ca252020e0c75e5
+
+**Obligation**: Internal plan review
+**Tier**: Internal
+**Findings**: raised
+
+The plan aims to make the accepted comparison observable without treating a failed isolation control as a successful trial.
+
+1. **Should this happen as framed?** Yes: C1 gates C2 on both reviews and confinement controls, and C2 retains the six matched cells, baseline comparison and 37-case classification -- accepted proposal, Proposal and Evidence; plan Sequence and Acceptance criteria.
+2. **Best alternative.** The temporary driver and existing installer routines avoid a maintained trial framework while retaining the accepted outcomes -- plan Scope and Reuse; archived upgrade-growth plan C0–C1.
+3. **What would show it wrong?** A failed control, mismatched reconstructed destination, or an unobserved cell must stop the affected work or leave it incomplete -- plan C1–C3 and Verification.
+
+**Non-blocking finding:** The plan gives command and driver time limits but no estimated work window or uncertainty, as required by `dev/agent_collaboration.md` under Plans and records. Add an approximate window and its main uncertainty; it is an estimate, not a deadline or waiver.
+
+**Coverage:** Compared the committed plan with the accepted proposal, current template, archived C0–C1 and installer reuse points. The plan adds no doctrine and leaves installed duties in their existing homes. No guest setup, controls, comparison, tests, Security Review or integration was run; feasibility and confinement remain unproven. Elapsed: unknown. Tokens: unknown.
