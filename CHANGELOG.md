@@ -56,6 +56,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 - **Changed: One tools folder.** Cairn's installer now lives under `install/`, and upgrades move its adopted tools into `dev/tools` while preserving local changes and project-owned files. Update your own commands that name the old tool paths; the agreed root entry files remain outside `dev/`. ([proposal](dev/proposals/archive/2026-11-09-claude-repository-layout.md))
 
+- **Changed: Useful module offers.** Guidance now explains unselected modules and known costs, asks whether to adopt them, and offers them when a task needs them. Missing descriptions defer the offer; existing automatic core and skills additions continue. ([plan](dev/plans/archive/2026-11-18-module-offers.md))
+
 ### Minor changes
 
 - **Changed** — Guide navigation separates using Cairn, reference material and contributing, and selected module guides now point to five previously hard-to-find commands. Cairn's release and count-maintenance instructions sit beside their tools. ([guide-placement proposal](dev/proposals/archive/2026-11-09-codex-docs-audience-and-homes.md); [discovery proposal](dev/proposals/archive/2026-11-18-terra-installed-discovery.md))
