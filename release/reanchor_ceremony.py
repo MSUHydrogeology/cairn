@@ -9,7 +9,7 @@ is refused has paid a full authorization package to be told something that was
 free.
 
 IT RUNS NO STAGE: it reports, and prints the launcher commands. The ceremony
-itself is run by `scripts/repin.py ceremony` (ordinary ceremonies) or by hand
+itself is run by `release/repin.py ceremony` (ordinary ceremonies) or by hand
 from the runbook (a transition). Three helpers here are also called by
 `repin`: `values_field`, `compare` and `check_packet_pair`, and
 `packet_artifact_digest`.
@@ -39,7 +39,7 @@ import sys
 from pathlib import Path
 
 ANCHOR_REF = "refs/cairn/gate-anchor"
-ARTIFACT_REL = "bootstrap/reanchor.sh"
+ARTIFACT_REL = "release/reanchor.sh"
 PACKET_SLOT = "@PACKET_SHA256@"
 REVIEW_MANIFEST_SCHEMA = "cairn-review-manifest/v1"
 
@@ -131,7 +131,7 @@ def values_field(values: Path, key: str) -> str | None:
     return None
 
 
-TEMPLATE_REL = "bootstrap/reanchor-launcher.template.sh"
+TEMPLATE_REL = "release/reanchor-launcher.template.sh"
 
 
 def closure_members(repo: Path, candidate: str) -> list[str]:
@@ -324,7 +324,7 @@ def rehearse(repo: Path, state: dict) -> bool:
   the module itself refuses to. Its banner is printed below rather than
   swallowed.""")
 
-    sys.path.insert(0, str(repo / "bootstrap" / "tests"))
+    sys.path.insert(0, str(repo / "tests"))
     try:
         import _gate_preflight as gp
     except Exception as exc:
@@ -439,7 +439,7 @@ def main() -> int:
 
     if not args.values.exists():
         stop(f"the values file {args.values} does not exist. Copy "
-             f"bootstrap/reanchor-values.example outside the repository "
+             f"release/reanchor-values.example outside the repository "
              f"and fill it in.")
 
     # THE REPOSITORY IS THE VALUES FILE'S, NOT THIS SCRIPT'S. `git -C` discovers
@@ -486,12 +486,12 @@ def main() -> int:
         return 1
     if not pair_ok:
         say("  The tree is fine; the materials are not. The packet and launcher")
-        say("  are produced together: by `python scripts/repin.py packet` in an")
+        say("  are produced together: by `python release/repin.py packet` in an")
         say("  ordinary ceremony, by hand in a transition (see the runbook).")
         return 1
 
     say("  Preflight only: this tool runs no stage. The ceremony is")
-    say("  `python scripts/repin.py ceremony` for an ordinary one. By hand, run")
+    say("  `python release/repin.py ceremony` for an ordinary one. By hand, run")
     say("  each command on one line, in this order.")
     say("")
     home = values_field(args.values, "home") or "<home>"

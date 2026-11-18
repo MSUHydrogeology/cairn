@@ -152,7 +152,7 @@ def check_promotion(
     prior_anchor_actual: str,
     candidate: str,
     is_sensitive,
-    checker_path: str = "bootstrap/tests/_gate_transition.py",
+    checker_path: str = "tests/_gate_transition.py",
 ) -> tuple[bool, list[str]]:
     """**Data-only, pure** validation that the candidate's gate-control bytes
     EXACTLY match the externally-authored *manifest*, **bound to one immutable

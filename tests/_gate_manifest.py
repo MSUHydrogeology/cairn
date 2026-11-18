@@ -11,7 +11,7 @@ Two file classes
 
 * **Frozen set** — every pre-existing test, harness, scanner, and fixture whose
   content defines a gate's pass/fail semantics. Discovered by glob
-  (``bootstrap/tests/**/*.py`` + ``bootstrap/tests/fixtures/**`` + ``scripts/*.py``)
+  (``tests/**/*.py`` + ``tests/fixtures/**`` + ``release/*.py`` + ``dev/tools/*.py``)
   and byte-hashed. During the batch, **modifying or deleting a frozen file HOLDs
   by default**; *adding* a new test file is allowed and recorded. The unattended
   run must NOT decide that an edit to an existing gate is merely "strengthening."
@@ -38,7 +38,7 @@ nodes are allowed and recorded.
 External anchor
 ---------------
 
-The manifest lives at ``bootstrap/tests/fixtures/gate_manifest.json``, committed
+The manifest lives at ``tests/fixtures/gate_manifest.json``, committed
 in the supervised pre-run prerequisite commit. ``verify --anchor-ref <SHA>``
 reads the expected manifest from that **immutable git object**
 (``git show <SHA>:<manifest>``) and HOLDs if the working-tree manifest differs —
@@ -49,8 +49,8 @@ worktree) so a tampered worktree copy of *this tool* cannot whitewash itself.
 Usage
 -----
 
-    python bootstrap/tests/_gate_manifest.py produce > bootstrap/tests/fixtures/gate_manifest.json
-    python bootstrap/tests/_gate_manifest.py verify --anchor-ref <PREREQ_SHA>
+    python tests/_gate_manifest.py produce > tests/fixtures/gate_manifest.json
+    python tests/_gate_manifest.py verify --anchor-ref <PREREQ_SHA>
 
 All gate work runs under the canonical interpreter (lhm / Python 3.13); the
 verifier HOLDs if the running interpreter's *minor* differs from the pinned one
@@ -74,19 +74,19 @@ SCHEMA = "cairn-gate-manifest/v2"
 #: only ever emits v2.  Refusing v1 before the ceremony that replaces it
 #: would brick the gate it is meant to protect.
 SCHEMA_V1 = "cairn-gate-manifest/v1"
-_REPO = Path(__file__).resolve().parents[2]
-_MANIFEST_REL = "bootstrap/tests/fixtures/gate_manifest.json"
-_PROTECTED_ROSTER_REL = "bootstrap/tests/fixtures/protected_test_roster.json"
+_REPO = Path(__file__).resolve().parent.parent
+_MANIFEST_REL = "tests/fixtures/gate_manifest.json"
+_PROTECTED_ROSTER_REL = "tests/fixtures/protected_test_roster.json"
 _APPROVED_INITIAL_ROSTER_SHA256 = (
     "188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4")
-_TESTDIR_REL = "bootstrap/tests"
+_TESTDIR_REL = "tests"
 
 # Legitimately mutated by the cascade — EXCLUDED from frozen hashing; integrity
 # governed by the named mechanism, not a byte hash.
 CASCADE_MUTABLE: dict[str, str] = {
-    "bootstrap/_scaffold/config.py":
+    "install/_scaffold/config.py":
         "AST source-motion attest — one predeclared mapping-symbol delta only (A/B/C/E)",
-    "bootstrap/tests/fixtures/scaffold_ast_baseline.json":
+    "tests/fixtures/scaffold_ast_baseline.json":
         "_ast_attest.py update-symbol — one allowlisted baseline key, --expect-old guarded",
 }
 
@@ -95,7 +95,7 @@ CASCADE_MUTABLE: dict[str, str] = {
 # each phase's AST source-motion attestation + collection-identity (node-IDs / skip-xfail)
 # + green suite + External-stance review, NOT a byte hash. Reported as notes by the verifier.
 # Every OTHER templates/modules/**/*.py (the shipped scanner / security-gate implementations:
-# content_scan*, run_security_audit, link_check, …) and every OTHER bootstrap/tests/**/*.py
+# content_scan*, run_security_audit, link_check, …) and every OTHER tests/**/*.py
 # IS frozen — the batch does not edit them, and weakening a deployed scanner or a gate test
 # must HOLD (Codex confirmation R2-2 Finding 2).
 #
@@ -111,7 +111,7 @@ CASCADE_MUTABLE: dict[str, str] = {
 PHASE_SPLIT_TARGETS: dict[str, str] = {
     "templates/modules/team-gated/intent.py":
         "phase A intent-split facade — per-phase AST source-motion attestation + External-stance review",
-    "bootstrap/tests/test_intents_tool.py":
+    "tests/test_intents_tool.py":
         "phase A intent-split TEST FIXTURE — _git_repo (+ inline copies) stage the _intent/ "
         "package beside the copied facade so the git-hook subprocess tests find the engine; "
         "ASSERTIONS UNCHANGED. Governed by collection identity (node-IDs / skip-xfail) + green "
@@ -134,22 +134,22 @@ GATE_COMMANDS: list[dict] = [
      # executes.  A recorded command that cannot run is a worse defect than a
      # missing one, because it looks usable.
      "cmd": ["env", "CAIRN_FULL_SUITE=1",
-             "python", "-m", "pytest", "bootstrap/tests/", "-q"],
+             "python", "-m", "pytest", "tests/", "-q"],
      "expect": "all green; 0 skipped / 0 xfailed (the dev Bandit gate, AST attest, "
                "differential oracle, and loader-identity tests all run inside this suite)"},
     {"id": "ast-attest-verify",
-     "cmd": ["python", "bootstrap/tests/_ast_attest.py", "verify",
-             "bootstrap/tests/fixtures/scaffold_ast_baseline.json",
+     "cmd": ["python", "tests/_ast_attest.py", "verify",
+             "tests/fixtures/scaffold_ast_baseline.json",
              "--known-new",
-             "bootstrap/tests/fixtures/scaffold_ast_known_new.json",
-             "bootstrap/_scaffold/*.py"],
+             "tests/fixtures/scaffold_ast_known_new.json",
+             "install/_scaffold/*.py"],
      "expect": "exit 0 — every baselined symbol accounted for unchanged; the ONLY "
                "permitted CHANGED is the predeclared one-symbol mapping delta"},
     {"id": "check-cairn",
-     "cmd": ["python", "scripts/check_cairn.py"],
+     "cmd": ["python", "tests/check_cairn.py"],
      "expect": "green"},
     {"id": "quality-gate-neutrality",
-     "cmd": ["python", "scripts/quality_gate.py", "--sub", "neutrality"],
+     "cmd": ["python", "tests/quality_gate.py", "--sub", "neutrality"],
      "expect": "green"},
 ]
 
@@ -163,8 +163,8 @@ _INTERPRETER_NOTE = ("ast.dump / differential-oracle digests are interpreter-min
 #
 # There is **one guarded
 # launcher per executable boundary**, not one shared module: this file,
-# `_gate_preflight.py`, `bootstrap/security_check.py` and
-# `bootstrap/container/verify-ref.sh` are four independently executable entry
+# `_gate_preflight.py`, `install/security_check.py` and
+# `install/container/verify-ref.sh` are four independently executable entry
 # points, and a Python launcher cannot serve the shell one.
 #
 # Before this, the two git calls below ran bare `["git", ...]` with the
@@ -356,7 +356,7 @@ def _roster_from_bytes(raw: bytes, *, require_initial_approval: bool = False) ->
     except (UnicodeError, json.JSONDecodeError, KeyError, TypeError) as exc:
         raise RuntimeError(f"protected roster is malformed: {exc}") from None
     if (not isinstance(members, list) or not members
-            or any(not isinstance(p, str) or not p.startswith("bootstrap/tests/")
+            or any(not isinstance(p, str) or not p.startswith("tests/")
                    or ".." in Path(p).parts for p in members)
             or members != sorted(set(members))):
         raise RuntimeError("protected roster membership is invalid or ambiguous")
@@ -428,8 +428,8 @@ def _legacy_frozen_files(repo: Path = _REPO) -> list[str]:
     """The broad policy used by anchors created before roster installation."""
     exclude = set(CASCADE_MUTABLE) | set(PHASE_SPLIT_TARGETS) | {_MANIFEST_REL}
     found: set[str] = set()
-    for pattern in ("bootstrap/*.py", "bootstrap/tests/**/*.py",
-                    "bootstrap/tests/fixtures/**/*", "scripts/*.py",
+    for pattern in ("install/*.py", "tests/**/*.py",
+                    "tests/fixtures/**/*", "release/*.py", "dev/tools/*.py",
                     "templates/modules/**/*.py"):
         for p in repo.glob(pattern):
             if p.is_file() and "__pycache__" not in p.parts:
@@ -455,19 +455,19 @@ def _frozen_files(repo: Path = _REPO,
     # its copied helper fixture could change. Roster membership now freezes its
     # bytes while the phase record remains available for the facade/template.
     exclude = set(CASCADE_MUTABLE) | set(PHASE_SPLIT_TARGETS) | {_MANIFEST_REL}
-    exclude.discard("bootstrap/tests/test_intents_tool.py")
+    exclude.discard("tests/test_intents_tool.py")
     found: set[str] = set()
-    # ``bootstrap/*.py`` (top-level, NON-recursive) freezes the gate-defining engine
+    # ``install/*.py`` (top-level, NON-recursive) freezes the gate-defining engine
     # modules — security_check.py (the single source of the Bandit ALLOWLIST +
     # scan_targets), verify_integrity.py, check_module_body_coverage.py, and the
     # scaffold.py launcher — which the in-suite security/integrity gates import. The
-    # cascade edits ``bootstrap/_scaffold/config.py`` (a subdir, not matched here),
+    # cascade edits ``install/_scaffold/config.py`` (a subdir, not matched here),
     # so these stay frozen; a launcher change during the batch is a deliberate HOLD.
     # ``templates/modules/**/*.py`` freezes the shipped scanner / security-gate
     # implementations (content_scan*, run_security_audit, link_check, …); the three
     # phase-split facade targets are excluded above (PHASE_SPLIT_TARGETS).
-    for pattern in ("bootstrap/*.py", "bootstrap/tests/**/*.py",
-                    "bootstrap/tests/fixtures/**/*", "scripts/*.py",
+    for pattern in ("install/*.py", "tests/**/*.py",
+                    "tests/fixtures/**/*", "release/*.py", "dev/tools/*.py",
                     "templates/modules/**/*.py"):
         for p in repo.glob(pattern):
             if not p.is_file() or "__pycache__" in p.parts:
@@ -493,7 +493,7 @@ def _frozen_files(repo: Path = _REPO,
 
 
 # --- pytest plugin hook: active ONLY when CAIRN_GATE_COLLECT_OUT is set ----------
-# Loaded via `-p bootstrap.tests._gate_manifest` from the _collect subprocess; a
+# Loaded via `-p tests._gate_manifest` from the _collect subprocess; a
 # no-op for any normal pytest run (the module is never auto-registered as a plugin).
 def pytest_collection_modifyitems(items):  # noqa: D401 (pytest hook)
     dest = os.environ.get("CAIRN_GATE_COLLECT_OUT")
@@ -518,7 +518,7 @@ def _collect(repo: Path = _REPO) -> tuple[list[str], list[str], int]:
         env = dict(os.environ, CAIRN_GATE_COLLECT_OUT=out_path)
         r = subprocess.run(
             [sys.executable, "-m", "pytest", _TESTDIR_REL, "--collect-only", "-q",
-             "-p", "bootstrap.tests._gate_manifest", "-p", "no:cacheprovider"],
+             "-p", "tests._gate_manifest", "-p", "no:cacheprovider"],
             cwd=str(repo), env=env, capture_output=True, text=True,
         )
         try:
@@ -589,7 +589,7 @@ def produce(repo: Path = _REPO, protected_roster: dict | None = None) -> dict:
         for rel, why in sorted(PHASE_SPLIT_TARGETS.items())
         if (repo / rel).is_file()
     }
-    baseline = json.loads((repo / "bootstrap/tests/fixtures/scaffold_ast_baseline.json")
+    baseline = json.loads((repo / "tests/fixtures/scaffold_ast_baseline.json")
                           .read_text(encoding="utf-8"))
     mappings = {}
     for sym, phases in MAPPING_SYMBOLS_PHASES.items():
@@ -878,7 +878,7 @@ def verify(manifest_path: str | Path, *, anchor_ref: str | None = None,
         cur = _sha256(repo / rel) if (repo / rel).is_file() else "<absent>"
         if cur != info["pre_run_sha256"]:
             notes.append(f"PHASE-CHANGED: {rel} (governed by: {info['governed_by']})")
-    baseline_p = repo / "bootstrap/tests/fixtures/scaffold_ast_baseline.json"
+    baseline_p = repo / "tests/fixtures/scaffold_ast_baseline.json"
     if baseline_p.is_file():
         baseline = json.loads(baseline_p.read_text(encoding="utf-8"))
         for sym, info in manifest["mapping_symbols"].items():

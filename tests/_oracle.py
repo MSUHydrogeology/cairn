@@ -20,7 +20,7 @@ in a **fixed, recorded matrix**, it:
 
 1. materializes the **baseline** engine from the trusted ref (refused before any
    extraction or execution if the baseline is not reachable from the trusted ref)
-   and runs it alongside the **current** engine (``bootstrap/scaffold.py``), each
+   and runs it alongside the **current** engine (``install/scaffold.py``), each
    as a subprocess installing into its own cloned adopter tree — the baseline
    runs from its extracted tree (old code) with **identical templates** (same
    ``--cairn-root``) and the **same profile**;
@@ -43,7 +43,7 @@ write path, via a real upstream template delta), the **containment refusal**
 (symlink-trap → ``ScaffoldSecurityError``), and the **dirty-tree refusal** — each
 run on both engines and compared (tree byte-compare for apply; normalized exit +
 refusal signature for the guards). ``verify_integrity`` hard-imports
-``bootstrap.scaffold`` so it is single-engine (suite-covered, not differential);
+``install.scaffold`` so it is single-engine (suite-covered, not differential);
 the report's ``non_differential_coverage`` enumerates exactly what is NOT in the
 differential gate, so the gate is honest rather than over-claimed.
 
@@ -53,7 +53,7 @@ across a refactor (the baseline runs the OLD extracted code, never the current).
 
 Run::
 
-    python bootstrap/tests/_oracle.py run --baseline-ref <sha> --trusted-ref <ref> --report /tmp/oracle.json
+    python tests/_oracle.py run --baseline-ref <sha> --trusted-ref <ref> --report /tmp/oracle.json
 """
 from __future__ import annotations
 
@@ -67,15 +67,15 @@ import tempfile
 from pathlib import Path
 
 _TESTS_DIR = Path(__file__).resolve().parent
-CAIRN_ROOT = _TESTS_DIR.parent.parent
-CURRENT_ENGINE = CAIRN_ROOT / "bootstrap" / "scaffold.py"
+CAIRN_ROOT = _TESTS_DIR.parent
+CURRENT_ENGINE = CAIRN_ROOT / "install" / "scaffold.py"
 
 # The "before" engine is no longer a checked-in frozen FILE — it is materialized
 # from a **trusted git ref** at run time (plan: differential-oracle git-ref
 # baseline). The trust verification + bounded extraction live in `_oracle_trust`.
 try:  # package import (pytest)
-    from bootstrap.tests import _oracle_trust as _trust
-except ImportError:  # script mode: `python bootstrap/tests/_oracle.py`
+    from tests import _oracle_trust as _trust
+except ImportError:  # script mode: `python tests/_oracle.py`
     import _oracle_trust as _trust
 
 REPORT_SCHEMA = "cairn.scaffold_split.oracle/v1"
@@ -276,7 +276,7 @@ def _compare(frozen: dict[str, bytes], current: dict[str, bytes]) -> list[dict]:
 # refusal. Each runs BOTH engines and compares the deterministic result.
 #
 # Honest coverage boundary (do not over-claim): `verify_integrity.py` hard-imports
-# `bootstrap.scaffold`, so it cannot run against the frozen standalone engine --
+# `install.scaffold`, so it cannot run against the frozen standalone engine --
 # it is a SINGLE-engine tool covered by the unit suite, not this differential
 # gate. `upgrade --init-lock` / `--finalize` are deterministic lockfile ops
 # covered by the unit suite. The report enumerates exactly what is differential.
@@ -372,7 +372,7 @@ def _refusal_signature(stderr: str) -> str:
     # containment leaf is extracted (Stage 1). The class identity + message +
     # exit are unchanged; only the traceback's module path moved.
     last = re.sub(r"[\w.]*ScaffoldSecurityError", "ScaffoldSecurityError", lines[-1])
-    last = last.replace("bootstrap._scaffold.", "")
+    last = last.replace("bootstrap._scaffold.", "").replace("install._scaffold.", "")
     return re.sub(r"(:\s)(/\S+)$", r"\1<path>", last)
 
 
@@ -381,7 +381,7 @@ def _error_block(stderr: str) -> str:
     stripped -- deterministic across engines for the gated-refusal messages."""
     idx = stderr.find("error:")
     block = stderr[idx:] if idx >= 0 else stderr
-    return block.replace("bootstrap._scaffold.", "").strip()
+    return block.replace("bootstrap._scaffold.", "").replace("install._scaffold.", "").strip()
 
 
 def _upgrade_apply_scenario(workdir: Path, engines, target_root: Path = CAIRN_ROOT) -> dict:
@@ -480,7 +480,7 @@ _PRIVILEGED_SCENARIOS = (
 #: Behaviors the plan's per-stage gate names that are NOT differential here, with
 #: the reason -- enumerated so the gate's coverage is honest, not over-claimed.
 _NON_DIFFERENTIAL = {
-    "verify_integrity": "single-engine (hard-imports bootstrap.scaffold); covered by the unit suite",
+    "verify_integrity": "single-engine (hard-imports install.scaffold); covered by the unit suite",
     "upgrade --init-lock / --finalize": "deterministic lockfile ops; covered by the unit suite",
     "upgrade --plan": "read-only report; its write effects are exercised by upgrade_apply",
 }
@@ -564,7 +564,7 @@ def run_oracle(workdir: Path, baseline_ref: str | None = None,
         return {"schema": REPORT_SCHEMA, "status": "baseline_not_runnable", "ok": False,
                 "reason": "baseline engine does not run under the current environment",
                 "fixtures": [], "privileged": []}
-    current_engine = Path(target_root) / "bootstrap" / "scaffold.py"   # the EVALUATED current engine
+    current_engine = Path(target_root) / "install" / "scaffold.py"   # the EVALUATED current engine
     engines = [("baseline", base_engine, base_root), ("current", current_engine, target_root)]
 
     # Both engines read templates from ONE neutralized copy of the evaluated

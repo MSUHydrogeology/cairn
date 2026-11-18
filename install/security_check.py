@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Cairn release security check -- fail closed until native evidence joins.
 
-The dev-time Bandit gate (``bootstrap/tests/test_security_lint.py``)
+The dev-time Bandit gate (``tests/test_security_lint.py``)
 *skips* when Bandit is absent locally, so a contributor without dev-deps
 is not blocked. That is the wrong posture for a **release**: "the security
 gate may have skipped on the machine that cut the release" is not
@@ -12,13 +12,13 @@ exit.
 
 Run from the Cairn repo root on each native host and retain the local record:
 
-    python bootstrap/security_check.py --record /absolute/path/mac.json
+    python install/security_check.py --record /absolute/path/mac.json
 
 The Windows host uses the same command with a distinct external record path.
 Each clean local run prints ``INCOMPLETE`` and exits 5. Only the explicit join
 on the clean final candidate can print ``PASS``:
 
-    python bootstrap/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json
+    python install/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json
 
 **A repository-state preflight runs first and stops the command on failure**:
 the invocation must name the checkout root, the worktree must be clean of
@@ -41,11 +41,11 @@ an earlier one has failed, so one run yields a complete repair list:
 
 1. the repository-state preflight above;
 2. Bandit over the derived shipped surface, plus the Markdown self-check
-   (``scripts/check_cairn.py``);
-3. the shipped-only engine selection (``bootstrap/tests``) in default order;
+   (``tests/check_cairn.py``);
+3. the shipped-only engine selection (``tests``) in default order;
    only fixed, source-reviewed opposite-platform node IDs may have their
    expected setup skip recorded;
-4. ``scripts/quality_gate.py`` with its seed-0 shipped-only child, plus
+4. ``tests/quality_gate.py`` with its seed-0 shipped-only child, plus
    vendor-neutrality and redundancy.
 
 Each suite order records the exact collected IDs and setup/call/teardown
@@ -72,7 +72,7 @@ gate imports them (no second drift-prone copy).
 process that establishes and launches the committed checkout is not
 authenticated, and nothing cryptographically binds its output to a release
 tag. Running it, reading it, and recording it in the release notes is the
-Maintainer's act -- see ``SECURITY.md`` and ``bootstrap/PROVENANCE.md``.
+Maintainer's act -- see ``SECURITY.md`` and ``install/PROVENANCE.md``.
 
 Manifest derivation per the ``scan-coverage`` plan; four-phase
 orchestration per the ``release-security-orchestration`` plan.
@@ -95,11 +95,12 @@ from pathlib import Path
 CAIRN_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap._scaffold.config import (  # noqa: E402  (trust anchor: narrowest owner, plan 0B.3 / Stage 4)
+from install._scaffold.config import (  # noqa: E402  (trust anchor: narrowest owner, plan 0B.3 / Stage 4)
     _MODULE_MAPPINGS,
 )
-from bootstrap._scaffold.install import install_manifest  # noqa: E402
-from bootstrap.tests.security_manifest import (  # noqa: E402
+from install._scaffold.install import install_manifest  # noqa: E402
+from install._scaffold.layout_catalog import LAYOUT_INSTALLS  # noqa: E402
+from tests.security_manifest import (  # noqa: E402
     NATIVE_ONLY_POLICY_ID,
     release_excluded_files,
     validated_native_only_nodes,
@@ -128,7 +129,7 @@ _REQUIRED_FINDING_FIELDS = ("filename", "test_id", "issue_severity",
 _REQUIRED_ERROR_FIELDS = ("filename", "reason")
 
 #: The release-mode token, and its **one** recognized value.
-#: ``bootstrap/tests/conftest.py`` reads exactly this pair and
+#: ``tests/conftest.py`` reads exactly this pair and
 #: refuses skipped / xfailed / xpassed outcomes when it matches; any other
 #: value -- including the variable being absent -- leaves ordinary contributor
 #: behaviour untouched. The pair lives here because this command is the only
@@ -171,20 +172,20 @@ _PHASE_RESULTS: dict[str, str] = {}
 #: verified-buffer helper loading; they remain subject to the same
 #: report-liveness check.
 ALLOWLIST: dict[tuple[str, str], str] = {
-    ("bootstrap/_scaffold/lockfile.py", "B102"):
+    ("install/_scaffold/lockfile.py", "B102"):
         "`_git_read_helper` executes only the bounded single-descriptor bytes "
         "from the fixed source-layout helper after literal `_GIT_READ_SHA256` "
         "comparison and descriptor/component rechecks; no target-supplied "
         "Python is executed.",
-    ("scripts/content_scan_runner.py", "B102"):
+    ("dev/tools/content_scan_runner.py", "B102"):
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from its fixed delivery root after the literal "
         "`_GIT_READ_SHA256` pin matches; target and CWD data do not select code.",
-    ("scripts/prose_diff.py", "B102"):
+    ("dev/tools/prose_diff.py", "B102"):
         "`_load_git` executes only bounded, revalidated bytes from the fixed "
         "Git-helper destination after literal digest and applicable installed-lock "
         "checks; no target-supplied Python is executed.",
-    ("scripts/exact_replace.py", "B102"):
+    ("dev/tools/exact_replace.py", "B102"):
         "`_load_module` executes only bounded, revalidated captured bytes for the "
         "fixed Git-helper or sibling-report destination after its caller-literal "
         "digest and applicable installed-lock checks; no target-supplied Python "
@@ -229,25 +230,25 @@ ALLOWLIST: dict[tuple[str, str], str] = {
         "no-follow read with component and identity rechecks, then executes "
         "only that verified buffer with `dont_inherit=True`; target/CWD data "
         "select neither helper bytes nor expected pin.",
-    ("scripts/gen_legacy_code_review_passes.py", "B102"):
+    ("tests/gen_legacy_code_review_passes.py", "B102"):
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from the fixed source/tools layout after the literal "
         "`_GIT_READ_SHA256` pin matches; baseline and target data do not select code.",
-    ("scripts/link_check.py", "B102"):
+    ("dev/tools/link_check.py", "B102"):
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from the fixed source/tools layout after the literal "
         "`_GIT_READ_SHA256` pin matches; target and CWD data do not select code.",
-    ("scripts/measurements.py", "B102"):
+    ("tests/measurements.py", "B102"):
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from the fixed source/tools layout after the literal "
         "`_GIT_READ_SHA256` pin matches; registered measurements do not select code.",
-    ("scripts/run_portable_security_sweeps.py", "B102"):
+    ("dev/tools/run_portable_security_sweeps.py", "B102"):
         "`_load_verified_git_read` executes only the bounded single-descriptor "
         "helper buffer from its fixed packaged source/tools root after literal "
         "`_GIT_READ_SHA256` comparison and component/identity rechecks; "
         "`dont_inherit=True` and source binding precede Git use, and target/CWD "
         "data selects neither code nor expected pin.",
-    ("scripts/sync_doc_snippets.py", "B102"):
+    ("dev/tools/sync_doc_snippets.py", "B102"):
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from the fixed source/tools layout after the literal "
         "`_GIT_READ_SHA256` pin matches; snippet inputs do not select code.",
@@ -637,11 +638,11 @@ def _consume_suite_report(order: str) -> dict:
 
 
 def _tracked_test_files(head: str) -> set[str]:
-    """Return committed pytest files under bootstrap/tests at *head*."""
+    """Return committed pytest files under tests at *head*."""
     blobs = _committed_blobs(CAIRN_ROOT, head)
     return {
         rel for rel in blobs
-        if rel.startswith("bootstrap/tests/")
+        if rel.startswith("tests/")
         and rel.endswith(".py")
         and (Path(rel).name.startswith("test_")
              or Path(rel).name.endswith("_test.py"))
@@ -720,13 +721,13 @@ class _RepoStateError(RuntimeError):
 
 #: Git config forced onto every invocation below. Same posture -- and the
 #: same reasons, each verified against a real attack in that module's review
-#: rounds -- as ``bootstrap/tests/_gate_preflight._STERILE_CONFIG``: an
+#: rounds -- as ``tests/_gate_preflight._STERILE_CONFIG``: an
 #: in-repo ``.git/config`` key must not be able to steer, or execute during,
 #: the state check that decides whether a release may be cut. Command-line
 #: ``-c`` outranks system, global, repository and worktree config.
 #:
 #: Deliberately a NARROW SECOND INSTANCE rather than an import. The trust-root
-#: pattern lives in ``bootstrap/tests/`` and pulls in ``_gate_manifest`` and
+#: pattern lives in ``tests/`` and pulls in ``_gate_manifest`` and
 #: ``_gate_reanchor``; importing the test package into the release command
 #: would make Cairn's release gate depend on its own gate-ceremony tooling and
 #: invert the dependency direction. What is reused is the pattern, named here
@@ -1287,13 +1288,13 @@ def _detached_checkout(head: str) -> Iterator[Path]:
 # (``_gate_preflight.declared_authority_closure()``), repo-relative. Spelled out
 # here because this module cannot import test-tree code; kept honest by a test.
 _CEREMONY_CLOSURE_PY: tuple[str, ...] = (
-    "bootstrap/tests/_gate_preflight.py",
-    "bootstrap/tests/_gate_manifest.py",
-    "bootstrap/tests/_gate_reanchor.py",
-    "bootstrap/tests/_gate_transition.py",
-    "bootstrap/tests/_oracle_activation.py",
-    "bootstrap/tests/_oracle.py",
-    "bootstrap/tests/_oracle_trust.py",
+    "tests/_gate_preflight.py",
+    "tests/_gate_manifest.py",
+    "tests/_gate_reanchor.py",
+    "tests/_gate_transition.py",
+    "tests/_oracle_activation.py",
+    "tests/_oracle.py",
+    "tests/_oracle_trust.py",
 )
 
 
@@ -1301,10 +1302,9 @@ def scan_targets() -> list[str]:
     """The executable surface to scan, derived from Cairn's source of truth:
     every **verbatim** (byte-for-byte, un-substituted) ``.py`` in the
     published install manifest -- the artifacts an adopter runs as code --
-    plus Cairn's own dev executables (``scripts/*.py`` + the top-level
-    ``bootstrap/`` tools) and the whole scaffold engine package, as explicit
-    files. A newly-shipped script is covered automatically; there is no
-    hand-maintained list to drift.
+    plus Cairn's own development and release executables and the whole
+    scaffold engine package, as explicit files. A newly shipped script is
+    covered automatically through the install manifest.
 
     The registry loop below (``_MODULE_MAPPINGS``) is strictly redundant once
     the manifest union lands -- every verbatim ``.py`` it names is also a
@@ -1314,37 +1314,41 @@ def scan_targets() -> list[str]:
     the scanned surface" is true by inspection rather than by measurement. It
     is defence in depth, not a second guard: what actually catches a shipped
     ``.py`` falling out of this set is the on-disk oracle in
-    ``bootstrap/tests/test_security_lint.py``, whose input this function never
+    ``tests/test_security_lint.py``, whose input this function never
     reads."""
     targets: set[str] = set()
     for specs in _MODULE_MAPPINGS.values():
         for spec in specs:
             if spec.verbatim and spec.src.endswith(".py"):
                 targets.add(f"templates/modules/{spec.src}")
-    # Cairn's own dev executables: scripts/*.py + the top-level bootstrap/
-    # tools (scaffold, security_check, verify_integrity). Non-recursive, so
-    # bootstrap/tests/ -- which carry intentional attack fixtures -- are not
-    # scanned.
-    for sub in ("scripts", "bootstrap"):
+    # Cairn's executable sources and the installed copies that used to live
+    # under scripts/. Include the latter at either known path during migration.
+    for sub in ("install", "release"):
         targets.update(
             str(p.relative_to(CAIRN_ROOT))
             for p in (CAIRN_ROOT / sub).glob("*.py")
         )
+    targets.update(str(p.relative_to(CAIRN_ROOT)) for p in (CAIRN_ROOT / "tests").glob("*.py")
+                   if not p.name.startswith(("test_", "_", "conftest")))
+    targets.add("tests/test_tiers.py")
+    for _, _, old_dst, _, _, new_dst in LAYOUT_INSTALLS:
+        if old_dst.startswith("scripts/") and old_dst.count("/") == 1 and old_dst.endswith(".py"):
+            targets.update(path for path in (old_dst, new_dst) if (CAIRN_ROOT / path).is_file())
     # The scaffold engine package (post-split): RECURSE it -- every module
-    # under bootstrap/_scaffold/ is
+    # under install/_scaffold/ is
     # privileged implementation, equal in authority to the old monolith, so the
-    # non-recursive bootstrap/*.py glob above would leave the engine's guts
-    # unscanned after the split. bootstrap/tests/ (intentional attack fixtures)
+    # non-recursive install/*.py glob above would leave the engine's guts
+    # unscanned after the split. tests/ (intentional attack fixtures)
     # stays excluded. A no-op until the package exists (Stage 0B), so the Bandit
     # surface is unchanged today.
-    engine_pkg = CAIRN_ROOT / "bootstrap" / "_scaffold"
+    engine_pkg = CAIRN_ROOT / "install" / "_scaffold"
     if engine_pkg.is_dir():
         targets.update(
             str(p.relative_to(CAIRN_ROOT))
             for p in engine_pkg.rglob("*.py")
         )
     # The Python files that decide what a re-anchor ceremony blesses and runs.
-    # They live under bootstrap/tests/, which the globs above leave out on
+    # They live under tests/, which the globs above leave out on
     # purpose (attack fixtures), so they are named one by one; a test compares
     # this tuple with the checker's own declared closure so a new member
     # cannot go unscanned.
@@ -1379,7 +1383,7 @@ def is_blocking(finding: Mapping[str, object]) -> bool:
 
     Exported and called by every consumer -- the release command's suppression
     filter and its allowlist-liveness set here, and (intended) the dev gate in
-    ``bootstrap/tests/test_security_lint.py``, which today re-spells severity
+    ``tests/test_security_lint.py``, which today re-spells severity
     through its own ``_SEVERITY_RANK`` table. The single-sourcing comment on
     that import has always been true of the *data* (``ALLOWLIST``,
     ``scan_targets``) and silent about the *predicate*: two spellings of "is
@@ -1570,7 +1574,7 @@ def run_bandit() -> int:
 
 def run_check_cairn() -> int:
     """Run the Markdown self-check (link / claim / content integrity)."""
-    script = CAIRN_ROOT / "scripts" / "check_cairn.py"
+    script = CAIRN_ROOT / "tests" / "check_cairn.py"
     if not script.is_file():
         print(f"security_check: {script} missing -- fail closed.",
               file=sys.stderr)
@@ -1596,10 +1600,10 @@ def _release_child_env() -> dict[str, str]:
       left undisturbed by a future edit;
     * a *superset* of the operator's environment, because the quality gate's
       order-independence sub-gate launches pytest as a **grandchild** with no
-      ``env=`` of its own (``scripts/quality_gate.py``, argv bound at the
+      ``env=`` of its own (``tests/quality_gate.py``, argv bound at the
       ``cmd`` assignment, ``subprocess.run`` immediately below). It reaches
       that grandchild by inheritance alone -- which is why the decisive
-      regression in ``bootstrap/tests/test_security_check.py`` drives the real
+      regression in ``tests/test_security_check.py`` drives the real
       child path rather than reading this dict back.
     """
     env = dict(os.environ)
@@ -1623,7 +1627,7 @@ def run_suite() -> int:
     Output is not captured: the operator records this run in the release
     notes, so the evidence has to be visible while it happens.
     """
-    tests = CAIRN_ROOT / "bootstrap" / "tests"
+    tests = CAIRN_ROOT / "tests"
     if not tests.is_dir():
         print(f"security_check: {tests} is missing -- fail closed. A release "
               f"cannot be cut on a suite that is not there.", file=sys.stderr)
@@ -1633,7 +1637,7 @@ def run_suite() -> int:
           "platform setup skips are eligible; all other incomplete outcomes refuse.")
     try:
         proc = subprocess.run(
-            [sys.executable, "-m", "pytest", "bootstrap/tests", "-q"],
+            [sys.executable, "-m", "pytest", "tests", "-q"],
             cwd=str(CAIRN_ROOT), env=_release_child_env(), check=False,
         )
     except OSError as exc:
@@ -1658,10 +1662,10 @@ def run_suite() -> int:
 
 
 def run_quality_gate() -> int:
-    """Phase 4: ``scripts/quality_gate.py`` -- in no release checklist before
+    """Phase 4: ``tests/quality_gate.py`` -- in no release checklist before
     this plan, though it owns the vendor-neutrality gate that protects every
     adopter-facing template."""
-    script = CAIRN_ROOT / "scripts" / "quality_gate.py"
+    script = CAIRN_ROOT / "tests" / "quality_gate.py"
     if not script.is_file():
         print(f"security_check: {script} missing -- fail closed.",
               file=sys.stderr)
@@ -1698,7 +1702,7 @@ def _phases() -> tuple[tuple[str, Callable[[], int]], ...]:
     binds each runner *by value at import*, so repointing
     ``security_check.run_suite`` -- the ordinary way to isolate one phase --
     would be a silent no-op. That exact trap is documented against
-    ``_SKILLS_MAPPINGS`` in ``bootstrap/tests/test_security_lint.py``; the
+    ``_SKILLS_MAPPINGS`` in ``tests/test_security_lint.py``; the
     globals are resolved here at call time instead.
     """
     return (
@@ -1812,7 +1816,7 @@ def _run_in_detached_checkout(head: str, context: dict[str, str],
     """Execute this checker from an exact-byte detached checkout of *head*."""
     try:
         with _detached_checkout(head) as checkout:
-            checker = checkout / "bootstrap" / "security_check.py"
+            checker = checkout / "install" / "security_check.py"
             env = dict(os.environ)
             env["PYTHONDONTWRITEBYTECODE"] = "1"
             env[NATIVE_RUN_NONCE_ENV] = context["nonce"]

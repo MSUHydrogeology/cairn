@@ -32,16 +32,16 @@ failure message.
 1. **Baseline** (Stage 0A, re-pinned at 0B just before extraction; run under the
    canonical interpreter — see "Interpreter pinning" above)::
 
-       python bootstrap/tests/_ast_attest.py baseline bootstrap/scaffold.py \
-           > bootstrap/tests/fixtures/scaffold_ast_baseline.json
+       python tests/_ast_attest.py baseline bootstrap/scaffold.py \
+           > tests/fixtures/scaffold_ast_baseline.json
 
 2. **Verify a stage** — prove every symbol the commit claims to have moved is
    present, exactly once, with an unchanged digest, across the new module set::
 
-       python bootstrap/tests/_ast_attest.py verify \
-           --known-new bootstrap/tests/fixtures/scaffold_ast_known_new.json \
-           bootstrap/tests/fixtures/scaffold_ast_baseline.json \
-           bootstrap/scaffold.py bootstrap/_scaffold/security.py ...
+       python tests/_ast_attest.py verify \
+           --known-new tests/fixtures/scaffold_ast_known_new.json \
+           tests/fixtures/scaffold_ast_baseline.json \
+           install/scaffold.py install/_scaffold/security.py ...
 
    Exit 0 = every baselined symbol is accounted for unchanged (and nothing
    changed identity); non-zero = a CHANGED / MISSING / DUPLICATE symbol — i.e.

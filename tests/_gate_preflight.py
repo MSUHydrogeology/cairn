@@ -48,13 +48,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 try:  # package import (pytest)
-    from bootstrap.tests import _gate_manifest as G
-    from bootstrap.tests import _gate_reanchor as R
+    from tests import _gate_manifest as G
+    from tests import _gate_reanchor as R
 except ImportError:  # script import (the anchored invocation)
     import _gate_manifest as G
     import _gate_reanchor as R
 
-_REPO = Path(__file__).resolve().parents[2]
+_REPO = Path(__file__).resolve().parent.parent
 
 # The installed forward baseline already records the approved protected roster.
 # Consume that policy; the compatibility bridge is no longer the default.
@@ -67,19 +67,19 @@ _ANCHOR_REF = "refs/cairn/gate-anchor"
 #: by operators recovering a prior value; read by **no** decision predicate.
 _CEREMONY_REFLOG_REASON = "cairn: supervised gate re-anchor"
 
-_MANIFEST_REL = "bootstrap/tests/fixtures/gate_manifest.json"
-_RUNBOOK_REL = "bootstrap/REANCHOR_RUNBOOK.md"
+_MANIFEST_REL = "tests/fixtures/gate_manifest.json"
+_RUNBOOK_REL = "release/REANCHOR_RUNBOOK.md"
 _ALLOWED_SIGNERS_REL = "dev/.cairn/allowed_signers"
 #: The ceremony artifact the Maintainer actually runs. It is not a Python
 #: module, so `_gate_manifest._frozen_files()` -- which globs Python only --
 #: cannot cover it. It is pinned here explicitly, the same way the runbook and
 #: the roster are, because the same argument applies: its bytes decide what
 #: executes at the next ceremony.
-_ARTIFACT_REL = "bootstrap/reanchor.sh"
+_ARTIFACT_REL = "release/reanchor.sh"
 #: The reviewed source of the launcher the Maintainer runs. The launcher is
 #: this file with one slot filled, and it decides what runs before this checker
 #: exists, so a change to the source has to show as a changed member.
-_LAUNCHER_TEMPLATE_REL = "bootstrap/reanchor-launcher.template.sh"
+_LAUNCHER_TEMPLATE_REL = "release/reanchor-launcher.template.sh"
 
 #: **There is deliberately no signing epoch here.** A `_SIGNING_EPOCH` constant
 #: used to sit at this line and decide which commits were exempt from a
@@ -352,7 +352,7 @@ def _require_worktree_root(repo: Path) -> Path:
     """Resolve the target repository, and refuse anything that is not its root.
 
     Two failures, one root cause: **the checker's own location is not the
-    target.** The recorded anchored invocation extracts ``bootstrap/tests`` into
+    target.** The recorded anchored invocation extracts ``tests`` into
     a temp directory and runs the checker from there, so the ``_REPO`` default --
     computed from ``__file__`` -- names the *extraction* directory, not the
     checkout being blessed. Executing the runbook's exact steps refused with
@@ -549,7 +549,7 @@ def raw_tree(commit: str, *, repo: Path = _REPO):
 
     A tracked compiled file (``.pyc``, ``__pycache__``) is materialized, not
     refused: other readers share this tree, and the ceremony's range scan
-    reports each one as a hit the reader must explain (``scripts/repin.py``
+    reports each one as a hit the reader must explain (``release/repin.py``
     refuses them outright for an ordinary ceremony).
     """
     entries = _tree_entries(commit, repo=repo)
@@ -636,13 +636,13 @@ def declared_authority_closure() -> list[str]:
     the candidate differ.
     """
     return [
-        "bootstrap/tests/_gate_preflight.py",     # this checker
-        "bootstrap/tests/_gate_manifest.py",      # its import closure, below
-        "bootstrap/tests/_gate_reanchor.py",
-        "bootstrap/tests/_gate_transition.py",
-        "bootstrap/tests/_oracle_activation.py",
-        "bootstrap/tests/_oracle.py",
-        "bootstrap/tests/_oracle_trust.py",
+        "tests/_gate_preflight.py",     # this checker
+        "tests/_gate_manifest.py",      # its import closure, below
+        "tests/_gate_reanchor.py",
+        "tests/_gate_transition.py",
+        "tests/_oracle_activation.py",
+        "tests/_oracle.py",
+        "tests/_oracle_trust.py",
         _RUNBOOK_REL,                             # canonical invocation source
         _ARTIFACT_REL,                            # the procedure itself
         _LAUNCHER_TEMPLATE_REL,                   # what runs before this checker
@@ -652,7 +652,7 @@ def declared_authority_closure() -> list[str]:
 
 
 def _imported_local_modules() -> set[str]:
-    """Repo-relative paths of the ``bootstrap/tests`` modules this checker's own
+    """Repo-relative paths of the ``tests`` modules this checker's own
     import graph actually reaches.
 
     Compared against the declared closure so a **new dependency** cannot slip in
@@ -678,7 +678,7 @@ def _imported_local_modules() -> set[str]:
                 rel = Path(f).resolve().relative_to(_REPO).as_posix()
             except (ValueError, OSError):
                 rel = ""
-            if rel.startswith("bootstrap/tests/") and rel.endswith(".py"):
+            if rel.startswith("tests/") and rel.endswith(".py"):
                 found.add(rel)
             elif rel:
                 continue          # in-repo but outside the gate surface
@@ -1266,11 +1266,11 @@ _RANGE_ROLES = ("decides", "pinned", "other")
 #: ceremony. `repin` byte-compares the first four with the anchor before it
 #: imports anything; `conftest.py` runs at stage 1 whenever pytest collects.
 _DECIDES_BEYOND_CLOSURE = (
-    "scripts/repin.py",
-    "scripts/reanchor_ceremony.py",
-    "bootstrap/tests/__init__.py",
-    "bootstrap/tests/_ast_attest.py",
-    "bootstrap/tests/conftest.py",
+    "release/repin.py",
+    "release/reanchor_ceremony.py",
+    "tests/__init__.py",
+    "tests/_ast_attest.py",
+    "tests/conftest.py",
 )
 
 #: The fixed line patterns an added line is matched against, by name. This is
@@ -1342,9 +1342,9 @@ _DIFF_MAX_LINES = 10_000
 #: candidate-sized file in memory to look for a line in it.
 SCAN_MAX_BLOB_BYTES = 1 << 20
 
-#: Added files under these roots are scanned (outside `bootstrap/tests/`).
-_SCAN_NEW_FILE_ROOTS = ("scripts/", "bootstrap/")
-_SCAN_NEW_FILE_EXCLUDED = ("bootstrap/tests/",)
+#: Added files under these roots are scanned (outside `tests/`).
+_SCAN_NEW_FILE_ROOTS = ("install/", "release/", "dev/tools/")
+_SCAN_NEW_FILE_EXCLUDED = ("tests/",)
 
 #: Tree modes a changed path is listed for, beyond a plain file.
 _LISTED_MODES = ("100755", "120000", "160000")
@@ -1387,7 +1387,7 @@ def _blob_sizes(shas: list[str], *, repo: Path = _REPO) -> list[int | None]:
 
 def _is_compiled(rel: str) -> bool:
     """A tracked path Python would load in place of its source: the rule
-    ``scripts/repin.py`` refuses on."""
+    ``release/repin.py`` refuses on."""
     return rel.endswith(".pyc") or "__pycache__" in rel.split("/")
 
 
@@ -1420,7 +1420,7 @@ def _scan_range(anchor_tree: str, candidate_tree: str, changed: list[bytes],
     """The line scan over a range, and the per-path facts the report carries.
 
     Scope: every *decides* path, every sensitive-roster path, and every file the
-    range adds under `scripts/` or `bootstrap/` outside the tests. Everything
+    range adds under `install/`, `release/`, or `dev/tools/`. Everything
     else is counted by class and named in the report's path list, never
     silently skipped. Every hit is kept, escaped as :func:`_display_path`
     escapes a path; nothing is truncated."""
@@ -1567,7 +1567,7 @@ def _signer_lines(commit: str, *, repo: Path = _REPO) -> list[str]:
 def _running_checker_is_anchors(anchor: str, *, repo: Path = _REPO) -> bool:
     """True when the bytes of this very file equal the anchor's copy -- so the
     scan was computed by the anchor's own checker, not by candidate code."""
-    blob = _blob_at(anchor, "bootstrap/tests/_gate_preflight.py", repo=repo)
+    blob = _blob_at(anchor, "tests/_gate_preflight.py", repo=repo)
     try:
         return blob is not None and blob == Path(__file__).read_bytes()
     except OSError:
@@ -1903,7 +1903,7 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
                   f"(no .git, raw objects)\n")
         with R._scrubbed_environ():
             # Drop the invoking process's import path so the producer cannot
-            # resolve `bootstrap.tests` from *another* checkout and measure a
+            # resolve `tests` from *another* checkout and measure a
             # tree other than the one being blessed. Hardening on its own
             # merits -- it was added while chasing an unrelated fixture bug
             # (a root-level `code.py` shadowing the stdlib module), and did not
@@ -1940,7 +1940,7 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
                 json.dumps(protected_roster, sort_keys=True).encode()).decode("ascii")
             proc = subprocess.run(
                 [sys.executable, "-E", "-s",
-                 "bootstrap/tests/_gate_manifest.py", "produce",
+                 "tests/_gate_manifest.py", "produce",
                  "--trusted-protected-roster-b64", roster_arg],
                 cwd=str(tree), capture_output=True, text=True, check=False,
                 env=env)
@@ -2175,7 +2175,7 @@ def rederive_static_manifest(commit: str, *, protected_roster: dict | None = Non
             for rel, why in sorted(G.PHASE_SPLIT_TARGETS.items())
             if (tree / rel).is_file()
         }
-        baseline_rel = "bootstrap/tests/fixtures/scaffold_ast_baseline.json"
+        baseline_rel = "tests/fixtures/scaffold_ast_baseline.json"
         try:
             baseline = json.loads(
                 (tree / baseline_rel).read_text(encoding="utf-8"))

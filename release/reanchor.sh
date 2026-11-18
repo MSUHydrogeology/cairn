@@ -42,7 +42,7 @@ case $0 in
     */*) ARTIFACT_DIR=${0%/*} ;;
     *)   ARTIFACT_DIR=. ;;
 esac
-CHECKER=$ARTIFACT_DIR/tests/_gate_preflight.py
+CHECKER=$ARTIFACT_DIR/../tests/_gate_preflight.py
 
 # --------------------------------------------------------------------------
 # path predicates
@@ -178,7 +178,7 @@ take_values() {
 
     # `signing_key` is checked here for shape only. That it PARSES as a public
     # key is established at stage 1 by `validate_signing_key` in
-    # bootstrap/tests/_gate_preflight.py, which runs `ssh-keygen -l -f` and
+    # tests/_gate_preflight.py, which runs `ssh-keygen -l -f` and
     # reports UNPROBEABLE when it does not. This artifact does not duplicate
     # that check, and does not claim to have made it.
     require_regular_file "signing_key" "$V_signing_key"
@@ -736,7 +736,7 @@ if len(paths) != sum(count(v, "role count") for v in role_counts.values()):
     refuse("the role counts do not add up to the path list")
 
 add("  line scan: added lines in the paths that decide what runs, in the"
-    " sensitive roster and in new files under scripts/ and bootstrap/")
+    " sensitive roster and in new files under install/, release/, and dev/tools/")
 add("    what this finds: an added call, write, command or compiled file that"
     " matches a fixed pattern list.")
 add("    what it does not: a harmful change that matches no pattern, or a check"
@@ -898,7 +898,7 @@ usage() {
         'usage: reanchor.sh <command> <the 13 recorded values> [options]' \
         '' \
         '  The launcher runs this and supplies the values, in the schema order' \
-        '  of bootstrap/reanchor-values.example. Run it through the launcher:' \
+        '  of release/reanchor-values.example. Run it through the launcher:' \
         '  nothing has checked a copy you start by hand.' \
         '' \
         '  validate       refuse any value that is not a usable path, and' \
@@ -916,7 +916,7 @@ usage() {
         '  transition mode adds --review-manifest and --reviewed-candidate' \
         '  to stage1 and stage2; the launcher supplies both.' \
         '' \
-        'The values file is documented in bootstrap/reanchor-values.example.'
+        'The values file is documented in release/reanchor-values.example.'
 }
 
 main() {

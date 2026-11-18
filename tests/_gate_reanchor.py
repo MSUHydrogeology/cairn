@@ -45,11 +45,11 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 try:  # package import (pytest)
-    from bootstrap.tests import _oracle as O
-    from bootstrap.tests import _oracle_activation as A
-    from bootstrap.tests import _gate_transition as G
-    from bootstrap.tests import _gate_manifest as M
-    from bootstrap.tests import _oracle_trust as _trust
+    from tests import _oracle as O
+    from tests import _oracle_activation as A
+    from tests import _gate_transition as G
+    from tests import _gate_manifest as M
+    from tests import _oracle_trust as _trust
 except ImportError:  # script mode
     import _oracle as O
     import _oracle_activation as A
@@ -57,7 +57,7 @@ except ImportError:  # script mode
     import _gate_manifest as M
     import _oracle_trust as _trust
 
-_MANIFEST_REL = "bootstrap/tests/fixtures/gate_manifest.json"
+_MANIFEST_REL = "tests/fixtures/gate_manifest.json"
 _ACTIVATION_REL = "dev/.cairn/active-refactor.yml"               # evaluated, in the candidate tree
 _AUTHZ_REL = "dev/.cairn/promotion-authorization.yml"           # authority bundle @ A
 _TRUSTED_ACT_REL = "dev/.cairn/trusted-activation.yml"          # authority bundle @ A
@@ -135,7 +135,7 @@ def _authority_code_files():
     trusted verifier code, not whatever happens to be in the invoking checkout."""
     import sys as _sys
     mods = [_sys.modules[__name__], G, A, M, O, _trust]
-    return [("bootstrap/tests/" + Path(m.__file__).name, m.__file__) for m in mods]
+    return [("tests/" + Path(m.__file__).name, m.__file__) for m in mods]
 
 
 def _verify_executing_authority_code(trusted_repo: Path, prior_sha: str,
@@ -165,7 +165,7 @@ def _verify_executing_authority_code(trusted_repo: Path, prior_sha: str,
     if include_preflight:
         # _gate_preflight is not imported in this process yet. Validate the
         # exact source object that the trusted loader will execute below.
-        rel = "bootstrap/tests/_gate_preflight.py"
+        rel = "tests/_gate_preflight.py"
         entry = frozen.get(rel)
         source = _git_show_bytes(trusted_repo, prior_sha, rel)
         if entry is None:
@@ -181,7 +181,7 @@ def _load_pinned_preflight(trusted_repo: Path, prior_sha: str):
     import importlib.abc
     import importlib.util
     import sys
-    rel = "bootstrap/tests/_gate_preflight.py"
+    rel = "tests/_gate_preflight.py"
     manifest_raw = _git_show_bytes(trusted_repo, prior_sha, _MANIFEST_REL)
     source = _git_show_bytes(trusted_repo, prior_sha, rel)
     if manifest_raw is None or source is None:
@@ -195,10 +195,10 @@ def _load_pinned_preflight(trusted_repo: Path, prior_sha: str):
     # executing the anchored source, so Python cannot resolve a second copy
     # from the invoking checkout or an import-path shadow.
     current = sys.modules.get(__name__)
-    package = sys.modules.get("bootstrap.tests")
+    package = sys.modules.get("tests")
     aliases = {
-        "bootstrap.tests._gate_manifest": M,
-        "bootstrap.tests._gate_reanchor": current,
+        "tests._gate_manifest": M,
+        "tests._gate_reanchor": current,
         "_gate_manifest": M,
         "_gate_reanchor": current,
     }
@@ -219,7 +219,7 @@ def _load_pinned_preflight(trusted_repo: Path, prior_sha: str):
         sys.modules[alias] = obj
 
     source_hash = hashlib.sha256(source).hexdigest()
-    module_name = "bootstrap.tests._gate_preflight_stage_b_" + source_hash
+    module_name = "tests._gate_preflight_stage_b_" + source_hash
     if module_name in sys.modules:
         raise RuntimeError("pinned preflight module identity is already occupied")
     filename = str(Path(trusted_repo).resolve() / rel)
@@ -246,7 +246,7 @@ def _load_pinned_preflight(trusted_repo: Path, prior_sha: str):
     spec = importlib.util.spec_from_loader(module_name, loader, origin=filename)
     module = importlib.util.module_from_spec(spec)
     module.__file__ = filename
-    module.__package__ = "bootstrap.tests"
+    module.__package__ = "tests"
     sys.modules[module_name] = module
     try:
         loader.exec_module(module)
@@ -311,7 +311,7 @@ def gather_evidence(
     materialize_fn=None,
     env_scrub: bool = True,
     manifest_rel: str = _MANIFEST_REL,
-    checker_rel: str = "bootstrap/tests/_gate_transition.py",
+    checker_rel: str = "tests/_gate_transition.py",
 ) -> EvidenceBundle:
     """**Stage A.** Materialize candidate ``C`` into an isolated, credential-scrubbed
     temp tree and gather the (NON-authoritative) evidence bundle. Never executes

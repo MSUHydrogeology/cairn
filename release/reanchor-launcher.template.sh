@@ -50,21 +50,21 @@ MAX_LINE_BYTES=4096
 #:
 #: Compared with the shell's own string equality -- no `cmp`, no `diff` -- so no
 #: utility joins the pre-candidate trust set for this check.
-EXPECTED_PATHS='bootstrap/REANCHOR_RUNBOOK.md
-bootstrap/reanchor-launcher.template.sh
-bootstrap/reanchor.sh
-bootstrap/tests/_gate_manifest.py
-bootstrap/tests/_gate_preflight.py
-bootstrap/tests/_gate_reanchor.py
-bootstrap/tests/_gate_transition.py
-bootstrap/tests/_oracle.py
-bootstrap/tests/_oracle_activation.py
-bootstrap/tests/_oracle_trust.py
-bootstrap/tests/fixtures/protected_test_roster.json
-dev/.cairn/allowed_signers
+EXPECTED_PATHS='dev/.cairn/allowed_signers
+release/REANCHOR_RUNBOOK.md
+release/reanchor-launcher.template.sh
+release/reanchor.sh
+tests/_gate_manifest.py
+tests/_gate_preflight.py
+tests/_gate_reanchor.py
+tests/_gate_transition.py
+tests/_oracle.py
+tests/_oracle_activation.py
+tests/_oracle_trust.py
+tests/fixtures/protected_test_roster.json
 '
 
-ARTIFACT_REL='bootstrap/reanchor.sh'
+ARTIFACT_REL='release/reanchor.sh'
 
 #: The trust root this ceremony moves. Named here rather than taken as an
 #: argument: which ref is the anchor is not the operator's to choose.
@@ -688,7 +688,7 @@ printf '\n'
 # --- THE ANCHOR'S OWN SCAN, run before any candidate byte -------------------
 # `--scan-digest` runs the checker the ANCHOR holds, not the candidate's: a
 # candidate that hides a hit from its own scan cannot move this number. The
-# anchor's `bootstrap` tree is written out with `cat-file blob` by blob id,
+# anchor's `tests` tree is written out with `cat-file blob` by blob id,
 # through the sterile git child. It is never taken from `git archive` or a
 # checkout, which read attributes, so a filter in the repository's own
 # `.git/info/attributes` or a replace entry cannot change the bytes that run.
@@ -707,9 +707,9 @@ if [ "$MODE" = scan-digest ]; then
     case $ANCHOR_OID in
         *[!0123456789abcdef]*) die "the resolved anchor is not an object id" ;;
     esac
-    ANCHOR_TREE=$(sterile_git ls-tree -r "$ANCHOR_OID" bootstrap) \
-        || die "cannot list the anchor's bootstrap tree"
-    [ -n "$ANCHOR_TREE" ] || die "the anchor holds no bootstrap tree"
+    ANCHOR_TREE=$(sterile_git ls-tree -r "$ANCHOR_OID" tests) \
+        || die "cannot list the anchor's tests tree"
+    [ -n "$ANCHOR_TREE" ] || die "the anchor holds no tests tree"
     TAB=$(printf '\t')
     while IFS= read -r ENTRY || [ -n "$ENTRY" ]; do
         [ -n "$ENTRY" ] || continue
@@ -717,7 +717,7 @@ if [ "$MODE" = scan-digest ]; then
         REL=${ENTRY#*"$TAB"}
         case $META in
             "100644 blob "*|"100755 blob "*) BLOB=${META#* blob } ;;
-            *) die "the anchor's bootstrap tree holds an entry that is not a regular file" ;;
+            *) die "the anchor's tests tree holds an entry that is not a regular file" ;;
         esac
         is_hex40_or_64 "$BLOB" || die "the anchor lists a blob that is not an object id"
         case $REL in
@@ -732,7 +732,7 @@ if [ "$MODE" = scan-digest ]; then
 $ANCHOR_TREE
 ENTRIES
     "$L_env" -i PATH=/usr/bin:/bin HOME="$L_home" \
-        "$L_python" -E -s -S "$T/anchor/bootstrap/tests/_gate_preflight.py" \
+        "$L_python" -E -s -S "$T/anchor/tests/_gate_preflight.py" \
         scan-digest --repo "$L_checkout" --anchor "$ANCHOR_OID" \
         --candidate "$RESOLVED"
     exit $?

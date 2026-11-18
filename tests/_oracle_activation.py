@@ -33,18 +33,18 @@ from pathlib import Path
 # themselves gate-control changes and require the same external authorization.
 SENSITIVE_ROSTER: tuple[str, ...] = (
     # the engine
-    "bootstrap/scaffold.py",
-    "bootstrap/_scaffold/",
+    "install/scaffold.py",
+    "install/_scaffold/",
     # the trust machinery itself
-    "bootstrap/tests/_oracle.py",
-    "bootstrap/tests/_oracle_trust.py",
-    "bootstrap/tests/_oracle_activation.py",
-    "bootstrap/tests/_gate_preflight.py",
-    "bootstrap/tests/_gate_transition.py",
-    "bootstrap/tests/_gate_reanchor.py",
-    "bootstrap/tests/_gate_manifest.py",
-    "bootstrap/verify_integrity.py",
-    "bootstrap/security_check.py",
+    "tests/_oracle.py",
+    "tests/_oracle_trust.py",
+    "tests/_oracle_activation.py",
+    "tests/_gate_preflight.py",
+    "tests/_gate_transition.py",
+    "tests/_gate_reanchor.py",
+    "tests/_gate_manifest.py",
+    "install/verify_integrity.py",
+    "install/security_check.py",
 )
 
 

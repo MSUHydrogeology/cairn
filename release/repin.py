@@ -58,29 +58,39 @@ import unicodedata
 from pathlib import Path
 
 ANCHOR_REF = "refs/cairn/gate-anchor"
-MANIFEST_REL = "bootstrap/tests/fixtures/gate_manifest.json"
-REPIN_REL = "scripts/repin.py"
-RUNBOOK = "bootstrap/REANCHOR_RUNBOOK.md"
+MANIFEST_REL = "tests/fixtures/gate_manifest.json"
+REPIN_REL = "release/repin.py"
+RUNBOOK = "release/REANCHOR_RUNBOOK.md"
 #: Files whose bytes must equal the anchor's before anything is imported: the
 #: modules this process imports (the seven `_gate_preflight` loads and their
 #: package marker), the AST child's module and the driver.  `repin.py` is the
 #: running file and is judged separately.
-LISTED = ["bootstrap/tests/__init__.py", "bootstrap/tests/_ast_attest.py",
-          "bootstrap/tests/_gate_manifest.py", "bootstrap/tests/_gate_preflight.py",
-          "bootstrap/tests/_gate_reanchor.py", "bootstrap/tests/_gate_transition.py",
-          "bootstrap/tests/_oracle.py", "bootstrap/tests/_oracle_activation.py",
-          "bootstrap/tests/_oracle_trust.py", "scripts/reanchor_ceremony.py"]
-BASELINE_REL = "bootstrap/tests/fixtures/scaffold_ast_baseline.json"
-KNOWN_NEW_REL = "bootstrap/tests/fixtures/scaffold_ast_known_new.json"
-VERIFIER_REL = "bootstrap/tests/_gate_manifest.py"
+LISTED = ["tests/__init__.py", "tests/_ast_attest.py",
+          "tests/_gate_manifest.py", "tests/_gate_preflight.py",
+          "tests/_gate_reanchor.py", "tests/_gate_transition.py",
+          "tests/_oracle.py", "tests/_oracle_activation.py",
+          "tests/_oracle_trust.py", "release/reanchor_ceremony.py"]
+BASELINE_REL = "tests/fixtures/scaffold_ast_baseline.json"
+KNOWN_NEW_REL = "tests/fixtures/scaffold_ast_known_new.json"
+VERIFIER_REL = "tests/_gate_manifest.py"
 VERIFIER_SCANNER_PATHS = [
+    "tests/__init__.py", "tests/_gate_manifest.py",
+    "tests/_gate_preflight.py", "tests/_gate_reanchor.py",
+    "tests/_gate_transition.py", "tests/_oracle.py",
+    "tests/_oracle_activation.py", "tests/_oracle_trust.py",
+    "release/reanchor_ceremony.py",
+]
+VERIFIER_MANIFEST_REL = "tests/fixtures/gate_manifest.json"
+# Raw paths at a signed anchor made before the layout move.
+LEGACY_VERIFIER_MANIFEST_REL = "bootstrap/tests/fixtures/gate_manifest.json"
+LEGACY_VERIFIER_SCANNER_PATHS = (
     "bootstrap/tests/__init__.py", "bootstrap/tests/_gate_manifest.py",
     "bootstrap/tests/_gate_preflight.py", "bootstrap/tests/_gate_reanchor.py",
     "bootstrap/tests/_gate_transition.py", "bootstrap/tests/_oracle.py",
     "bootstrap/tests/_oracle_activation.py", "bootstrap/tests/_oracle_trust.py",
     "scripts/reanchor_ceremony.py",
-]
-VERIFIER_MANIFEST_REL = "bootstrap/tests/fixtures/gate_manifest.json"
+)
+LEGACY_VERIFIER_REL = "bootstrap/tests/_gate_manifest.py"
 VERIFIER_PACKET = "verifier-evidence.json"
 OBSERVER_SOURCE = '''import importlib.util, json, os, sys
 from pathlib import Path
@@ -176,11 +186,11 @@ def git_text(repo, *args):
 
 def load_encoder(repo, anchor, tmp):
     """The one terminal encoder, from the anchor's tree: HEAD's copy never runs."""
-    spec = f"{anchor}:tools/session.py"
+    spec = f"{anchor}:dev/tools/session.py"
     oid = git(repo, "rev-parse", "--verify", spec, check=False)
     blob = git(repo, "cat-file", "blob", spec, check=False)
     if oid is None or blob is None:
-        raise Refuse("the anchor's tree has no tools/session.py, the source of the "
+        raise Refuse("the anchor's tree has no dev/tools/session.py, the source of the "
                      "display encoder. Nothing was written. Ask the Maintainer.")
     path = tmp / "anchor-session" / "session.py"
     path.parent.mkdir()
@@ -192,7 +202,7 @@ def load_encoder(repo, anchor, tmp):
     sys.modules["anchor_session"] = mod
     spec_.loader.exec_module(mod)
     if not hasattr(mod, "encode_display"):
-        raise Refuse("the anchor's tools/session.py has no encode_display.")
+        raise Refuse("the anchor's dev/tools/session.py has no encode_display.")
     return mod.encode_display, oid.decode().strip(), path
 
 
@@ -265,7 +275,7 @@ def baseline_prepare(repo, candidate, approved_roster, reader_record, output_dir
     repo = Path(repo).resolve()
     candidate = git_text(repo, "rev-parse", "--verify", candidate + "^{commit}")
     if git(repo, "cat-file", "blob", f"{candidate}:{REPIN_REL}", check=False) != Path(__file__).read_bytes():
-        raise Refuse("running scripts/repin.py differs from the committed candidate; commit and review it first.")
+        raise Refuse("running release/repin.py differs from the committed candidate; commit and review it first.")
     output = _plain_absolute_path(output_dir)
     parent = output.parent
     if output.exists() or output.is_symlink() or parent.is_symlink() or not parent.is_dir():
@@ -299,8 +309,8 @@ def baseline_prepare(repo, candidate, approved_roster, reader_record, output_dir
         sys.path.insert(0, str(extracted))
         try:
             import importlib
-            gm = importlib.import_module("bootstrap.tests._gate_manifest")
-            gp = importlib.import_module("bootstrap.tests._gate_preflight")
+            gm = importlib.import_module("tests._gate_manifest")
+            gp = importlib.import_module("tests._gate_preflight")
             approved = gm._roster_from_bytes(roster_raw, require_initial_approval=True)
             if not required.issubset(paths):
                 raise Refuse("candidate is missing required baseline or authority files: "
@@ -314,12 +324,12 @@ def baseline_prepare(repo, candidate, approved_roster, reader_record, output_dir
                 raise
             raise Refuse(f"independent approved roster is invalid: {exc}") from None
         engine = sorted(p for _m, _o, p in ents
-                        if re.fullmatch(r"bootstrap/_scaffold/[^/]+\.py", p))
+                        if re.fullmatch(r"install/_scaffold/[^/]+\.py", p))
         probe_ctx = {"repo": repo, "head": candidate, "anchor": "no-signed-predecessor",
                      "ext": extracted, "tmp": temp, "engine": engine, "ents": ents,
                      "closure_changed": [], "baseline_mode": True,
                      "session_oid": git_text(repo, "rev-parse",
-                                              f"{candidate}:tools/session.py")}
+                                              f"{candidate}:dev/tools/session.py")}
         transaction = build_transaction(probe_ctx, baseline=True)
         if transaction is not None:
             raise Refuse("candidate still owes reviewed AST or lockfile preparation. Complete and "
@@ -345,7 +355,7 @@ def baseline_prepare(repo, candidate, approved_roster, reader_record, output_dir
         # shared checker modules.
         tool_hashes = {p: sha(git(repo, "cat-file", "blob", f"{candidate}:{p}"))
                        for p in sorted(required) if p.endswith(".py") or p in
-                       (RUNBOOK, "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh",
+                       (RUNBOOK, "release/reanchor.sh", "release/reanchor-launcher.template.sh",
                         "dev/.cairn/allowed_signers")}
         package = {"schema": "cairn-baseline-package/v1", "candidate": candidate,
                    "candidate_tree_sha256": _candidate_tree_digest(repo, candidate),
@@ -374,14 +384,14 @@ def baseline_prepare(repo, candidate, approved_roster, reader_record, output_dir
 
 def ctx_baseline_tool_paths():
     """The independent derivation and manifest producer used for preparation."""
-    return ["bootstrap/tests/_gate_manifest.py", "bootstrap/tests/_gate_preflight.py"]
+    return ["tests/_gate_manifest.py", "tests/_gate_preflight.py"]
 
 
 def baseline_required_paths():
     """Closed candidate input set used by both reader preparation and packaging."""
-    return {"bootstrap/tests/fixtures/protected_test_roster.json",
-            MANIFEST_REL, REPIN_REL, RUNBOOK, "dev/.cairn/allowed_signers", "tools/session.py",
-            "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh",
+    return {"tests/fixtures/protected_test_roster.json",
+            MANIFEST_REL, REPIN_REL, RUNBOOK, "dev/.cairn/allowed_signers", "dev/tools/session.py",
+            "release/reanchor.sh", "release/reanchor-launcher.template.sh",
             *LISTED, *ctx_baseline_tool_paths()}
 
 
@@ -390,7 +400,7 @@ def baseline_reader_inputs(repo, candidate, approved_roster, output):
     repo = _plain_absolute_path(repo)
     candidate = git_text(repo, "rev-parse", "--verify", candidate + "^{commit}")
     if git(repo, "cat-file", "blob", f"{candidate}:{REPIN_REL}") != Path(__file__).read_bytes():
-        raise Refuse("running reader-input tool differs from scripts/repin.py at the committed candidate.")
+        raise Refuse("running reader-input tool differs from release/repin.py at the committed candidate.")
     roster_path, output_path = _plain_absolute_path(approved_roster), _plain_absolute_path(output)
     if (roster_path.is_symlink() or not roster_path.is_file()
             or output_path.exists() or output_path.is_symlink() or output_path.parent.is_symlink()
@@ -411,19 +421,19 @@ def baseline_reader_inputs(repo, candidate, approved_roster, output):
         sys.path.insert(0, str(extracted))
         try:
             import importlib
-            gm = importlib.import_module("bootstrap.tests._gate_manifest")
-            gp = importlib.import_module("bootstrap.tests._gate_preflight")
+            gm = importlib.import_module("tests._gate_manifest")
+            gp = importlib.import_module("tests._gate_preflight")
             approved = gm._roster_from_bytes(roster_raw, require_initial_approval=True)
             if (approved["path"] not in required or git(
                     repo, "cat-file", "blob", f"{candidate}:{approved['path']}", check=False) != roster_raw):
                 raise Refuse("candidate roster differs from the independently supplied approved roster.")
             engine = sorted(p for _mode, _oid, p in ents
-                            if re.fullmatch(r"bootstrap/_scaffold/[^/]+\.py", p))
+                            if re.fullmatch(r"install/_scaffold/[^/]+\.py", p))
             transaction = build_transaction(
                 {"repo": repo, "head": candidate, "anchor": "no-signed-predecessor",
                  "ext": extracted, "tmp": tmp, "engine": engine, "ents": ents,
                  "closure_changed": [], "baseline_mode": True,
-                 "session_oid": git_text(repo, "rev-parse", f"{candidate}:tools/session.py")},
+                 "session_oid": git_text(repo, "rev-parse", f"{candidate}:dev/tools/session.py")},
                 baseline=True)
             if transaction is not None:
                 raise Refuse("candidate still owes reviewed AST or lockfile preparation; commit it before reader review.")
@@ -442,7 +452,7 @@ def baseline_reader_inputs(repo, candidate, approved_roster, output):
         manifest_raw = dump(manifest)
         tool_hashes = {p: sha(git(repo, "cat-file", "blob", f"{candidate}:{p}"))
                        for p in sorted(required) if p.endswith(".py") or p in
-                       (RUNBOOK, "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh",
+                       (RUNBOOK, "release/reanchor.sh", "release/reanchor-launcher.template.sh",
                         "dev/.cairn/allowed_signers")}
         record = {"schema": "cairn-baseline-reader/v1", "candidate": candidate,
                   "roster_sha256": sha(roster_raw), "manifest_sha256": sha(manifest_raw),
@@ -474,7 +484,7 @@ def baseline_install(repo, candidate, package_dir, approved_roster, reader_recor
     if git(repo, "status", "--porcelain", check=False):
         raise Refuse("baseline installation requires a clean candidate worktree and index.")
     if git(repo, "cat-file", "blob", f"{candidate}:{REPIN_REL}") != Path(__file__).read_bytes():
-        raise Refuse("running installer differs from scripts/repin.py at the reviewed candidate.")
+        raise Refuse("running installer differs from release/repin.py at the reviewed candidate.")
 
     package_dir = _plain_absolute_path(package_dir)
     roster_path = _plain_absolute_path(approved_roster)
@@ -554,7 +564,7 @@ def baseline_install(repo, candidate, package_dir, approved_roster, reader_recor
             if not isinstance(digest, str) or sha((extracted / rel).read_bytes()) != digest:
                 raise Refuse(f"candidate execution closure differs from package at {d(rel)}.")
         required_tool_hashes = (set(LISTED) | set(ctx_baseline_tool_paths())
-                                | {REPIN_REL, "tools/session.py", "dev/.cairn/allowed_signers"})
+                                | {REPIN_REL, "dev/tools/session.py", "dev/.cairn/allowed_signers"})
         if required_tool_hashes - set(package["tool_hashes"]):
             raise Refuse("baseline package does not bind the complete installer and checker closure.")
         # Imports below come only from the raw-object extraction whose full
@@ -562,10 +572,10 @@ def baseline_install(repo, candidate, package_dir, approved_roster, reader_recor
         before = set(sys.modules)
         made = {}
         try:
-            made = load_listed(extracted, extracted / "tools/session.py")
+            made = load_listed(extracted, extracted / "dev/tools/session.py")
             check_loaded(before, made, extracted, package["tool_hashes"])
-            gm = sys.modules["bootstrap.tests._gate_manifest"]
-            gp = sys.modules["bootstrap.tests._gate_preflight"]
+            gm = sys.modules["tests._gate_manifest"]
+            gp = sys.modules["tests._gate_preflight"]
             roster = gm._roster_from_bytes(roster_raw, require_initial_approval=True)
             static = gp.rederive_static_manifest(candidate, protected_roster=roster, repo=repo)
             rebuilt = gp.authoritative_manifest(manifest, static)
@@ -635,33 +645,35 @@ def baseline_install(repo, candidate, package_dir, approved_roster, reader_recor
 
 #: The in-process modules, each after the ones it imports.  The others in LISTED
 #: are the empty package marker (loaded first) and the AST child's module.
-LOAD = ["bootstrap.tests._oracle_trust", "bootstrap.tests._oracle", "bootstrap.tests._oracle_activation",
-        "bootstrap.tests._gate_transition", "bootstrap.tests._gate_manifest",
-        "bootstrap.tests._gate_reanchor", "bootstrap.tests._gate_preflight",
-        "scripts.reanchor_ceremony"]
+LOAD = ["tests._oracle_trust", "tests._oracle", "tests._oracle_activation",
+        "tests._gate_transition", "tests._gate_manifest",
+        "tests._gate_reanchor", "tests._gate_preflight",
+        "release.reanchor_ceremony"]
 
 
 def load_listed(ext, session_path):
     """Load the listed modules by file location under their dotted names.
 
     The extraction never joins ``sys.path``, so nothing else in the commit can be
-    found by an import: not a ``bootstrap/__init__.py`` or ``scripts/__init__.py``,
-    and not a root ``bootstrap.py`` or ``scripts.py``.  The two parent packages are
-    empty ones made here.  Returns each loaded name with the file it came from."""
+    found by an import. The release parent package has an empty search path
+    and the tests package marker is read from the verified extraction.
+    Returns each loaded name with the file it came from."""
     made = {"anchor_session": session_path}
-    for pkg in ("bootstrap", "scripts"):
-        parent = types.ModuleType(pkg)
-        parent.__path__, parent.__spec__ = [], importlib.machinery.ModuleSpec(pkg, None, is_package=True)
-        sys.modules[pkg] = made[pkg] = parent
+    release = types.ModuleType("release")
+    release.__path__ = []
+    release.__spec__ = importlib.machinery.ModuleSpec("release", None, is_package=True)
+    sys.modules["release"] = made["release"] = release
     try:
-        for name in ["bootstrap.tests", *LOAD]:
-            path = ext.joinpath(*name.split(".")) / "__init__.py" if name == "bootstrap.tests" else \
+        for name in ["tests", *LOAD]:
+            path = ext / "tests/__init__.py" if name == "tests" else \
                 ext.joinpath(*name.split(".")).with_suffix(".py")
             spec = importlib.util.spec_from_file_location(
-                name, path, submodule_search_locations=[] if name == "bootstrap.tests" else None)
+                name, path, submodule_search_locations=[] if name == "tests" else None)
             mod = sys.modules[name] = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(mod)
-            setattr(sys.modules[name.rpartition(".")[0]], name.rpartition(".")[2], mod)
+            parent_name, _, leaf = name.rpartition(".")
+            if parent_name:
+                setattr(sys.modules[parent_name], leaf, mod)
             made[name] = path
     except ImportError as exc:
         raise Refuse(f"a checked module imported something outside the checked list ({d(str(exc))}). "
@@ -707,7 +719,11 @@ def boot(repo, tmp, *, prior_authority=False):
         raise Refuse(f"{ANCHOR_REF} does not resolve in this repository. Fetch it: "
                      f"git fetch origin '+{ANCHOR_REF}:{ANCHOR_REF}'")
     anchor = anchor.decode().strip()
-    man = json.loads(git(repo, "cat-file", "blob", f"{anchor}:{MANIFEST_REL}"))
+    manifest_raw = git(repo, "cat-file", "blob", f"{anchor}:{MANIFEST_REL}", check=False)
+    if manifest_raw is None:
+        raise Refuse("the anchor has no current-layout manifest. A legacy anchor requires "
+                     "the reviewed repository-layout transition.")
+    man = json.loads(manifest_raw)
     frozen = {k: (v if isinstance(v, str) else v["sha256"])
               for k, v in man.get("frozen_files", {}).items()}
     if not frozen:
@@ -726,9 +742,9 @@ def boot(repo, tmp, *, prior_authority=False):
                          f"this tool runs, so nothing was imported. Only the by-hand "
                          f"ceremony in {RUNBOOK} anchors new bytes.")
     made = load_listed(authority, session_path)
-    ctx = {k: sys.modules[v] for k, v in (("gm", "bootstrap.tests._gate_manifest"),
-                                          ("gp", "bootstrap.tests._gate_preflight"),
-                                          ("rc", "scripts.reanchor_ceremony"))}
+    ctx = {k: sys.modules[v] for k, v in (("gm", "tests._gate_manifest"),
+                                          ("gp", "tests._gate_preflight"),
+                                          ("rc", "release.reanchor_ceremony"))}
     check_loaded(before, made, authority, frozen)
     running = Path(__file__).read_bytes()
     entry = frozen.get(REPIN_REL)
@@ -740,9 +756,9 @@ def boot(repo, tmp, *, prior_authority=False):
                frozen=frozen, ents=ents, session_oid=session_oid, repin_state=state,
                prior_authority=prior_authority,
                engine=sorted(p for _, _, p in ents if re.fullmatch(
-                   r"bootstrap/_scaffold/[^/]+\.py", p)))
+                   r"install/_scaffold/[^/]+\.py", p)))
     if not ctx["engine"]:
-        raise Refuse("HEAD tracks no bootstrap/_scaffold/*.py, so the engine set is empty.")
+        raise Refuse("HEAD tracks no install/_scaffold/*.py, so the engine set is empty.")
     # The authority files, from the byte-compared checker; a blob-id difference
     # from the anchor is a transition, which an AST pin never carries.
     members = ctx["gp"].declared_authority_closure()
@@ -767,7 +783,7 @@ def check_head(ctx):
 _AST_CHILD = r'''
 import json, os, re, sys
 root, fx, mods = sys.argv[1], sys.argv[2] + "/", sys.argv[3:]
-sys.path.append(root + "/bootstrap/tests")
+sys.path.append(root + "/tests")
 import _ast_attest as A
 base = json.load(open(fx + "scaffold_ast_baseline.json"))
 known = json.load(open(fx + "scaffold_ast_known_new.json"))
@@ -952,8 +968,8 @@ def lockfile_correction(ctx):
     ext = ctx["ext"]
     header, doc = split_lockfile((ext / LOCKFILE_REL).read_bytes())
     mappings = ()
-    if "bootstrap/_scaffold/config.py" in tracked:
-        for node in ast.parse((ext / "bootstrap/_scaffold/config.py").read_bytes()).body:
+    if "install/_scaffold/config.py" in tracked:
+        for node in ast.parse((ext / "install/_scaffold/config.py").read_bytes()).body:
             target = node.targets[0] if isinstance(node, ast.Assign) else getattr(node, "target", None)
             if getattr(target, "id", "") == "_SKILLS_MAPPINGS":
                 mappings = ast.literal_eval(node.value)
@@ -1045,10 +1061,10 @@ def forward_context(repo, candidate):
         ext = tmp / "candidate"
         ents = extract(repo, candidate, ext)
         engine = sorted(p for _m, _o, p in ents
-                        if re.fullmatch(r"bootstrap/_scaffold/[^/]+\.py", p))
+                        if re.fullmatch(r"install/_scaffold/[^/]+\.py", p))
         if not engine:
-            raise Refuse("candidate tracks no bootstrap/_scaffold/*.py files.")
-        session_oid = git_text(repo, "rev-parse", f"{candidate}:tools/session.py")
+            raise Refuse("candidate tracks no install/_scaffold/*.py files.")
+        session_oid = git_text(repo, "rev-parse", f"{candidate}:dev/tools/session.py")
     except BaseException:
         shutil.rmtree(tmp, ignore_errors=True)
         raise
@@ -1076,7 +1092,7 @@ def build_forward_packet(ctx, txn, txn_raw):
     known_new_delta = {key: {"before": old_known.get(key), "after": proposed_known.get(key)}
                        for key in sorted(set(old_known) | set(proposed_known))
                        if old_known.get(key) != proposed_known.get(key)}
-    tools = [REPIN_REL, "bootstrap/tests/_ast_attest.py", *ctx["engine"]]
+    tools = [REPIN_REL, "tests/_ast_attest.py", *ctx["engine"]]
     tool_hashes = {p: sha((ctx["ext"] / p).read_bytes()) for p in tools}
     return {"schema": "cairn-forward-ast/v1", "candidate": ctx["head"],
             "candidate_tree_sha256": _candidate_tree_digest(ctx["repo"], ctx["head"]),
@@ -1095,7 +1111,7 @@ def prepare_forward_pin(repo, candidate, evidence_dir):
     ctx = forward_context(repo, candidate)
     try:
         if git(repo, "cat-file", "blob", f"{ctx['head']}:{REPIN_REL}") != Path(__file__).read_bytes():
-            raise Refuse("running scripts/repin.py differs from the committed candidate; commit and review it first.")
+            raise Refuse("running release/repin.py differs from the committed candidate; commit and review it first.")
         manifest = _unique_json((ctx["ext"] / MANIFEST_REL).read_bytes(), "candidate gate manifest")
         if not isinstance(manifest, dict) or not isinstance(manifest.get("interpreter"), dict):
             raise Refuse("candidate gate manifest has no usable interpreter record.")
@@ -1316,7 +1332,7 @@ def encode_txn(txn):
     return json.dumps(txn, sort_keys=True, separators=(",", ":")).encode()
 
 
-# Containment is written here, not imported from bootstrap/_scaffold/_guard.py:
+# Containment is written here, not imported from install/_scaffold/_guard.py:
 # the AST baseline attests that module, so a pin run must not execute the very
 # code whose digest it is about to write.
 def read_safe(path, *, own=False):
@@ -1567,16 +1583,16 @@ def package(ctx, cdir=None, *, reviewed_deletions=()):
 
 KEYGEN, SSHADD, LAUNCHCTL, SH = "/usr/bin/ssh-keygen", "/usr/bin/ssh-add", "/bin/launchctl", "/bin/sh"
 CHILD_PATH = "/usr/bin:/bin"
-ARTIFACT_REL = "bootstrap/reanchor.sh"
+ARTIFACT_REL = "release/reanchor.sh"
 ROSTER_REL = "dev/.cairn/allowed_signers"
-TEMPLATE_REL = "bootstrap/reanchor-launcher.template.sh"
+TEMPLATE_REL = "release/reanchor-launcher.template.sh"
 #: The launcher template's one slot, filled with the packet's digest.
 SLOT = "@PACKET_SHA256@"
 PACKET_NAME, LAUNCHER_NAME = "authorization-packet.txt", "reanchor-launcher.sh"
 PACKET_SCHEMA = "cairn-authorization-packet/v1"
 #: The reader's record, committed on the commit it read as the candidate's tip.
 RECORD_REL = "dev/ceremony-record.md"
-REPIN_TESTS = ("bootstrap/tests/test_repin.py", "bootstrap/tests/test_repin_ceremony.py")
+REPIN_TESTS = ("tests/test_repin.py", "tests/test_repin_ceremony.py")
 
 
 def launchctl_socket():
@@ -1648,6 +1664,18 @@ def verify_checkpoint(repo, commit, roster, fingerprint):
     return status == "G" and key == fingerprint, status, key
 
 
+def verifier_paths(repo, prior):
+    """Select immutable prior paths as one complete layout."""
+    layouts = (
+        (VERIFIER_MANIFEST_REL, VERIFIER_REL, VERIFIER_SCANNER_PATHS),
+        (LEGACY_VERIFIER_MANIFEST_REL, LEGACY_VERIFIER_REL, LEGACY_VERIFIER_SCANNER_PATHS),
+    )
+    matches = [paths for paths in layouts if blob_at(repo, prior, paths[0])]
+    if len(matches) != 1:
+        raise Refuse("the prior anchor must have exactly one supported manifest path.")
+    return matches[0]
+
+
 def _verifier_prepare(repo, prior, candidate, trusted_ref, expected_fingerprint,
                       evidence_dir):
     """Prepare raw prior tools and a clean candidate worktree for the human verifier.
@@ -1664,11 +1692,12 @@ def _verifier_prepare(repo, prior, candidate, trusted_ref, expected_fingerprint,
     preparer = Path(__file__).read_bytes()
     candidate_preparer = git(repo, "cat-file", "blob", f"{candidate}:{REPIN_REL}", check=False)
     if candidate_preparer is None or sha(candidate_preparer) != sha(preparer):
-        raise Refuse("the preparation script running now does not equal scripts/repin.py at exact candidate C.")
+        raise Refuse("the preparation script running now does not equal release/repin.py at exact candidate C.")
     if not re.fullmatch(r"SHA256:[A-Za-z0-9+/]{43}", expected_fingerprint):
         raise Refuse("supply the independently trusted SHA256 signing fingerprint.")
     roster_raw = git(repo, "cat-file", "blob", f"{prior}:{ROSTER_REL}", check=False)
-    manifest_raw = git(repo, "cat-file", "blob", f"{prior}:{MANIFEST_REL}", check=False)
+    manifest_rel, verifier_rel, scanner_paths = verifier_paths(repo, prior)
+    manifest_raw = git(repo, "cat-file", "blob", f"{prior}:{manifest_rel}", check=False)
     if roster_raw is None or manifest_raw is None:
         raise Refuse("prior anchor lacks its signer roster or gate manifest.")
     evidence = _plain_absolute_path(evidence_dir)
@@ -1691,7 +1720,7 @@ def _verifier_prepare(repo, prior, candidate, trusted_ref, expected_fingerprint,
     if not frozen:
         raise Refuse("prior manifest has no frozen file map.")
     prior_hashes = {}
-    for rel in VERIFIER_SCANNER_PATHS:
+    for rel in scanner_paths:
         raw = git(repo, "cat-file", "blob", f"{prior}:{rel}", check=False)
         entry = frozen.get(rel)
         pinned = entry if isinstance(entry, str) else entry.get("sha256") if isinstance(entry, dict) else None
@@ -1703,7 +1732,7 @@ def _verifier_prepare(repo, prior, candidate, trusted_ref, expected_fingerprint,
         prior_hashes[rel] = sha(raw)
     manifest_path = prior_dir / "gate_manifest.json"
     manifest_path.write_bytes(manifest_raw)
-    prior_hashes[VERIFIER_MANIFEST_REL] = sha(manifest_raw)
+    prior_hashes[manifest_rel] = sha(manifest_raw)
     observer_path = evidence / "verifier-observer.py"
     observer_path.write_text(OBSERVER_SOURCE, encoding="utf-8")
     observer_digest = sha(OBSERVER_SOURCE.encode())
@@ -1719,8 +1748,8 @@ def _verifier_prepare(repo, prior, candidate, trusted_ref, expected_fingerprint,
         "schema": "cairn-prior-verifier-evidence/v1", "trusted_repo": str(repo),
         "trusted_ref": trusted_ref, "prior_anchor": prior, "candidate": candidate,
         "signer_fingerprint": signer, "expected_fingerprint": expected_fingerprint,
-        "verifier": VERIFIER_REL, "verifier_sha256": prior_hashes[VERIFIER_REL],
-        "manifest_sha256": prior_hashes[VERIFIER_MANIFEST_REL],
+        "verifier": verifier_rel, "verifier_sha256": prior_hashes[verifier_rel],
+        "manifest_sha256": prior_hashes[manifest_rel],
         "prior_dependencies": prior_hashes, "target": str(target),
         "target_tree_sha256": _candidate_tree_digest(repo, candidate),
         "observer": str(observer_path), "observer_sha256": observer_digest,
@@ -1736,7 +1765,7 @@ def _verifier_prepare(repo, prior, candidate, trusted_ref, expected_fingerprint,
     say(f"candidate C {candidate}  raw tree {record['target_tree_sha256']}")
     say(f"verifier  sha256 {record['verifier_sha256']}  manifest sha256 {record['manifest_sha256']}")
     say(f"observer  {observer_path}  sha256 {observer_digest}")
-    say(f"preparer  scripts/repin.py at C sha256 {record['preparer_sha256']}")
+    say(f"preparer  release/repin.py at C sha256 {record['preparer_sha256']}")
     say("Reader must independently verify P's signed commit, signer provenance, dependency hashes, exact clean C bytes, and the Python path and digest.")
     say("The target contains candidate code. Run the verifier only with the signing key away.")
     return path
@@ -1906,23 +1935,28 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
     good, state, signer = verify_checkpoint(repo, prior, roster_path, expected_fingerprint)
     if not good or signer != packet["signer_fingerprint"]:
         raise Refuse(f"P signature/fingerprint no longer verifies ({state}, {signer!r}).")
-    manifest_raw = git(repo, "cat-file", "blob", f"{prior}:{VERIFIER_MANIFEST_REL}")
+    manifest_rel, verifier_rel, scanner_paths = verifier_paths(repo, prior)
+    if manifest_rel == LEGACY_VERIFIER_MANIFEST_REL:
+        raise Refuse("full collection across the legacy layout requires the reviewed "
+                     "repository-layout transition.")
+    manifest_raw = git(repo, "cat-file", "blob", f"{prior}:{manifest_rel}")
     frozen = json.loads(manifest_raw).get("frozen_files", {})
     dependencies = packet["prior_dependencies"]
-    if set(dependencies) != set(VERIFIER_SCANNER_PATHS) | {VERIFIER_MANIFEST_REL}:
+    if set(dependencies) != set(scanner_paths) | {manifest_rel}:
         raise Refuse("prior verifier dependency set differs from the complete required set.")
-    for rel in VERIFIER_SCANNER_PATHS:
+    for rel in scanner_paths:
         entry = frozen.get(rel)
         pinned = entry if isinstance(entry, str) else entry.get("sha256") if isinstance(entry, dict) else None
         if not pinned or dependencies[rel] != pinned:
             raise Refuse(f"prior verifier dependency is not pinned by P at {d(rel)}.")
-    if (dependencies[VERIFIER_MANIFEST_REL] != sha(manifest_raw)
+    if (dependencies[manifest_rel] != sha(manifest_raw)
             or packet.get("manifest_sha256") != sha(manifest_raw)
-            or packet.get("verifier_sha256") != dependencies[VERIFIER_REL]):
+            or packet.get("verifier") != verifier_rel
+            or packet.get("verifier_sha256") != dependencies[verifier_rel]):
         raise Refuse("prior verifier or manifest digest differs from immutable P.")
     for rel, expected in dependencies.items():
         raw = git(repo, "cat-file", "blob", f"{prior}:{rel}", check=False)
-        path = _plain_absolute_path(evidence / "prior" / ("gate_manifest.json" if rel == VERIFIER_MANIFEST_REL else rel))
+        path = _plain_absolute_path(evidence / "prior" / ("gate_manifest.json" if rel == manifest_rel else rel))
         if raw is None or sha(raw) != expected or path.is_symlink() or path.read_bytes() != raw:
             raise Refuse(f"prior verifier evidence changed at {d(rel)}; prepare again.")
     observer = _plain_absolute_path(packet["observer"])
@@ -1955,7 +1989,7 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
     say("The following full collection executes candidate code. Confirm the signing key is away and type YES.")
     if input("Signing key away? [YES]: ").strip() != "YES":
         raise Refuse("operator did not confirm key absence; verifier was not run.")
-    verifier = evidence / "prior" / VERIFIER_REL
+    verifier = evidence / "prior" / verifier_rel
     manifest = evidence / "prior" / "gate_manifest.json"
     env = {"HOME": "/nonexistent", "PATH": "/usr/bin:/bin", "LC_ALL": "C",
            "PYTHONDONTWRITEBYTECODE": "1"}
@@ -1990,7 +2024,7 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
         raise Refuse(f"P signature/fingerprint changed during candidate collection ({state}, {signer!r}).")
     for rel, expected in packet["prior_dependencies"].items():
         raw = git(repo, "cat-file", "blob", f"{prior}:{rel}", check=False)
-        path = _plain_absolute_path(evidence / "prior" / ("gate_manifest.json" if rel == VERIFIER_MANIFEST_REL else rel))
+        path = _plain_absolute_path(evidence / "prior" / ("gate_manifest.json" if rel == manifest_rel else rel))
         if raw is None or sha(raw) != expected or path.is_symlink() or path.read_bytes() != raw:
             raise Refuse(f"prior verifier evidence changed during collection at {d(rel)}.")
     if sha(Path(current_python).read_bytes()) != packet["python_sha256"]:
@@ -2142,7 +2176,7 @@ def check_first_run(ctx, reviewed):
     if txn is not None and set(txn["outputs"]) != {LOCKFILE_REL}:
         raise Refuse("a pin is owed (the AST baseline). The first run never carries one, because "
                      "repin's own unpinned bytes would decide it. Pin it by hand under "
-                     "bootstrap/AST_BASELINE_RUNBOOK.md first.")
+                     "release/AST_BASELINE_RUNBOOK.md first.")
     if txn is None:
         say(NOTHING_OWED)
     else:
