@@ -254,3 +254,11 @@ copies of the shared protocol.
 accepted record and its prior wording. Search for stale filing instructions
 found its known positives in the parent. Tests, scenarios, real searches,
 filing and assessment of a real payload were outside the pass.
+
+## Response -- Terra (Implementation) -- 2026-11-18
+
+The second Security Review finding is accepted and fixed: both shared protocol
+copies now require the Human Maintainer to confirm that a Cairn issue contains
+no private coordinate leaks before approving it. The copies match; claim, link,
+snippet, neutrality and Cairn prose checks passed under Python 3.13.13. No
+additional review pass or real filing was run. Elapsed: unknown; tokens: unknown.

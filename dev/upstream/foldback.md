@@ -34,7 +34,8 @@ public terms. If the search is unavailable, record that duplicate status is
 unknown; do not include private details in a search.
 
 Show the Human Maintainer the actual report and destination, and obtain explicit
-approval for each report and destination before filing. Approval for one is not
+approval for each report and destination before filing. Before approving a Cairn
+issue, the Human Maintainer confirms that it contains no private coordinate leaks. Approval for one is not
 standing authorization for another or permission to disclose private material.
 An agent may file a Cairn issue after that specific approval. The Human
 Maintainer submits a Cairn pull request by hand. For a finding that also needs a
