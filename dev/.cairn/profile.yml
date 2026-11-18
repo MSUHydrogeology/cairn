@@ -19,6 +19,7 @@ preset: collaborative-team
 human_team: solo
 
 modules_add:
+  - architecture-review
   - issue-capture            # GitHub Issues for gap/friction capture
   - security-review          # real trust boundary: file I/O, path handling, YAML/module parsing
   - examples-gallery         # examples/ ships runnable code; others adopt Cairn
