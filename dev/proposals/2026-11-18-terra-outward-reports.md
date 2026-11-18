@@ -1,7 +1,7 @@
 # Make outward report drafts usable
 
 **Author**: Terra (Implementation, Medium)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — a shipped file changes the install mapping
 **Plan review**: required(Internal + Internal Security Review)
@@ -11,7 +11,7 @@
 
 ## Decision summary
 
-An agent finding a Cairn problem or dependency defect has a dependency draft template but no collaboration-guide route to it, and the Cairn fold-back form is not installed. Add one Cairn fold-back template in the existing `dev/upstream/` folder, improve the existing dependency workflow, and point the collaboration guide to both. Draft and check each report, show it to the Human Maintainer, and file only after approval of that particular report; exclude unpublished data and credentials. This addresses #80. It adds one installed file and the corresponding mapping and maintenance, with implementation and review effort not yet measured; it creates no service or automatic filing.
+An agent finding a Cairn problem or dependency defect has a dependency draft template but no collaboration-guide route to it, and the Cairn fold-back form is not installed. Add one Cairn fold-back template in the existing `dev/upstream/` folder, improve the existing dependency workflow, and point the collaboration guide to both. Draft and check each report and show its contents and destination to the Human Maintainer. For a Cairn issue, #80 changes the current hand-submission rule: the agent may file only after approval of that specific issue and destination. The Maintainer continues to submit Cairn pull requests by hand. Exclude unpublished data, proprietary detail and credentials. It adds one installed file and the corresponding mapping and maintenance, with implementation and review effort not yet measured; it creates no service or automatic filing.
 
 ## Context
 
@@ -21,7 +21,7 @@ An agent finding a Cairn problem or dependency defect has a dependency draft tem
 
 Ship `templates/core/dev/upstream/foldback.md` with the Cairn counterpart `dev/upstream/foldback.md`, and retain the existing dependency template. Make the shipped fold-back template the single protocol source; the Cairn forge forms point to it instead of restating the protocol, while keeping the fields needed by their forge. Keep `.github` and `.gitlab` fixed forge paths; add no `.forge` directory. Update the existing upstream README and collaboration guide, including their shipped counterparts, to route an agent who finds a Cairn problem or dependency defect to a local draft in `dev/upstream/`.
 
-For a dependency, use its own issue template when available, adapting the local draft to its requested information; otherwise use the existing dependency template. Describe how to find that template without requiring an automated fetch or a new external service. Keep reproduction, versions, expected and actual behavior and status useful to a real upstream maintainer. For either channel, check the draft for unpublished data and credentials, show it to the Human Maintainer, and obtain explicit approval for each report before filing. No standing authorization, automatic external filing, or permission to disclose private material follows from this workflow. Record the outcome in the draft using the existing lifecycle. A finding spanning both channels gets distinct drafts and approvals.
+For a dependency, use its own issue template when available, adapting the local draft to its requested information; otherwise use the existing dependency template. Describe how to find that template without requiring an automated fetch or a new external service. Keep reproduction, versions, expected and actual behavior and status useful to a real upstream maintainer. Sanitize tracebacks and other evidence before a dependency draft enters Git; never copy sensitive content verbatim into the draft. For either channel, check the entire public payload, including bodies, attachments and every changed file in a pull request, for unpublished data or hints, proprietary project or customer detail, and credentials. After writing, reread the complete payload and, for a pull request, its full diff with those classes in mind. Show the actual report and destination to the Human Maintainer and obtain explicit approval for each before filing. The agent may file an individually approved Cairn issue; the Maintainer submits a Cairn pull request by hand, as today. No standing authorization, automatic external filing, or permission to disclose private material follows from this workflow. Record the outcome in the draft using the existing lifecycle. A finding spanning both channels gets distinct drafts and approvals.
 
 ## Rationale
 
@@ -49,7 +49,7 @@ Exercise the public fresh-install manifest and installation for the new mapped f
 
 ### Examples / smoke checks
 
-In a disposable installation, follow the guide to draft one synthetic Cairn report and one synthetic dependency report, including an upstream template and the fallback, and verify the human approval step precedes filing. Do not actually file. Run the project prose gates and claim check.
+In a disposable installation, follow the guide to draft one synthetic Cairn report and one synthetic dependency report, including an upstream template and the fallback, and verify the human approval step precedes filing. Include synthetic sensitive content in a dependency traceback and confirm only sanitized evidence reaches the Maintainer; inspect a synthetic pull request body, attachments and full diff and retain the final reread. Do not actually file. Run the project prose gates and claim check.
 
 #### Security preflight
 
@@ -107,3 +107,14 @@ Reviewed commit: 73c2a6c5723c6d6b1b50767ec97b54417b67e04e
 - **Blocking — preserve the publication check end to end.** Explicitly carry forward the final reread, proprietary-detail and unpublished-data checks, including the PR's full diff. Replace the fallback template's verbatim-traceback instruction with sanitized evidence before a draft enters Git. In the disposable smoke check, include synthetic sensitive content and verify the sanitized version is what reaches the Maintainer. `.github/ISSUE_TEMPLATE/foldback.md:69-83`, `.github/PULL_REQUEST_TEMPLATE/foldback.md:53-70`, `templates/core/dev/upstream/_template.md:40-42`.
 
 Coverage: committed workflow, mappings and named test paths. No installer, forge, filing, platform or suite execution.
+
+## Response -- Terra (author) -- 2026-11-18
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+- Ordinary blocking and Security publication-check finding: accepted. The shared protocol retains unpublished-data and proprietary-detail checks, credentials, complete bodies, attachments and changed files, and the final reread; the smoke check covers a synthetic PR diff. The dependency traceback is sanitized before its draft enters Git and the smoke check verifies what the Maintainer sees.
+- Security filing-role finding: accepted. #80 changes Cairn issues to agent filing after approval of the actual issue and destination; the Maintainer still submits Cairn PRs by hand. Approval remains specific to each report and destination.
+
+### Withdrawn / superseded commitments
+
+None; the proposal clarifies the requested issue change and retains the existing PR control.
