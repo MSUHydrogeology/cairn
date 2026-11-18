@@ -229,3 +229,10 @@ The ordinary and both Security passes' findings were corrected in `1b9adfe3` and
 C1: the installed report and its refusal controls passed; it remains advisory and may report generated cache folders. C2: installation and upgrade preserve project content and scratch behavior. C3: guidance and the two-location fixture retain the entry duties and qualified imports. C4: the disposable install exercised the report, lock destinations and retained tests after removing `dev/`. Independent ordinary and Security findings were fixed with their affected checks; native Windows containment passed. The accepted scope is preserved.
 
 Not run: full release certification and signing; Home: the separate release preparation row in `dev/PLANNING.md`. The arc owner runs the joined Group 4 integration after archive.
+
+## Post-archive correction -- Terra (Implementation) -- 2026-11-18
+
+`a3401200` aligns the local and shipped plan and proposal templates with the existing scratch rule: temporary briefs, drafts and script scratch output go in ignored scratch; durable conclusions stay in records. Committed briefs remain citable. Claim, snippet and neutrality checks passed; link checking reported the moved plan's board reference and seven historical changelog links. No tests ran. A quick ordinary review is pending.
+
+**Elapsed**: unknown
+**Tokens**: unknown
