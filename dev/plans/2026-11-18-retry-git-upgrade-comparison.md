@@ -1,7 +1,7 @@
 # Plan: Retry the isolated Git upgrade comparison
 
 **Source proposal**: dev/proposals/archive/2026-11-18-terra-retry-git-upgrade-comparison.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/development-environment.md
@@ -369,4 +369,26 @@ Reviewed commit: `63745b9b` (covering `34644c4e`, `5164bf36`, `4e2cafcd`, `65097
 **Coverage:** Inspected committed revisions `6a3707df`, `34644c4e`, `5164bf36`, `4e2cafcd`, `65097e38`, and `63745b9b`, `63745b9b:dev/plans/2026-11-18-retry-git-upgrade-comparison.md`, `63745b9b:dev/proposals/archive/2026-11-18-terra-retry-git-upgrade-comparison.md`, `5164bf36:tests/test_upgrade_refuses_hostile_project_data.py`, `5164bf36:dev/tools/git_read.py`, and read-only trial scripts and raw output (`supervisor.py`, `ns-init.py`, `trial_driver.py`, `prepare_inputs.py`, `trial_raw.txt`). Did not inspect uncommitted repository working-tree files, re-run the trial on `linux-dev`, or change plan lifecycle status.
 
 Elapsed: ~3 minutes. Tokens: unknown.
+
+## Implementation verification
+
+- **Repository mapping (`/Users/kendal30/conda_envs/lhm/bin/python3.13 tests/tier_inventory.py`)**: `0 test files selected` (zero tracked Cairn source files were modified by this isolated VM comparison).
+- **`linux-dev` C1–C3 trial execution (`4e2cafcd`, verified at `63745b9b` and `8f59f780`)**:
+  - **C1 pre-launch controls**: verified `PR_SET_CHILD_SUBREAPER` + separate `os.pidfd_open` handles (`separate_pidfds: true`), `POLLERR | POLLHUP` lifeline EOF, `--ipc` namespace isolation (`ns_isolated: true`) with zero `/dev/shm` or `/dev/mqueue` mounts (`no_shm_mqueue_mounts: true`), `0600` recovery metadata, mode-`0600` UID-`1001` canary positive control (`b2cd62a1...` -> `9281ef0b...` -> `b2cd62a1...`) vs `EROFS` (`errno 30`, `ino=565428`, `ino_match=true`), outside sentinel restore (`367ef15b...` -> `ad6d4975...`), loopback positive vs `EPERM`, `ld-linux-aarch64.so.1` `EACCES`, and `dev/tools/git_read.py` (`rev-parse --show-toplevel` `rc=0` vs `push --all` refused `unsupported-read-form`).
+  - **C2 matched comparison**: `39/39` v0.5.0 destinations reconstructed byte-for-byte against `A_clean`, `T0` (`94fa1d8f...`) verified as sole direct parent of non-empty `T1` (`3a00f7f6...`, `>= 60` files) and all three `A_var` commits (`85c5af13...`, `ab4031ba...`, `167eefe0...`). All six cells ran against clean hookless `cand_checkout` (`5164bf36`): `benign` Git merge exited `1` with `1` conflict (`AGENTS.md`) and clean `dev/README.md` merge while `upgrade --plan` exited `2` refusing unproved layout-migration ancestry for 12 legacy `scripts/`/`tools/` paths; `leaf_link` and `linked_parent` Git merges exited `1` with `3` conflicts while `upgrade --plan` exited `2` refusing record 19 (`dev/proposals/_template.md` outside project) with unchanged outside sentinels (`3be21218...`, `ee9c04b2...`). All 37 hostile tests in `5164bf36:tests/test_upgrade_refuses_hostile_project_data.py` accurately classified `untested`.
+  - **C3 guest cleanup**: `owned_mounts_remaining_before_cleanup: 0`, AppArmor profile unloaded (`profile_absent: true`, `unrelated_profiles_unchanged: true`, `117` profiles intact), `/tmp` trial root removed (`root_absent: true`), recovery metadata removed (`recovery_meta_removed: true`).
+- **Omissions / limits**: The trial tested three `benign` / `leaf_link` / `linked_parent` variants (`upgrade --apply` was never reached because `upgrade --plan` exited `2` cleanly), did not rerun the 37 hostile unit tests inside the guest (`untested` by plan), and leaves no replacement authorization for Cairn's upgrade engine.
+
+**Benefit versus cost**: worth it -- resolved the three confinement findings and completed the unrun 0.7 Git upgrade comparison trial on `linux-dev` with 39/39 predecessor reconstruction, matched merge versus exit-2 `upgrade --plan` outcomes, and complete 37-case hostile classification; cost temporary VM confinement harness, C1–C3 trial execution, Hydrogen Ordinary review + resolution (`65097e38` / `63745b9b`), and one Argon Security review pass (`8f59f780`); remaining burden zero ongoing repository code or maintenance burden (guest harness and state removed).
+
+## Implementation closeout -- Coordinator (Antigravity) -- 2026-11-18
+
+C1 (pre-launch confinement controls under `PR_SET_CHILD_SUBREAPER`, `--ipc`, and `0600` canary), C2 (`39/39` v0.5.0 reconstruction, non-empty `T1` with `T0` sole parent, six matched comparison cells across `benign`, `leaf_link`, and `linked_parent`, and 37-case hostile classification), and C3 (clean guest teardown, `claim_check`, Ordinary `65097e38` ACCEPT + `63745b9b` resolution, and Argon Security `8f59f780` ACCEPT) all held.
+
+- Not run: Whole-suite certification (`CAIRN_FULL_SUITE=1`) and `upgrade --apply` (unreached because `upgrade --plan` refused with exit `2` across all three variants without lowering protections); `37` hostile cases recorded `untested`. Home: completed trial record in this archived plan (`dev/PLANNING.md` v0.8 Group 5 row closes; any future upgrade-engine work requires its own accepted proposal).
+
+Dispositions: `accept` (all non-blocking parameter/log findings from `65097e38` resolved in `63745b9b`).
+
+**Elapsed**: unknown
+**Tokens**: unknown
 
