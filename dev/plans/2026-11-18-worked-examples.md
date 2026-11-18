@@ -1,7 +1,7 @@
 # Plan: Runnable worked examples
 
 **Source proposal**: dev/proposals/archive/2026-11-09-codex-worked-examples.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/working-agreements.md
@@ -85,3 +85,14 @@ C1–C2 ship at `5e20fb14`. The v0.7.0 input `49dfa217102545d44e57190a48941cabce
 3. **What would show it wrong?** A sign inversion surviving the independently calculated residual, or a managed slot disappearing after staged review and apply, would falsify the result. -- `examples/scientific-minimal/test_water_budget.py::TestResidualWriter::test_hand_calculated_row_through_cli`, `tests/test_upgrade.py`, Implementation evidence
 
 The hand calculation uses 100−30−20−40−10 = 0 mm; recorded inversion produced 60 and failed. The upgrade identifies the prior tag and commit, managed `AGENTS.md` slot, staged review and applied result. Coverage: read committed walkthroughs, public checks and recorded results; did not rerun commands, verify a real research model or perform release verification. No governing doctrine changes were made.
+
+## Implementation closeout -- Terra -- 2026-11-18
+
+C1 and C2 held: the runnable traces, independent residual check, managed-slot upgrade and handoff are evidenced at `5e20fb14` and in Implementation evidence. C3 held: the independent ordinary code review accepted with no findings; no dispositions are needed. The example's `dev/plans/archive/` contains its illustrative lifecycle record used by the scientific walkthrough; it is teaching material, not a plan evidence folder.
+
+Not run: joined Group 4 integration. Home: `dev/PLANNING.md`, Group 4 sequence and arc owner.
+Not covered: real research validation or release verification. Home: `dev/PLANNING.md`, release preparation and outside-adopter trial.
+
+**Benefit versus cost**: unknown -- reproducible workflows and managed-upgrade evidence; the focused upgrade check took 28.73 seconds and two local clones; maintenance burden is unknown. Revisit if fixture compatibility or runtime becomes onerous.
+
+**Elapsed**: unknown. **Tokens**: unknown.
