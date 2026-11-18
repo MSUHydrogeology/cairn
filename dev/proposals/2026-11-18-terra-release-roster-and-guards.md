@@ -83,3 +83,20 @@ A platform's strict record hides a skipped required test, an actually supported 
 ## Assurance path
 
 Usual and Security proposal review, a heavy plan with Internal and Internal Security Review, and independent ordinary and Security code review as applicable. The existing cap and any explicit extra-pass authorization remain in force. No roster change, release record, signature or Maintainer Decision is claimed. Elapsed: unknown; tokens: unknown.
+
+## Review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: cad52724f43cb26e7c12066caf0ec2e18c5929b2
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the choice makes the cost of retaining guards and the conditions for retiring them visible while updating platform classifications. -- Decision summary, Proposal options A and B
+2. **Best alternative.** Retain all guards and refresh only the roster; it avoids removal risk but preserves their runtime and maintenance burden. -- Proposal option A, Alternatives considered
+3. **What would show it wrong?** A strict record accepting an unexpected skip or a removed guard leaving a distinct unsafe path unchecked would falsify the result. -- Evidence / verification plan, Security preflight S2–S4
+
+Option B retains a guard when equivalence is unproven and specifies the unresolved question for any explicitly authorized extra pass; this proposal cannot reset the old review cap. The now-lifted claims fence is scoped to the named file and public warn/block promises. The proposed longer opening supplies the decision and platform context rather than a per-test ledger. No governing rule change is proposed; roster and release work remain in their existing homes. Coverage: read the committed proposal, template and relevant archived hold disposition; did not collect tests, run either platform, establish current roster membership or assess the security boundary. Security Review remains separate.
