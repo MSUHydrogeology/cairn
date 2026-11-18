@@ -36,6 +36,7 @@ from .config import (
     duplicate_destinations,
     strip_conditional_regions,
 )
+from .layout_catalog import ONBOARDING_GUIDES
 
 
 def _display_name(value: str) -> str:
@@ -1636,8 +1637,8 @@ def _substitute_slot(
 #: under ``dev/modules/onboarding/``.  The presets' "walk this doc" task
 #: refs point at the *installed* copies; without this write those refs
 #: were dead links on first run (the bug this delivery fixes).
-_ONBOARDING_DOC_NAMES = ("agent-team-onboarding.md", "dev-tour.md")
-_ONBOARDING_DOC_DST_DIR_REL = "dev/modules/onboarding"
+_ONBOARDING_DOC_NAMES = tuple(Path(dst).name for _, _, dst in ONBOARDING_GUIDES)
+_ONBOARDING_DOC_DST_DIR_REL = str(Path(ONBOARDING_GUIDES[0][2]).parent.as_posix())
 
 
 def install_onboarding(
@@ -1753,36 +1754,35 @@ def install_onboarding(
             results.append((inventory_dst, [], [], "installed"))
 
     # Write E: ship the shared onboarding reference docs into the
-    # installed-source dir so the presets' "walk this doc" refs resolve
-    # in the adopter.  Sourced from cairn/docs/; skipped when the file
-    # exists unless --force.  Shared across presets, so a preset selection
-    # ships both regardless of which one.
+    # installed-source dir so the presets' "walk this doc" refs resolve.
+    # Leave project copies intact on reinstall.
     if valid_preset:
-        docs_root = templates_root.parent / "docs"
-        for doc_name in _ONBOARDING_DOC_NAMES:
-            doc_src = docs_root / doc_name
-            doc_dst = target / _ONBOARDING_DOC_DST_DIR_REL / doc_name
-            if not doc_src.exists():
+        cairn_root = templates_root.parent
+        for old_src, new_src, dst in ONBOARDING_GUIDES:
+            doc_dst = target / dst
+            _assert_safe_write(doc_dst, target)
+            if doc_dst.exists():
+                results.append((doc_dst, [], [], "skipped-exists"))
+                continue
+            raw = None
+            for rel in (new_src, old_src):
+                doc_src = cairn_root / rel
+                _assert_safe_write(doc_src, cairn_root)
+                raw = _read_regular_bytes(doc_src)
+                if raw is not None:
+                    break
+            if raw is None:
                 print(
-                    f"  [warn] onboarding doc source missing: docs/{doc_name}",
+                    f"  [warn] onboarding doc source missing: {new_src}",
                     file=sys.stderr,
                 )
                 continue
             if dry_run:
                 results.append((doc_dst, [], [], "dry-run"))
                 continue
-            if doc_dst.exists() and not force:
-                print(
-                    f"  [skip] {doc_dst}: already exists -- pass --force to "
-                    f"overwrite",
-                    file=sys.stderr,
-                )
-                results.append((doc_dst, [], [], "skipped-exists"))
-                continue
-            _assert_safe_write(doc_dst, target)
             doc_dst.parent.mkdir(parents=True, exist_ok=True)
             doc_dst.write_text(
-                doc_src.read_text(encoding="utf-8"), encoding="utf-8", newline="\n"
+                raw.decode("utf-8").replace("\r\n", "\n"), encoding="utf-8", newline="\n"
             )
             results.append((doc_dst, [], [], "installed"))
 

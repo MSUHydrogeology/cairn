@@ -40,6 +40,7 @@ from .config import (
     _RETIRED_INSTALLS,
     _SKILLS_GITIGNORE,
     _SKILLS_MAPPINGS,
+    _minimal_yaml_parse,
     duplicate_destinations,
     load_config,
     missing_required_tokens,
@@ -59,6 +60,25 @@ from .security import (
 )
 from .merge import SlotError, merge_file
 from .slotmerge import substitute_tokens
+from .layout_migration import (
+    JOURNAL as _LAYOUT_JOURNAL,
+    RECEIPT as _LAYOUT_RECEIPT,
+    SourceBlob,
+    SourceRevision,
+    Transaction as LayoutTransaction,
+    installer_rows as _layout_installer_rows,
+    load_receipt as _load_layout_receipt,
+    pending as _layout_pending,
+    read_state as _read_layout_state,
+    resolve_revision as _resolve_layout_revision,
+)
+from .layout_catalog import (
+    CODE_MAP_V070_BLOB,
+    CODE_MAP_V070_COMMIT,
+    LAYOUT_INSTALLS,
+    ONBOARDING_GUIDES,
+    SELF_HOST_UNLISTED,
+)
 from .lockfile import (
     _BASE_CACHE_REL,
     _LIVING_STATE_DSTS,
@@ -84,6 +104,7 @@ from .install import (
     _display_name,
     _lock_file_list,
     _module_task_blocks,
+    _ONBOARDING_PRESETS,
     fan_out_skills,
     ModuleDiscoveryConflict,
     _substitute_module_inventory,
@@ -837,6 +858,10 @@ def _compute_upgrade(
                 "a directory occupies this tracked file path; preserve its "
                 "contents, resolve the path, then re-stage", None, None))
             continue
+        if src_rel == "core/VENDOR.md" and rec.get("layout_keep") is True:
+            plans.append(FilePlan(dst, "up-to-date", None,
+                                  "existing layout wrapper kept", None, None))
+            continue
         ours_bytes = dst_abs.read_bytes() if dst_abs.exists() else None
         ours: str | None = None
         if ours_bytes is not None and not verbatim:
@@ -1353,6 +1378,27 @@ def _seed_staging_gitignore(target: Path) -> None:
     seed_gitignore(target, (_STAGING_REL + "/",))
 
 
+def _clear_ordinary_stage(stage: Path, target: Path) -> None:
+    """Clean only the ordinary stage, even when a layout stage races it."""
+    import shutil
+    _assert_safe_write(stage, target)
+    if not stage.exists():
+        return
+    journal = target / _LAYOUT_JOURNAL
+    for path in stage.iterdir():
+        if path == journal:
+            continue
+        if path.is_dir() and not path.is_symlink():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
+    try:
+        stage.rmdir()
+    except OSError:
+        if not journal.is_dir():
+            raise
+
+
 def _write_stage(
     target: Path, plans: list[FilePlan], lock: dict[str, Any],
     to_ref: str | None, cairn_root: Path,
@@ -1370,7 +1416,6 @@ def _write_stage(
     + the new version/commit in metadata, so ``--apply`` can advance the
     lockfile + base cache without needing the Cairn source again."""
     import json
-    import shutil
     stage = target / _STAGING_REL
     # Guard the STAGE ROOT itself BEFORE
     # the first rmtree / mkdir. If ``target/dev`` is a symlink to an external
@@ -1379,8 +1424,7 @@ def _write_stage(
     # guard below catches only AFTER the damage. ``_assert_safe_write`` refuses a
     # symlinked parent (``target/dev``) here, before any mutation.
     _assert_safe_write(stage, target)
-    if stage.exists():
-        shutil.rmtree(stage)
+    _clear_ordinary_stage(stage, target)
     # Verify and prepare the selected-source inventory before creating any
     # stage contents. A failed inventory check therefore leaves no usable
     # partial stage (and removes a stale prior stage above).
@@ -3417,7 +3461,6 @@ def _apply_upgrade(
     in-flight work), and stops, naming ``--force``, when the edit check cannot
     tell (`_EditCheckCannotTell`)."""
     import json
-    import shutil
     stage = target / _STAGING_REL
     _assert_stage_has_no_links(stage, target)
     meta_path = stage / _STAGE_META
@@ -3996,7 +4039,7 @@ def _apply_upgrade(
         if seeded:
             print(f"  Seeded .gitignore (skills): {', '.join(seeded)}")
 
-    shutil.rmtree(stage)
+    _clear_ordinary_stage(stage, target)
     added_note = f" (+{len(added_dsts)} new core-like)" if added_dsts else ""
     print(f"Applied {len(staged_meta)} file(s){added_note}; advanced "
           f"{_LOCKFILE_REL} + the base cache to {new_lock['cairn_commit']}.")
@@ -4076,6 +4119,392 @@ def _self_heal_profile_config(target: Path, lock: dict[str, Any]) -> bool:
     return True
 
 
+_LAYOUT_MOVES = tuple(row for row in LAYOUT_INSTALLS if row[1:3] != row[4:6])
+_LAYOUT_NEW_ROWS = {(owner, new_src, new_dst, verbatim)
+                    for owner, _, _, verbatim, new_src, new_dst in _LAYOUT_MOVES}
+
+
+def _layout_config_path(cairn_root: Path) -> Path | None:
+    for directory in ("install", "bootstrap"):
+        path = cairn_root / directory / "_scaffold" / "config.py"
+        if path.is_file():
+            _assert_safe_write(path, cairn_root)
+            return path
+    return None
+
+
+def _layout_target(cairn_root: Path, to_ref: str | None) -> SourceRevision | None:
+    """Recognize a relocated source from installer data, never from target paths."""
+    if to_ref is None:
+        cfg = _layout_config_path(cairn_root)
+        if cfg is None or not _layout_installer_rows(cfg.read_bytes()) & _LAYOUT_NEW_ROWS:
+            return None
+    elif not _cairn_is_git(cairn_root):
+        return None  # ordinary --to reports its existing source error
+    selected = SourceRevision(cairn_root, _resolve_layout_revision(cairn_root, to_ref or "HEAD"))
+    if not selected.rows & _LAYOUT_NEW_ROWS:
+        if to_ref is None:
+            raise ScaffoldSecurityError("the relocated installer mapping has no matching committed Cairn source")
+        return None
+    if to_ref is None and cfg.read_bytes() != selected.config.raw:
+        raise ScaffoldSecurityError("the running installer mapping differs from its committed Cairn source")
+    return selected
+
+
+def _layout_recorded_source(root: Path, authority: SourceRevision,
+                            revision: object, cache: dict) -> SourceRevision | None:
+    if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{4,64}", revision):
+        return None
+    if revision not in cache:
+        try:
+            oid = _resolve_layout_revision(root, revision)
+            cache[revision] = SourceRevision(root, oid) if authority.includes(oid) else None
+        except ScaffoldSecurityError:
+            cache[revision] = None
+    return cache[revision]
+
+
+def _layout_blob(source: SourceRevision | None, row: tuple, *, new: bool = False):
+    owner, src, dst, verbatim, new_src, new_dst = row
+    if new:
+        src, dst = new_src, new_dst
+    if source is None or (owner, src, dst, verbatim) not in source.rows:
+        return None
+    return source.blob(src)
+
+
+def _layout_digest(raw: bytes) -> str:
+    return "sha256:" + _sha256_hex(raw)
+
+
+def _layout_decode_lock(raw: bytes) -> dict:
+    import json
+    body = "\n".join(line for line in raw.decode("utf-8").splitlines()
+                     if not line.lstrip().startswith("#"))
+    payload = json.loads(body)
+    if not isinstance(payload, dict) or payload.get("schema") != _LOCK_SCHEMA:
+        raise ScaffoldSecurityError(f"{_LOCKFILE_REL} has an unsupported layout lock schema")
+    return payload
+
+
+def _layout_tools_profile(raw: bytes, required: list[str]) -> bytes:
+    """Make an exact addition to the self-host profile's module list."""
+    text = raw.decode("utf-8")
+    cfg = _minimal_yaml_parse(text, source=_PROFILE_REL)
+    key = "modules" if "modules" in cfg else "modules_add"
+    if set(cfg.get("modules_remove") or ()) & set(required):
+        raise ScaffoldSecurityError(f"{_PROFILE_REL} explicitly removes the unlisted tool's owner")
+    additions = [name for name in required if name not in (cfg.get(key) or ())]
+    if not additions:
+        return raw
+    lines = "".join(f"  - {name}\n" for name in additions)
+    header = re.search(rf"(?m)^{key}:[ \t]*(?:#[^\r\n]*)?\r?\n", text)
+    if header:
+        if "\r\n" in header[0]:
+            lines = lines.replace("\n", "\r\n")
+        amended = text[:header.end()] + lines + text[header.end():]
+    elif key in cfg:
+        raise ScaffoldSecurityError(f"{_PROFILE_REL} needs a block list under {key} for reconciliation")
+    else:
+        amended = text.rstrip("\r\n") + f"\n\n{key}:\n" + lines
+    _minimal_yaml_parse(amended, source=_PROFILE_REL)
+    return amended.encode("utf-8")
+
+
+def _layout_render(raw: bytes, src: str, profile: dict, tokens: dict) -> str | None:
+    """Reconstruct simple installed prose from its rendering inputs.
+
+    Generated slots and historical module merge overlays need their own inputs.
+    Their raw cache alone never proves that rendered ancestor.
+    """
+    text = raw.decode("utf-8").replace("\r\n", "\n")
+    if src in {"templates/core/AGENTS.md", "templates/core/dev/PLANNING.md",
+               "templates/core/dev/modules/README.md"}:
+        return None
+    axes = _embedded_axes(profile)
+    if "<!-- cairn:if" in text and not all(axis in axes for axis in _AXES):
+        return None
+    rendered = substitute_tokens(strip_conditional_regions(text, axes), tokens)
+    if re.search(r"\{\{[^{}]+\}\}", rendered):
+        return None
+    return rendered
+
+
+def _layout_merge(row: tuple, lock: dict, rec: dict, old: SourceBlob,
+                  new: SourceBlob, ours: bytes, tx: LayoutTransaction) -> bytes | None:
+    base_name = rec.get("base_cache")
+    if base_name != f"{_BASE_CACHE_REL}/{row[2]}":
+        return None
+    cached = tx.read(base_name)
+    if cached is None or cached.raw != old.raw:
+        return None
+    profile, tokens = lock.get("profile") or {}, lock.get("tokens") or {}
+    before = _layout_render(old.raw, row[1], profile, tokens)
+    after = _layout_render(new.raw, row[4], profile, tokens)
+    if before is None or after is None or rec.get("layout_ancestry") == "unknown":
+        return None
+    try:
+        merged = merge_file(before, after, ours.decode("utf-8"), {})
+    except (SlotError, UnicodeError):
+        return None
+    return merged.merged.encode("utf-8") if merged.status == "clean" else None
+
+
+def _layout_plan(target: Path, source: SourceRevision,
+                 comparison: SourceRevision | None, saved: dict | None = None
+                 ) -> tuple[LayoutTransaction, list[str]]:
+    tx = LayoutTransaction(target, {
+        "target_commit": source.oid,
+        "target_config": source.config.oid if source.config else None,
+        "comparison_commit": comparison.oid if comparison else None,
+        "comparison_config": comparison.config.oid if comparison and comparison.config else None,
+    }, saved)
+    original = tx.read(_LOCKFILE_REL)
+    if original is None:
+        raise ScaffoldSecurityError(f"no {_LOCKFILE_REL}; run upgrade --init-lock first")
+    lock = _layout_decode_lock(original.raw)
+    _check_lockfile_paths(lock, target, source.root / "templates")
+    files = {row["dst"]: row.copy() for row in lock["files"]}
+    if len(files) != len(lock["files"]):
+        raise ScaffoldSecurityError("the lockfile records a destination more than once")
+    profile = tx.read(_PROFILE_REL)
+    modules = list(lock.get("modules") or ())
+    history: dict = {}
+    blocks: list[str] = []
+    restore: list[str] = []
+    for row in _LAYOUT_MOVES:
+        owner, src, dst, verbatim, new_src, new_dst = row
+        rec = files.get(dst)
+        module = owner.removeprefix("module:") if owner.startswith("module:") else None
+        unlisted_self = comparison is not None and target == source.root and (owner, dst) in SELF_HOST_UNLISTED
+        if rec is None and module is not None and module not in modules and not unlisted_self:
+            continue
+        if rec is None and new_dst in files:
+            continue  # the old name is no longer managed after a completed move
+        if comparison is None and _layout_blob(source, row, new=True) is None:
+            if rec is not None or tx.read(dst) is not None:
+                blocks.append(f"{new_dst}: no verified destination in the selected Cairn revision")
+            continue
+        live = tx.read(dst)
+        if rec is None and live is None:
+            continue
+        if rec is None and not unlisted_self:
+            blocks.append(f"{dst}: unlisted copy requires reconciliation")
+            continue
+        if live is None:
+            blocks.append(f"{dst}: recorded old copy is missing; reconcile its disposition")
+            continue
+        if live.mode & ~0o777:
+            blocks.append(f"{dst}: file has unsupported mode bits")
+            continue
+        if rec is not None and (rec["src"] != src.removeprefix("templates/")
+                                or rec.get("verbatim", False) is not verbatim
+                                or (module is not None and module not in modules)):
+            blocks.append(f"{dst}: lockfile does not match the selected installer owner")
+            continue
+        historical = _layout_recorded_source(source.root, source,
+            (rec or {}).get("layout_base_commit") or lock.get("cairn_commit"), history)
+        old = _layout_blob(historical, row)
+        old_proved = (old is not None and rec is not None
+                      and (rec.get("base_hash") or rec.get("hash")) == _layout_digest(old.raw))
+        if comparison is not None:
+            compared = _layout_blob(comparison, row)
+            if compared is None:
+                blocks.append(f"{dst}: comparison revision does not prove its owner and source")
+                continue
+            if unlisted_self and rec is None:
+                v070 = _layout_recorded_source(source.root, source, CODE_MAP_V070_COMMIT, history)
+                template = _layout_blob(v070, row)
+                installed = v070.blob(dst) if v070 else None
+                if (template is None or installed is None or compared is None
+                        or template.oid != CODE_MAP_V070_BLOB or installed.oid != template.oid
+                        or compared.oid != template.oid or module is None):
+                    blocks.append(f"{dst}: unlisted self-hosted copy has no verified ownership evidence")
+                    continue
+                restore.append(module)
+            if not verbatim:
+                blocks.append(f"{dst}: rendered ancestor requires separate reconciliation")
+                continue
+            # A comparison can classify a fork without claiming that the
+            # comparison bytes are the original installed ancestor.
+            found = old if old_proved else compared
+            base_rev = historical if old_proved else comparison
+            entry, _ = _record_fork_entry(target, src.removeprefix("templates/"), dst,
+                                         verbatim, found.raw, live.raw)
+            entry = {**(rec or {}), **entry, "layout_base_commit": base_rev.oid,
+                     "layout_ancestry": "verified" if old_proved else "unknown",
+                     "layout_fork": live.raw != found.raw}
+            files[dst] = entry
+            action = "keep fork" if entry["layout_fork"] else "keep"
+            if not old_proved:
+                action += " (historical ancestry unproved)"
+            tx.actions.append((dst, dst, action))
+            continue
+        if not old_proved:
+            blocks.append(f"{dst}: unproved ancestry; reconcile the old copy before moving it")
+            continue
+        if new_dst in files:
+            blocks.append(f"{new_dst}: destination already has a lockfile owner")
+            continue
+        new = _layout_blob(source, row, new=True)
+        if verbatim:
+            fork = live.raw != old.raw
+            output = live.raw if fork else new.raw
+            action = "fork" if fork else "copy"
+        else:
+            output = _layout_merge(row, lock, rec, old, new, live.raw, tx)
+            if output is None:
+                blocks.append(f"{dst}: unproved rendered ancestor or overlapping edits; reconcile before moving it")
+                continue
+            action = "clean merge"
+        entry, cache = _record_fork_entry(target, new_src.removeprefix("templates/"),
+                                         new_dst, verbatim, new.raw, output)
+        tx.write(new_dst, output, live.mode, absent=True)
+        if cache is not None:
+            path, raw = cache
+            tx.write(path.relative_to(target).as_posix(), raw, 0o644, absent=True)
+        entry = {**rec, **entry, "layout_base_commit": source.oid,
+                 "layout_ancestry": rec.get("layout_ancestry", "verified"),
+                 "layout_fork": action == "fork"}
+        files[dst] = entry
+        if new_dst != dst:
+            tx.retire[dst] = new_dst
+        tx.actions.append((dst, new_dst, action))
+
+    # Keep the existing wrapper, including a known renamed or recorded custom
+    # wrapper. Adopt its observed bytes without rebasing its existing ancestor.
+    wrapper = next((row for row in files.values() if row["src"] == "core/VENDOR.md"), None)
+    if wrapper is not None and tx.actions:
+        recorded = wrapper["dst"]
+        if "/" in recorded:
+            raise ScaffoldSecurityError("the existing vendor wrapper is not a root file")
+        state = tx.read(recorded)
+        actual = recorded
+        if state is None and recorded == "VENDOR.md":
+            # The resolution is read-only. Snapshot the selected resolved path
+            # and repeat the same classification from the saved input on apply.
+            known = [name for name in _KNOWN_VENDOR_WRAPPERS if name not in files]
+            for name in known:
+                if (candidate := tx.read(name)) is not None:
+                    actual, state = name, candidate
+                    break
+        if state is not None:
+            wrapper.update(dst=actual, hash=_layout_digest(state.raw), layout_keep=True)
+            tx.actions.append((actual, actual, "keep wrapper"))
+    if restore:
+        if profile is None:
+            blocks.append(f"{_PROFILE_REL}: required to restore the unlisted self-hosted module owner")
+        else:
+            amended = _layout_tools_profile(profile.raw, restore)
+            if amended != profile.raw:
+                tx.write(_PROFILE_REL, amended, profile.mode)
+            lock["modules"] = list(dict.fromkeys([*modules, *restore]))
+    if comparison is None and tx.actions and (lock.get("profile") or {}).get("preset") in _ONBOARDING_PRESETS:
+        for old_src, new_src, dst in ONBOARDING_GUIDES:
+            if tx.read(dst) is not None:
+                continue
+            guide = source.blob(new_src) or source.blob(old_src)
+            if guide is not None:
+                tx.write(dst, guide.raw, guide.mode, absent=True)
+                tx.actions.append((guide.oid, dst, "copy guide"))
+    if tx.actions:
+        lock["files"] = list(files.values())
+        new_lock = _emit_lock_yaml(lock).encode("utf-8")
+        if new_lock != original.raw:
+            tx.write(_LOCKFILE_REL, new_lock, original.mode)
+    return tx, blocks
+
+
+def _layout_guard(force: bool, after: bool, tx: LayoutTransaction) -> None:
+    if force:
+        return
+    paths = list(tx.retire)
+    if not after:
+        # An exact output from this transaction is retryable, even while Git
+        # still sees the old tracked bytes. All preimages retain the edit guard.
+        for name, (raw, mode) in tx.outputs.items():
+            current = _read_layout_state(tx.target, name, publisher=tx._publisher(name))
+            if current is None or (current.raw, current.mode) != (raw, mode):
+                paths.append(name)
+    paths = [name for name in paths if (tx.target / name).exists()]
+    try:
+        dirty = _writeset_dirty_collisions(tx.target, paths)
+    except _EditCheckCannotTell as exc:
+        raise ScaffoldSecurityError(_cannot_tell_refusal("layout --apply", exc.reason)) from exc
+    if dirty:
+        raise ScaffoldSecurityError("unsaved edits on layout paths: " + ", ".join(dirty)
+                                    + "; commit them or pass --force")
+
+
+def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
+    """Dispatch the receipt before ordinary cleanup, apply or profile self-heal."""
+    pending = _layout_pending(target)
+    if pending and not args.migration_receipt:
+        print(f"An unfinished layout transaction is at {_LAYOUT_RECEIPT}. "
+              "Resume with --apply --migration-receipt and the digest printed at stage time.")
+        mutable = any((args.apply, args.init_lock, args.finalize, args.adopt_collisions,
+                       args.adopt_module, args.remove_retired))
+        return 2 if mutable else 0
+    if args.migration_receipt:
+        raw, saved = _load_layout_receipt(target, args.migration_receipt)
+        compare_oid = saved["source"].get("comparison_commit")
+        if compare_oid is not None:
+            if not isinstance(compare_oid, str) or not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", compare_oid):
+                raise ScaffoldSecurityError("invalid layout comparison commit")
+            source = SourceRevision(cairn_root, _resolve_layout_revision(cairn_root, "HEAD"))
+            if not source.includes(compare_oid):
+                raise ScaffoldSecurityError("the layout comparison commit is outside Cairn's history")
+            comparison = SourceRevision(cairn_root, compare_oid)
+        else:
+            source = _layout_target(cairn_root, args.to)
+            comparison = None
+            if source is None:
+                raise ScaffoldSecurityError("the selected source has no repository layout migration")
+        tx, blocked = _layout_plan(target, source, comparison, saved)
+        if blocked:
+            raise ScaffoldSecurityError("\n".join(blocked))
+        tx.apply(raw, _LOCKFILE_REL, _PROFILE_REL,
+                 lambda after, transaction: _layout_guard(args.force, after, transaction))
+        print("Layout reconciliation complete." if comparison else
+              "Layout migration complete. Run --stage for ordinary upgrades.")
+        return 0
+    if any((args.init_lock, args.finalize, args.adopt_collisions, args.adopt_module, args.remove_retired)):
+        return None
+    if args.reconcile_layout is not None:
+        source = SourceRevision(cairn_root, _resolve_layout_revision(cairn_root, "HEAD"))
+        compare_oid = _resolve_layout_revision(cairn_root, args.reconcile_layout)
+        if not source.includes(compare_oid):
+            raise ScaffoldSecurityError("the layout comparison commit is outside Cairn's history")
+        comparison = SourceRevision(cairn_root, compare_oid)
+    else:
+        source = _layout_target(cairn_root, args.to)
+        comparison = None
+        if source is None or not (target / _LOCKFILE_REL).exists():
+            return None
+    tx, blocked = _layout_plan(target, source, comparison)
+    for old, new, action in tx.actions:
+        name = old if old == new else f"{old} -> {new}"
+        print(f"  {action}: {name}")
+    for message in blocked:
+        print(f"  blocked: {message}", file=sys.stderr)
+    if blocked:
+        return 2
+    if _LOCKFILE_REL not in tx.outputs:
+        if comparison is not None:
+            print("No layout reconciliation needed.")
+            return 0
+        return None
+    if args.apply:
+        raise ScaffoldSecurityError("stage the layout migration before applying ordinary upgrades")
+    if args.stage:
+        seed_gitignore(target, (), dry_run=True)
+        digest = tx.stage()
+        _seed_staging_gitignore(target)
+        to_arg = f" --to {source.oid}" if args.to is not None else ""
+        print(f"Apply to the same project with --apply --migration-receipt {digest}{to_arg}")
+    return 0
+
+
 def cmd_upgrade(argv: list[str] | None = None) -> int:
     """`scaffold.py upgrade` -- the adopter upgrade path (Chunk 5/6)."""
     import argparse
@@ -4110,6 +4539,10 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                    help="Write the staged review surface (no swap).")
     p.add_argument("--apply", action="store_true",
                    help="Apply a previously-staged, resolved upgrade.")
+    p.add_argument("--reconcile-layout", metavar="REV",
+                   help="With --stage, compare existing copies against a trusted Cairn revision.")
+    p.add_argument("--migration-receipt", metavar="SHA256",
+                   help="With --apply, authorize the exact staged layout transaction.")
     p.add_argument("--ack-review-only", action="store_true",
                    help="Acknowledge outstanding review-only files so --apply "
                         "proceeds (the #44 completion gate is fail-closed "
@@ -4144,6 +4577,11 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                         "`upgrade --plan`. Authorization is the operator's typed "
                         "digests, never the mutable stage metadata.")
     args = p.parse_args(argv)
+
+    if (args.reconcile_layout is not None and (not args.stage or args.to is not None)
+            or args.migration_receipt is not None and not args.apply):
+        p.error("--reconcile-layout requires --stage without --to; "
+                "--migration-receipt requires --apply")
 
     # The upgrade ACTIONS are mutually exclusive.
     # argparse parses them independently and the dispatch is first-match, so a
@@ -4182,6 +4620,14 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     cairn_root = (Path(args.cairn_root).resolve() if args.cairn_root
                   else _cairn_root())
     templates_root = cairn_root / "templates"
+
+    try:
+        layout_result = _layout_command(args, target, cairn_root)
+    except (ScaffoldSecurityError, OSError, ValueError, TypeError) as exc:
+        print(f"error: upgrade layout transaction refused: {exc}", file=sys.stderr)
+        return 2
+    if layout_result is not None:
+        return layout_result
 
     if args.init_lock:
         return _cmd_init_lock(target, cairn_root, templates_root)

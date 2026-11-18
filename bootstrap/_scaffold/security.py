@@ -188,7 +188,9 @@ def _assert_fanout_contained(dst: Path, target: Path) -> None:
 
 
 def _remove_unchanged_file(
-    path: Path, target: Path, expected: bytes | None, *, _after_walk=None,
+    path: Path, target: Path, expected: bytes | None, *,
+    expected_identity: tuple[int, int, int] | None = None,
+    durable: bool = False, _after_walk=None,
 ) -> bool:
     """Remove *path* only if it is a regular file holding exactly *expected*.
 
@@ -227,6 +229,13 @@ def _remove_unchanged_file(
         raise ScaffoldSecurityError("refusing to remove a path that is not a plain name")
     not_regular = "refusing to remove a non-regular file"
 
+    def matches(data: bytes, opened: os.stat_result) -> bool:
+        return data == expected and (
+            expected_identity is None
+            or (opened.st_dev, opened.st_ino, stat.S_IMODE(opened.st_mode))
+            == expected_identity and opened.st_nlink == 1
+        )
+
     read_flags = os.O_RDONLY
     for name in ("O_NOFOLLOW", "O_NONBLOCK", "O_NOCTTY", "O_BINARY", "O_CLOEXEC"):
         read_flags |= getattr(os, name, 0)
@@ -263,7 +272,7 @@ def _remove_unchanged_file(
         except OSError as exc:
             raise ScaffoldSecurityError(not_regular) from exc
         data, opened = read_open_file(fd)
-        if data != expected:
+        if not matches(data, opened):
             return False
         try:
             now = os.lstat(path)
@@ -324,7 +333,7 @@ def _remove_unchanged_file(
         except OSError as exc:
             raise ScaffoldSecurityError(not_regular) from exc
         data, opened = read_open_file(fd)
-        if data != expected:
+        if not matches(data, opened):
             return False
         try:
             now = os.stat(name, dir_fd=folder, follow_symlinks=False)
@@ -344,11 +353,16 @@ def _remove_unchanged_file(
             return False
         else:
             return False
+        if durable:
+            os.fsync(folder)
         if len(handles) > 1:
             try:
                 os.rmdir(parts[-2], dir_fd=handles[-2])
             except OSError:
                 pass
+            else:
+                if durable:
+                    os.fsync(handles[-2])
         return True
     finally:
         for handle in handles:
