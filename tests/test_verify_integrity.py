@@ -32,7 +32,7 @@ CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap import verify_integrity  # noqa: E402
+from install import verify_integrity  # noqa: E402
 from install.scaffold import main, read_lockfile  # noqa: E402
 
 pytestmark = pytest.mark.skipif(

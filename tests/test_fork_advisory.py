@@ -582,7 +582,7 @@ def test_node11_recorded_hash_never_decides_the_verdict(tmp_path, capsys) -> Non
 
     Perturbation: suppress on ``rec["hash"] == sha256(trusted)``.
     """
-    from bootstrap import verify_integrity  # noqa: PLC0415
+    from install import verify_integrity  # noqa: PLC0415
 
     # (a) the detector directly, over the fixture matrix row.
     case = build_case(tmp_path / "n11", "n11", hash_mode="trusted")
@@ -727,7 +727,7 @@ def test_node10_the_two_callers_differ_on_the_opt_out_and_on_to_ref(
 
     Perturbation: make ``cmd_upgrade`` honour ``fork_acknowledged``.
     """
-    from bootstrap import verify_integrity  # noqa: PLC0415
+    from install import verify_integrity  # noqa: PLC0415
     from install._scaffold.upgrade import cmd_upgrade  # noqa: PLC0415
 
     target = tmp_path / "t"
@@ -840,7 +840,7 @@ def test_node17_a1_trusted_upstream_takes_only_a_cairn_root(tmp_path) -> None:
 # ===========================================================================
 
 def test_node8_advisory_never_changes_the_exit_code(tmp_path, capsys) -> None:
-    from bootstrap import verify_integrity  # noqa: PLC0415
+    from install import verify_integrity  # noqa: PLC0415
 
     case = build_case(tmp_path / "n8", "n8")
     write_lockfile(case.target, case.lock)

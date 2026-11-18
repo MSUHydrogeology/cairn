@@ -43,7 +43,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from install import scaffold as s  # noqa: E402
-from bootstrap import verify_integrity  # noqa: E402
+from install import verify_integrity  # noqa: E402
 
 from tests._repo_root import repository_root
 

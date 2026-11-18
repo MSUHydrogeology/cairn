@@ -235,7 +235,7 @@ class TestInstallOutputEndsWithThePointerToTheList:
 import hashlib  # noqa: E402
 import subprocess  # noqa: E402
 
-from bootstrap import verify_integrity  # noqa: E402
+from install import verify_integrity  # noqa: E402
 
 OLD_HELPER_DSTS = ("scripts/onboarding_activate.py",) + tuple(
     f"scripts/_onboarding/{name}.py" for name in (
