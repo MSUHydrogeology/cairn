@@ -1,7 +1,7 @@
 # Plan: Retry the isolated Git upgrade comparison
 
 **Source proposal**: dev/proposals/archive/2026-11-18-terra-retry-git-upgrade-comparison.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/development-environment.md
@@ -17,9 +17,9 @@ The Maintainer accepted the revised heavy proposal and temporary guest administr
 
 ## Scope
 
-Use the shared `linux-dev` guest described in `dev/rules/development-environment.md`; do not alter other projects or global policy, add packages or create a VM. Create an owned temporary workspace with no host shares. Pin the v0.5.0 source `3bb27388fccaf51ae490e80ca4b4ab94aa5e2206`, a clean candidate commit, guest Python and Git, profile, driver and corpus hashes. The recorded Mac interpreter is `/Users/kendal30/conda_envs/lhm/bin/python3.13`; record the guest runtime actually used. Synthetic inputs only; no production engine, installed contract, trust record or real adopter data changes. No doctrine surface changes.
+Use the shared `linux-dev` guest described in `dev/rules/development-environment.md`; do not alter other projects or global policy, add packages or create a VM. Create an owned temporary workspace with no host shares. Pin the v0.5.0 source `3bb27388fccaf51ae490e80ca4b4ab94aa5e2206`, a clean candidate commit, guest Python and Git, profile, driver and corpus hashes. The recorded Mac interpreter is `/Users/kendal30/conda_envs/lhm/bin/python3.13`; record the guest runtime actually used. Synthetic inputs only; no production engine, installed contract, trust record or real adopter data changes. No doctrine surface changes. Estimated work window: 2 to 4 hours across C1–C3; main uncertainty is tuning the Linux unshare/pidfd/subreaper lifetime and AppArmor canary controls on ARM64 Linux 6.8 and achieving byte-exact v0.5.0 predecessor reconstruction.
 
-The reviewed setup must make a private filesystem, network and PID view and install a unique deny-default AppArmor trial profile. Pinned sources and driver are read-only; only the synthetic writable island W and `/dev/null` are writable. Allow exact Python and Git applications to execute, with loader and libraries read or mapped but not directly executable. Drop setup privilege before trial, deny network, remove the temporary profile and owned workspace afterward, and verify cleanup. No comparison writes precede startup and all C0 controls; no unsafe fallback.
+The reviewed setup must make a private filesystem, network, PID and IPC view and install a unique deny-default AppArmor trial profile. Pinned sources and driver are read-only; only the synthetic writable island W and `/dev/null` are writable. Allow exact Python and Git applications to execute, with loader and libraries read or mapped but not directly executable. Drop setup privilege before trial, deny network, remove the temporary profile and owned workspace afterward, and verify cleanup. No comparison writes precede startup and all C0 controls; no unsafe fallback.
 
 ### Guest setup and launch
 
@@ -31,24 +31,38 @@ stop if missing. No profile load, mount or privileged setup occurs before both
 plan reviews. Run a reviewed fixed Python supervisor using `sudo -n
 /usr/bin/python3.12 -I -B -` on script stdin; never evaluate trial data as shell.
 Create a root-owned `mkdtemp` under `/tmp`, record its device/inode and use a
-128-bit random token for unique profile `cairn-upgrade-<32hex>`. Stage only
+128-bit random token for unique profile `cairn-upgrade-<32hex>`. Write root-only (`0600`)
+`fsync`ed recovery metadata (host boot ID, profile name, owned `mkdtemp` path,
+device/inode, and monitor/PID1 PID plus start time as acquired) in a sibling
+root-only metadata file before loading policy or launching children so abrupt
+supervisor loss leaves verifiable cleanup identifiers. Stage only
 hash-checked regular committed inputs and reviewed scripts using descriptor-
-relative `O_NOFOLLOW` traversal, without hardlinks. Record the existing loaded
+relative `O_NOFOLLOW` traversal, without hardlinks; stage backing `canary` as
+mode `0600` owned by UID `1001` inside a guard staging directory. Record the existing loaded
 profiles. Refuse an existing name; load only the new profile with
 `apparmor_parser -a -K PROFILE` and verify `NAME (enforce)` in
 `/sys/kernel/security/apparmor/profiles`. Never replace another profile.
 
-For each launch, use `Popen` with `start_new_session=True`, fresh environment,
-DEVNULL stdin, anonymous output pipes and only the supervisor lifeline read FD:
-`/usr/bin/unshare --mount --net --pid --fork --kill-child=SIGKILL --propagation
-private /usr/bin/python3.12 -I -B ROOT/ns-init.py`. PID1 mounts a
+Enable `PR_SET_CHILD_SUBREAPER` in the supervisor so if the `unshare` monitor dies
+before guest `PID1`, `PID1` reparents directly to the supervisor rather than init.
+For each launch, keep the supervisor as the sole writer to the lifeline pipe
+(checking EOF and write readiness before fork and during reaping), and use
+`Popen` with `start_new_session=True`, fresh environment, DEVNULL stdin,
+anonymous output pipes and only the lifeline read FD:
+`/usr/bin/unshare --mount --net --pid --ipc --fork --kill-child=SIGKILL --propagation
+private /usr/bin/python3.12 -I -B ROOT/ns-init.py` (do not rely on `--kill-child`
+after privilege drop, since `setuid` clears `PR_SET_PDEATHSIG`). Identify `PID1` as the
+sole live owned child of the `unshare` monitor by verifying `PPid`, `NSpid`, `UID`,
+start time and `/proc/<pid>/fdinfo` showing the inherited lifeline read-end FD, and
+hold separate `os.pidfd_open` handles for both the `unshare` monitor and `PID1` before
+opening `/guard/go`. `PID1` mounts a
 `nosuid,nodev` tmpfs root, populates the pinned copy manifest and binds only W
 at `/w` (nonrecursive, `rw,nosuid,nodev,noexec`), protected canary at `/guard`
 (nonrecursive, `ro,nosuid,nodev,noexec`), and verified character device
 `/dev/null` (major 1, minor 3; `rw,nosuid,noexec`, without `nodev`). Inputs in
 `/inputs` are root-owned read-only. Pivot with ARM64 `pivot_root` syscall 41,
 chdir to `/`, detach and remove `/.old`, then remount root `ro,nosuid,nodev`.
-Mount no proc, sysfs, home, host cwd or shares; keep private loopback down.
+Mount no proc, sysfs, shm, mqueue, home, host cwd or shares; keep private loopback down.
 
 Copy Python to `/usr/bin/python3.12`, Git to `/opt/cairn-trial/bin/git`, and regular files from `dpkg-query -L`
 for `libpython3.12-minimal` and `libpython3.12-stdlib` under
@@ -86,20 +100,38 @@ fresh C environment and PATH containing only the Git parent; HOME and temp are
 under W. No target-installed code executes.
 
 Prove the post-exec profile via syscall 459 (`CURRENT=100`, `SINGLE=1`,
-AppArmor ID 104). Hold the owned child on `/guard/go`; the supervisor checks
-its scoped proc ancestry, IDs, capability sets and NoNewPrivs, then creates the
-gate. Clear it between launches. Missing proof never opens the gate. Check
+AppArmor ID 104). Hold the owned child on `/guard/go`; before creating the gate,
+the supervisor verifies both `PID1` (monitor-child `PPid`, sole child, lifeline
+`fdinfo`, private `mnt`/`net`/`pid`/`ipc` namespace IDs, no `/dev/shm` or
+`/dev/mqueue` paths, and separate monitor/`PID1` `pidfd`s) and `PID2` (`NSpid`,
+matching namespace IDs, zero capability sets, `NoNewPrivs=1`, `Dumpable=0`, and
+`NAME (enforce)`), updates the root recovery metadata with `PID1` start time,
+and then creates `/guard/go`. Clear it between launches. Missing proof never opens
+the gate. Prove the canary positive control with an unconfined helper running as
+the same UID `1001` that writes one byte to `canary` using only a preopened
+host `guard-dirfd`; supervisor observes the changed digest and restores the
+original content. In the confined guest, read `/guard/canary` first to confirm the
+same inode and visibility, then attempt a non-truncating write (`O_WRONLY`/`O_RDWR`
+without `O_CREAT`/`O_TRUNC`) and require `EACCES`, `EPERM` or `EROFS` with
+unchanged parent digest (`ENOENT`/`ENOTDIR` fails C0). Check
 loader direct execution is denied and exact Git starts under the same profile.
 PID1 polls the lifeline and reaps all children; EOF or trial exit kills any remaining namespace processes.
 
 Cap each captured stream at 1 MiB, each command at 60 seconds and driver at
-15 minutes. On failure or timeout kill the owned namespace-init pidfd with
-SIGKILL and reap it; `--kill-child` and the lifeline cover supervisor loss.
+15 minutes. Install handlers for catchable termination signals (`SIGTERM`,
+`SIGINT`), and on exit, timeout, signal or monitor-first loss close the
+supervisor lifeline write FD, track monitor state, send `SIGKILL` to the owned
+`PID1` `pidfd` (and monitor `pidfd` if alive) and reap both `PID1` (via
+`PR_SET_CHILD_SUBREAPER`) and the monitor while checking lifeline EOF. Abrupt
+`SIGKILL` loss of the supervisor leaves only the boot-scoped root recovery
+metadata, loaded profile name and root-owned `mkdtemp` path/device/inode for
+verified post-mortem cleanup.
 Before cleanup verify private mount IDs are gone and the parent mount list has
 no owned paths. In `finally`, remove only the exact loaded profile with
 `apparmor_parser -R -K` on the same bytes; verify its absence and the unrelated
 profile listing. Check the owned root's owner/device/inode and remove by
-FD-safe traversal without following links or mounts. If reaping, profile or
+FD-safe traversal without following links or mounts; remove the sibling root
+recovery metadata file only after verified cleanup succeeds. If reaping, profile or
 path verification is uncertain, stop and report the exact owned residual;
 never blindly remove it. Record source-controlled reviewed supervisor input if
 needed for reproducibility, not a separate evidence ledger.
@@ -116,9 +148,9 @@ needed for reproducibility, not a separate evidence ledger.
 
 ## Acceptance criteria
 
-**C1.** Under the same final restrictive profile, the pinned Python `-I -B -c` constant print succeeds after privilege drop. The known-absent marker remains absent. A write to a protected outside canary is denied and its parent-observed digest unchanged; deliberately alter W's outside sentinel, detect it and restore it. A controlled guest-side unsandboxed loopback reaches its listener; the confined child cannot connect and is not observed. The verified read helper returns the exact synthetic root and refuses `push --all` without launch. Record exact commands, profile and hashes, outputs and limits. Failure stops comparison writes and remains incomplete; earlier broad-read probes do not satisfy C0.
+**C1.** Under the same final restrictive profile, the pinned Python `-I -B -c` constant print succeeds after privilege drop. Verify private `mnt`, `net`, `pid` and `ipc` namespace IDs differ from parent and zero `/dev/shm` or `/dev/mqueue` paths exist in guest mounts or policy; prove subreaper, separate monitor/PID1 `pidfd`s, lifeline EOF and root recovery metadata behavior without relying on `--kill-child` after `setuid`. The known-absent marker remains absent. Prove the canary positive control with an unconfined UID-`1001` write of one byte via only a preopened `guard-dirfd` (parent observes change and restores), then inside confinement read the mode-`0600` `/guard/canary` (proving the exact same inode) and require `EACCES`/`EPERM`/`EROFS` on a non-truncating write with parent-observed digest unchanged (`ENOENT`/`ENOTDIR` fails C0); deliberately alter W's outside sentinel, detect it and restore it. A controlled guest-side unsandboxed loopback reaches its listener; the confined child cannot connect and is not observed. The verified read helper returns the exact synthetic root and refuses `push --all` without launch. Record exact commands, profile and hashes, outputs and limits. Failure stops comparison writes and remains incomplete; earlier broad-read probes do not satisfy C0.
 
-**C2.** Reconstruct each recorded predecessor destination from verified base hashes, conditional sizing and tokens, with the actual security-module merge for `AGENTS.md` and onboarding overlay for `dev/PLANNING.md`. Compare bytes against an independently saved clean install; classify unrecorded install outputs. A mismatch stops the Git leg. From identical customizations run benign, committed leaf-link and committed linked-parent variants through both Git merge and public `upgrade --plan`, `--stage`, `--apply` (six cells). Record conflicts, marker preservation, sentinel and outside changes, operator steps, modules exercised, migration result, timings, platform, versions, hashes, exclusions and limits. Classify all 37 pinned hostile functions and parameter classes applicable, inapplicable or untested, with reason and remaining mechanism; this is not a security-equivalence claim.
+**C2.** Reconstruct each recorded predecessor destination from verified base hashes, conditional sizing and tokens, with the actual security-module merge for `AGENTS.md` and onboarding overlay for `dev/PLANNING.md`. Compare bytes against an independently saved clean install; classify unrecorded install outputs. A mismatch stops the Git leg. Verify Git ancestry before running the cells: the reconstructed predecessor commit `T0` must be the sole direct parent (`parents == [T0]`) of both candidate template commit `T1` and each synthetic adopter base commit, confirmed with `git merge-base`. From identical customizations run benign, committed leaf-link and committed linked-parent variants through both Git merge and public `upgrade --plan`, `--stage`, `--apply` (six cells). Record conflicts, marker preservation, sentinel and outside changes, operator steps, modules exercised, migration result, timings, platform, versions, hashes, exclusions and limits. Classify all 37 pinned hostile functions and parameter classes applicable, inapplicable or untested, with reason and remaining mechanism; this is not a security-equivalence claim.
 
 **C3.** On success or failure, remove only the owned profile and scratch root without following planted links; verify absence and unchanged unrelated policy and projects. Failure to establish cleanup stays open. No routine human action is a final chunk.
 
@@ -168,3 +200,16 @@ Reviewed commit: c76e760454972011ff37eed18a31a9f4cae9de64
 **Blocking — canary false pass.** Specify a mode-0600 canary writable by the trial UID before confinement, prove the confined probe can read that same file, and require a permission or read-only denial at the attempted write with the parent digest unchanged. Missing-path errors fail C0. See Guest setup and launch, C1 and archived C0.
 
 **Coverage:** Read the Decision, both plans, template and verifier source. No guest setup, controls, baseline reconstruction, comparisons or tests ran. Elapsed: unknown. Tokens: unknown.
+
+## Author Response -- Orchestrator (Argon, High) -- 2026-11-18
+
+**Disposition**: ready-to-implement
+
+All plan review findings are accepted and folded into the operative plan text per the prepared High security corrections:
+
+- **Estimated work window (`gpt-6.1-terra`, non-blocking)**: Added a 2–4 hour work window across C1–C3 and its primary technical uncertainty under `## Scope`.
+- **Process lifetime (`gpt-6.2-sol`, blocking)**: Replaced post-`setuid` reliance on `--kill-child` (`PR_SET_PDEATHSIG` clears across credential drop) with supervisor `PR_SET_CHILD_SUBREAPER`, sole-writer lifeline pipe, `PPid`/`NSpid`/`UID`/start-time/`fdinfo` identification of guest `PID1` as the monitor's sole live child before opening `/guard/go`, separate `os.pidfd_open` handles for monitor and `PID1`, catchable signal handlers (`SIGTERM`/`SIGINT`), lifeline EOF checks on reap, and boot-scoped root-only (`0600`) `fsync`ed recovery metadata for abrupt supervisor loss.
+- **Shared guest IPC (`gpt-6.2-sol`, blocking)**: Added `--ipc` to `unshare`, required verifying `mnt`/`net`/`pid`/`ipc` namespace ID isolation on both `PID1` and `PID2`, and prohibited `/dev/shm` and `/dev/mqueue` mounts or AppArmor paths.
+- **Canary false pass & `T0` ancestry (`gpt-6.2-sol`, blocking)**: Specified staging `/guard/canary` as mode `0600` owned by UID `1001` under a read-only `/guard` bind, proving positive writability via an unconfined UID-`1001` write using only a preopened host `guard-dirfd` (observed and restored by parent), then proving the confined child reads that exact same inode before receiving `EACCES`/`EPERM`/`EROFS` on a non-truncating write with unchanged digest (`ENOENT`/`ENOTDIR` fails C0). Added explicit `C2` check that reconstructed predecessor `T0` is the sole direct parent of candidate template `T1` and each synthetic adopter base commit via `git merge-base`.
+
+Elapsed: unknown. Tokens: unknown.
