@@ -1,7 +1,7 @@
 # Plan: Run and development rules
 
 **Source proposal**: [Run rules apart from development rules](../proposals/archive/2026-11-16-claude-run-and-development-rules.md)
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: `dev/rules/protected-surfaces.md`, `dev/rules/conventions.md`, `dev/rules/working-agreements.md`

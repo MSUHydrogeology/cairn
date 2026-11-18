@@ -130,3 +130,9 @@ the five tool help commands ran. Claim, link, snippet, neutrality and Cairn
 prose checks passed on the applicable changes under Python 3.13.13. No wording
 tests or full suite were run. No installed item was removed. Elapsed: unknown;
 tokens: unknown.
+
+**Benefit versus cost**: worth it -- five supporting commands now have purpose
+and discovery pointers in four existing guides. No installed file, always-loaded
+text or recurring check was added. Audit and help-command runtime and aggregate
+agent time are unknown. Revisit if an adopter cannot find an installed item or
+navigation no longer follows the install mapping.
