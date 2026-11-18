@@ -150,3 +150,34 @@ the original confinement outcomes, stop conditions and comparison remain.
 3. **What would show it wrong?** A failed confined startup or C0 control stops comparison writes; an unmatched baseline, outside write or missing cell prevents a complete favorable result. -- Proposal, Evidence / verification plan
 
 The widened candidate keeps both reconstruction fixes, matched variants and all 37 classifications. It prohibits global policy weakening and effects on other projects, drops privilege for the trial and removes its temporary profile. It is expressly untested; the reviewed plan must bind the setup and controls, with novel boundary design at the applicable High floor. No Maintainer technical trial is planned. No doctrine or installed contract change is proposed. Coverage: compared the committed revision, prior reviews, response and archived C0–C1; did not set up the guest, probe its kernel, run controls or assess the security boundary. A separate Security Review of the widened proposal remains required.
+
+## Review -- Codex Sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: ef494b3befb1fb7479dd6a2fad4b7f3e204dad30
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown.
+**Tokens**: unknown.
+
+A confined retry could expose which upgrade path preserves project edits.
+The new administrator request needs review because the prior Mac and
+unprivileged Linux attempts never established a qualified launch.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, the Maintainer can decide on temporary setup in the existing guest. Private filesystem, network and process views and a named deny-default profile limit the request. The trial drops setup privilege, permits only pinned Python and Git to execute, maps the loader without permitting direct execution, writes only to the synthetic island and `/dev/null`, and removes the profile afterward. — Proposal and S1–S5.
+2. **Best alternative.** Leave the trial incomplete to avoid guest administration and cleanup. The cost is six unobserved comparison cells and outstanding classification of 37 hostile cases. — Alternatives considered, archived trial plan C1.
+3. **What would show it wrong?** Under the final profile, failed Python startup, an outside write, an undetected sentinel change, unexpected loopback behavior or a read-helper failure stops comparison writes. An unmatched old baseline stops the Git leg. — Examples / smoke checks, archived trial plan C0–C1.
+
+If the Maintainer grants setup access, a reviewed plan must fix
+the exact setup before administrator use. Startup and every old C0
+control must pass before comparison writes. Both missing overlays, all
+six cells and the full hostile-case assessment remain due. Existing
+protections remain in force. No broader fallback or engine replacement
+is authorized.
+
+**Coverage.** Compared the committed revision and prior review with the
+accepted trial and archived evidence. No guest setup, launch, controls,
+baseline reconstruction or comparison was run.
