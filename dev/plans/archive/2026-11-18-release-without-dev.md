@@ -252,3 +252,12 @@ The correction routes temporary working material to ignored scratch while keepin
 **Rule retention and audience.** Compared all four changes with their parents: checker placement, keeping scripts and briefs out of the artifact, carrying criteria and results, and path-and-commit citation for committed briefs remain. Temporary briefs now follow the accepted scratch rule instead of requiring a committed citation. These instructions address agents without requiring a person-level decision; the installed templates and installed collaboration rule retain the applicable duties. No findings.
 
 **Coverage.** Read the four committed diffs and both collaboration rules. Did not replay author checks, examine other templates, or conduct Security Review; this is a prose-only ordinary review.
+
+## Group 4 joined integration -- Terra (Implementation) -- 2026-11-18
+
+At clean `ced48b35`, the single joined selection covered the public all-module install manifest, scratch upgrade and retained-project release, outward-report template upgrade, module adoption and inventory, installed release-boundary report, and installed measurement command. Seven tests passed in 17.01 seconds under Python 3.13.13. The native Windows boundary control passed separately in 5.52 seconds under Python 3.13.18 x64 at `ab4bc91b`. The subsequent scratch-pointer correction `a3401200` changed prose only and received an ordinary ACCEPT at `47ca72f1`; its prose gates are recorded above. No full suite or release certification ran.
+
+Issue #72 is resolved by the accepted alternative: support tests in either location without forcing a move. A universal default and automatic pytest migration were not adopted. Issues #67 and #75 retain release-cut and keep-list work in the existing v0.9 row.
+
+**Elapsed**: unknown
+**Tokens**: unknown
