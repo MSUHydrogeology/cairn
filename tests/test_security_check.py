@@ -1303,7 +1303,7 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
         '("release/x.py",), "Fixture."),)\n'
     )
     old_count_guard = (
-        'if len(grouped["nt"]) != 63 or len(grouped["posix"]) != 285:'
+        'if len(grouped["nt"]) != 63 or len(grouped["posix"]) != 361:'
     )
     assert manifest.count(old_count_guard) == 1
     manifest = manifest.replace(

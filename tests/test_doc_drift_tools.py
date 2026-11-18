@@ -109,9 +109,9 @@ def _commit_tree(root: Path) -> None:
 
 
 _BOUND_CALLERS = (
-    "scripts/link_check.py",
+    "dev/tools/link_check.py",
     "templates/modules/team-gated/link_check.py",
-    "scripts/sync_doc_snippets.py",
+    "dev/tools/sync_doc_snippets.py",
     "templates/modules/team-gated/sync_doc_snippets.py",
 )
 
@@ -144,10 +144,12 @@ def _bound_cli_tree(base: Path, rel: str, helper_bytes: bytes, *,
     shutil.copyfile(CAIRN_ROOT / rel, caller)
     if rel.startswith("templates/modules/team-gated/"):
         helper_rel = Path("templates") / "skills" / "_lib" / "git_read.py"
+    elif rel.startswith("dev/tools/"):
+        helper_rel = Path("dev") / "tools" / "git_read.py"
     else:
         helper_rel = Path("tools") / "git_read.py"
     helper = delivery / helper_rel
-    helper.parent.mkdir(parents=True)
+    helper.parent.mkdir(parents=True, exist_ok=True)
     if literal_wildcard:
         helper_bytes = _literal_wildcard_helper(helper_bytes)
     helper.write_bytes(helper_bytes)
@@ -442,8 +444,8 @@ def test_each_markdown_owner_refuses_hostile_git_and_catches_path_route_mutant(
 
 @pytest.mark.parametrize(
     "kind,rel",
-    [("link", "scripts/link_check.py"),
-     ("snippet", "scripts/sync_doc_snippets.py")],
+    [("link", "dev/tools/link_check.py"),
+     ("snippet", "dev/tools/sync_doc_snippets.py")],
 )
 def test_real_discovery_cli_finds_planted_issue_without_decoy(
     tmp_path: Path, kind: str, rel: str,
@@ -476,8 +478,8 @@ def test_real_discovery_cli_finds_planted_issue_without_decoy(
 )
 @pytest.mark.parametrize(
     "kind,rel",
-    [("link", "scripts/link_check.py"),
-     ("snippet", "scripts/sync_doc_snippets.py")],
+    [("link", "dev/tools/link_check.py"),
+     ("snippet", "dev/tools/sync_doc_snippets.py")],
 )
 def test_real_discovery_cli_keeps_broken_file_with_decoy_and_catches_literal_mutant(
     tmp_path: Path, kind: str, rel: str,

@@ -336,16 +336,13 @@ handles_only = pytest.mark.skipif(
 )
 
 
-@pytest.fixture(params=[HANDLES, BY_PATH])
+@pytest.fixture(params=[pytest.param(HANDLES, marks=handles_only), BY_PATH])
 def branch(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> str:
     """Run a test over both removal branches.
 
     `by path` is forced on POSIX by hiding `rmdir` from `os.supports_dir_fd`."""
     if request.param == BY_PATH:
         monkeypatch.setattr(os, "supports_dir_fd", set(os.supports_dir_fd) - {os.rmdir})
-    elif not (hasattr(os, "O_DIRECTORY") and hasattr(os, "O_NOFOLLOW")
-              and {os.open, os.unlink, os.rmdir, os.stat} <= os.supports_dir_fd):
-        pytest.skip("no folder-relative unlink on this platform")
     return request.param
 
 

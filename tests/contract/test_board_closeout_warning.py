@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -80,13 +81,11 @@ def test_non_plain_modes_do_not_warn(tmp_path, capsys):
             assert json.loads(out)["schema"] == "cairn-board/1"
 
 
+@pytest.mark.skipif(os.name == "nt", reason="Windows forbids control characters in filenames")
 def test_warning_escapes_untrusted_name_and_never_shows_closeout(tmp_path, capsys):
     name = "2026-01-01-\x1b" + "x" * 105 + ".md"
     assert len(name) == 120
-    try:
-        _plan(tmp_path, body="Not run: PRIVATE\x1b\x01 text\n", name=name)
-    except OSError:
-        pytest.skip("filesystem refuses ESC in a name")
+    _plan(tmp_path, body="Not run: PRIVATE\x1b\x01 text\n", name=name)
     code, out, err = _run(tmp_path, capsys=capsys)
     assert code == 0
     assert "\x1b" not in err and "\x01" not in err
