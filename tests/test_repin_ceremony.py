@@ -49,6 +49,7 @@ CLOSURE = ["release/REANCHOR_RUNBOOK.md", "release/reanchor-launcher.template.sh
            "tests/fixtures/protected_test_roster.json",
            "dev/.cairn/allowed_signers"]
 MAPS = "install/_scaffold/maps.py"
+EMPTY_MAPPINGS = "_MODULE_MAPPINGS = {}\n_SKILLS_MAPPINGS = {}\n_CORE_MAPPINGS = {}\n"
 RECORD = "dev/ceremony-record.md"
 LAUNCHER_TEMPLATE = REAL / "release/reanchor-launcher.template.sh"
 _repin_spec = importlib.util.spec_from_file_location("repin_ceremony_tests", REAL / "release/repin.py")
@@ -185,7 +186,7 @@ def ceremony_template(template, tmp_path_factory):
     bed.write("tests/test_smoke.py", "def test_smoke():\n    assert True\n")
     for rel in ("tests/test_repin.py", "tests/test_repin_ceremony.py"):
         bed.write(rel, (REAL / rel).read_bytes())
-    bed.write(MAPS, "_MODULE_MAPPINGS = {}\n_SKILLS_MAPPINGS = {}\n_CORE_MAPPINGS = {}\n")
+    bed.write(MAPS, EMPTY_MAPPINGS)
     bed.write(BASELINE, _dump({**A.digest_module(bed.repo / ENGINE), **A.digest_module(bed.repo / MAPS)}))
     bed.pin("signed anchor")
     sh("ssh-keygen", "-q", "-p", "-P", "", "-N", PASSPHRASE, "-f", str(bed.key), cwd=root, env=bed.env)
@@ -309,11 +310,12 @@ def _layout_bed(root):
     for rel in (retained, removed):
         bed.write(rel, "def test_layout_probe():\n    pass\n")
     legacy_outputs = {"bootstrap/" + path: path for path in (BASELINE, KNOWN_NEW, MANIFEST)}
-    legacy_outputs[ENGINE.replace("install/", "bootstrap/", 1)] = ENGINE
-    bed.write("bootstrap/" + BASELINE, "{}\n")
+    legacy_engine = ENGINE.replace("install/", "bootstrap/", 1)
+    legacy_outputs[legacy_engine] = ENGINE
+    bed.write(legacy_engine, EMPTY_MAPPINGS)
+    bed.write("bootstrap/" + BASELINE, _dump(A.digest_module(bed.repo / legacy_engine)))
     bed.write("bootstrap/" + KNOWN_NEW, "{}\n")
     bed.write("dev/.cairn/cairn-lock.yml", "{}\n")
-    bed.write(ENGINE.replace("install/", "bootstrap/", 1), "x = 1\n")
     frozen = {path: hashlib.sha256((bed.repo / path).read_bytes()).hexdigest()
               for path in (*pairs, retained, removed, old_roster)}
     bed.write("bootstrap/" + MANIFEST, _dump({
