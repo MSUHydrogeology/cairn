@@ -38,14 +38,14 @@ from pathlib import Path
 CAIRN_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap._scaffold.lockfile import (  # noqa: E402  (trust anchor: narrowest owner, plan 0B.3 / Stage 5)
+from install._scaffold.lockfile import (  # noqa: E402  (trust anchor: narrowest owner, plan 0B.3 / Stage 5)
     _LIVING_STATE_DSTS,
     _LOCKFILE_REL,
     format_forked_facade_warning,
     forked_facade_findings,
     read_lockfile,
 )
-from bootstrap._scaffold.install import trusted_upstream  # noqa: E402  (fork-advisory comparison source)
+from install._scaffold.install import trusted_upstream  # noqa: E402  (fork-advisory comparison source)
 
 
 #: The slot markers and the customized marker an adopter adds inside a slot
