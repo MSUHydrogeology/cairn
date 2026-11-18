@@ -1,7 +1,7 @@
 # Plan: Release without the development tree
 
 **Source proposal**: `dev/proposals/archive/2026-11-17-codex-release-without-dev.md`
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: `dev/rules/conventions.md`, `dev/rules/working-agreements.md`, `dev/rules/protected-surfaces.md`
@@ -122,3 +122,12 @@ native-platform checks and installer runs were outside this pass.
 **Tokens**: unknown
 
 Accepted the index-evidence finding. Scope now retains index mode and stage, requires a regular stage-zero README and a contained readable root table, and reports incomplete when that table is unavailable. C1 adds installed-command controls for untracked and nonregular indexed root guides. This restores the accepted tracked-folder report without changing its boundary.
+
+## Implementation evidence -- Terra (Implementation) -- 2026-11-18
+
+Implementation is in `d06c0fc4`, with the selected-input refusal control in the next commit. Installed report tests cover clean and finding outcomes, index-backed folder guides, unknown and unsafe inputs, selected-file links and non-UTF-8 data. Fresh-install manifest, upgrade scratch preservation, two test locations and retained tests without development files passed. The focused install/upgrade collision controls and three release-scan controls passed. Python: 3.13.13. Claim, snippet and neutrality passed; link checking reported seven historical changelog links. Native Windows, full suite, signing and baseline were not run. Independent ordinary and Security reviews and the joined Group 4 integration remain.
+
+**Benefit versus cost**: unknown -- advisory inspection and folder guidance delivered; measured total cost and continuing burden unknown; revisit after adoption and integration.
+
+**Elapsed**: unknown
+**Tokens**: unknown
