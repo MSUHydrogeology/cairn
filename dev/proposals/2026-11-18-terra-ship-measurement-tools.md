@@ -1,7 +1,7 @@
 # Ship the existing measurement tools to adopters
 
 **Author**: Terra (Implementation)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -13,47 +13,66 @@
 
 ## Decision summary
 
-Adopters cannot install two existing Cairn tools that help keep instructions small and numbers current. Add the token estimator to the documentation-plan module and the count checker to claim-check, each with a short installed guide paragraph. The count checker also needs its measurement support and an initially empty registry that adopters can maintain without losing their entries on upgrade. The changes add installed files and maintenance of their release and upgrade records; count definitions still require human work. The estimator may use a clearly labelled approximation, and neither tool makes a count correct by itself. Cairn's separate audit report remains internal.
+Ship two commands that help keep instructions small and published numbers current. The documentation-plan module gains a token-estimate command. Claim-check gains a count-checking command, its support code and an empty settings file for count definitions. For example, an adopter can register the number of files in a directory and check an annotated claim after the directory changes. Both guides gain a usage paragraph. The settings survive upgrades, and the shipped Python stays under integrity checking. Cairn must maintain four added files in the install and upgrade records. Adopters who use the checker review definitions in Git. Token estimates are approximate. Counts come from the adopter project, and history counts need supported Git.
 
 ## Context
 
-`tests/token_budget.py` detects common always-loaded files or accepts an explicit list, labels its estimator, and warns by default; `--strict` is optional. `tests/verify_counts.py` loads sibling `tests/measurements.py`, whose registry currently contains Cairn-specific entries and whose verified Git helper is loaded eagerly. Copying the checker alone cannot work. The installer maps module files in `install/_scaffold/config.py`; the selected modules already install guides and tools. The board's Group 4 row records the Maintainer's direction to ship these tools with an empty adopter registry.
+`tests/token_budget.py` optionally imports a tokenizer. The pair `tests/verify_counts.py` and `tests/measurements.py` bundles Cairn definitions, a pinned Git reader and a Cairn installer import. `tests/check_cairn.py` uses it for Cairn's docs. Copying that pair also derives the wrong project root. Group 4 in `dev/PLANNING.md` calls for an empty adopter registry.
 
 ## Proposal
 
-Deliver in v0.8 through the existing module installation and upgrade paths. Ship the existing token estimator with documentation-plan and the existing count checker with claim-check under `dev/tools/`. Supply the measurement support and any existing pinned helper it actually needs, using the existing verified helper and install ownership mechanisms; provide an empty adopter registry rather than Cairn's entries. Preserve the checker's key-only annotations, contained measurement behavior, visible skips and refusal of unknown keys. An adopter can add reviewed measurements and retain them through normal upgrades; use the existing managed-customization and baseline mechanisms rather than silently replacing their work. Keep Cairn's own measurements and `tests/audit_report.py` internal.
+Deliver in v0.8 through the existing module install and upgrade paths. Adapt the current commands and reuse their parsing and measurement code while preserving Cairn's internal entry points, definitions, preset count and audit report. The installed estimator uses the standard-library characters-divided-by-four estimate, labelled in text and JSON. It detects common always-loaded files at the installed project root or accepts a list from the operator. Keep warnings by default and strict caps opt-in.
 
-Add a concise paragraph to each installed module guide: purpose, invocation, limitations and how to supply the applicable file list or register counts. Explain the approximation and opt-in strict mode for token estimates, and the empty starting registry for counts. Update applicable published install inventory, lock and release-quality records through existing processes. Keep shipped code standard-library-only. If implementation needs a new runtime trust boundary or a design beyond these existing contracts, stop for strategy and review before choosing it.
+Seed `dev/.cairn/measurements.json` with an empty object. Read it as data at that fixed location and refuse links that escape the project. Each key selects a dated snapshot or a count of lines, files, Python definitions or commits in a Git revision range. Reject invalid types, unknown fields and duplicate keys. A document annotation only selects a key. Default to the project root above the installed `dev/tools/` directory. A definition may select a project-relative subdirectory as its root. Check containment before reporting an absent root as a skip. Refuse file targets or inspected descendants that resolve outside the selected root. Use a fixed, bounded offline Git read after confirming that the selected root is the worktree root. Treat the validated range only as revisions. The existing helper requires Git 2.45 or later for history reads. Cairn's project-specific preset module count and sibling-checkout measurements stay internal.
+
+Manage only the JSON file as mergeable project state through the existing lock and baseline rules. Manage all three Python files as integrity-checked sources. Reuse the existing caller-pinned helper binding at `dev/tools/git_read.py`, with its unconditional owner and no fallback path. Add each command's purpose, invocation and limits to its module guide. The checker reports zero checks explicitly when the named files contain no annotations, reports skips separately and fails on unknown keys.
+
+| Module | Source | Installed path |
+|---|---|---|
+| documentation-plan | `templates/modules/default-on/token_budget.py` | `dev/tools/token_budget.py` |
+| claim-check | `templates/modules/default-on/verify_counts.py` | `dev/tools/verify_counts.py` |
+| claim-check | `templates/modules/default-on/measurements.py` | `dev/tools/measurements.py` |
+| claim-check | `templates/modules/default-on/measurements.json` | `dev/.cairn/measurements.json` |
+
+Proposed paths:
+- `templates/modules/default-on/token_budget.py`
+- `templates/modules/default-on/verify_counts.py`
+- `templates/modules/default-on/measurements.py`
+- `templates/modules/default-on/measurements.json`
+- `dev/tools/token_budget.py`
+- `dev/tools/verify_counts.py`
+- `dev/tools/measurements.py`
+- `dev/.cairn/measurements.json`
 
 ## Rationale
 
-These are working tools with a direct purpose for adopters. Shipping their necessary support and guidance makes the existing capability usable without prescribing a new reporting system.
+A small data reader reuses the counters and limits definition edits to choosing what gets counted.
 
 ## Alternatives considered
 
-Leave both internal: no install maintenance, but adopters must build or copy the same tools and reconcile their dependencies themselves.
+Leaving both internal avoids install maintenance and leaves adopters to assemble the tools themselves. An editable Python registry reuses the current import but gives each definition edit authority to run code as the operator and conflicts with the existing adopted-Python integrity gate.
 
 ## Documentation / doctrine surface
 
-Installed module guides in `templates/modules/default-on/` carry usage and the relevant practice; published install and tool descriptions reflect the delivered paths. No governing methodology change is proposed.
+Update the installed module guides, published install inventory, tool descriptions and release records.
 
 ## Evidence / verification plan
 
 ### Tests required
 
-Exercise the real installer and upgrade entry points with the relevant modules selected: a fresh install has working tools and an empty registry, and an upgrade preserves a registered adopter measurement. Extend existing manifest and module-upgrade tests for missing support or overwritten customization. Through installed commands, check a known registered count, a mismatched count and an unknown key; check the estimator's explicit files, labelled estimate and opt-in strict cap. A missing helper, Cairn registry entry, lost customization or silent unknown-key success falsifies delivery. Use existing `tests/test_manifest.py`, `tests/test_upgrade_module_additions.py` and relevant tool tests, selecting affected nodes in the plan.
+Use public install, upgrade and integrity commands to check the empty seed, definition preservation and rejection of changed support. Extend `tests/test_manifest.py` and `tests/test_upgrade_module_additions.py`. Through the installed checker, exercise zero checks, match, drift, skip, unknown key, invalid definition, path escape, Git count and rejection of changed helper bytes. Test explicit token files, labelled output and strict caps. Map affected nodes in the plan, including `tests/test_verify_counts.py` where behavior is shared.
 
 ### Examples / smoke checks
 
-Run the installed commands in a disposable project and the applicable prose and quality gates; use the published manifest and existing release checks to confirm the installed roster. No full certification is implied.
+Run both commands from outside a disposable install. Check the installed roster and guides with applicable prose and release gates.
 
 #### Security preflight — five questions, answered in writing
 
-- **S1:** The installer receives module selections and target paths from the operator; the count checker reads document annotations and a project-maintained code registry. An annotation supplies a key, not executable code or a path.
-- **S2:** An unknown key must fail; a deliberately wrong registered count must report drift. A changed helper must fail its existing pinned verification. Exercise these negative controls on the installed delivery.
-- **S3:** The installed checker is invoked on named documents and checks their annotations against the registry. The installed guide must say this same scope and its initial empty state; its final wording is reviewed against the actual command.
-- **S4:** Unknown keys and measurement errors report failure; missing roots are visible skips. The estimator labels its fallback and strict mode is opt-in. Existing install collision and customization protections remain in force.
-- **S5:** A document author can choose annotations but cannot supply a command through one; a person able to alter the executable registry can still change what it executes. Review that project-owned code before trusting it.
+- **S1:** The operator chooses the modules, install target and input files. The project maintains the JSON definitions. Document authors supply numbers and keys. For snapshots, the reviewed definition supplies the frozen value and date.
+- **S2:** Change a cited count to provoke drift. Add an unknown key, supply an escaping target or alter a pinned helper byte to provoke failure. Registry edits must pass integrity verification while a support code edit fails.
+- **S3:** Run `python dev/tools/verify_counts.py <file> ...`. The guide will say “The command checks annotations in the named files. The registry starts empty. With no annotations, the command reports zero checks.”
+- **S4:** An invalid or missing registry, unknown key, or measurement error fails. An absent contained root skips visibly. Zero annotations report zero checks. Install collision and customization protections still apply.
+- **S5:** A registry editor can change what a key counts, including its date and value for a snapshot, so the adopter reviews definitions in Git. The checker dispatches only the fixed operations. The operator still trusts the installed Python entry point and host Git.
 
 ### Independent scientific check
 
@@ -61,7 +80,7 @@ N/A: no scientific assumption or result touched.
 
 ## Signals the change is wrong
 
-A normal install cannot execute the tools, project entries disappear on upgrade, or maintaining the registry costs more than the measurements save.
+A normal install cannot execute the tools, local entries disappear on upgrade, or maintaining the definitions costs more than the measurements save.
 
 ## Scope delta
 
@@ -69,7 +88,7 @@ A normal install cannot execute the tools, project entries disappear on upgrade,
 
 ## Assurance path
 
-**Assurance path**: high-assurance. The installer contract and adopter-executed Python change; the engine change also requires Security Review. A plan is needed to specify the exact existing ownership and helper handling before implementation.
+**Assurance path**: high-assurance. The plan and implementation require ordinary and Security reviews because this changes the install contract and adopter-executed Python.
 
 ## Review -- Terra (Reviewer) -- 2026-11-18
 
@@ -113,3 +132,17 @@ Reviewed commit: 73c2a6c5723c6d6b1b50767ec97b54417b67e04e
 - **Blocking — define honest defaults.** The estimator automatically imports optional third-party code. Use a labelled standard-library estimate in the installed command. The checker exits successfully on zero matches. Make the empty seed and zero verified claims explicit in the command and guide, while preserving unknown-key failure and distinct visible skips. Exercise these through the installed commands. `tests/token_budget.py:52-61`, `tests/verify_counts.py:191-246`, `RULES.md`.
 
 Coverage: committed source and named test paths, with no implementation, installer, command, suite or platform execution.
+
+## Response -- Sol (Strategy, High) -- 2026-11-18
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+- **Registry boundary:** accepted. A JSON definitions file stays in the existing mergeable project-state class. The adopted-Python source gate in `templates/modules/team-gated/run_security_audit.py` hashes every adopted Python file, so exempting an editable Python registry would either break that check or weaken it. The shipped support stays checked. The currently installed Git helper and the source in `templates/skills/_lib/git_read.py` have matching bytes and the existing caller pin. The proposal names the root, supported operations and adopter review authority. The count checker needs changes to its support and loading path as well as its command.
+- **Honest defaults:** accepted. The installed estimator always uses the labelled standard-library estimate. The checker distinguishes zero checks, skips and failed claims. A parsed empty seed contains no Cairn-specific definitions.
+
+The new public JSON input was a design option in the first Security Review, but that pass could not assess the chosen schema and authority. A focused second Security pass should check whether the declared fields can select an escaping target or an unintended Git read and whether the single integrity exclusion leaves Python checked. I inspected source and checked the helper digest. Installer, upgrade and runtime behavior remain unverified.
+
+### Withdrawn / superseded commitments
+
+The review draft's executable registry becomes data. Cairn's preset module count and sibling-checkout behavior remain available through its internal tools. The installed command covers its own project, with distinct skips for absent subdirectories.
