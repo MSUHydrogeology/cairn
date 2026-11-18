@@ -2000,6 +2000,8 @@ def _parse_worktree_porcelain_z(raw: bytes, common_dir: Path) -> list[dict[str, 
         if wt_cdir.resolve() != common_dir.resolve():
             raise ValueError(f"worktree common directory mismatch: {wt_path}")
         wt_gdir = Path(gdir_proc.stdout.strip())
+        if (wt_gdir / "shallow").exists() or (wt_cdir / "shallow").exists():
+            raise ValueError(f"shallow worktree is refused: {wt_path}")
         if wt_gdir.resolve() == common_dir.resolve():
             if seen_main:
                 raise ValueError("duplicate main worktree in inventory")
@@ -2101,6 +2103,7 @@ def _collect_source_inventory(runner, session, repo_root: Path, head: str) -> di
         "source": pinned,
         "refs": refs_sorted,
         "heads": heads_sorted,
+        "raw_roots": raw_roots,
         "roots": sorted(peeled_roots),
     }
 
@@ -2139,7 +2142,7 @@ def _freeze_history(manifest_path: Path) -> int:
             inv_before = _collect_source_inventory(runner, session, CAIRN_ROOT, head)
             rev_proc = _git_at(
                 CAIRN_ROOT, "rev-list", "--objects", "--no-object-names",
-                "--missing=print", *inv_before["roots"], "--",
+                "--missing=print", *inv_before["raw_roots"], "--",
             )
             if rev_proc.returncode != 0:
                 raise ValueError("rev-list object enumeration failed")
@@ -2208,9 +2211,47 @@ def _validate_frozen_manifest(manifest_path: Path, expected_head: str) -> tuple[
     obj_meta = _exact_keys(manifest["objects"], {"count", "objects_sha256"}, "manifest objects")
     if type(obj_meta["count"]) is not int or obj_meta["count"] <= 0 or not _is_sha256(obj_meta["objects_sha256"]):
         raise ValueError("frozen history object summary is malformed")
+    if (type(manifest["source"]) is not dict
+            or type(manifest["refs"]) is not list
+            or type(manifest["heads"]) is not list):
+        raise ValueError("frozen history manifest inventory fields are malformed")
     if type(manifest["roots"]) is not list or not manifest["roots"] or any(not _is_full_sha(r) for r in manifest["roots"]):
         raise ValueError("frozen history roots are malformed")
     return manifest, pack_bytes, manifest_sha256
+
+
+def _projected_manifest_oids(manifest: dict) -> list[str]:
+    return [
+        str(row["oid"]) for row in manifest["refs"]
+    ] + [
+        str(row["oid"])
+        for row in manifest["heads"]
+        if not row.get("unborn") and row.get("oid") is not None
+    ]
+
+
+def _expected_store_projection(manifest: dict) -> dict:
+    projected_oids = _projected_manifest_oids(manifest)
+    rows = [
+        {
+            "oid": oid,
+            "ref_b64": base64.b64encode(
+                f"refs/cairn-frozen/{idx:06d}".encode("ascii")
+            ).decode("ascii"),
+        }
+        for idx, oid in enumerate(projected_oids)
+    ]
+    proj_lines = "\n".join(
+        f"{row['oid']}:{row['ref_b64']}"
+        for row in sorted(rows, key=lambda r: r["ref_b64"])
+    )
+    return {
+        "head": manifest["candidate"],
+        "projected_count": len(rows),
+        "projected_sha256": hashlib.sha256(proj_lines.encode("ascii")).hexdigest(),
+        "object_count": manifest["objects"]["count"],
+        "objects_sha256": manifest["objects"]["objects_sha256"],
+    }
 
 
 def _measure_store_projection(runner, session, store_repo: Path, expected_head: str) -> dict:
@@ -2377,7 +2418,7 @@ def _run_local_record(record_path: Path, *, history_roots: Path | None = None) -
         print("security_check: FAIL -- resolve the above before release.",
               file=sys.stderr)
         return rc or 1
-    scratch = Path(tempfile.mkdtemp(prefix="cairn-native-evidence-"))
+    scratch = Path(tempfile.mkdtemp(prefix="cairn-native-evidence-")).resolve(strict=True)
     if os.name != "nt":
         scratch.chmod(0o700)
     if scratch.resolve().is_relative_to(CAIRN_ROOT.resolve()):
@@ -2413,7 +2454,10 @@ def _run_local_record(record_path: Path, *, history_roots: Path | None = None) -
                     git=git, target=CAIRN_ROOT, source_repo=CAIRN_ROOT, private=private,
                 )
                 live = _collect_source_inventory(runner, src_session, CAIRN_ROOT, head)
-                if (live["refs"] != manifest["refs"]
+                if live["object_format"] != manifest["object_format"]:
+                    raise ValueError("live source repository object format differs from frozen manifest")
+                if live["source"] == manifest["source"] and (
+                        live["refs"] != manifest["refs"]
                         or live["heads"] != manifest["heads"]
                         or live["roots"] != manifest["roots"]):
                     raise ValueError("live source repository inventory differs from frozen manifest")
@@ -2433,13 +2477,16 @@ def _run_local_record(record_path: Path, *, history_roots: Path | None = None) -
                 runner._release_history_git(store_session, "INIT")
                 runner._release_history_git(store_session, "INDEX", stdin_data=pack_bytes)
                 proj_chunks = []
-                for idx, ref_row in enumerate(manifest["refs"]):
-                    proj_chunks.append(f"update refs/cairn-frozen/{idx:06d}\0{ref_row['oid']}\0".encode("ascii"))
+                for idx, oid in enumerate(_projected_manifest_oids(manifest)):
+                    proj_chunks.append(f"update refs/cairn-frozen/{idx:06d}\0{oid}\0\0".encode("ascii"))
                 if proj_chunks:
                     runner._release_history_git(store_session, "PROJECT", stdin_data=b"".join(proj_chunks))
                 runner._release_history_git(store_session, "HEAD", expected_head=head)
                 _check_store_registrations(runner, store_session, store_repo, expected_checkout=None)
+                expected_proj = _expected_store_projection(manifest)
                 proj_before = _measure_store_projection(runner, store_session, store_repo, head)
+                if proj_before != expected_proj:
+                    raise ValueError("sterile store projection does not match frozen manifest")
                 parent_repo = store_repo
 
                 def _run_sweep_in_checkout(checkout: Path) -> dict:
@@ -2462,7 +2509,7 @@ def _run_local_record(record_path: Path, *, history_roots: Path | None = None) -
                             f"(rc={sweep_rc}, mode={sweep_summary.get('mode')})"
                         )
                     proj_after = _measure_store_projection(runner, store_session, store_repo, head)
-                    if proj_before != proj_after:
+                    if proj_before != proj_after or proj_after != expected_proj:
                         raise ValueError("frozen history projection drifted during sweep")
                     legs_map = {
                         item["leg"]: {
@@ -2484,7 +2531,7 @@ def _run_local_record(record_path: Path, *, history_roots: Path | None = None) -
                             "mode": sweep_summary["mode"],
                             "legs": legs_map,
                             "adapter_version": str(facts.get("adapter_version_output", "")),
-                            "adapter_digest": str(facts.get("adapter_sha256", "")),
+                            "adapter_digest": str(facts.get("adapter_digest", "")),
                             "policy_sha256": hashlib.sha256(policy_path.read_bytes()).hexdigest(),
                             "runner_sha256": hashlib.sha256(runner_file.read_bytes()).hexdigest(),
                         },
@@ -2558,10 +2605,13 @@ def _run_join(record_paths: list[Path], *, history_roots: Path | None = None) ->
                     git=git, target=CAIRN_ROOT, source_repo=CAIRN_ROOT, private=private,
                 )
                 live = _collect_source_inventory(runner, src_session, CAIRN_ROOT, head)
-            if (live["refs"] != manifest["refs"]
+            if (live["object_format"] != manifest["object_format"]
+                    or live["source"] != manifest["source"]
+                    or live["refs"] != manifest["refs"]
                     or live["heads"] != manifest["heads"]
                     or live["roots"] != manifest["roots"]):
                 raise ValueError("live source repository inventory differs from frozen manifest")
+            expected_proj = _expected_store_projection(manifest)
             loaded = [_validate_local_record(_load_strict_json(p), head) for p in record_paths]
             for rec in loaded:
                 if "history_sweep" not in rec:
@@ -2569,7 +2619,9 @@ def _run_join(record_paths: list[Path], *, history_roots: Path | None = None) ->
                 hs = rec["history_sweep"]
                 if (hs["manifest_sha256"] != manifest_sha256
                         or hs["pack_sha256"] != manifest["pack"]["sha256"]
-                        or hs["candidate"] != head):
+                        or hs["candidate"] != head
+                        or hs["projection_before"] != expected_proj
+                        or hs["projection_after"] != expected_proj):
                     raise ValueError(f"{rec['platform']} history_sweep does not match frozen manifest")
             if (loaded[0]["history_sweep"]["sweep"]["policy_sha256"]
                     != loaded[1]["history_sweep"]["sweep"]["policy_sha256"]

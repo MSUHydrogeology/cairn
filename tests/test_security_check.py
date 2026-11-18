@@ -2223,3 +2223,256 @@ def test_history_roots_refuses_tampered_pack_and_live_drift(
         ["--record", str(rec_path), "--history-roots", str(manifest_path)]
     ) == 1
     assert "differs" in capsys.readouterr().err.lower()
+
+
+def _init_frozen_pipeline_repo(tmp_path: Path, name: str = "repo") -> tuple[Path, Path, str, str, str]:
+    """Create a synthetic repo with an annotated tag and a detached linked worktree HEAD."""
+    repo = tmp_path / name
+    repo.mkdir()
+    _setup_git("init", "-q", cwd=repo)
+    _setup_git("config", "user.email", "t@t.invalid", cwd=repo)
+    _setup_git("config", "user.name", "Tester", cwd=repo)
+    (repo / "dev" / "tools").mkdir(parents=True)
+    (repo / "release").mkdir()
+    src_runner = security_check.CAIRN_ROOT / "dev" / "tools" / "run_portable_security_sweeps.py"
+    src_policy = security_check.CAIRN_ROOT / "dev" / "tools" / "portable_security_policy.json"
+    src_git_read = security_check.CAIRN_ROOT / "dev" / "tools" / "git_read.py"
+    (repo / "dev" / "tools" / "run_portable_security_sweeps.py").write_text(
+        src_runner.read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    (repo / "dev" / "tools" / "portable_security_policy.json").write_text(
+        src_policy.read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    (repo / "dev" / "tools" / "git_read.py").write_text(
+        src_git_read.read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    (repo / "a.txt").write_text("clean\n", encoding="utf-8")
+    _setup_git("add", "-A", cwd=repo)
+    _setup_git("commit", "-qm", "init", cwd=repo)
+
+    # Create a side branch with an annotated tag, then delete the branch so only the tag holds it.
+    _setup_git("checkout", "-qb", "side-tag-branch", cwd=repo)
+    (repo / "tagged.txt").write_text("tag-content\n", encoding="utf-8")
+    _setup_git("add", "tagged.txt", cwd=repo)
+    _setup_git("commit", "-qm", "tagged-commit", cwd=repo)
+    _setup_git("tag", "-a", "v0.1-annotated", "-m", "annotated release tag", cwd=repo)
+    tag_oid = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "refs/tags/v0.1-annotated"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+    _setup_git("checkout", "-q", "master", cwd=repo)
+    _setup_git("branch", "-D", "side-tag-branch", cwd=repo)
+
+    # Create a detached linked worktree with its own commit not on any branch.
+    wt = tmp_path / f"{name}-detached-wt"
+    _setup_git("worktree", "add", "--detach", str(wt), "HEAD", cwd=repo)
+    _setup_git("config", "user.email", "t@t.invalid", cwd=wt)
+    _setup_git("config", "user.name", "Tester", cwd=wt)
+    (wt / "wt_only.txt").write_text("detached-wt-content\n", encoding="utf-8")
+    _setup_git("add", "wt_only.txt", cwd=wt)
+    _setup_git("commit", "-qm", "detached-wt-commit", cwd=wt)
+    wt_head = subprocess.run(
+        ["git", "-C", str(wt), "rev-parse", "HEAD"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+
+    # Write a minimal bound checker stub on main so _run_in_detached_frozen_checkout
+    # executes inside a real detached sterile-store worktree.
+    stub = (
+        "import json, os, sys\n"
+        "from pathlib import Path\n"
+        "rec = json.loads(os.environ['CAIRN_TEST_BOUND_RECORD'])\n"
+        "rec['nonce'] = os.environ['CAIRN_NATIVE_RUN_NONCE']\n"
+        "rec['head'] = sys.argv[2]\n"
+        "rec['python'] = list(sys.version_info[:3])\n"
+        "Path(sys.argv[4]).write_text(json.dumps(rec), encoding='utf-8')\n"
+    )
+    (repo / "release" / "security_check.py").write_text(stub, encoding="utf-8")
+    _setup_git("add", "release/security_check.py", cwd=repo)
+    _setup_git("commit", "-qm", "add-bound-stub", cwd=repo)
+    head = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+    return repo, wt, head, tag_oid, wt_head
+
+
+def test_frozen_history_end_to_end_cross_host_and_projection_tamper(
+        tmp_path, monkeypatch, capsys) -> None:
+    """Full --freeze-history -> --record --history-roots (including second-host
+    clone with differing source/refs) -> --join --history-roots pipeline, plus
+    tamper refusal on manifest['objects']."""
+    if sys.version_info[:2] != (3, 13):
+        _pretend_python_313(monkeypatch)
+        monkeypatch.setattr(security_check.sys, "executable", sys.executable, raising=False)
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)
+    repo, _wt, head, tag_oid, wt_head = _init_frozen_pipeline_repo(tmp_path, "host1")
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", repo)
+    monkeypatch.chdir(repo)
+
+    out_dir = tmp_path / "frozen"
+    out_dir.mkdir()
+    manifest_path = out_dir / "cut-history.json"
+    assert security_check.main(["--freeze-history", str(manifest_path)]) == 0, capsys.readouterr().err
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    expected_proj = security_check._expected_store_projection(manifest)
+
+    seen_store_objs: list[set[str]] = []
+    real_loader = security_check._load_portable_sweeps_runner
+
+    def _patched_loader(root: Path):
+        mod = real_loader(root)
+        if root.resolve() != repo.resolve() and root.resolve() != clone.resolve():
+            def _fake_run_sweep(_args, frozen_history=None):
+                assert frozen_history is not None
+                objs = set(subprocess.run(
+                    ["git", "-C", str(frozen_history.repository), "rev-list",
+                     "--objects", "--no-object-names", "--all", "HEAD"],
+                    capture_output=True, text=True, check=True,
+                ).stdout.splitlines())
+                seen_store_objs.append(objs)
+                return 0, {
+                    "result": 0,
+                    "mode": "full",
+                    "legs": [
+                        {"leg": "current-tree", "status": "CLEAN", "result": 0, "finding_count": 0},
+                        {"leg": "history", "status": "CLEAN", "result": 0, "finding_count": 0},
+                    ],
+                    "adapter_facts": {
+                        "adapter_version_output": "8.30.1",
+                        "adapter_digest": "d" * 64,
+                    },
+                }
+            mod.run_sweep = _fake_run_sweep
+        return mod
+
+    # Prepare a second-host checkout with different source path and an extra local branch.
+    clone = tmp_path / "host2"
+    subprocess.run(["git", "clone", "-q", str(repo), str(clone)], check=True)
+    _setup_git("branch", "host2-local-only", cwd=clone)
+
+    monkeypatch.setattr(security_check, "_load_portable_sweeps_runner", _patched_loader)
+    monkeypatch.setenv("CAIRN_TEST_BOUND_RECORD", json.dumps(
+        _synthetic_local_record(sys.platform, head, "0" * 64)
+    ))
+
+    mac_rec_path = tmp_path / "mac.json"
+    assert security_check.main(
+        ["--record", str(mac_rec_path), "--history-roots", str(manifest_path)]
+    ) == 5, capsys.readouterr().err
+    mac_doc = json.loads(mac_rec_path.read_text(encoding="utf-8"))
+    hs = mac_doc["history_sweep"]
+    assert hs["sweep"]["adapter_digest"] == "d" * 64
+    assert hs["projection_before"] == expected_proj
+    assert hs["projection_after"] == expected_proj
+    # Annotated tag object and detached linked worktree HEAD must both be in the sterile store.
+    assert tag_oid in seen_store_objs[0]
+    assert wt_head in seen_store_objs[0]
+
+    # Second host checkout with differing source/refs must still succeed in --record.
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", clone)
+    monkeypatch.chdir(clone)
+    win_stub_rec = _synthetic_local_record("win32", head, "0" * 64)
+    monkeypatch.setenv("CAIRN_TEST_BOUND_RECORD", json.dumps(win_stub_rec))
+    win_rec_path = tmp_path / "win-raw.json"
+    # _run_local_record checks record["platform"] == sys.platform; write host2's record
+    # on host1's platform first, then re-label as win32 for the join check.
+    monkeypatch.setenv("CAIRN_TEST_BOUND_RECORD", json.dumps(
+        _synthetic_local_record(sys.platform, head, "0" * 64)
+    ))
+    assert security_check.main(
+        ["--record", str(win_rec_path), "--history-roots", str(manifest_path)]
+    ) == 5, capsys.readouterr().err
+    win_doc = json.loads(win_rec_path.read_text(encoding="utf-8"))
+    assert win_doc["history_sweep"]["projection_before"] == expected_proj
+    win_doc["platform"] = "win32"
+    win_doc["os_name"] = "nt"
+    win_doc["orders"] = win_stub_rec["orders"]
+    win_join_path = tmp_path / "win.json"
+    win_join_path.write_text(json.dumps(win_doc), encoding="utf-8")
+
+    # Join on host1 (matching manifest source/refs) passes.
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", repo)
+    monkeypatch.chdir(repo)
+    _track_synthetic_files(monkeypatch)
+    assert security_check.main(
+        ["--join", str(mac_rec_path), str(win_join_path), "--history-roots", str(manifest_path)]
+    ) == 0, capsys.readouterr().err
+    assert "PASS" in capsys.readouterr().out
+
+    # Tamper manifest['objects']['count'] -> --record must refuse.
+    tampered_manifest = tmp_path / "tampered.json"
+    tampered_pack = tmp_path / "tampered.pack"
+    tampered_pack.write_bytes((out_dir / "cut-history.pack").read_bytes())
+    bad_doc = dict(manifest)
+    bad_doc["objects"] = {"count": manifest["objects"]["count"] + 1,
+                          "objects_sha256": manifest["objects"]["objects_sha256"]}
+    tampered_manifest.write_text(json.dumps(bad_doc), encoding="utf-8")
+    refused_rec = tmp_path / "refused.json"
+    assert security_check.main(
+        ["--record", str(refused_rec), "--history-roots", str(tampered_manifest)]
+    ) == 1
+    assert "projection" in capsys.readouterr().err.lower()
+    assert not refused_rec.exists()
+
+
+def test_frozen_history_refuses_finding_on_detached_wt_and_shallow_worktree(
+        tmp_path, monkeypatch, capsys) -> None:
+    """A finding on a detached linked worktree HEAD blocks --record, and a
+    shallow linked worktree is refused during inventory collection."""
+    _pretend_python_313(monkeypatch)
+    monkeypatch.setattr(security_check.sys, "executable", sys.executable, raising=False)
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)
+    repo, wt, head, _tag_oid, wt_head = _init_frozen_pipeline_repo(tmp_path, "sec")
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", repo)
+    monkeypatch.chdir(repo)
+
+    out_dir = tmp_path / "frozen"
+    out_dir.mkdir()
+    manifest_path = out_dir / "cut-history.json"
+    assert security_check.main(["--freeze-history", str(manifest_path)]) == 0, capsys.readouterr().err
+
+    real_loader = security_check._load_portable_sweeps_runner
+
+    def _finding_loader(root: Path):
+        mod = real_loader(root)
+        if root.resolve() != repo.resolve():
+            def _finding_run_sweep(_args, frozen_history=None):
+                assert frozen_history is not None
+                # Confirm the detached worktree commit is reachable from the sterile store.
+                commits = subprocess.run(
+                    ["git", "-C", str(frozen_history.repository), "rev-list", "--all", "HEAD"],
+                    capture_output=True, text=True, check=True,
+                ).stdout.splitlines()
+                assert wt_head in commits
+                return 10, {
+                    "result": 10,
+                    "mode": "full",
+                    "legs": [
+                        {"leg": "current-tree", "status": "CLEAN", "result": 0, "finding_count": 0},
+                        {"leg": "history", "status": "FINDINGS", "result": 10, "finding_count": 1},
+                    ],
+                }
+            mod.run_sweep = _finding_run_sweep
+        return mod
+
+    monkeypatch.setattr(security_check, "_load_portable_sweeps_runner", _finding_loader)
+    monkeypatch.setenv("CAIRN_TEST_BOUND_RECORD", json.dumps(
+        _synthetic_local_record(sys.platform, head, "0" * 64)
+    ))
+    rec_path = tmp_path / "blocked.json"
+    assert security_check.main(
+        ["--record", str(rec_path), "--history-roots", str(manifest_path)]
+    ) == 1
+    assert "did not pass clean" in capsys.readouterr().err.lower()
+    assert not rec_path.exists()
+
+    # Mark the linked worktree's gitdir as shallow -> --freeze-history must refuse.
+    wt_gdir = Path(subprocess.run(
+        ["git", "-C", str(wt), "rev-parse", "--path-format=absolute", "--git-dir"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip())
+    (wt_gdir / "shallow").write_text(wt_head + "\n", encoding="utf-8")
+    shallow_manifest = out_dir / "shallow.json"
+    assert security_check.main(["--freeze-history", str(shallow_manifest)]) == 1
+    assert "shallow" in capsys.readouterr().err.lower()

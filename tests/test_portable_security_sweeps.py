@@ -3243,7 +3243,7 @@ def test_release_history_git_enforces_closed_ops_and_store_isolation(
         with pytest.raises(runner.Degraded, match="refs/cairn-frozen/"):
             runner._release_history_git(
                 session, "PROJECT",
-                stdin_data=f"update refs/heads/evil\0{'a' * 40}\0".encode("ascii"),
+                stdin_data=f"update refs/heads/evil\0{'a' * 40}\0\0".encode("ascii"),
             )
         runner._release_history_git(session, "INIT")
         wt = runner._release_history_git(session, "WORKTREES", repo_path=store)
@@ -3285,3 +3285,306 @@ def test_gitleaks_8301_redaction_classify_and_private_triage_cross_platform(
     assert doc["legs"][0]["findings"][0]["path"] == "secret_file.py"
     assert "Secret" not in doc["legs"][0]["findings"][0]
     assert "Match" not in doc["legs"][0]["findings"][0]
+
+
+def test_shallow_linked_worktree_marks_history_incomplete(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A linked worktree whose common_dir has a shallow marker yields history
+    leg INCOMPLETE (5) even though (target / '.git') is a file with no
+    '.git/shallow'."""
+    if not REAL_GIT:
+        pytest.skip("git not available")
+    runner = load_runner()
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run([REAL_GIT, "init", "-q", str(repo)], check=True)
+    (repo / "f.txt").write_text("hi\n", encoding="utf-8")
+    subprocess.run([REAL_GIT, "-C", str(repo), "add", "f.txt"], check=True)
+    subprocess.run(
+        [REAL_GIT, "-C", str(repo), "-c", "user.email=a@b.c", "-c", "user.name=a",
+         "commit", "-qm", "init"],
+        check=True,
+    )
+    head = subprocess.run(
+        [REAL_GIT, "-C", str(repo), "rev-parse", "HEAD"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+    wt = tmp_path / "linked-wt"
+    subprocess.run([REAL_GIT, "-C", str(repo), "worktree", "add", "-b", "wt-br", str(wt)], check=True)
+    common_dir = Path(subprocess.run(
+        [REAL_GIT, "-C", str(wt), "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip())
+    (common_dir / "shallow").write_text(head + "\n", encoding="utf-8")
+    assert (wt / ".git").is_file()
+    assert not (wt / ".git" / "shallow").exists()
+
+    rc, summary, _out, _log = _run_with_tool(tmp_path / "run", wt, admissions="admit")
+    assert rc == 5
+    assert summary["adapter_facts"]["history_discovery"]["shallow"] is True
+    assert summary["adapter_facts"]["history_discovery"]["has_refs"] is True
+    assert leg(summary, "history")["status"] == "INCOMPLETE"
+    assert leg(summary, "history")["result"] == 5
+
+
+def test_windows_relay_wiring_uses_executable_directory_and_target_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify _run_sweep_inner and cmd_verify_version_support wire
+    windows_relay.executable.directory (not .dir) and win_hist.authority == target."""
+    runner = load_runner()
+    src = Path(runner.__file__).read_text(encoding="utf-8")
+    assert "windows_relay.dir" not in src
+    assert "windows_relay.executable.directory" in src
+
+    target = tmp_path / "target"
+    target.mkdir()
+    (target / ".git").mkdir()
+    relay_dir = tmp_path / "relay-bin"
+    relay_dir.mkdir()
+    relay_exe = runner.Resolved(
+        name="git",
+        lexical=str(relay_dir / "git.exe"),
+        resolved=str(relay_dir / "git.exe"),
+        directory=str(relay_dir),
+        digest="a" * 64,
+    )
+    fake_relay = runner._WindowsGitRelay(
+        executable=relay_exe,
+        interpreter=relay_exe,
+        worker=relay_dir / "git_worker.py",
+        worker_digest="b" * 64,
+        private=runner._WindowsInvocation(target, tmp_path / "priv"),
+    )
+
+    @runner.contextmanager
+    def _fake_win_relay(*_args, **_kwargs):
+        yield fake_relay
+
+    bd = tmp_path / "bin"
+    bd.mkdir()
+    adapter = fake_tool(bd / "gitleaks")
+    digest = hashlib.sha256(adapter.read_bytes()).hexdigest()
+    (tmp_path / "run").mkdir()
+    runner_path = runner_copy(tmp_path / "run", {platform_triple("8.30.1"): (digest, "GL-test")})
+    runner = load_runner(runner_path)
+    fake_relay = runner._WindowsGitRelay(
+        executable=runner.Resolved(
+            name="git",
+            lexical=str(relay_dir / "git.exe"),
+            resolved=str(relay_dir / "git.exe"),
+            directory=str(relay_dir),
+            digest="a" * 64,
+        ),
+        interpreter=relay_exe,
+        worker=relay_dir / "git_worker.py",
+        worker_digest="b" * 64,
+        private=runner._WindowsInvocation(target, tmp_path / "priv"),
+    )
+
+    @runner.contextmanager
+    def _fake_win_relay(*_args, **_kwargs):
+        yield fake_relay
+
+    real_resolve = runner.resolve_executable
+
+    def _fake_resolve(name: str, tgt: Path, path_env: str | None = None):
+        if name == "git":
+            return fake_relay.executable
+        return real_resolve(name, tgt, path_env)
+
+    class _OsProxy:
+        name = "nt"
+        def __getattr__(self, item: str):
+            return getattr(os, item)
+
+    monkeypatch.setattr(runner, "os", _OsProxy())
+    monkeypatch.setattr(runner, "_create_invocation_log", lambda *_a, **_kw: None)
+    monkeypatch.setattr(runner, "_append_invocation", lambda *_a, **_kw: None)
+    monkeypatch.setattr(runner, "_windows_git_relay", _fake_win_relay)
+    monkeypatch.setattr(runner, "_private_sweep_workspace", lambda _t: runner.nullcontext(str(tmp_path / "priv")))
+    monkeypatch.setattr(runner, "screen_local_config", lambda *_a, **_kw: [])
+    monkeypatch.setattr(runner, "probe_reachable_commit", lambda *_a: False)
+    monkeypatch.setattr(runner, "resolve_executable", _fake_resolve)
+    monkeypatch.setattr(runner, "select_git_reader_token", lambda *_a: fake_relay.executable)
+    from types import SimpleNamespace
+    (tmp_path / "priv").mkdir()
+    monkeypatch.setattr(
+        runner._GIT_READ, "_version_probe",
+        lambda *_a, **_kw: SimpleNamespace(state="completed", returncode=0, stdout=b"git version 2.47.0\n"),
+    )
+    def _fake_supervised(argv, *_a, **_kw):
+        if "--version" in argv:
+            return SimpleNamespace(returncode=0, stdout=b"8.30.1\n", stderr=b"")
+        for arg in argv:
+            if arg.startswith("--report-path="):
+                Path(arg.split("=", 1)[1]).write_text("[]", encoding="utf-8")
+        return SimpleNamespace(returncode=0, stdout=b"", stderr=b"")
+
+    monkeypatch.setattr(runner, "_supervised_process", _fake_supervised)
+
+    monkeypatch.setenv("PATH", str(bd))
+    args = runner.build_parser().parse_args([
+        "--target", str(target), "--policy", str(POLICY_SRC), "--json",
+    ])
+    _rc, summary = runner.run_sweep(args)
+    assert str(relay_dir) in summary["adapter_facts"]["child_path"]
+
+    # Also dynamically exercise cmd_verify_version_support under os.name == "nt"
+    # to confirm win_hist.authority == target.resolve() and PATH == relay_dir.
+    captured_hists: list[Any] = []
+    captured_matrix_paths: list[str] = []
+
+    @runner.contextmanager
+    def _capturing_win_relay(_priv, _git, _rec, _id, _rem, history=None, **_kw):
+        captured_hists.append(history)
+        yield fake_relay
+
+    def _fake_matrix_supervised(argv, _exe, tgt, env_arg, *_a, **_kw):
+        captured_matrix_paths.append(env_arg["PATH"])
+        if "--version" in argv:
+            return SimpleNamespace(returncode=0, stdout=b"gitleaks version 8.30.1\n", stderr=b"")
+        if any("--timeout=cairn-not-an-integer" == item for item in argv):
+            return SimpleNamespace(returncode=1, stdout=b"", stderr=b"bad timeout\n")
+        report_file = next(
+            argv[idx + 1] for idx, tok in enumerate(argv) if tok == "--report-path"
+        )
+        if tgt.name == "planted":
+            Path(report_file).write_text(json.dumps([{
+                "RuleID": "generic-api-key",
+                "File": "config.py",
+                "StartLine": 1,
+                "Commit": "",
+                "Fingerprint": "config.py:generic-api-key:1",
+                "Secret": "REDACTED",
+                "Match": 'api_key = "REDACTED"',
+            }]), encoding="utf-8")
+            return SimpleNamespace(returncode=42, stdout=b"", stderr=b"")
+        Path(report_file).write_text("[]", encoding="utf-8")
+        return SimpleNamespace(returncode=0, stdout=b"", stderr=b"")
+
+    monkeypatch.setattr(runner, "_windows_git_relay", _capturing_win_relay)
+    monkeypatch.setattr(runner, "_supervised_process", _fake_matrix_supervised)
+    monkeypatch.setattr(runner, "_invocation_log_problem", lambda *_a, **_kw: None)
+    monkeypatch.setattr(runner, "_invocation_labels", lambda *_a, **_kw: [])
+    monkeypatch.setattr(
+        runner._GIT_READ, "run_git",
+        lambda *_a, **_kw: SimpleNamespace(
+            state="completed", returncode=0, stdout=b"a" * 40 + b"\n", stderr=b"",
+        ),
+    )
+    if REAL_GIT:
+        monkeypatch.setenv("PATH", f"{bd}{os.pathsep}{os.path.dirname(REAL_GIT)}")
+    matrix_args = runner.build_parser().parse_args([
+        "--target", str(target),
+        "--verify-version-support", str(adapter),
+        runner.CONFIRM_FLAG,
+    ])
+    matrix_rc = runner.cmd_verify_version_support(matrix_args)
+    assert matrix_rc == 0
+    assert len(captured_hists) == 6
+    assert all(h is not None and h.authority == target.resolve() for h in captured_hists)
+    assert all(h.repository != h.authority for h in captured_hists)
+    assert len(captured_matrix_paths) == 7
+    assert all(p == str(relay_dir) for p in captured_matrix_paths[1:])
+
+
+def test_frozen_history_shim_detects_non_candidate_ref_secret_end_to_end(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Invoke run_sweep with frozen_history through the real POSIX Git shim
+    and confirm a secret committed only on a non-candidate ref in store_repo
+    is detected as history FINDINGS (10) while current-tree stays CLEAN (0)."""
+    if os.name != "posix":
+        pytest.skip("POSIX shim test")
+    if not REAL_GIT:
+        pytest.skip("git not available")
+    tmp_root = tmp_path.resolve(strict=True)
+    target = tmp_root / "candidate"
+    target.mkdir()
+    git_env = {
+        "PATH": os.path.dirname(REAL_GIT),
+        "GIT_AUTHOR_NAME": "Test",
+        "GIT_COMMITTER_NAME": "Test",
+        "GIT_AUTHOR_EMAIL": "t@t.invalid",
+        "GIT_COMMITTER_EMAIL": "t@t.invalid",
+    }
+    subprocess.run([REAL_GIT, "init", "-q", str(target)], env=git_env, check=True)
+    (target / "clean.txt").write_text("clean\n", encoding="utf-8")
+    subprocess.run([REAL_GIT, "-C", str(target), "add", "clean.txt"], env=git_env, check=True)
+    subprocess.run([REAL_GIT, "-C", str(target), "commit", "-qm", "clean-head"], env=git_env, check=True)
+    head_oid = subprocess.run(
+        [REAL_GIT, "-C", str(target), "rev-parse", "HEAD"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+
+    # Create a separate repo containing a secret commit on a branch, mirror-pack
+    # both repos into an off-tree bare store_repo under non-candidate refs.
+    upstream = tmp_root / "upstream"
+    subprocess.run([REAL_GIT, "clone", "-q", str(target), str(upstream)], env=git_env, check=True)
+    subprocess.run([REAL_GIT, "-C", str(upstream), "checkout", "-qb", "secret-ref"], env=git_env, check=True)
+    marker = "TOK_NON_CANDIDATE_SECRET_987654321"
+    (upstream / "leaked.py").write_text(f'token = "{marker}"\n', encoding="utf-8")
+    subprocess.run([REAL_GIT, "-C", str(upstream), "add", "leaked.py"], env=git_env, check=True)
+    subprocess.run([REAL_GIT, "-C", str(upstream), "commit", "-qm", "non-candidate-secret"], env=git_env, check=True)
+    secret_oid = subprocess.run(
+        [REAL_GIT, "-C", str(upstream), "rev-parse", "HEAD"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+
+    store_root = tmp_root / "sterile-store"
+    store_root.mkdir()
+    store_repo = store_root / "mirror.git"
+    subprocess.run([REAL_GIT, "init", "--bare", "-q", str(store_repo)], env=git_env, check=True)
+    subprocess.run(
+        [REAL_GIT, "-C", str(store_repo), "fetch", "-q", str(upstream),
+         f"{head_oid}:refs/cairn-frozen/000000", f"{secret_oid}:refs/cairn-frozen/000001"],
+        env=git_env, check=True,
+    )
+    subprocess.run(
+        [REAL_GIT, "-C", str(store_repo), "update-ref", "--no-deref", "HEAD", head_oid],
+        env=git_env, check=True,
+    )
+
+    bd = tmp_root / "bin"
+    bd.mkdir()
+    tool = bd / "gitleaks"
+    tool.write_text(
+        f"#!{sys.executable}\n"
+        "import json, os, shlex, subprocess, sys\n"
+        "argv = sys.argv[1:]\n"
+        "if argv == ['--version']:\n"
+        "    print('gitleaks version 8.30.1')\n"
+        "    raise SystemExit(0)\n"
+        "sub = argv[0]\n"
+        "rp = argv[argv.index('--report-path') + 1]\n"
+        "ec = int(argv[argv.index('--exit-code') + 1])\n"
+        "if sub == 'dir':\n"
+        "    open(rp, 'w').write('[]')\n"
+        "    raise SystemExit(0)\n"
+        "log_opts = shlex.split(argv[argv.index('--log-opts') + 1])\n"
+        "p = subprocess.run(['git', '-C', argv[1], 'log', '-p', '-U0', *log_opts], capture_output=True, text=True, check=True)\n"
+        f"if {marker!r} in p.stdout:\n"
+        "    open(rp, 'w').write(json.dumps([{'RuleID': 'generic-api-key', 'File': 'leaked.py', 'StartLine': 1, 'Commit': '0'*40, 'Fingerprint': 'leaked.py:1', 'Secret': 'REDACTED', 'Match': 'token = \"REDACTED\"'}]))\n"
+        "    raise SystemExit(ec)\n"
+        "open(rp, 'w').write('[]')\n"
+        "raise SystemExit(0)\n",
+        encoding="utf-8",
+    )
+    tool.chmod(0o755)
+    digest = hashlib.sha256(tool.read_bytes()).hexdigest()
+    (tmp_root / "run").mkdir()
+    runner_path = runner_copy(tmp_root / "run", {platform_triple("8.30.1"): (digest, "GL-test")})
+    runner = load_runner(runner_path)
+    monkeypatch.setenv("PATH", f"{bd}{os.pathsep}{os.path.dirname(REAL_GIT)}")
+    args = runner.build_parser().parse_args([
+        "--target", str(target), "--policy", str(POLICY_SRC), "--json",
+    ])
+    frozen = runner._WindowsFrozenHistory(store_repo, store_root, target, (head_oid, secret_oid))
+    rc, summary = runner.run_sweep(args, frozen_history=frozen)
+    assert rc == 10
+    assert summary["mode"] == "full"
+    assert leg(summary, "current-tree")["status"] == "CLEAN"
+    assert leg(summary, "history")["status"] == "FINDINGS"
+    assert leg(summary, "history")["finding_count"] == 1

@@ -1,7 +1,7 @@
 # Plan: Release secrets scanning on both platforms
 
 **Source proposal**: `dev/proposals/archive/2026-11-17-codex-release-secrets-scan.md`
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: `dev/rules/conventions.md`, `dev/rules/working-agreements.md`, `dev/rules/protected-surfaces.md`, `dev/rules/development-environment.md`
@@ -246,6 +246,40 @@ Reviewed commit: 296213ad
 5. **Blocking (unchecked store projection/closure against manifest, cross-host Windows offline check, and shallow linked worktree discovery)**: In `release/security_check.py:2442, 2464-2466` and `:2566-2578`, `_run_local_record` and `_run_join` check `proj_before == proj_after` but never verify `proj_before["object_count"] == manifest["objects"]["count"]`, `proj_before["objects_sha256"] == manifest["objects"]["objects_sha256"]`, or expected `projected_count` / `projected_sha256` against the manifest (Plan Scope line 28). In `release/security_check.py:2415-2419`, `_run_local_record` enforces `live["refs"] == manifest["refs"]` and `live["heads"] == manifest["heads"]` even when running on an offline second host whose checkout (`live["source"] != manifest["source"]`) has different local refs/worktrees from the freeze authority (Plan Scope line 27 & C1). Also, `_history_discovery` (`dev/tools/run_portable_security_sweeps.py:1187-1196`) checks `(target / ".git" / "shallow").exists()`, which is always `False` when `.git` is a linked-worktree gitfile (`shallow` lives under `common_dir`). *Satisfier (guard + test)*: verify `proj_before`/`proj_after` against `manifest["objects"]` and expected projection in `--record` and `--join`, require live ref/head equality in `--record` when `live["source"] == manifest["source"]` (and always in `--join`) while allowing a clean non-shallow offline second checkout to scan the frozen store, check `common_dir / "shallow"` in `_run_sweep_inner`, and add C1–C3 tests for end-to-end freeze/record/join, a non-candidate-ref secret, differing host refs, and a shallow linked worktree.
 
 **Coverage.** I inspected `git show` for `36bad4f7`, `25fd162f`, `e1b01d0d`, `7579ce40`, and `296213ad`, read `release/security_check.py`, `dev/tools/run_portable_security_sweeps.py`, `dev/tools/git_read.py`, `release/RELEASE_PROCESS.md`, `dev/modules/portable-security-sweeps.md`, `dev/.cairn/cairn-lock.yml`, `dev/PLANNING.md:111-115`, `tests/test_security_check.py`, and `tests/test_portable_security_sweeps.py`, verified twin blob equality and AST stdlib-only imports, and ran targeted read-only Python probes confirming `_WindowsGitRelay` lacks `.dir`, macOS `tempfile.mkdtemp()` fails `_GIT_READ._lstat_chain`, and annotated tag OIDs are excluded from `rev-list` over peeled roots. This review exceeds 300 words to document all five blocking C1–C3 execution findings with exact line citations and satisfiers. I did not run the full test suite or mutate the Windows VM.
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+## Author response -- 2026-11-18
+
+Responds to: Argon pass-1 Internal Security Review (`5382c096`)
+
+**Disposition**: Resolved all five blocking findings across both byte-identical runner copies, `release/security_check.py`, `dev/.cairn/cairn-lock.yml`, and focused unit/end-to-end tests:
+
+1. **Windows relay `.executable.directory` and `win_hist.authority` (Finding 1)**:
+   - `dev/tools/run_portable_security_sweeps.py:3356-3358` (`cmd_verify_version_support`): changed `win_hist` authority from `Path(tree)` to outer `target`.
+   - `dev/tools/run_portable_security_sweeps.py:3381` (`cmd_verify_version_support`) and `:3834` (`_run_sweep_inner`): replaced `windows_relay.dir` with `windows_relay.executable.directory`.
+   - Strengthened `tests/test_portable_security_sweeps.py::test_windows_relay_wiring_uses_executable_directory_and_target_authority` to dynamically exercise both `run_sweep` and `cmd_verify_version_support` under `os.name == "nt"` (`win_hist.authority == target.resolve()`, `win_hist.repository != win_hist.authority`, `relay_dir` in `PATH`).
+2. **`adapter_digest` key alignment (Finding 2)**:
+   - `release/security_check.py:2534` (`_run_sweep_in_checkout`): reads `facts.get("adapter_digest", "")` matching `run_portable_security_sweeps.py`.
+3. **Resolved temporary scratch path on macOS (Finding 3)**:
+   - `release/security_check.py:2421` (`_run_local_record`): resolves `scratch` on creation via `.resolve(strict=True)` before sterile `store_repo` creation passes `_GIT_READ._lstat_chain`.
+4. **Annotated tags, detached worktree HEADs, and `PROJECT` transaction framing (Finding 4)**:
+   - `release/security_check.py:2106` (`_collect_source_inventory`): retains `raw_roots` alongside peeled `roots`; `_freeze_history` (`release/security_check.py:2145`) passes `*inv_before["raw_roots"]` to `rev-list --objects --no-object-names --missing=print` while keeping `manifest["roots"]` as sorted peeled commit OIDs.
+   - `release/security_check.py:2223-2230` and `:2480-2483` (`_projected_manifest_oids` / `PROJECT`): projects all `manifest["refs"]` (including annotated tag OIDs) and non-unborn `manifest["heads"]` (including detached worktree HEADs) into `refs/cairn-frozen/<idx:06d>`.
+   - Real-Git end-to-end testing caught two additional transaction/argv defects fixed in the same patch:
+     - `git update-ref --stdin -z` requires 3 NUL-terminated tokens per update (`update <ref>\0<oid>\0\0`); updated `release/security_check.py:2481` and `dev/tools/run_portable_security_sweeps.py:2818-2834` (`_validate_frozen_projection`).
+     - `_write_git_shim` (`dev/tools/run_portable_security_sweeps.py:2229`) checked `len(argv) == 12` instead of `11` for the frozen-history `git log` invocation (`-C`, target, `log`, `-p`, `-U0`, plus 6 frozen flags). Added `tests/test_portable_security_sweeps.py::test_frozen_history_shim_detects_non_candidate_ref_secret_end_to_end` exercising real `_materialize_sweep_git_shim` against an off-tree bare store with a non-candidate secret commit (`current-tree` CLEAN `0`, `history` FINDINGS `10`).
+5. **Store projection/closure verification, offline second-host check, shallow linked worktree detection, and end-to-end C1–C3 tests (Finding 5)**:
+   - `release/security_check.py:2003-2004` (`_parse_worktree_porcelain_z`): rejects shallow main or linked worktrees (`(wt_gdir / "shallow").exists() or (wt_cdir / "shallow").exists()`).
+   - `release/security_check.py:2214-2254`, `:2457-2513`, `:2608-2624`: added `_expected_store_projection(manifest)` and inventory type validation; `_run_local_record` verifies `proj_before == expected_proj` and `proj_after == expected_proj`, enforces `object_format`, and restricts `refs`/`heads`/`roots` equality to `live["source"] == manifest["source"]` (allowing clean non-shallow offline second-host clones at `head`); `_run_join` enforces full live source/inventory equality and `projection_before == projection_after == expected_proj` on both records.
+   - `dev/tools/run_portable_security_sweeps.py:963-986`, `:1177-1206`, `:3845-3850`: `screen_local_config` optionally populates `_common_dir_out` (with `TypeError` fallback for monkeypatched callers) and `_history_discovery` inspects `common_dir / "shallow"` and common-dir refs for linked worktrees.
+   - Added end-to-end tests `tests/test_security_check.py::test_frozen_history_end_to_end_cross_host_and_projection_tamper`, `tests/test_security_check.py::test_frozen_history_refuses_finding_on_detached_wt_and_shallow_worktree`, and `tests/test_portable_security_sweeps.py::test_shallow_linked_worktree_marks_history_incomplete`.
+6. **Twin parity & lockfile**: Copied `dev/tools/run_portable_security_sweeps.py` identically to `templates/modules/team-gated/run_portable_security_sweeps.py` (`cmp -s` exit `0`), verified stdlib-only imports (`non_stdlib: []`), and updated `dev/.cairn/cairn-lock.yml` (`install/scaffold.py upgrade --target . --finalize dev/tools/run_portable_security_sweeps.py`).
+
+**Verification after final edits**:
+- macOS Python 3.13.13 (`/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q tests/test_security_check.py tests/test_portable_security_sweeps.py`): `345 passed, 2 skipped, 3 warnings in 183.44s` (2 skips are `os.name == "nt"`-only native Windows ACL/relay tests).
+- **Gaps / unrun**: `cairn-windows` (`192.168.64.2`) went unreachable (`No route to host`, UTM guest asleep; `utmctl` blocked from sandbox with `OSStatus -1743`) after its pre-revision native verification at `7579ce40` (`test_security_check.py` 9 passed; `test_portable_security_sweeps.py` 8 passed, 1 skipped), so a post-fix native Windows VM rerun did not run in this session.
 
 **Elapsed**: unknown
 **Tokens**: unknown

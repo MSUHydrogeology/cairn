@@ -960,7 +960,8 @@ def _discover_git_common_dir(
 
 
 def screen_local_config(
-    git: Resolved, git_token: Any, target: Path
+    git: Resolved, git_token: Any, target: Path,
+    *, _common_dir_out: list[Path] | None = None,
 ) -> list[tuple[str, str]]:
     """**Deny-by-default pre-execution screen** over the candidate's
     *include-expanded* repository-local configuration.
@@ -981,6 +982,8 @@ def screen_local_config(
     and the screen bounds *configuration* -- not everything a candidate
     repository controls."""
     git_dir = _discover_git_common_dir(git, git_token, target)
+    if _common_dir_out is not None:
+        _common_dir_out.append(git_dir)
     revalidate(git, target)
     result = _recorded_read(
         "runner", "config",
@@ -1171,7 +1174,9 @@ def _diagnostic(raw: bytes) -> str:
     return _escape(raw[:_STDERR_DIAGNOSTIC_BYTES].decode("utf-8", "replace"))
 
 
-def _history_discovery(target: Path) -> dict[str, Any]:
+def _history_discovery(
+    target: Path, common_dir: Path | None = None,
+) -> dict[str, Any]:
     """Filesystem-only discovery for facts and for the shallow-clone /
     non-Git-export determination, both of which a ref-file presence check
     answers correctly.
@@ -1185,13 +1190,17 @@ def _history_discovery(target: Path) -> dict[str, Any]:
     :func:`probe_reachable_commit`, which asks Git's own object model instead
     of inferring from ref-file presence."""
     git_dir = target / ".git"
-    heads = git_dir / "refs" / "heads"
-    has_refs = (git_dir / "packed-refs").exists() or (
+    ref_root = common_dir if (git_dir.is_file() and common_dir is not None) else git_dir
+    heads = ref_root / "refs" / "heads"
+    has_refs = (ref_root / "packed-refs").exists() or (
         heads.is_dir() and any(heads.rglob("*"))
+    )
+    shallow = (git_dir / "shallow").exists() or (
+        common_dir is not None and (common_dir / "shallow").exists()
     )
     return {
         "git_dir_present": git_dir.exists(),
-        "shallow": (git_dir / "shallow").exists(),
+        "shallow": shallow,
         "has_refs": bool(has_refs),
     }
 
@@ -2217,7 +2226,7 @@ def _run():
         operation = "log"
         git_args = ("log", "-p", "-U0", "--all", "--full-history", "--text",
                     "--no-textconv", "--no-ext-diff")
-    elif (_FROZEN_REPO and len(argv) == 12 and argv[0] == "-C" and argv[1] == _TARGET
+    elif (_FROZEN_REPO and len(argv) == 11 and argv[0] == "-C" and argv[1] == _TARGET
           and argv[2:] == ["log", "-p", "-U0", "--full-history", "--root",
                            "--diff-merges=first-parent", "--text",
                            "--no-textconv", "--no-ext-diff"]):
@@ -2809,10 +2818,10 @@ def _validate_frozen_projection(stdin_data: bytes) -> None:
     if parts[-1] != b"":
         raise Degraded("PROJECT transaction must be NUL-terminated")
     tokens = parts[:-1]
-    if len(tokens) % 2 != 0:
-        raise Degraded("PROJECT transaction has an odd token count")
-    for idx in range(0, len(tokens), 2):
-        cmd_raw, oid_raw = tokens[idx], tokens[idx + 1]
+    if len(tokens) % 3 != 0:
+        raise Degraded("PROJECT transaction has a malformed token count")
+    for idx in range(0, len(tokens), 3):
+        cmd_raw, oid_raw, old_raw = tokens[idx], tokens[idx + 1], tokens[idx + 2]
         if not cmd_raw.startswith(b"update "):
             raise Degraded("PROJECT transaction may only contain update commands")
         ref_name = cmd_raw[len(b"update "):].decode("ascii", "strict")
@@ -2821,6 +2830,8 @@ def _validate_frozen_projection(stdin_data: bytes) -> None:
         oid_str = oid_raw.decode("ascii", "strict")
         if not _OID_RE.match(oid_str):
             raise Degraded("PROJECT target is not a valid object id")
+        if old_raw != b"":
+            raise Degraded("PROJECT transaction must not specify an old object id")
 
 
 def _release_history_git(
@@ -3343,7 +3354,7 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                             )
                             tree_head = head_probe.stdout.decode("ascii", "strict").strip()
                             win_hist = _WindowsFrozenHistory(
-                                Path(tree), Path(workdir), Path(tree), (tree_head,),
+                                Path(tree), Path(workdir), target, (tree_head,),
                             )
                             relay_cm = _windows_git_relay(
                                 _WindowsInvocation(Path(tree), Path(workdir)),
@@ -3367,7 +3378,7 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                     try:
                         with relay_cm as windows_relay:
                             if windows_relay is not None:
-                                scenario_env["PATH"] = str(windows_relay.dir)
+                                scenario_env["PATH"] = str(windows_relay.executable.directory)
                             proc = _supervised_process(
                                 argv, exe, Path(tree), scenario_env, workdir,
                                 _SCAN_TIMEOUT, shim_executable, shim_interpreter,
@@ -3743,9 +3754,16 @@ def _run_sweep_inner(
                 "a candidate suppression file refused the run before execution",
                 facts,
             )
+        discovered_common_dirs: list[Path] = []
         if git is not None and (target / ".git").exists():
             try:
-                pairs = screen_local_config(git, git_token, target)
+                try:
+                    pairs = screen_local_config(
+                        git, git_token, target,
+                        _common_dir_out=discovered_common_dirs,
+                    )
+                except TypeError:
+                    pairs = screen_local_config(git, git_token, target)
             except Degraded as exc:
                 legs = [LegOutcome("preflight", _AGG_DEGRADED, "DEGRADED", str(exc))]
                 return _AGG_DEGRADED, summarize(
@@ -3813,7 +3831,7 @@ def _run_sweep_inner(
                 )
         with relay_cm as windows_relay:
             if windows_relay is not None:
-                shim_dir = str(windows_relay.dir)
+                shim_dir = str(windows_relay.executable.directory)
             environment = child_env(choice.mode, git, empty_dir, work.empty_config,
                                     shim_dir)
             facts["child_path"] = environment["PATH"]
@@ -3824,7 +3842,11 @@ def _run_sweep_inner(
             facts["current_tree_report"] = current_report
             legs_to_run = [("current-tree", current_argv, current_report)]
             pending: list[LegOutcome] = []
-            discovery = _history_discovery(target)
+            common_dir = discovered_common_dirs[0] if discovered_common_dirs else None
+            try:
+                discovery = _history_discovery(target, common_dir)
+            except TypeError:
+                discovery = _history_discovery(target)
             facts["history_discovery"] = discovery
             if not discovery["git_dir_present"]:
                 pending.append(LegOutcome(
