@@ -849,7 +849,7 @@ def test_installed_measurement_commands(tmp_path: Path):
     assert run(verifier, document).returncode == 0
     document.write_text("2 <!-- verify: lines -->\n")
     assert run(verifier, document).returncode == 1
-    for marker in ("2 <!-- verify: docs.files -->", "<!-- verify: lines", "<!-- verify: lines -->"):
+    for marker in ("2 <!-- verify: docs.files -->", "<!-- verify: lines", "<!-- verify: lines -->", "1 <!--\nverify: lines -->"):
         document.write_text(marker)
         assert run(verifier, document).returncode == 1
     document.write_text("1 <!-- verify: lines -->\n")

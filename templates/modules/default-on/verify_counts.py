@@ -59,18 +59,24 @@ def parse_annotations(text: str) -> list[tuple[int, int | None, str]]:
     """
     out: list[tuple[int, int | None, str]] = []
     attempted = re.compile(r"<!--\s*verify:")
-    for lineno, line in enumerate(text.split('\n'), start=1):
-        pos = 0
-        while match := attempted.search(line, pos):
-            valid = _VERIFY_RE.match(line, match.start())
-            if valid is None:
-                out.append((lineno, None, "malformed marker"))
-                pos = match.end()
-                continue
-            numbers = list(_NUMBER_RE.finditer(line[:match.start()]))
-            number = int(numbers[-1].group('num').replace(',', '')) if numbers else None
-            out.append((lineno, number, valid.group('key')))
-            pos = valid.end()
+    pos = 0
+    while match := attempted.search(text, pos):
+        line_start = text.rfind('\n', 0, match.start()) + 1
+        line_end = text.find('\n', match.start())
+        if line_end < 0:
+            line_end = len(text)
+        lineno = text.count('\n', 0, match.start()) + 1
+        line = text[line_start:line_end]
+        offset = match.start() - line_start
+        valid = _VERIFY_RE.match(line, offset)
+        if valid is None:
+            out.append((lineno, None, "malformed marker"))
+            pos = match.end()
+            continue
+        numbers = list(_NUMBER_RE.finditer(line[:offset]))
+        number = int(numbers[-1].group('num').replace(',', '')) if numbers else None
+        out.append((lineno, number, valid.group('key')))
+        pos = line_start + valid.end()
 
     return out
 
