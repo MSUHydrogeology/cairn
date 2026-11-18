@@ -82,12 +82,30 @@ a convenient Python carrier.
    `Dockerfile`; the build **emits the Cairn identity** as OCI labels
    (`org.cairn.commit`, `org.cairn.ref`):
 
+   Use the full commit ID verified in Phase 1. The context is extracted from
+   that commit, so ignored files and local caches in the checkout are excluded.
+
    ```sh
-   podman build -f /path/to/verified-checkout/install/container/Dockerfile --target engine \
-     --build-arg CAIRN_COMMIT="$(git -C /path/to/verified-checkout rev-parse HEAD)" \
-     --build-arg CAIRN_REF="<selected-tag>" \
-     -t cairn-kernel:pinned /path/to/verified-checkout
+   # --- BEGIN DOCUMENTED-BUILD ---
+   CAIRN_CHECKOUT='/path/to/verified-checkout'
+   CAIRN_COMMIT='<verified-full-commit-id>'
+   CAIRN_REF='<selected-tag-or-ref>'
+   CONTEXT="$(mktemp -d "${TMPDIR:-/tmp}/cairn-build.XXXXXXXX")" &&
+   CONTEXT="$(cd "$CONTEXT" && pwd -P)" &&
+   git -C "$CAIRN_CHECKOUT" archive --format=tar --output "$CONTEXT/source.tar" "$CAIRN_COMMIT" \
+     install/container/Dockerfile install/scaffold.py install/_scaffold templates CITATION.cff &&
+   mkdir "$CONTEXT/tree" &&
+   tar -xf "$CONTEXT/source.tar" -C "$CONTEXT/tree" &&
+   podman build -f "$CONTEXT/tree/install/container/Dockerfile" --target engine \
+     --build-arg CAIRN_COMMIT="$CAIRN_COMMIT" \
+     --build-arg CAIRN_REF="$CAIRN_REF" \
+     -t cairn-kernel:pinned "$CONTEXT/tree" &&
+   rm -rf -- "$CONTEXT"
+   # --- END DOCUMENTED-BUILD ---
    ```
+
+   A successful build removes its temporary context. If a step fails, remove
+   the context named by `CONTEXT` after inspecting the failure.
 
    Inspect the emitted identity with
    `podman image inspect cairn-kernel:pinned --format '{{ .Labels }}'`.

@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -1120,6 +1121,50 @@ def test_acceptance_build_uses_archived_recipe_after_live_substitution(
     assert result.returncode == 0, f"{result.stdout}{result.stderr}"
     assert capture.read_text() == "verified recipe\n"
     assert (repo / "install/container/Dockerfile").read_text() == "substituted live recipe\n"
+
+
+def test_documented_build_archives_verified_commit_without_ignored_files(
+        lab: Lab, tmp_path: Path) -> None:
+    """The public recipe builds only the verified commit's archived inputs."""
+    repo = _build_surface_repo(lab, tmp_path / "documented-source")
+    (repo / ".gitignore").write_text("*.pyc\n")
+    lab.git(repo, "add", ".gitignore")
+    lab.git(repo, "commit", "-qm", "ignore local cache")
+    commit = lab.git(repo, "rev-parse", "HEAD").stdout.strip()
+    ignored = repo / "install/_scaffold/local.pyc"
+    ignored.write_bytes(b"local cache, not source")
+    assert lab.git(repo, "check-ignore", str(ignored)).returncode == 0
+
+    fakebin = tmp_path / "bin"
+    fakebin.mkdir()
+    podman = fakebin / "podman"
+    podman.write_text(
+        '#!/bin/sh\n'
+        '[ "$1" = build ] && [ "$2" = -f ] || exit 1\n'
+        'recipe=$3\n'
+        'for arg in "$@"; do context=$arg; done\n'
+        '[ "$recipe" = "$context/install/container/Dockerfile" ] || exit 2\n'
+        '[ ! -e "$context/install/_scaffold/local.pyc" ] || exit 3\n'
+        'cp "$recipe" "$CAPTURE_RECIPE" && cp "$context/install/scaffold.py" "$CAPTURE_ENGINE"\n'
+    )
+    podman.chmod(0o755)
+    guide = (REPO_ROOT / "install/container/recipe.md").read_text()
+    unindented = "\n".join(line[3:] if line.startswith("   ") else line
+                            for line in guide.splitlines()) + "\n"
+    script = _extract_marked(unindented, "DOCUMENTED-BUILD")
+    script = script.replace("'/path/to/verified-checkout'", shlex.quote(str(repo)))
+    script = script.replace("'<verified-full-commit-id>'", shlex.quote(commit))
+    script = script.replace("'<selected-tag-or-ref>'", shlex.quote(commit))
+    recipe_capture = tmp_path / "captured-recipe"
+    engine_capture = tmp_path / "captured-engine"
+    env = dict(lab.env, PATH=str(fakebin) + os.pathsep + lab.env["PATH"],
+               TMPDIR=str(tmp_path), CAPTURE_RECIPE=str(recipe_capture),
+               CAPTURE_ENGINE=str(engine_capture))
+    result = subprocess.run(["bash", "-c", script], capture_output=True, text=True, env=env)
+    assert result.returncode == 0, f"{result.stdout}{result.stderr}"
+    assert recipe_capture.read_text() == "verified recipe\n"
+    assert engine_capture.read_text() == "x\n"
+    assert ignored.read_bytes() == b"local cache, not source"
 
 
 def test_provenance_path_is_exercised_without_acceptance_sh(lab: Lab):
