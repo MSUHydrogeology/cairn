@@ -23,7 +23,9 @@ from pathlib import Path
 
 import pytest
 
-SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "replay_ordinary_c2_mutants.py"
+from tests._repo_root import repository_root
+
+SCRIPT = repository_root(Path(__file__)) / "tests" / "replay_ordinary_c2_mutants.py"
 SPEC = importlib.util.spec_from_file_location("ordinary_c2_replay", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 replay = importlib.util.module_from_spec(SPEC)

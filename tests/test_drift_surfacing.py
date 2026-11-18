@@ -12,7 +12,7 @@ Promises:
 - ``upgrade --plan`` says the drift is unavailable, rather than failing, when the Cairn source is not a git repository.
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/
+    python -m pytest tests/
 """
 
 from __future__ import annotations
@@ -20,14 +20,11 @@ from __future__ import annotations
 import re
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-
-import scaffold  # noqa: E402
+from install import scaffold
 
 
 def _git(repo: Path, *args: str) -> str:
@@ -66,10 +63,10 @@ def _cairn_without_git(tmp_path: Path) -> Path:
     """A copy of what an install reads from the Cairn source, with no git history."""
     root = tmp_path / "cairn-without-git"
     shutil.copytree(CAIRN_ROOT / "templates", root / "templates")
-    (root / "bootstrap" / "_scaffold").mkdir(parents=True)
+    (root / "install" / "_scaffold").mkdir(parents=True)
     for name in ("config.py", "install.py"):
         shutil.copy2(CAIRN_ROOT / "install" / "_scaffold" / name,
-                     root / "bootstrap" / "_scaffold" / name)
+                     root / "install" / "_scaffold" / name)
     if (CAIRN_ROOT / "CITATION.cff").exists():
         shutil.copy2(CAIRN_ROOT / "CITATION.cff", root / "CITATION.cff")
     return root

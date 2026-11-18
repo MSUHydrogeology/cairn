@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from tools import board
+from dev.tools import board
 
 
 from tests._repo_root import repository_root
@@ -105,7 +105,7 @@ def test_warning_caps_output_at_five_plus_summary(tmp_path, capsys):
 
 
 def test_board_copies_are_byte_equal():
-    assert (ROOT / "tools/board.py").read_bytes() == (
+    assert (ROOT / "dev/tools/board.py").read_bytes() == (
         ROOT / "templates/skills/_lib/board.py").read_bytes()
 
 

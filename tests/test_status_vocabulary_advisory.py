@@ -41,8 +41,8 @@ def _load(rel: str, name: str):
     return module
 
 
-board = _load("tools/board.py", "_cairn_board_vocab")
-# The shipped twin; a separate test pins it byte-identical to tools/session.py.
+board = _load("dev/tools/board.py", "_cairn_board_vocab")
+# The shipped twin; a separate test pins it byte-identical to dev/tools/session.py.
 session = _load("templates/skills/_lib/session.py", "_cairn_session_vocab")
 
 PROPOSAL_WORDS = ("awaiting-review", "revising", "awaiting-decision",

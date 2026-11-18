@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-"""Synthetic-only contracts for tools/meter.py; no host-source access.
+"""Synthetic-only contracts for dev/tools/meter.py; no host-source access.
 
 Promises:
 - Default and disabled commands stay off and do not read configured sources or ledgers.
@@ -33,7 +33,7 @@ from tests._repo_root import repository_root
 ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(ROOT))
 from install.scaffold import main as scaffold_main  # noqa: E402
-METER = ROOT / "tools/meter.py"
+METER = ROOT / "dev/tools/meter.py"
 spec = importlib.util.spec_from_file_location("meter_reader", METER)
 meter = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(meter)
@@ -3540,7 +3540,7 @@ def test_explicit_refresh_commands_emit_closed_receipt_from_synthetic_home(
          "--cairn-root", str(ROOT), "--allow-dev"]
     ) == 0
     capsys.readouterr()
-    installed_meter = adopter / "tools" / "meter.py"
+    installed_meter = adopter / "dev" / "tools" / "meter.py"
     disabled_config = json.dumps(
         {"version": 1, "enabled": False, "sources": [], "projects": []}
     ).encode("utf-8")
