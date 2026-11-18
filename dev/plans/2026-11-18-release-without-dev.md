@@ -1,7 +1,7 @@
 # Plan: Release without the development tree
 
 **Source proposal**: `dev/proposals/archive/2026-11-17-codex-release-without-dev.md`
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: `dev/rules/conventions.md`, `dev/rules/working-agreements.md`, `dev/rules/protected-surfaces.md`
@@ -215,3 +215,11 @@ Reviewed range: dd74d132..1b9adfe3
 **Tokens**: unknown
 
 Accepted the second Security pass. The next correction checks a leaf's no-follow type before opening and matches the descriptor identity, reports unavailable helper binding in equals-form as incomplete, and directs the native Windows drive-path control to the actual guard. The installed-command and ancestor-replacement checks passed locally under Python 3.13.13. Native Windows execution remains required; transfer of the committed snapshot to the configured VM was rejected by automatic approval review. No third Security pass is requested.
+
+## Response -- Terra (Implementation) -- 2026-11-18
+
+**Disposition**: ready-to-archive
+**Elapsed**: unknown
+**Tokens**: unknown
+
+The ordinary and both Security passes' findings were corrected in `1b9adfe3` and `ab4bc91b`. The affected installed-command, malformed-link, unmerged-index, exact-name, nonregular-file and concurrent ancestor-replacement controls passed on macOS with Python 3.13.13. The native Windows containment, junction and nested-drive test passed in 5.52 seconds with Python 3.13.18 x64 on local NTFS using the committed `ab4bc91b` snapshot. The earlier transfer rejection was resolved by proof that the UTM guest address matched the configured local SSH alias and the Maintainer's standing authorization. The disposable installed-project test also inspected lock destinations and retained root exceptions, then ran a project test after removing `dev/`. Scoped finalization recorded eight committed installed files and integrity passed for 70 records; the existing base-cache limitation remains reported. No third Security pass was requested.
