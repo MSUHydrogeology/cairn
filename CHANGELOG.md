@@ -46,6 +46,10 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 - **Added: Separate running and developing.** Projects can distinguish running software from changing it with an optional Operator role and separate run rules. Operators switch to development before tracked changes; run rules can only add limits. ([plan](dev/plans/archive/2026-11-18-run-and-development-rules.md))
 
+- **Added: Reusable measurement commands.** The documentation-plan and claim-check modules now include token estimates and checks for documented counts. Count definitions live in an editable settings file that upgrades preserve. ([plan](dev/plans/archive/2026-11-18-ship-measurement-tools.md))
+
+- **Added: Shared outward-report drafts.** Installed guidance leads to shared templates for reporting Cairn and dependency problems. Agents sanitize drafts and file Cairn issues only after approval of the content and destination; people submit Cairn pull requests. ([plan](dev/plans/archive/2026-11-18-outward-reports.md))
+
 - **Changed: Commit-time claim check warns by default.** If you installed the optional commit check (`python dev/tools/intent.py install-precommit`), it now warns and lets the commit through when another session holds a claim on the same file. To keep refusing, add `"enforce": "block"` to `dev/.cairn/intent-config.json` (older installs: `dev/intent-config.json`); no hook reinstall is needed. ([proposal](dev/proposals/archive/2026-11-16-claude-claims-check-warn-only.md))
 
 - **Changed: Security review trigger.** A Security Review is required when a change alters what a named high-risk surface does or accepts, or adds a place where outside input enters the system; merely touching the surface does not trigger one. Prose-only shipped templates receive a release-wide read on the exact candidate, while code, installer structure and functional configuration retain their protections; the development checkout therefore carries that exposure until release. ([heavy-tier plan](dev/plans/archive/2026-11-16-heavy-tier-trigger.md); [template-scan plan](dev/plans/archive/2026-11-17-template-scan-and-risk-list.md))
