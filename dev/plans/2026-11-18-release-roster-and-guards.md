@@ -51,3 +51,23 @@ The Maintainer's exact authorization was: “Accept both as revised, choosing Op
 Before implementation use `python tests/tier_inventory.py for <changed paths>` to select tests naming changed files and focused public-entry nodes. Use current source inventory and known-positive controls for negative searches. Run the applicable checks on native Mac with `/Users/kendal30/conda_envs/lhm/bin/python3.13` and native Windows in the existing local UTM environment, including previously skipped paths; record exact commands, versions and results. Use existing scripts and readers, not a new ledger or one test per helper. For changed prose run claim, link, snippet, neutrality and prose-integrity gates, and inspect readers and byte pins. Independent scientific check: N/A, as accepted.
 
 The Maintainer's re-anchor and actual certifying records are separate named board waits with their owner, required evidence and link to this implementation; they remain unpassed until their evidence exists. This plan neither performs nor signs a baseline, and routine release operations do not gate its final chunk. Elapsed: unknown; tokens: unknown.
+
+## Plan review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: dcaef30b77eb008f209129aa9389c6a525c53f8e
+**Obligation**: Internal
+**Verdict**: REVISE
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** The conditional guard retirement and bounded extra security pass preserve the Decision, but verification and completion sequencing need correction (Scope; Sequence; C3).
+2. **Best alternative.** Bind the actual selected checks and inputs to the tested candidate in the existing evidence, and leave joined integration to the arc owner after connected plans finish; neither needs a new ledger (accepted proposal S3; `dev/agent_collaboration.md`, Verification).
+3. **What would show it wrong?** A check record whose selected nodes or inputs do not correspond to the candidate, or a completed plan held open solely for another plan's integration, would expose the gaps (C3; Verification).
+
+**Findings**
+
+- The accepted proposal S3 requires the plan to bind exact inventory selections, public nodes, platform commands and input sets to the final candidate. C3 names a candidate and commands but does not require the selected nodes and input sets to be bound to it. Add that requirement to Verification and C3, using existing records.
+- C3 puts joined integration after connected work inside this plan's final chunk. Plans finish independently before later integration. Make the arc owner's joined integration a separate arc obligation while retaining this plan's own checks and reviews (Sequence; `dev/agent_collaboration.md`, Verification).
+
+Coverage: read the committed plan, accepted proposal and Decision, current plan template and relevant collaboration rules. Did not collect or run tests, assess actual guard equivalence, inspect native results or perform Security Review. The separate Internal Security Review remains outstanding.
