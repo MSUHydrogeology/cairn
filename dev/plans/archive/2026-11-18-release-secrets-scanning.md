@@ -338,3 +338,27 @@ Dispositions: `accept` (all five Argon pass-1 findings resolved in `7b502666` an
 
 **Elapsed**: unknown
 **Tokens**: unknown
+
+## Post-archive security review (Gitleaks 8.30.1 admissions and Windows verification) -- Argon (Security Review, High) -- 2026-11-18
+
+Reviewed commit: 900b8806
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Model basis**: gemini-4-argon-high
+**Findings**: none
+**Verdict**: ACCEPT
+
+1. **Should this happen as framed?** Yes. Native post-fix verification on `cairn-windows` (`c918b4d5`, Windows ARM64, Python 3.13.18) and macOS (`900b8806`, Python 3.13.13) confirmed both checksum-verified Gitleaks `8.30.1` builds pass `--verify-version-support` (`"admit": true`) and synthetic C3 full-mode frozen-history sweeps. -- `dev/measurement/gitleaks-version-support.md:122-142`; `dev/tools/run_portable_security_sweeps.py:248-259`.
+2. **Best alternative.** Record both measured triples in `_ADMITTED_ARTIFACTS` and the evidence ledger, enforce their bijection via `test_shipped_admitted_artifacts_match_evidence_ledger`, and keep `runner_copy` defaulting to `{}` so unadmitted/empty-table controls stay intact. -- `tests/test_portable_security_sweeps.py:104-137`, `:3598-3646`.
+3. **What would show it wrong?** A non-candidate-ref secret missed on native Windows full mode, or an unmeasured/mismatched digest reaching CLEAN `0`. -- Plan C1–C3.
+
+**Verified admissions and post-fix Windows runs.**
+- **Admitted triples**: `("8.30.1", "darwin", "arm64")` (`sha256:f414bc2fb952be6c9072b75cb411e3368614ef4b16d48dbd9ad238034afd2302`, `GL-2026-11-18-darwin-arm64-8.30.1`) and `("8.30.1", "windows", "arm64")` (`sha256:200df852fdecbedb19a33960657333cba5e231740bc8968972b507b50f93b194`, `GL-2026-11-18-windows-arm64-8.30.1`, official `gitleaks_8.30.1_windows_arm64.zip` SHA-256 `b95f5e4f5c425cedca7ee203d9afd29597e692c4924a12ed42f970537c72cc0f`) match across both byte-identical runner twins (`sha256:05b69dae...`), `dev/.cairn/cairn-lock.yml`, and the ledger (`152 passed, 2 skipped` on macOS).
+- **Post-fix `cairn-windows` verification**: With `gitleaks.exe` 8.30.1, `bandit` 1.9.4, and `vermin` 1.9.2 installed, `--verify-version-support` passed (`"admit": true`, `git version 2.56.0.windows.4`, `canary_connections: 0`); C3 disposable synthetic full-mode frozen-history sweeps with real `gitleaks.exe` and the C# Job relay passed `WIN_C3_CLEAN` (`rc=0`, `mode='full'`, both legs `CLEAN`) and `WIN_C3_FINDING` (`rc=10`, `mode='full'`, `current-tree` `CLEAN`, `history` `FINDINGS` 1); `test_security_check.py -k "freeze_history or history_roots or windows"` (`9 passed`), `test_python_floor.py` (`1 passed`), `test_security_check.py -k bandit` (`7 passed`), and `test_native_windows_reduced_entry_runs_version_and_current_tree` (`1 passed`) passed.
+- **Unmasked Windows observations**: The ad-hoc C3 probe script hit a script indexing bug (`triage_doc["legs"][1]`) before its bad-digest step; pre-existing `tests/test_security_check.py:2240-2248` CRLF `.write_text()` (`git-read-binding-failed` on `test_frozen_history_*`) and `tests/test_security_lint.py` Windows path-separator failures (`3 failed, 2 passed`) remain separate from the C1–C3 scanner and admission controls.
+
+**Coverage.** Inspected `git show 900b8806`, twin parity, AST stdlib-only imports, `cairn-lock.yml`, and runs `test_shipped_admitted_artifacts_match_evidence_ledger` and `test_windows_relay_wiring_uses_executable_directory_and_target_authority` (`2 passed`).
+
+**Elapsed**: unknown
+**Tokens**: unknown

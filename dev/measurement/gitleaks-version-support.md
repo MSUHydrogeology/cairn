@@ -162,3 +162,26 @@ A retired triple does not linger above.*
   `windows/x86_64`) remain unmeasured and therefore run in reduced-provenance
   mode until a Maintainer-supplied, checksum-verified build is measured and
   reviewed under the cadence above.
+
+## Security-lens review of 2026-11-18 admissions -- Argon (Security Review, High) -- 2026-11-18
+
+Reviewed commit: 900b8806
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Model basis**: gemini-4-argon-high
+**Findings**: none
+**Verdict**: ACCEPT
+
+1. **Should this happen as framed?** Yes. Both `("8.30.1", "darwin", "arm64")` (`GL-2026-11-18-darwin-arm64-8.30.1`) and `("8.30.1", "windows", "arm64")` (`GL-2026-11-18-windows-arm64-8.30.1`) passed `--verify-version-support` on Maintainer-supplied, checksum-verified binaries with `"admit": true`, zero canary connections, and exact expected Git mediation. -- `dev/measurement/gitleaks-version-support.md:122-142`; `dev/tools/run_portable_security_sweeps.py:248-259`.
+2. **Best alternative.** Admit only the two measured triples in `_ADMITTED_ARTIFACTS` across both byte-identical runner twins while keeping unmeasured triples in reduced-provenance mode (`INCOMPLETE` `5`) and defaulting test `runner_copy` to `{}`. -- `dev/tools/run_portable_security_sweeps.py:476-527`; `tests/test_portable_security_sweeps.py:104-137`.
+3. **What would show it wrong?** Any mismatch between `_ADMITTED_ARTIFACTS` and the verbatim JSON records here, a digest mismatch failing to return `DEGRADED` (`20`), or candidate secret/context bytes leaking into the ledger. -- `tests/test_portable_security_sweeps.py:3598-3646`.
+
+**Verified properties.**
+- **Digests, matrix rows, and provenance**: `("8.30.1", "darwin", "arm64")` matches `/opt/homebrew/Cellar/gitleaks/8.30.1/bin/gitleaks` (`sha256:f414bc2fb952be6c9072b75cb411e3368614ef4b16d48dbd9ad238034afd2302`, `git version 2.53.0`); `("8.30.1", "windows", "arm64")` matches `C:\Program Files\Git\cmd\gitleaks.exe` (`sha256:200df852fdecbedb19a33960657333cba5e231740bc8968972b507b50f93b194`, `git version 2.56.0.windows.4`, extracted from official `gitleaks_8.30.1_windows_arm64.zip` with verified SHA-256 `b95f5e4f5c425cedca7ee203d9afd29597e692c4924a12ed42f970537c72cc0f`). Both records show `clean` (`exit: 0`, `validated_findings: 0`), `planted_finding` (`exit: 42`, `validated_findings: 1`), and `invalid_argv` (`exit: 1`) on `current-tree` and `history`, `git_invocations: ["runner:common-dir", "runner:config", "runner:version", "shim:log", "shim:url"]`, `canary_connections: 0`, `refusals: []`, and no secret or `Match` context in the ledger.
+- **Fail-closed mode selection, twins, and lockfile**: `select_mode` (`:476-527`) keeps unmeasured triples in reduced mode (`5`) and digest mismatches in `DEGRADED` (`20`). `runner_copy` (`tests/test_portable_security_sweeps.py:121-137`) defaults to `{}` so negative unadmitted tests remain valid, while `test_shipped_admitted_artifacts_match_evidence_ledger` enforces the runner-to-ledger bijection. Both runner twins match byte-for-byte (`sha256:05b69dae8a19a458a4b5d5fc2e04d2e6ce798dba1b599ab7830710de3e126742`), use stdlib-only imports (`non_stdlib: []`), and match `dev/.cairn/cairn-lock.yml:369-377`.
+
+**Coverage.** Inspected `git show 900b8806`, `dev/measurement/gitleaks-version-support.md`, both runner twins, `dev/.cairn/cairn-lock.yml`, and `tests/test_portable_security_sweeps.py`; verified twin `cmp -s`, local Darwin binary SHA-256, AST stdlib-only imports, and `pytest -q tests/test_portable_security_sweeps.py -k "admitted_artifacts or select_mode or windows_relay_wiring"` (`2 passed`). Did not re-execute the Windows VM matrix.
+
+**Elapsed**: unknown
+**Tokens**: unknown
