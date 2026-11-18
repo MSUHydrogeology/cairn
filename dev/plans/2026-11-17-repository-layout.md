@@ -2,6 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-09-claude-repository-layout.md
 **Status**: revising-plan
+**Waiting on Maintainer**: Dispose of the recipe-binding correction
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-17
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/development-environment.md
@@ -498,7 +499,7 @@ ceremony, migration or review of rewritten guidance.
 ## Plan change -- Codex -- 2026-11-18
 
 **Prior reviewed commit**: 2ba9f750c93bc67354691d9f3808e5d29ee29538
-**Replacement commit**: this commit
+**Replacement commit**: 3389c79f4097dab8762d309cbad74b69ba3e13fb
 **Affected cells and dependencies**: Scope, Sequence, Acceptance criteria, Verification, C1, C3, C4, C5
 **Change**: Bind the Dockerfile to the same selected source as its COPY
 inputs. Extend the existing refusal and recipe selection checks.
