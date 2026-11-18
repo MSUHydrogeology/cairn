@@ -1,7 +1,7 @@
 # Plan: Release secrets scanning on both platforms
 
 **Source proposal**: `dev/proposals/archive/2026-11-17-codex-release-secrets-scan.md`
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: `dev/rules/conventions.md`, `dev/rules/working-agreements.md`, `dev/rules/protected-surfaces.md`, `dev/rules/development-environment.md`
@@ -305,6 +305,36 @@ Reviewed commit: 7b502666
 - **Parity & lockfile**: Both runner twins (`sha256:a21ef97a...`) and module docs match (`cmp -s`), imports are stdlib-only (`non_stdlib: []`), `dev/.cairn/cairn-lock.yml` updates only `dev/tools/run_portable_security_sweeps.py`, and the unreachable `cairn-windows` VM gap after `7579ce40` is honestly recorded.
 
 **Coverage.** Inspected `git show 7b502666`, verified twin `cmp -s`, lockfile SHA-256, and AST stdlib-only imports, and ran the 5 new regression tests under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (`5 passed` across `test_security_check.py` and `test_portable_security_sweeps.py`). Did not rerun full suites or connect to `cairn-windows`.
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+## Implementation verification
+
+**Mac canonical Python 3.13.13 (`/Users/kendal30/conda_envs/lhm/bin/python3.13`):**
+- At final code/lockfile/test commit (`7b502666`, unchanged after `d7c94919`):
+  - `pytest -q tests/test_security_check.py tests/test_portable_security_sweeps.py`: `345 passed, 2 skipped, 3 warnings in 183.44s` (the 2 skips are `os.name == "nt"`-only native Windows ACL/relay tests).
+  - `pytest -q tests/test_security_lint.py` (at `d7c94919`): `4 passed in 3.13s`.
+  - Twin byte parity (`cmp -s` for `dev/tools/run_portable_security_sweeps.py` <-> `templates/modules/team-gated/run_portable_security_sweeps.py` and `dev/modules/portable-security-sweeps.md` <-> `templates/modules/team-gated/portable-security-sweeps.md`): exit `0`.
+  - Stdlib-only AST check on `dev/tools/run_portable_security_sweeps.py`: `0` non-stdlib imports (`non_stdlib: []`).
+  - Scoped lockfile finalization (`install/scaffold.py upgrade --target . --finalize dev/tools/run_portable_security_sweeps.py` -> `sha256:a21ef97a...`): attested by `test_cairns_own_install_records_all_three_files_in_the_lockfile`.
+  - Remaining mapped `tests/tier_inventory.py` Boundary B files (`task-8346`, at `d7c94919`): `295 passed, 92 failed, 28 errors in 73.50s` — `test_broad_run_guard.py`, `test_config_module.py`, `test_core_dev_folders.py`, `test_lockfile_provenance.py`, `test_python_floor.py`, `test_scaffold_substrate.py`, and `test_upgrade_lockfile_path_containment.py` passed; all `92 failed` and `28 errors` (`test_gate_manifest.py`, `test_gate_reanchor.py`, `test_oracle_activation.py`, `test_ceremony_review_report.py`, `test_replacement_tools.py`, `integration/test_gauge.py`, `contract/test_test_tiers.py`) and earlier `tests/test_security_stack.py` (`18 failed, 203 passed` in `task-8084`) / `tests/security/test_git_read_routes.py` + `tests/test_reference_scripts.py` (`30 failed, 101 passed` in `task-7927`) trace strictly to pre-existing pre-re-anchor baseline mismatches, pre-relocation `bootstrap/`/`tools/`/`scripts/` paths, or pre-existing `tier_inventory.py` linked-tools harness drift.
+- Pre-revision real Gitleaks `8.30.1` run (`/opt/homebrew/bin/gitleaks`, `sha256:f414bc2fb952be6c9072b75cb411e3368614ef4b16d48dbd9ad238034afd2302` at `7579ce40`): `--verify-version-support --confirm-executing-an-unadmitted-binary` -> `"admit": true` on both `current-tree` and `history`, `canary_connections: 0`.
+
+**Native Windows (`cairn-windows`, Python 3.13.18):**
+- Pre-revision run at `7579ce40` (`task-8068`): `tests/test_security_check.py -k 'freeze_history or history_roots or windows'` -> `9 passed, 183 deselected in 13.49s`; `tests/test_portable_security_sweeps.py` cross-platform/native/history/triage subset -> `8 passed, 1 skipped, 141 deselected in 3.47s` (skip: absent native `gitleaks.exe`; ~102 pre-existing POSIX-shebang `fake_tool` tests fail on Windows outside scope).
+- **Unrun / gap**: `cairn-windows` (`192.168.64.2`) went unreachable (`No route to host`, UTM guest asleep; `utmctl` blocked from sandbox with `OSStatus -1743`) after `7579ce40`, so the post-fix rerun (after `7b502666`, including Finding 1 `.executable.directory` / `win_hist.authority` and Finding 4–5 fixes) could not execute on native Windows in this session.
+
+**Benefit versus cost**: worth it -- delivered complete frozen-history binding (`--freeze-history`, `--record --history-roots`, `--join --history-roots`), Windows Job C# relay mediation, Gitleaks 8.30.1 `Secret == "REDACTED"` / `"REDACTED" in Match` validation + wholesale `Match` discard + owner-only `--triage-record`, and verified Mac end-to-end checks; cost iterative Mac and pre-revision Windows verification, twin/lockfile maintenance, Hydrogen Ordinary review (`296213ad`, `ACCEPT`), and two Argon Security review passes (`5382c096` `REVISE` -> `7b502666` fixes -> `d7c94919` `ACCEPT`); remaining burden post-fix native Windows VM verification once `cairn-windows` wakes, plus the four Maintainer/operator release-cut waits and grouped v0.8 AST re-anchor.
+
+## Implementation closeout -- Coordinator (Antigravity) -- 2026-11-18
+
+C1 (frozen-history capture/projection/mirror checks, `raw_roots` packing including annotated tags, non-unborn worktree HEADs, shallow linked-worktree refusal, Windows Job C# relay), C2 (`adapter_digest`, `Secret`/`Match` redaction validation, wholesale `Match` discard, exit-`0` findings `DEGRADED`, off-tree private `--triage-record`, projection equality in `--record` and `--join`), and C3 (twin parity, stdlib-only AST, scoped lockfile, Ordinary `296213ad` ACCEPT, Security pass 1 `5382c096` -> fixes `7b502666` -> Security pass 2 `d7c94919` ACCEPT) held on macOS; pre-revision Windows mediation/history/triage passed at `7579ce40` before the VM slept.
+
+- Remaining: Post-fix native `cairn-windows` rerun once UTM wakes; Maintainer grouped v0.8 AST/gate re-anchor for `dev/tools/run_portable_security_sweeps.py` and `release/security_check.py`; and four standalone release-cut waits: (1) Mac scanner build admission (Maintainer), (2) Windows scanner build admission (`gitleaks.exe`, Maintainer), (3) Mac candidate secrets scan (`--freeze-history` / `--record --history-roots`, release operator), (4) Windows candidate secrets scan + clean Mac `--join --history-roots` (release operator). Home: `dev/PLANNING.md` ("Completed repairs awaiting the trust operation" and rows 112–115 under "Release preparation, and trials that can run at any time").
+- Not run: Real credentials/history scans and post-fix `cairn-windows` rerun (`192.168.64.2` `No route to host`). Home: `dev/PLANNING.md` (same rows; `cairn-windows` rerun queued before strict Windows record).
+
+Dispositions: `accept` (all five Argon pass-1 findings resolved in `7b502666` and accepted in `d7c94919`).
 
 **Elapsed**: unknown
 **Tokens**: unknown
