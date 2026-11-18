@@ -1353,7 +1353,7 @@ def test_read_origin_excludes_git_from_every_supplied_root(tmp_path: Path) -> No
     assert not marker.exists()
 
 
-NATIVE_GIT_FIXTURE = ROOT / "bootstrap/tests/fixtures/native_git_fixture.cs"
+NATIVE_GIT_FIXTURE = ROOT / "tests/fixtures/native_git_fixture.cs"
 NATIVE_CSC = Path(r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe")
 
 

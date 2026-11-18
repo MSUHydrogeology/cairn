@@ -506,7 +506,7 @@ def test_real_discovery_cli_keeps_broken_file_with_decoy_and_catches_literal_mut
         installed_root = tmp_path / "installed"
         installed_root.mkdir()
         assert _scaffold(installed_root, ["doc-drift-prevention"]) == 0
-        installed_snippets = installed_root / "scripts" / "sync_doc_snippets.py"
+        installed_snippets = installed_root / "dev" / "tools" / "sync_doc_snippets.py"
         installed_check = subprocess.run(
             [sys.executable, str(installed_snippets), "--root", str(root),
              "--check"],

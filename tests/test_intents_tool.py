@@ -2531,11 +2531,11 @@ def _precommit_route_run(repo: Path, git: str, git_path: str,
 @pytest.mark.parametrize(
     ("entry_source", "route", "function"),
     [
-        (CAIRN_ROOT / "tools/_intent/conflict.py", "staged",
+        (CAIRN_ROOT / "dev/tools/_intent/conflict.py", "staged",
          "_staged_paths_via_git"),
         (CAIRN_ROOT / "templates/modules/team-gated/_intent/conflict.py",
          "staged", "_staged_paths_via_git"),
-        (CAIRN_ROOT / "tools/_intent/conflict.py", "rename",
+        (CAIRN_ROOT / "dev/tools/_intent/conflict.py", "rename",
          "_rename_map_via_git"),
         (CAIRN_ROOT / "templates/modules/team-gated/_intent/conflict.py",
          "rename", "_rename_map_via_git"),

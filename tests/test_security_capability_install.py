@@ -72,11 +72,11 @@ _POLICY_DESTINATIONS = frozenset({
 # reproduced as a full expected string, so this file does not silently pass
 # by re-deriving the renderer's own text.
 _NOTICE_FRAGMENTS = (
-    "python scripts/api_access_security.py local",
-    "python scripts/api_access_security.py deployed-passive "
+    "python dev/tools/api_access_security.py local",
+    "python dev/tools/api_access_security.py deployed-passive "
     "--authorize-base-url",
-    "python scripts/web_hosting_security.py local",
-    "python scripts/web_hosting_security.py deployed-passive "
+    "python dev/tools/web_hosting_security.py local",
+    "python dev/tools/web_hosting_security.py deployed-passive "
     "--authorize-base-url",
     "byte-for-byte",
     "No deployed credential is read during install or during local "
@@ -243,9 +243,9 @@ def test_hazard_a_renamed_engine_source_degrades_the_facade_at_runtime(
         templates_root, target, {}, ["api-access-security"], force=True,
     )
     assert not (
-        target / "scripts" / "_api_access_security" / "net.py"
+        target / "dev" / "tools" / "_api_access_security" / "net.py"
     ).exists()
-    facade = target / "scripts" / "api_access_security.py"
+    facade = target / "dev" / "tools" / "api_access_security.py"
     assert facade.is_file()
 
     result = subprocess.run(
@@ -354,7 +354,7 @@ def test_hazard_a_tampered_engine_member_fails_the_fresh_install(
     )
     assert rc == 0
     assert verify(target) == 0
-    member = target / "scripts" / "_api_access_security" / "net.py"
+    member = target / "dev" / "tools" / "_api_access_security" / "net.py"
     member.write_bytes(member.read_bytes() + b"\n# tampered\n")
     assert verify(target) == 1
 
@@ -379,7 +379,7 @@ def test_hazard_an_illegal_living_state_opt_out_still_refuses(
     assert rc == 0
     lock = s.read_lockfile(target)
     for rec in lock["files"]:
-        if rec["dst"] == "scripts/api_access_security.py":
+        if rec["dst"] == "dev/tools/api_access_security.py":
             rec["living_state"] = True
     (target / s._LOCKFILE_REL).write_text(
         s._emit_lock_yaml(lock), encoding="utf-8",
@@ -629,7 +629,7 @@ def test_f2_1_a_filled_policy_stays_ok_and_only_the_policy_does(
         "property F2 exists to provide"
     )
 
-    member = target / "scripts" / "_api_access_security" / "net.py"
+    member = target / "dev" / "tools" / "_api_access_security" / "net.py"
     member.write_bytes(member.read_bytes() + b"\n# tampered\n")
     assert verify(target) == 1, (
         "an engine member is verbatim, not living-state: a one-byte change "

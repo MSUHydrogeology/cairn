@@ -334,7 +334,7 @@ class TestModelMappingWaitingSeed:
         assert "**Waiting on Maintainer**: fill the model mapping" in slot
         assert read_lockfile(tmp_path) is not None
         board = subprocess.run(
-            [sys.executable, str(CAIRN_ROOT / "tools/board.py"),
+            [sys.executable, str(CAIRN_ROOT / "dev/tools/board.py"),
              "--maintainer", "--root", str(tmp_path)],
             capture_output=True, text=True, check=False,
         )

@@ -193,7 +193,7 @@ def test_verify_integrity_accepts_an_edited_copy(tmp_path: Path) -> None:
     attrs = target / ".gitattributes"
     attrs.write_bytes(attrs.read_bytes() + b"*.csv -text\n")
     assert verify_integrity.verify(target) == 0
-    board = target / "tools" / "board.py"
+    board = target / "dev" / "tools" / "board.py"
     board.write_bytes(board.read_bytes() + b"\n# changed\n")
     assert verify_integrity.verify(target) != 0
 

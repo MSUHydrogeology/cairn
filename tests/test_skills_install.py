@@ -4,11 +4,11 @@ executing plan `2026-06-01-claude-cairn-vendor-neutral-skills`).
 A real scaffold of a scratch adopter repo must:
 
 * install both ``SKILL.md`` sources to ``.agents/skills/<name>/`` and the CLI to
-  ``tools/session.py`` -- unconditionally, with no module selected (Decision
+  ``dev/tools/session.py`` -- unconditionally, with no module selected (Decision
   5: skills install like core);
 * record each canonical skill artifact in ``dev/.cairn/cairn-lock.yml`` -- the two
   ``SKILL.md`` files non-verbatim (with a ``base_cache`` + ``base_hash`` -> the
-  3-way-merge upgrade path) and ``tools/session.py`` verbatim (hash-only, no
+  3-way-merge upgrade path) and ``dev/tools/session.py`` verbatim (hash-only, no
   base cache);
 * write ``dev/.cairn/base/...`` cache entries for the non-verbatim skills;
 * write the per-worktree Git-administration interpreter binding and retain the
@@ -57,9 +57,9 @@ pytestmark = pytest.mark.skipif(
 
 SKILL_START = ".agents/skills/session-start/SKILL.md"
 SKILL_END = ".agents/skills/session-end/SKILL.md"
-CLI = "tools/session.py"
-METER = "tools/meter.py"
-GIT_READ = "tools/git_read.py"
+CLI = "dev/tools/session.py"
+METER = "dev/tools/meter.py"
+GIT_READ = "dev/tools/git_read.py"
 
 
 @pytest.fixture()

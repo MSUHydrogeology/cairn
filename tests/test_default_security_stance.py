@@ -78,22 +78,22 @@ def test_content_security_is_in_every_shipped_preset_roster(preset: str) -> None
 def test_content_security_reaches_the_no_key_default_shape(tmp_path: Path) -> None:
     rc, target = _install(tmp_path, "")
     assert rc == 0
-    assert (target / "scripts" / "content_scan.py").is_file()
+    assert (target / "dev" / "tools" / "content_scan.py").is_file()
 
 
 def test_an_exact_modules_list_is_never_widened_by_the_default_on_module(
         tmp_path: Path) -> None:
     rc, target = _install(tmp_path, "modules:\n  - claim-check\n")
     assert rc == 0
-    assert not (target / "scripts" / "content_scan.py").exists()
+    assert not (target / "dev" / "tools" / "content_scan.py").exists()
     assert not (target / "dev" / "modules" / "content-security.md").exists()
 
 
 def test_modules_empty_list_opts_out_entirely(tmp_path: Path) -> None:
     rc, target = _install(tmp_path, "python_package: mypkg\nmodules: []\n")
     assert rc == 0
-    assert not (target / "scripts" / "content_scan.py").exists()
-    assert not (target / "scripts" / "run_security_audit.py").exists()
+    assert not (target / "dev" / "tools" / "content_scan.py").exists()
+    assert not (target / "dev" / "tools" / "run_security_audit.py").exists()
 
 
 def test_python_security_is_selected_when_the_token_is_declared(
@@ -101,13 +101,13 @@ def test_python_security_is_selected_when_the_token_is_declared(
     rc, target = _install(
         tmp_path, "preset: solo-greenfield\npython_package: mypkg\n")
     assert rc == 0
-    assert (target / "scripts" / "run_security_audit.py").is_file()
+    assert (target / "dev" / "tools" / "run_security_audit.py").is_file()
 
 
 def test_python_security_is_absent_without_the_token(tmp_path: Path) -> None:
     rc, target = _install(tmp_path, "preset: solo-greenfield\n")
     assert rc == 0
-    assert not (target / "scripts" / "run_security_audit.py").exists()
+    assert not (target / "dev" / "tools" / "run_security_audit.py").exists()
 
 
 def test_the_token_gate_does_not_override_modules_remove() -> None:
@@ -178,7 +178,7 @@ def test_a_declared_token_never_conscripts_a_module_into_an_exact_list(
         "python_package: mypkg\nmodules:\n  - claim-check\n",
     )
     assert rc == 0
-    assert not (target / "scripts" / "run_security_audit.py").exists()
+    assert not (target / "dev" / "tools" / "run_security_audit.py").exists()
 
 
 def test_a_new_default_on_module_stays_opt_in_for_an_existing_adopter(
@@ -197,7 +197,7 @@ def test_a_new_default_on_module_stays_opt_in_for_an_existing_adopter(
     assert "content-security" in output
     assert "dev/modules/content-security.md" not in output
     assert "scripts/content_scan.py" not in output
-    assert not (target / "scripts" / "content_scan.py").exists()
+    assert not (target / "dev" / "tools" / "content_scan.py").exists()
 
 
 def test_the_summary_and_the_install_agree_on_the_roster_for_a_no_preset_profile(

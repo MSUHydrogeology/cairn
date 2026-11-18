@@ -54,7 +54,7 @@ def installed(tmp_path_factory: pytest.TempPathFactory) -> Path:
     target = base / "project"
     target.mkdir()
     result = subprocess.run(
-        [sys.executable, str(ROOT / "bootstrap/scaffold.py"),
+        [sys.executable, str(ROOT / "install/scaffold.py"),
          "--config", str(config), "--target", str(target),
          "--cairn-root", str(ROOT), "--allow-dev"],
         capture_output=True, text=True, check=False,

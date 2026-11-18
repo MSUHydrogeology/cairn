@@ -514,7 +514,7 @@ class TestAnchoredScanDigest:
     checker hides a hit, and the anchor's copy has to be the one that is run."""
 
     def _closure_files(self) -> dict:
-        return {f"bootstrap/tests/{n}": (CAIRN_ROOT / "bootstrap/tests" / n)
+        return {f"bootstrap/tests/{n}": (CAIRN_ROOT / "tests" / n)
                 .read_bytes() for n in _CLOSURE_PY}
 
     def _extract(self, repo: Path, commit: str, dest: Path) -> Path:

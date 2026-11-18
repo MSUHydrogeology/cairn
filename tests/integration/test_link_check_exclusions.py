@@ -52,7 +52,7 @@ from tests._repo_root import repository_root
 CAIRN_ROOT = repository_root(Path(__file__))
 MODULE_PATH = CAIRN_ROOT / "templates" / "modules" / "team-gated" / "link_check.py"
 sys.path.insert(0, str(CAIRN_ROOT))
-sys.path.insert(0, str(CAIRN_ROOT / 'scripts'))
+sys.path.insert(0, str(CAIRN_ROOT / 'tests'))
 
 from install.scaffold import main as scaffold_main  # noqa: E402
 import check_cairn  # noqa: E402
@@ -216,7 +216,7 @@ def test_configured_link_entry_point_preserves_other_findings(tmp_path, capsys):
         ['--config', str(cfg), '--target', str(root),
          '--cairn-root', str(CAIRN_ROOT), '--allow-dev']
     ) == 0
-    installed = root / 'scripts' / 'link_check.py'
+    installed = root / 'dev' / 'tools' / 'link_check.py'
     result = subprocess.run(
         [sys.executable, str(installed), '--root', str(root), str(doc)],
         cwd=root, text=True, capture_output=True, check=False,

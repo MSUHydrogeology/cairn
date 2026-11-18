@@ -87,7 +87,7 @@ def test_resolves_project_aliases_and_private_imports_without_running_project(tm
         ["--config", str(cfg), "--target", str(installed_root),
          "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
     ) == 0
-    installed_tool = installed_root / "scripts" / "test_coupling.py"
+    installed_tool = installed_root / "dev" / "tools" / "test_coupling.py"
     result = _run(root, tool=installed_tool)
     assert result.returncode == 0
     assert _rows(result) == [

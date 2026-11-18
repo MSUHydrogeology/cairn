@@ -117,7 +117,7 @@ def _run_public_git_route(
     tools = delivery / "tools"
     tools.mkdir(exist_ok=True)
     helper = tools / "git_read.py"
-    helper_bytes = (CAIRN_ROOT / "tools/git_read.py").read_bytes() + (
+    helper_bytes = (CAIRN_ROOT / "dev/tools/git_read.py").read_bytes() + (
         b"\nimport os as _route_os\n"
         b"from pathlib import Path as _route_Path\n"
         b"with _route_Path(_route_os.environ['CAIRN_TEST_HELPER_MARKER'])"
@@ -289,7 +289,7 @@ def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
     tools = delivery / "tools"
     tools.mkdir(exist_ok=True)
     helper = tools / "git_read.py"
-    helper_bytes = (CAIRN_ROOT / "tools/git_read.py").read_bytes() + (
+    helper_bytes = (CAIRN_ROOT / "dev/tools/git_read.py").read_bytes() + (
         b"\nimport os as _binding_os\n"
         b"from pathlib import Path as _binding_Path\n"
         b"with _binding_Path(_binding_os.environ['CAIRN_TEST_HELPER_MARKER'])"
@@ -731,7 +731,7 @@ class TestMeasurePrimitives:
 
 
 def test_git_commits_in_range_refuses_target_local_path_git_route(tmp_path):
-    caller = CAIRN_ROOT / "scripts/measurements.py"
+    caller = CAIRN_ROOT / "tests/measurements.py"
     success_driver = f'''\
 import os
 import runpy

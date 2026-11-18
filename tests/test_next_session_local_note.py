@@ -128,7 +128,7 @@ def test_verify_stems_flags_a_stem_in_a_present_handoff_file(
          "--cairn-root", str(ROOT), "--allow-dev"]
     ) == 0
     installed = _run_verify_stems(
-        installed_root / "scripts" / "verify_stems.py", repo,
+        installed_root / "dev" / "tools" / "verify_stems.py", repo,
     )
     assert installed.returncode == 1
     assert "2026-01-01-nobody-nothing" in installed.stderr

@@ -54,7 +54,7 @@ def required_files(root: Path, configured: Path | None) -> set[str]:
         if not isinstance(names, list) or not names:
             raise CheckError("required-file configuration must be a nonempty JSON list")
     else:
-        manifest = root / "bootstrap/tests/security_manifest.py"
+        manifest = root / "tests/security_manifest.py"
         try:
             tree = ast.parse(manifest.read_text(encoding="utf-8"))
             definitions = [node.value for node in tree.body
@@ -72,8 +72,8 @@ def required_files(root: Path, configured: Path | None) -> set[str]:
                or not name.startswith("test_") or not name.endswith(".py")
                for name in family):
             raise CheckError("invalid security family member")
-        names = ["bootstrap/tests/" + name for name in family]
-        names.append("bootstrap/tests/test_security_marker.py")
+        names = ["tests/" + name for name in family]
+        names.append("tests/test_security_marker.py")
     resolved = [_file(root, name) for name in names]
     if len(set(resolved)) != len(resolved):
         raise CheckError("required-file configuration contains duplicate identities")

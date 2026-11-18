@@ -6,7 +6,7 @@ Promises:
 - An adopter-owned slow selection is independent of the required members.
 - Refuses an existing report path, malformed or invalid required configuration, and an invalid start time.
 - An empty security manifest is never a pass.
-Sources: scripts/check_release_test_members.py module docstring; docs/release-process.md (the release sequence, around lines 115-148).
+Sources: release/check_release_test_members.py module docstring; docs/release-process.md (the release sequence, around lines 115-148).
 
 
 Small isolated release-shaped fixtures do not run Cairn's certifying suite.
@@ -30,17 +30,17 @@ import pytest
 from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
-SCRIPT = ROOT / "scripts/check_release_test_members.py"
+SCRIPT = ROOT / "release/check_release_test_members.py"
 DOC = ROOT / "docs/release-process.md"
-MANIFEST = ROOT / "bootstrap/tests/security_manifest.py"
-VICTIM = "bootstrap/tests/test_security_lint.py"
+MANIFEST = ROOT / "tests/security_manifest.py"
+VICTIM = "tests/test_security_lint.py"
 
 
 @pytest.fixture
 def project(tmp_path: Path) -> Path:
-    tests = tmp_path / "bootstrap/tests"
+    tests = tmp_path / "tests"
     tests.mkdir(parents=True)
-    scripts = tmp_path / "scripts"
+    scripts = tmp_path / "release"
     scripts.mkdir()
     shutil.copyfile(SCRIPT, scripts / SCRIPT.name)
     shutil.copyfile(MANIFEST, tests / MANIFEST.name)
@@ -74,7 +74,7 @@ def _sequence(root: Path, *, omit: str | None = None, adopter: bool = False,
     block = re.search(r"```bash\n(\(\n.*?\n\))\n```", DOC.read_text(), re.S)
     assert block is not None
     command = block.group(1)
-    assert "CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0" in command
+    assert "CAIRN_FULL_SUITE=1 python -m pytest tests --quality-gate-shuffle-seed=0" in command
     # Only a tiny fixture is executed. Never set the certification override.
     command = command.replace("CAIRN_FULL_SUITE=1 ", "")
     option = f"--quality-gate-shuffle-seed=0 -o junit_family={family}"
@@ -82,8 +82,8 @@ def _sequence(root: Path, *, omit: str | None = None, adopter: bool = False,
         option += f" --ignore={omit}"
     command = command.replace("--quality-gate-shuffle-seed=0", option)
     if adopter:
-        command = command.replace("python scripts/check_release_test_members.py",
-                                  "python scripts/check_release_test_members.py --required-files required.json")
+        command = command.replace("python release/check_release_test_members.py",
+                                  "python release/check_release_test_members.py --required-files required.json")
     if preexisting:
         command = command.replace('report="$report_dir/pytest.xml"',
                                   'report="$report_dir/pytest.xml"\ntouch "$report"')
@@ -98,7 +98,7 @@ def test_actual_pytest_identities_and_documented_sequence(project: Path, family:
     assert "release membership: PASS: 15 required files" in result.stdout
 
 
-@pytest.mark.parametrize("omit", [VICTIM, "bootstrap/tests/test_security_marker.py"])
+@pytest.mark.parametrize("omit", [VICTIM, "tests/test_security_marker.py"])
 def test_actual_security_omission_fails_after_pytest_passes(project: Path, omit: str):
     result = _sequence(project, omit=omit)
     assert result.returncode != 0
@@ -108,7 +108,7 @@ def test_actual_security_omission_fails_after_pytest_passes(project: Path, omit:
 
 @pytest.mark.parametrize("omit", [False, True])
 def test_adopter_owned_slow_selection_is_independent(project: Path, omit: bool):
-    slow = "bootstrap/tests/test_slow.py"
+    slow = "tests/test_slow.py"
     (project / slow).write_text("def test_slow():\n    assert True\n")
     (project / "required.json").write_text(json.dumps([slow]))
     result = _sequence(project, adopter=True, omit=slow if omit else None)
@@ -119,7 +119,7 @@ def test_adopter_owned_slow_selection_is_independent(project: Path, omit: bool):
 
 
 def test_pytest_failure_is_preserved_even_if_comparison_passes(project: Path):
-    (project / "bootstrap/tests/test_optional.py").write_text(
+    (project / "tests/test_optional.py").write_text(
         "def test_optional():\n    assert False\n")
     result = _sequence(project)
     assert result.returncode == 1
@@ -134,7 +134,7 @@ def test_documented_sequence_refuses_existing_report_path(project: Path):
     assert "release membership" not in result.stdout + result.stderr
 
 
-def _xml(*, classname: str = "bootstrap.tests.test_security_lint",
+def _xml(*, classname: str = "tests.test_security_lint",
          name: str = "test_ok", outcome: str | None = None) -> ET.Element:
     suite = ET.Element("testsuite", tests="1", failures="0", errors="0", skipped="0")
     case = ET.SubElement(suite, "testcase", classname=classname, name=name)
@@ -145,7 +145,7 @@ def _xml(*, classname: str = "bootstrap.tests.test_security_lint",
 
 
 def _check(root: Path, report: Path, start: int, *, configured: bool = True):
-    args = [sys.executable, str(root / "scripts" / SCRIPT.name), str(report),
+    args = [sys.executable, str(root / "release" / SCRIPT.name), str(report),
             "--started-ns", str(start)]
     if configured:
         args += ["--required-files", str(root / "required.json")]
@@ -214,9 +214,9 @@ def test_report_refusals(evidence, fault: str):
         elif fault == "unknown-class":
             case.set("classname", "not.a.source.file")
         elif fault == "ambiguous-class":
-            (root / "bootstrap.tests.test_security_lint.py").write_text("")
+            (root / "tests.test_security_lint.py").write_text("")
         elif fault == "file-disagrees":
-            case.set("file", "bootstrap/tests/test_security_marker.py")
+            case.set("file", "tests/test_security_marker.py")
         elif fault == "missing-name":
             case.attrib.pop("name")
         elif fault == "nested-case":
@@ -225,7 +225,7 @@ def test_report_refusals(evidence, fault: str):
             ET.SubElement(case, "skipped")
             ET.SubElement(case, "failure")
         elif fault == "no-success":
-            case.set("classname", "bootstrap.tests.test_security_marker")
+            case.set("classname", "tests.test_security_marker")
         else:
             suite = _xml(outcome=fault)
         ET.ElementTree(suite).write(report, encoding="utf-8")
@@ -260,5 +260,5 @@ def test_invalid_start_time_fails(evidence):
 
 def test_empty_security_manifest_is_not_a_pass(evidence):
     root, report, start = evidence
-    (root / "bootstrap/tests/security_manifest.py").write_text("SECURITY_FAMILY: dict = {}")
+    (root / "tests/security_manifest.py").write_text("SECURITY_FAMILY: dict = {}")
     assert _check(root, report, start, configured=False).returncode != 0

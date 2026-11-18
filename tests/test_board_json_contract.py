@@ -832,7 +832,7 @@ class TestSchemaOneBaselineHolds:
         ) == 0
         capsys.readouterr()
         public = subprocess.run(
-            [sys.executable, str(installed_root / "tools" / "board.py"),
+            [sys.executable, str(installed_root / "dev" / "tools" / "board.py"),
              "--json", "--archive", "--root", str(full_tree)],
             cwd=installed_root, text=True, capture_output=True, check=False,
         )
@@ -2437,12 +2437,12 @@ def test_next_light_proposal_continues_until_archived(tmp_path, capsys, monkeypa
     ("## Sequence\n```text\nMAINTAINER-ONLY example\n```\n", False),
     ("## Scope\nOrdinary agent work.\n", False),
 ])
-@pytest.mark.parametrize("board_source", ["tools/board.py", "templates/skills/_lib/board.py"])
+@pytest.mark.parametrize("board_source", ["dev/tools/board.py", "templates/skills/_lib/board.py"])
 def test_next_plan_operative_human_only_steps_stop(tmp_path, body, stop, board_source):
     staged = tmp_path / "tools/board.py"
     staged.parent.mkdir(parents=True)
     shutil.copyfile(CAIRN_ROOT / board_source, staged)
-    shutil.copyfile(CAIRN_ROOT / "tools/session.py", tmp_path / "tools/session.py")
+    shutil.copyfile(CAIRN_ROOT / "dev/tools/session.py", tmp_path / "tools/session.py")
     source = "dev/proposals/archive/2026-01-01-source.md"
     _write(tmp_path, source, _next_accepted_source())
     _write(tmp_path, "dev/plans/2026-01-01-plan.md", (
@@ -2476,7 +2476,7 @@ def test_next_plan_operative_human_only_steps_stop(tmp_path, body, stop, board_s
      ("implementer", "low")),
 ])
 @pytest.mark.parametrize("board_source", [
-    "tools/board.py", "templates/skills/_lib/board.py",
+    "dev/tools/board.py", "templates/skills/_lib/board.py",
 ])
 def test_next_decision_requires_one_unambiguous_outcome(
     tmp_path, decision, expected, board_source
@@ -2484,7 +2484,7 @@ def test_next_decision_requires_one_unambiguous_outcome(
     staged_board = tmp_path / "tools/board.py"
     staged_board.parent.mkdir(parents=True)
     shutil.copyfile(CAIRN_ROOT / board_source, staged_board)
-    shutil.copyfile(CAIRN_ROOT / "tools/session.py", tmp_path / "tools/session.py")
+    shutil.copyfile(CAIRN_ROOT / "dev/tools/session.py", tmp_path / "tools/session.py")
     rel = "dev/proposals/2026-01-01-decision.md"
     content = (
         "# Decision\n\n**Status**: accepted\n**Review**: usual\n"
@@ -2510,12 +2510,12 @@ def test_next_decision_requires_one_unambiguous_outcome(
     ("\nThe proposal is NOT ACCEPTED.", True),
     ("\nThe proposal is REJECTED.", True),
 ])
-@pytest.mark.parametrize("board_source", ["tools/board.py", "templates/skills/_lib/board.py"])
+@pytest.mark.parametrize("board_source", ["dev/tools/board.py", "templates/skills/_lib/board.py"])
 def test_next_actual_continuation_decision_repeated_acceptance(tmp_path, tail, stop, board_source):
     staged = tmp_path / "tools/board.py"
     staged.parent.mkdir(parents=True)
     shutil.copyfile(CAIRN_ROOT / board_source, staged)
-    shutil.copyfile(CAIRN_ROOT / "tools/session.py", tmp_path / "tools/session.py")
+    shutil.copyfile(CAIRN_ROOT / "dev/tools/session.py", tmp_path / "tools/session.py")
     original = (CAIRN_ROOT / "dev/proposals/archive/2026-11-03-claude-agent-continuation.md").read_text(encoding="utf-8")
     decision = "## Decision --" + original.split("## Decision --", 1)[1].split("\n## ", 1)[0]
     assert "**Tier**: heavy. Accepted as revised" in decision
@@ -2627,7 +2627,7 @@ def test_next_heavy_review_floor_is_not_downshifted(
 
 
 @pytest.mark.parametrize("board_source", [
-    "tools/board.py", "templates/skills/_lib/board.py",
+    "dev/tools/board.py", "templates/skills/_lib/board.py",
 ])
 @pytest.mark.parametrize("case,expected", [
     ("source-obligation", "heavy Decision requires a source proposal Security Review obligation"),
@@ -2640,7 +2640,7 @@ def test_next_heavy_requires_security_obligations_through_each_entrypoint(
     staged = tmp_path / "tools/board.py"
     staged.parent.mkdir(parents=True)
     shutil.copyfile(CAIRN_ROOT / board_source, staged)
-    shutil.copyfile(CAIRN_ROOT / "tools/session.py", tmp_path / "tools/session.py")
+    shutil.copyfile(CAIRN_ROOT / "dev/tools/session.py", tmp_path / "tools/session.py")
 
     source = "dev/proposals/archive/2026-01-01-heavy.md"
     source_security = case != "source-obligation"
@@ -2805,7 +2805,7 @@ def _next_amendment_plan(status="revising-plan", baseline=_AMENDMENT_BASE):
 
 
 @pytest.mark.parametrize("board_source", [
-    "tools/board.py", "templates/skills/_lib/board.py",
+    "dev/tools/board.py", "templates/skills/_lib/board.py",
 ])
 @pytest.mark.parametrize("is_git", [False, True])
 def test_next_amendment_revise_then_direct_fresh_successor(
@@ -2868,7 +2868,7 @@ def test_next_amendment_revise_then_direct_fresh_successor(
     "neutral-heading-security-cap",
 ])
 @pytest.mark.parametrize("board_source", [
-    "tools/board.py", "templates/skills/_lib/board.py",
+    "dev/tools/board.py", "templates/skills/_lib/board.py",
 ])
 @pytest.mark.parametrize("is_git", [False, True])
 def test_next_amendment_malformed_or_incomplete_chain_stops(

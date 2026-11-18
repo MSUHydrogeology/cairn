@@ -24,8 +24,8 @@ def test_scope_reduction_plan_template_installs_from_source(tmp_path: Path) -> N
         result = subprocess.run(
             [
                 sys.executable,
-                str(CAIRN_ROOT / "bootstrap/scaffold.py"),
-                "--config", str(CAIRN_ROOT / "bootstrap/profiles" / profile_name),
+                str(CAIRN_ROOT / "install/scaffold.py"),
+                "--config", str(CAIRN_ROOT / "install/profiles" / profile_name),
                 "--target", str(target),
                 "--cairn-root", str(CAIRN_ROOT),
                 "--non-interactive", "--allow-dev",

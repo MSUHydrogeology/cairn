@@ -79,9 +79,9 @@ EXPECTED_GROUP = (
     ("team-gated/portable-security-sweeps.md",
      "dev/modules/portable-security-sweeps.md", False),
     ("team-gated/run_portable_security_sweeps.py",
-     "scripts/run_portable_security_sweeps.py", True),
+     "dev/tools/run_portable_security_sweeps.py", True),
     ("team-gated/portable_security_policy.json",
-     "scripts/portable_security_policy.json", True),
+     "dev/tools/portable_security_policy.json", True),
 )
 
 
@@ -2745,7 +2745,7 @@ def test_windows_full_mode_is_refused_after_selection_even_without_git(
         ("8.30.1", "windows", "amd64"): runner.Admission("a" * 64, "test")
     })
     result, summary = runner._run_sweep_inner(argparse.Namespace(
-        target=str(target), policy=str(CAIRN_ROOT / "scripts/portable_security_policy.json")))
+        target=str(target), policy=str(CAIRN_ROOT / "dev/tools/portable_security_policy.json")))
     assert result == runner._AGG_DEGRADED
     assert summary["mode"] is None
     assert summary["legs"][0]["reason"] == (
@@ -3018,8 +3018,8 @@ def test_a_helper_planted_in_the_scanned_tree_never_runs(
 
 # --- Cairn's own adoption (Decision Condition 2) ---------------------------
 
-RUNNER_TWIN = CAIRN_ROOT / "scripts/run_portable_security_sweeps.py"
-POLICY_TWIN = CAIRN_ROOT / "scripts/portable_security_policy.json"
+RUNNER_TWIN = CAIRN_ROOT / "dev/tools/run_portable_security_sweeps.py"
+POLICY_TWIN = CAIRN_ROOT / "dev/tools/portable_security_policy.json"
 DOCTRINE_TWIN = CAIRN_ROOT / "dev/modules/portable-security-sweeps.md"
 
 
@@ -3080,8 +3080,8 @@ def test_cairns_own_run_with_gitleaks_absent_is_incomplete(tmp_path: Path) -> No
                    "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
     subprocess.run(["git", "init", "-q", str(target)], check=True,
                    capture_output=True, text=True)
-    installed_runner = target / "scripts" / "run_portable_security_sweeps.py"
-    installed_policy = target / "scripts" / "portable_security_policy.json"
+    installed_runner = target / "dev" / "tools" / "run_portable_security_sweeps.py"
+    installed_policy = target / "dev" / "tools" / "portable_security_policy.json"
     proc = subprocess.run(
         [sys.executable, str(installed_runner), "--target", str(target), "--json"],
         capture_output=True, text=True, timeout=300,
