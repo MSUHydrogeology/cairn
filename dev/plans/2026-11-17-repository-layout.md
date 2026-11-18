@@ -1,7 +1,7 @@
 # Plan: Repository layout and self-adoption
 
 **Source proposal**: dev/proposals/archive/2026-11-09-claude-repository-layout.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-17
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/development-environment.md
