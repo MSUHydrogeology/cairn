@@ -54,6 +54,8 @@ mapping records the model capability floors.
 
 **Model tier.** The task sets the capability floor; the lane sets the process, not the tier. High: strategy, premise-checking, novel design, security or trust-boundary judgment, Security Review. Medium: ordinary authoring and ordinary proposal, plan and code reviews. Low: executing an accepted, reviewed plan (high-risk chunks included), trivial implementation, Decision scribing the Maintainer authorized. Low execution never lowers review or security obligations or waives a fence. Never move work to a lower tier across a data-governance boundary. **Name the model at every spawn.** A reviewer who finds work below its floor flags it, unless a quoted Maintainer Decision allows it.
 
+An Operator runs software under project run rules, which may add limits but never relax these rules. The Operator edits no tracked file and runs no lifecycle step. To change code, data handling or credentials, explicitly switch to Implementation and follow all development rules. Capture defects; after switching, the defect-fix rule in `dev/agent_collaboration.md` > "Working tree and commits" determines fixes. If a cited `dev/` file is absent, do not fetch it elsewhere or change anything; ask the Maintainer.
+
 Execution retries: `dev/agent_collaboration.md` > "Agent execution retries".
 
 Plain language is a safety rule: put the conclusion first, define specialist terms, separate what you measured from what you assumed, give numbers with sources, and say which checks you did not run. If you do not understand a change, pause and say so. Rules: Cairn Plain Language in `dev/agent_collaboration.md`. Rationale: anchor 17 of the published methodology.

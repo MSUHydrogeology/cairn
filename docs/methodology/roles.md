@@ -52,12 +52,15 @@ sufficiently capable agent can fill:
   briefing also makes meaningful build, run, understanding and maintenance
   costs visible, includes a credible less involved option and its losses, and
   keeps the recommendation separate from the options.
-* **User Agent** — works from the user's seat: runs the software,
+* **Operator** (optional) — runs the project's software under its run rules,
+  reproduces and diagnoses defects, and files them. It follows the User
+  Agent's capture-vs-fix guidance after explicitly switching to Implementation.
+* **User Agent** — exercises Cairn from an adopter's position:
   exercises the workflows, captures friction as issues, and **debugs
   from the user's seat** — reproduces and diagnoses failures from real
   use, rather than from a synthetic test. The capture-vs-fix boundary
   holds even mid-diagnosis: a fix that is not a defect fix under
-  `AGENTS.md` > "Working tree and commits", or is not cheap,
+  `dev/agent_collaboration.md` > "Working tree and commits", or is not cheap,
   is *captured* (routed to the owning implementer or an issue), not
   landed ad-hoc — **scope, not size, is the bar**: diagnosing a bug
   from the user's seat is not authorization to re-decide the owning

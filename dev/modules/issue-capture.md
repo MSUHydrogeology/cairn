@@ -1,12 +1,12 @@
 # Module: issue-capture
 
 **Selected when:** the team **uses an issue tracker** to capture
-gaps and friction — the surface the User Agent role (`roles.md`)
-writes to. A team that tracks nothing, or tracks only in the
+gaps and friction — the surface the User Agent and Operator roles
+in `dev/agent_collaboration.md` write to. A team that tracks nothing, or tracks only in the
 deliberation record, does not need it; a team with a tracker gets a
 standing capture discipline so friction becomes a recorded issue
 rather than a lost remark.
-**Adds to:** the role roster note for the User Agent in
+**Adds to:** the role roster notes for the User Agent and Operator in
 `dev/agent_collaboration.md`, plus tracker-agnostic issue templates
 in the adopting repository.
 
@@ -55,13 +55,14 @@ adopter.
 ### Capture vs. fix inline
 
 Friction is **fixed where you meet it** when the defect-fix rule in
-`AGENTS.md` > "Working tree and commits" allows it, and **captured** otherwise.
+`dev/agent_collaboration.md` > "Working tree and commits" allows it, and **captured** otherwise.
 The operational rule is stated there once, including what counts as a defect
 and as cheap; this module adds no permission. A person who meets an easy
 problem fixes it with its test and review rather than scattering unreviewed
 changes through the session.
 
-The same rule binds the User Agent's **debug-from-the-user's-seat** mode:
+The same rule binds the User Agent's **debug-from-the-user's-seat** mode and
+the Operator after switching to Implementation:
 a diagnosed fix that meets it lands with its test; one that does not is
 captured with reproduction and root cause, then routed to its owning
 implementer or to the Maintainer when a decision is required.

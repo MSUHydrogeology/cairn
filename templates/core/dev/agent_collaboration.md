@@ -21,8 +21,14 @@ Roles are **frames, not people**. Any capable agent fills any of them except the
   steering it.
 * **Security Review** — an adversarial read aimed at a high-risk surface, run as
   a parallel lens rather than a second stop.
-* **User Agent** — exercises Cairn from an adopter's position and files what
-  it hits.
+* **User Agent** — exercises Cairn from an adopter's position, reproduces and
+  diagnoses failures from real use, and captures friction with its root cause.
+* **Operator** (optional) — runs the project's software under its run rules,
+  may reproduce and diagnose defects, and files them in its tracker. For either
+  role, if the tracker is unavailable, record reproduction, context and labels for
+  later filing or the Maintainer. Both roles use the defect-fix rule in
+  `dev/agent_collaboration.md` > "Working tree and commits"; an Operator
+  switches to Implementation before a fix.
 
 A fresh session is every review's floor, and no review requires a different
 agent type. How far a reviewer stood from the author is read from its
@@ -30,7 +36,7 @@ attribution, and the Maintainer may ask for more distance (`AGENTS.md` >
 "Review").
 
 <!-- cairn:slot role-roster-additions -->
-(Dimension-selected roles — a User Agent, a Security reviewer,
+(Dimension-selected roles — an Operator, a User Agent, a Security reviewer,
 domain-specialized agents, a Legacy Agent — are added here when
 the project's profile selects them. A minimal team runs the
 maintainer plus one generalist agent and adds none.)

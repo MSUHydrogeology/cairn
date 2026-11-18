@@ -635,10 +635,9 @@ class TestRulesMdStarter:
 
     def test_full_install_seeds_rules_md_within_word_budget(self, tmp_path: Path) -> None:
         """A full install seeds rules and stays within the combined cap."""
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = Path(__file__).resolve().parent.parent
         templates_root = cairn_root / "templates"
-        if not templates_root.exists():
-            pytest.skip("Cairn templates not available")
+        assert templates_root.is_dir(), "Cairn templates not available"
         tokens = {"project_name": "RulesDemo", "test_command": "pytest"}
         create_dev_tree(tmp_path)
         install_core(templates_root, tmp_path, tokens)
@@ -656,7 +655,7 @@ class TestRulesMdStarter:
         assert word_count <= 1500, f"installed guidance uses {word_count} words"
 
     def test_normal_install_preserves_existing_rules_bytes(self, tmp_path: Path) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = Path(__file__).resolve().parent.parent
         original = b"# Local rules\r\nKeep these exact bytes.\r\n"
         rules = tmp_path / "RULES.md"
         rules.write_bytes(original)

@@ -26,6 +26,16 @@ not into shared doctrine in place — see below.)
   discipline, with any project evidence logs, that `RULES.md` routes to
   but that should not ride in every-call context.
 
+## Optional run rules
+
+A project whose agents run its software may put run rules in root
+`RULES.md`. Opt in by writing them there; they ship whole. Run rules add
+limits and never relax `AGENTS.md`. They do not cite `dev/`; development
+rules in this folder may cite run rules. Shared essentials can live in
+`RULES.md`, but the governing instructions to read it and ask before pushing
+remain in `AGENTS.md`. A release may retain `AGENTS.md` pointers into `dev/`
+even when that folder is absent.
+
 ## What does NOT live here
 
 * **Descriptive software docs** — naming/style, library pitfalls,

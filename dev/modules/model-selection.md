@@ -52,6 +52,7 @@ Merged into the adopter's role/configuration documentation:
 > | Trivial implementation | low | The process lane remains trivial; a task that makes a high-tier judgment keeps that floor. |
 > | Authorized Decision scribing | low | Only when the Maintainer explicitly authorizes it; quote the authorization verbatim and keep the Decision commit exclusive. |
 > | User Agent (routine workflow) | low | Concrete-mode workflow exercise, capture only. |
+> | Operator | low / medium | Low for capture only; medium to diagnose a cause. Development keeps its own floor after switching. |
 > | Non-substantive doc tweaks | low | Typo / wording / linkfix. |
 > | Docstring and comment cleanup, and related edits | low | The writing step only; the paragraph below says what stays unchanged. |
 >

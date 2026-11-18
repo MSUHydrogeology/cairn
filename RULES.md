@@ -2,6 +2,8 @@
 
 The few rules that apply every turn when working on Cairn, and where the detail lives. Cairn adopts itself, so this is the project router that `dev/rules/README.md` describes. Keep it small.
 
+Run rules add limits to `AGENTS.md`. Release exception: shipped `AGENTS.md` may cite `dev/`.
+
 ## Bright lines
 
 - Run only the tests that read a changed file; for prose, the prose gates (`dev/agent_collaboration.md`, "Verification"). Never set `CAIRN_FULL_SUITE=1` except for the Maintainer's certifying run.
