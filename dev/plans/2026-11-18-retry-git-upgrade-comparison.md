@@ -147,3 +147,24 @@ The plan aims to make the accepted comparison observable without treating a fail
 **Non-blocking finding:** The plan gives command and driver time limits but no estimated work window or uncertainty, as required by `dev/agent_collaboration.md` under Plans and records. Add an approximate window and its main uncertainty; it is an estimate, not a deadline or waiver.
 
 **Coverage:** Compared the committed plan with the accepted proposal, current template, archived C0–C1 and installer reuse points. The plan adds no doctrine and leaves installed duties in their existing homes. No guest setup, controls, comparison, tests, Security Review or integration was run; feasibility and confinement remain unproven. Elapsed: unknown. Tokens: unknown.
+
+## Plan review -- gpt-6.2-sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: c76e760454972011ff37eed18a31a9f4cae9de64
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+1. **Should this happen as framed?** The accepted retry can run after the shared guest boundary and controls are complete. See the Decision and C1.
+2. **Best alternative.** Keep the temporary launcher and adopt archived C1's matched snapshots and template ancestry explicitly. Both the adopter and candidate template commits descend directly from the verified reconstructed predecessor. See Reuse and archived C1.
+3. **What would show it wrong?** A surviving trial process, a false pass on the outside-write control or a baseline mismatch invalidates the affected result. See C1–C3 and archived C0–C1.
+
+**Blocking — process lifetime.** The supervisor starts the `unshare` monitor, which forks and reaps PID1. The credential drop clears the monitor-death signal. Specify how the supervisor identifies and holds a process handle for PID1 before opening the gate, handles monitor loss, closes the lifeline and confirms exit, and reaps its own monitor before removing the profile. Define how catchable termination reaches cleanup and which owned identifiers survive abrupt supervisor loss. [util-linux source](https://github.com/util-linux/util-linux/blob/v2.39.3/sys-utils/unshare.c#L896-L982), [Linux parent-death signal](https://man7.org/linux/man-pages/man2/PR_SET_PDEATHSIG.2const.html).
+
+**Blocking — shared guest IPC.** The launcher leaves UID 1001 in the guest's interprocess communication namespace. Its listed restrictions do not isolate System V shared memory, semaphores or queues. Use and verify a private IPC namespace in the existing launcher. [Linux IPC namespaces](https://man7.org/linux/man-pages/man7/ipc_namespaces.7.html), [AppArmor kernel hooks](https://github.com/torvalds/linux/blob/v6.8/security/apparmor/lsm.c#L1341-L1432).
+
+**Blocking — canary false pass.** Specify a mode-0600 canary writable by the trial UID before confinement, prove the confined probe can read that same file, and require a permission or read-only denial at the attempted write with the parent digest unchanged. Missing-path errors fail C0. See Guest setup and launch, C1 and archived C0.
+
+**Coverage:** Read the Decision, both plans, template and verifier source. No guest setup, controls, baseline reconstruction, comparisons or tests ran. Elapsed: unknown. Tokens: unknown.
