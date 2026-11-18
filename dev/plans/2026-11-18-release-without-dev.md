@@ -81,3 +81,36 @@ Before implementation select changed-file checks with `python tests/tier_invento
 3. **What would show it wrong?** An installed report missing a known forbidden reference despite an allowance, or reporting unreadable or unclassified input as clean, would falsify the boundary. -- C1, Verification
 
 The specified scope, inventory and result rules make the report actionable for implementation; raw-cache descendants remain inventoried and may produce honest advisory findings. The longer opening earns its detail by defining that boundary and failure behavior. The Operator stop and existing entry duties remain; folder listings record permission rather than grant it. Public checks and negative controls target outcomes rather than prose pins; parent integration and human release operations are separate. Coverage: compared the committed plan with its accepted proposal and review rules; did not run a report, installer, upgrade or tests, or assess the security boundary. Security Review remains separate.
+
+## Plan review -- Codex Sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: 9080b56be3924e018358bddb032da00af4fc6d10
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown. **Tokens**: unknown.
+
+An offline report can help an adopter spot dangling references while leaving
+release decisions and project files in the adopter's hands.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, once folder evidence has an explicit index rule. The plan confines reads to the project and makes unavailable Git or incomplete classification visible. — Scope, C1, accepted proposal item 4 and S1–S5.
+2. **Best alternative.** Use the pinned Git reader and raw link patterns for the advisory mode, and inventory installed folders from destinations and directory creation. — C1–C2, `templates/modules/team-gated/link_check.py`, `install/_scaffold/config.py`, `install/_scaffold/install.py` (`_DEV_DIRS`).
+3. **What would show it wrong?** An installed-command case where a plausible untracked or nonregular indexed root guide satisfies the folder listing would break tracked-only coverage. — Scope, C1, `templates/modules/team-gated/link_check.py` (`_tracked_index_paths`).
+
+**Blocking.** Define the index evidence in Scope and C1. The path-only helper
+drops mode and stage. Require a regular stage-zero index entry for a folder's
+README. Use the root `dev/README.md` membership table only when that entry
+also passes the contained working-tree read. If the table is unavailable,
+report incomplete alongside any known missing guide findings. Include the
+public control in Foundation 3.
+
+**Rule retention.** The plan retains the `AGENTS.md` exception and Operator
+stop, optional root rules, scratch privacy and cache-byte preservation.
+
+**Coverage.** Compared the accepted proposal and committed plan with the
+scanner, installation destinations and directory creation. Runtime probes,
+native-platform checks and installer runs were outside this pass.
