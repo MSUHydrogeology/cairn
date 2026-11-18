@@ -1272,7 +1272,8 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
     closure_paths = security_check._CEREMONY_CLOSURE_PY
     closure = {rel: (root / rel).read_bytes() for rel in closure_paths}
     tools = {path.name: path.read_bytes() for path in test_root.glob("*.py")
-             if not path.name.startswith(("test_", "_", "conftest"))}
+             if not path.name.startswith(("test_", "_", "conftest"))
+             and path.name != "security_manifest.py"}
     for name in ("test_tiers.py", "test_tiers.json"):
         tools[name] = (test_root / name).read_bytes()
 
