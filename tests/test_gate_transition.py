@@ -24,7 +24,7 @@ import subprocess
 
 import pytest
 
-from bootstrap.tests import _gate_transition as G
+from tests import _gate_transition as G
 
 
 def _git(repo, *args):

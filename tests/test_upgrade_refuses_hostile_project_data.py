@@ -53,7 +53,7 @@ sys.path.insert(0, str(CAIRN_ROOT))
 from install.scaffold import ScaffoldSecurityError  # noqa: E402
 from install._scaffold import lockfile as LF  # noqa: E402
 from install._scaffold import upgrade as UP  # noqa: E402
-from bootstrap.tests.test_upgrade_lockfile_path_containment import (  # noqa: E402
+from tests.test_upgrade_lockfile_path_containment import (  # noqa: E402
     LOCK_REL,
     SCAFFOLD,
     STAGE_REL,

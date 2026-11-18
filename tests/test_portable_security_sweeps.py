@@ -56,7 +56,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-import bootstrap.scaffold as s  # noqa: E402
+import install.scaffold as s  # noqa: E402
 from install._scaffold.config import (  # noqa: E402
     _MODULE_MAPPINGS,
     _MODULE_REQUIRED_TOKENS,

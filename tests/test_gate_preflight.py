@@ -38,8 +38,8 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests import _gate_manifest as G
-from bootstrap.tests import _gate_preflight as P
+from tests import _gate_manifest as G
+from tests import _gate_preflight as P
 
 from tests._repo_root import repository_root
 

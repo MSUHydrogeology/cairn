@@ -34,7 +34,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from install import scaffold as s  # noqa: E402
 from install._scaffold import config as C  # noqa: E402
-from bootstrap.verify_integrity import verify  # noqa: E402
+from install.verify_integrity import verify  # noqa: E402
 
 from tests._repo_root import repository_root
 

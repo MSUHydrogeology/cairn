@@ -27,10 +27,10 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests import _gate_reanchor as R
-from bootstrap.tests import _oracle_activation as A
-from bootstrap.tests import _gate_transition as G
-from bootstrap.tests import _gate_preflight as P
+from tests import _gate_reanchor as R
+from tests import _oracle_activation as A
+from tests import _gate_transition as G
+from tests import _gate_preflight as P
 
 REQUIRED = ["solo-greenfield", "upgrade_apply"]
 SENSITIVE_REL = "bootstrap/tests/_oracle.py"

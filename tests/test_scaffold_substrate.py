@@ -1,16 +1,16 @@
 """0B.4 — activate the 0A contracts on the LANDED launcher+engine substrate.
 
 The 0A guards were proven against synthetic fixtures; these prove them against
-the real `bootstrap/scaffold.py` launcher and the `bootstrap/_scaffold/` engine:
+the real `install/scaffold.py` launcher and the `install/_scaffold/` engine:
 
-* **Canonical identity:** `bootstrap.scaffold` IS `bootstrap._scaffold`
+* **Canonical identity:** `install.scaffold` IS `install._scaffold`
   (one `sys.modules` entry / object per file), and the engine file is the
   canonical one.
-* **Facade patch-through:** patching `bootstrap.scaffold._cairn_is_git`
+* **Facade patch-through:** patching `install.scaffold._cairn_is_git`
   reaches the engine's own namespace (the `test_upgrade.py:509` pattern).
 * **Executable topology:** the launcher installs correctly when invoked as
   a script from an unrelated cwd (`/tmp`), not just from the Cairn root.
-* **Fail-closed against import hijack:** a decoy `bootstrap/_scaffold/` on
+* **Fail-closed against import hijack:** a decoy `install/_scaffold/` on
   `PYTHONPATH` does NOT become the loaded engine — the launcher loads
   file-relative, so the canonical engine stays the real one.
 * **Scan completeness:** the real engine package is now in the release
@@ -68,7 +68,7 @@ def _run(args, *, cwd, env_extra=None):
 def test_facade_exposes_full_public_surface():
     # The facade is the engine, so the historically-imported surface is present
     # by construction. Spot-check the high-traffic symbols + the exception class.
-    import bootstrap.scaffold as s  # noqa: PLC0415
+    import install.scaffold as s  # noqa: PLC0415
     for name in ("main", "read_lockfile", "_MODULE_MAPPINGS", "_GITIGNORE_SEEDS",
                  "load_config", "ScaffoldSecurityError", "_cairn_root"):
         assert hasattr(s, name), f"facade missing {name}"
@@ -77,7 +77,7 @@ def test_facade_exposes_full_public_surface():
 # --- scan completeness (0A.1 activated on the real package) -------------------
 
 def test_release_scan_now_covers_launcher_and_engine():
-    from bootstrap.security_check import scan_targets  # noqa: PLC0415
+    from release.security_check import scan_targets  # noqa: PLC0415
     targets = set(scan_targets())
     assert "install/scaffold.py" in targets, "the launcher must be scanned"
     assert "install/_scaffold/__init__.py" in targets, "the engine must be scanned (recursive)"
@@ -108,19 +108,19 @@ def test_launcher_installs_from_an_unrelated_cwd(tmp_path):
 # --- fail-closed against the import hijack (subprocess) ---------------------
 
 def test_hostile_pythonpath_does_not_hijack_the_engine(tmp_path):
-    """A decoy `bootstrap/_scaffold/` injected first on PYTHONPATH must NOT
+    """A decoy `install/_scaffold/` injected first on PYTHONPATH must NOT
     become the loaded engine: the launcher loads file-relative, so the canonical
-    `bootstrap._scaffold` stays the real one under the Cairn root."""
+    `install._scaffold` stays the real one under the Cairn root."""
     decoy = tmp_path / "attacker"
-    (decoy / "bootstrap" / "_scaffold").mkdir(parents=True)
-    (decoy / "bootstrap" / "_scaffold" / "__init__.py").write_text(
+    (decoy / "install" / "_scaffold").mkdir(parents=True)
+    (decoy / "install" / "_scaffold" / "__init__.py").write_text(
         "HIJACKED = True\n", encoding="utf-8"
     )
     probe = textwrap.dedent(f"""
         import sys
         sys.path.insert(0, {str(CAIRN_ROOT)!r})   # Cairn after the decoy (PYTHONPATH wins first)
-        import bootstrap.scaffold as s
-        eng = sys.modules["bootstrap._scaffold"]
+        import install.scaffold as s
+        eng = sys.modules["install._scaffold"]
         assert not hasattr(s, "HIJACKED"), "facade was hijacked"
         assert not hasattr(eng, "HIJACKED"), "engine was hijacked"
         assert hasattr(eng, "_MODULE_MAPPINGS"), "did not load the real engine"
@@ -148,8 +148,8 @@ def test_importing_trust_anchors_writes_nothing(tmp_path):
     probe = textwrap.dedent(f"""
         import sys
         sys.path.insert(0, {str(CAIRN_ROOT)!r})
-        import bootstrap.security_check
-        import bootstrap.verify_integrity
+        import release.security_check
+        import install.verify_integrity
         print("IMPORTED")
     """)
     proc = _run(["-c", probe], cwd=tmp_path)
@@ -166,7 +166,7 @@ def test_trust_anchor_imports_are_owner_specific_not_runtime_isolated(tmp_path):
     (``security_check`` -> ``_scaffold.config``; ``verify_integrity`` ->
     ``_scaffold.lockfile``) -- that establishes **ownership identity**. It does NOT
     establish a narrow *runtime loading* boundary: Python runs
-    ``bootstrap._scaffold.__init__`` (the re-export facade) before any child
+    ``install._scaffold.__init__`` (the re-export facade) before any child
     import, and that facade eagerly imports every owner. So importing a trust
     anchor loads the **whole engine package** (guard + all eight modules), not just
     the requested closure.
@@ -179,10 +179,10 @@ def test_trust_anchor_imports_are_owner_specific_not_runtime_isolated(tmp_path):
     probe = textwrap.dedent(f"""
         import sys
         sys.path.insert(0, {str(CAIRN_ROOT)!r})
-        import bootstrap.security_check  # imports from install._scaffold.config
+        import release.security_check  # imports from install._scaffold.config
         loaded = sorted(
             n.split(".")[-1] for n in sys.modules
-            if n.startswith("bootstrap._scaffold.")
+            if n.startswith("install._scaffold.")
         )
         print(",".join(loaded))
     """)
@@ -216,12 +216,12 @@ _GUARD_PROLOGUE = (
 
 
 def _fake_engine_tree(tmp_path):
-    """A throwaway fake Cairn root ``<tmp>/cairn/bootstrap/{scaffold.py(copy),
+    """A throwaway fake Cairn root ``<tmp>/cairn/install/{scaffold.py(copy),
     _scaffold/{_guard.py(copy)}}`` so the production launcher loads a controllable
     engine that installs the real guard. The fake root is ``boot.parent``; put
     escape targets OUTSIDE it (e.g. under ``tmp_path`` directly). Returns the
-    bootstrap dir."""
-    boot = tmp_path / "cairn" / "bootstrap"
+    install dir."""
+    boot = tmp_path / "cairn" / "install"
     (boot / "_scaffold").mkdir(parents=True)
     shutil.copy(LAUNCHER, boot / "scaffold.py")
     shutil.copy(ENGINE_INIT.parent / "_guard.py", boot / "_scaffold" / "_guard.py")
@@ -229,12 +229,12 @@ def _fake_engine_tree(tmp_path):
 
 
 def test_F1_sitecustomize_canonical_preload_is_refused(tmp_path):
-    """A hostile sitecustomize that preloads `bootstrap._scaffold` before the
+    """A hostile sitecustomize that preloads `install._scaffold` before the
     launcher runs must NOT satisfy the canonical name — the REAL launcher refuses
     the cache entry whose __file__ is not the expected engine."""
     decoy = tmp_path / "attacker"
-    (decoy / "bootstrap" / "_scaffold").mkdir(parents=True)
-    (decoy / "bootstrap" / "_scaffold" / "__init__.py").write_text(
+    (decoy / "install" / "_scaffold").mkdir(parents=True)
+    (decoy / "install" / "_scaffold" / "__init__.py").write_text(
         'HIJACKED = True\ndef main(): print("PWNED"); return 0\n', encoding="utf-8"
     )
     (decoy / "sitecustomize.py").write_text("import install._scaffold\n", encoding="utf-8")
@@ -255,7 +255,7 @@ def test_F2_submodule_symlink_escape_is_refused(tmp_path):
         _GUARD_PROLOGUE + "from . import security\ndef main(): return 0\n", encoding="utf-8"
     )
     (boot / "_scaffold" / "security.py").symlink_to(outside / "security.py")
-    probe = "import bootstrap.scaffold as s; print('LOADED', s.security.__file__)"
+    probe = "import install.scaffold as s; print('LOADED', s.security.__file__)"
     proc = _run(["-c", probe], cwd=tmp_path, env_extra={"PYTHONPATH": str(boot.parent)})
     assert "LOADED" not in proc.stdout, "symlinked-out submodule executed -- escape"
     assert proc.returncode != 0
@@ -275,16 +275,16 @@ def test_F4_failed_load_leaves_clean_namespace_and_retry_is_clean(tmp_path):
         import sys
         def attempt():
             try:
-                import bootstrap.scaffold  # noqa: F401
+                import install.scaffold  # noqa: F401
             except RuntimeError:
                 return "raised"
             return "no-error"
         first = attempt()
         # both the parent and the child must be gone after the failure
-        residue = [k for k in sys.modules if k.startswith("bootstrap._scaffold")]
+        residue = [k for k in sys.modules if k.startswith("install._scaffold")]
         # a retry must not reuse stale child state (still fails cleanly)
         second = attempt()
-        residue2 = [k for k in sys.modules if k.startswith("bootstrap._scaffold")]
+        residue2 = [k for k in sys.modules if k.startswith("install._scaffold")]
         print("FIRST", first)
         print("RESIDUE", residue)
         print("SECOND", second)
@@ -302,19 +302,19 @@ def test_F4_failed_load_leaves_clean_namespace_and_retry_is_clean(tmp_path):
 #
 # The launcher-installed finder did not mediate `import install._scaffold.<m>`
 # (no launcher in the call path) -- the route Stages 4/5 + the canonical-identity
-# contract use. The boundary now lives in bootstrap/_scaffold/_guard.py, installed
+# contract use. The boundary now lives in install/_scaffold/_guard.py, installed
 # by the engine __init__ as its first action, so it runs before ANY child resolves.
 
 
-# Declared exception (internal hook): preloads a polluted bootstrap._scaffold child in sys.modules and calls the private _guard.install; no public route installs a foreign cached child.
+# Declared exception (internal hook): preloads a polluted install._scaffold child in sys.modules and calls the private _guard.install; no public route installs a foreign cached child.
 def test_R1_guard_rejects_a_polluted_cached_child(tmp_path, monkeypatch):
-    """A `bootstrap._scaffold.*` child preloaded from outside the engine dir must
+    """An `install._scaffold.*` child preloaded from outside the engine dir must
     be refused -- a polluted cached namespace is not the Cairn engine."""
     import types  # noqa: PLC0415
     from install._scaffold import _guard as G  # noqa: PLC0415
-    evil = types.ModuleType("bootstrap._scaffold.evilchild")
+    evil = types.ModuleType("install._scaffold.evilchild")
     evil.__file__ = str(tmp_path / "evil.py")            # outside the engine dir
-    monkeypatch.setitem(sys.modules, "bootstrap._scaffold.evilchild", evil)
+    monkeypatch.setitem(sys.modules, "install._scaffold.evilchild", evil)
     with pytest.raises(G.ScaffoldLoaderError, match="polluted namespace"):
         G.install(ENGINE_INIT.parent, CAIRN_ROOT)
 
@@ -324,7 +324,7 @@ def test_R1_direct_child_symlink_escape_is_refused_end_to_end(tmp_path):
     architecture: a fake engine whose __init__ installs the guard (as the real
     one does) refuses a symlinked-out child on `import install._scaffold.<m>`."""
     root = tmp_path / "cairn"
-    eng = root / "bootstrap" / "_scaffold"
+    eng = root / "install" / "_scaffold"
     eng.mkdir(parents=True)
     shutil.copy(ENGINE_INIT.parent / "_guard.py", eng / "_guard.py")
     (eng / "__init__.py").write_text(
@@ -337,7 +337,7 @@ def test_R1_direct_child_symlink_escape_is_refused_end_to_end(tmp_path):
     outside.mkdir()
     (outside / "security.py").write_text("PWNED = True\n", encoding="utf-8")
     (eng / "security.py").symlink_to(outside / "security.py")
-    # cwd=tmp_path has no bootstrap/ at its top, so the fake engine (on PYTHONPATH)
+    # cwd=tmp_path has no install/ at its top, so the fake engine (on PYTHONPATH)
     # wins over the real repo -- a neutral cwd is essential here.
     proc = _run(["-c", "import install._scaffold.security"], cwd=tmp_path,
                 env_extra={"PYTHONPATH": str(root)})
@@ -350,7 +350,7 @@ def test_R1_direct_child_symlink_escape_is_refused_end_to_end(tmp_path):
 def _real_engine_with_symlinked_guard(tmp_path):
     """A tree using the REAL launcher + REAL engine __init__ (which verifies
     _guard.py before importing it), but with _guard.py symlinked outside."""
-    boot = tmp_path / "cairn" / "bootstrap"
+    boot = tmp_path / "cairn" / "install"
     (boot / "_scaffold").mkdir(parents=True)
     shutil.copy(LAUNCHER, boot / "scaffold.py")
     shutil.copy(ENGINE_INIT, boot / "_scaffold" / "__init__.py")
@@ -383,13 +383,13 @@ def test_RR2_symlinked_guard_refused_via_direct_import(tmp_path):
     assert "failed path verification" in proc.stderr
 
 
-# Declared exception (internal hook): preloads a polluted bootstrap._scaffold child in sys.modules and calls the private _guard.install; no public route installs a foreign cached child.
+# Declared exception (internal hook): preloads a polluted install._scaffold child in sys.modules and calls the private _guard.install; no public route installs a foreign cached child.
 def test_RR2_cached_child_without_file_is_rejected(monkeypatch):
     """Finding 2: a synthetic cached child with no __file__ cannot satisfy source
     verification -- it must be refused, not trusted by omission."""
     import types  # noqa: PLC0415
     from install._scaffold import _guard as G  # noqa: PLC0415
-    evil = types.ModuleType("bootstrap._scaffold.evil_nofile")   # deliberately no __file__
-    monkeypatch.setitem(sys.modules, "bootstrap._scaffold.evil_nofile", evil)
+    evil = types.ModuleType("install._scaffold.evil_nofile")   # deliberately no __file__
+    monkeypatch.setitem(sys.modules, "install._scaffold.evil_nofile", evil)
     with pytest.raises(G.ScaffoldLoaderError, match="no source path"):
         G.install(ENGINE_INIT.parent, CAIRN_ROOT)

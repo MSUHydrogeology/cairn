@@ -807,7 +807,7 @@ import json  # noqa: E402
 
 from install._scaffold.config import strip_conditional_regions  # noqa: E402
 from install._scaffold.slotmerge import substitute_tokens  # noqa: E402
-from bootstrap.verify_integrity import verify  # noqa: E402
+from install.verify_integrity import verify  # noqa: E402
 
 LOCK_REL = "dev/.cairn/cairn-lock.yml"
 SCRIPT = "scripts/onboarding_activate.py"

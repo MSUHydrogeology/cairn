@@ -1052,7 +1052,7 @@ def test_new_core_changelog_collision_can_be_kept_as_a_fork(
     assert s.main(base + ["--apply"]) == 0
     assert (target / dst).read_bytes() == history
 
-    from bootstrap.verify_integrity import verify
+    from install.verify_integrity import verify
     updated = history + "\nRelease notes: \u8bb0\u5f55.\n".encode("utf-8")
     (target / dst).write_bytes(updated)
     assert verify(target) == 0

@@ -11,7 +11,7 @@ lifecycle_metrics.py) hold.
 Environment behavior: a missing ``bandit`` ``pytest.skip``s with install
 guidance, so a contributor without dev-deps is not blocked.  **Cairn has no
 CI**, so the unskippable trigger is not an environment variable -- it is
-``python bootstrap/security_check.py --record <external-path>``, which fails closed on a missing
+``python release/security_check.py --record <external-path>``, which fails closed on a missing
 ``bandit`` unconditionally and refuses this skip outright in release mode.
 The ``CI`` / ``GITHUB_ACTIONS`` branch below is dormant provisioning for a CI
 that does not exist; see :func:`_in_ci`.  A scanner *error* (rc not in {0,1})
@@ -45,9 +45,9 @@ sys.path.insert(0, str(CAIRN_ROOT))
 
 from install._scaffold.install import install_manifest  # noqa: E402
 # The derived scan-target set and the Bandit allowlist are single-sourced in
-# the release command (bootstrap/security_check.py); the dev gate imports
+# the release command (release/security_check.py); the dev gate imports
 # them so the two never drift.
-from bootstrap.security_check import (  # noqa: E402
+from release.security_check import (  # noqa: E402
     ALLOWLIST as _ALLOWLIST,
     _rel as _rel,
     finding_key as _finding_key,
@@ -115,7 +115,7 @@ def _in_ci() -> bool:
     already correct if one is ever added -- it is not a trigger today.
 
     Today's fail-closed trigger for the Bandit gate is
-    ``python bootstrap/security_check.py --record <external-path>``
+    ``python release/security_check.py --record <external-path>``
     (``run_bandit``), a Maintainer-run release command: a missing Bandit is a
     non-zero exit there, unconditionally,
     with no environment variable involved. The local skip below is deliberate
@@ -159,7 +159,7 @@ def test_no_blocking_security_findings() -> None:
         pytest.skip(
             "bandit not installed locally; install it to run the security "
             "gate (pip install bandit). The unskippable trigger is "
-            "`python bootstrap/security_check.py --record <external-path>`, "
+            "`python release/security_check.py --record <external-path>`, "
             "which fails closed on a "
             "missing bandit and refuses this skip in release mode."
         )
@@ -180,7 +180,7 @@ def test_no_blocking_security_findings() -> None:
 
     # A file Bandit could not READ is not a file Bandit found clean: it lands
     # in the JSON `errors` array and the run still exits 0. The release command
-    # (bootstrap/security_check.py) fails closed on it; the dev gate consumes
+    # (release/security_check.py) fails closed on it; the dev gate consumes
     # the same report and had the same hole, so it applies the same rule here
     # -- fixing one and not the other is how the two drift (scan-coverage
     # plan).
@@ -262,8 +262,8 @@ def test_every_templates_py_on_disk_is_release_scanned() -> None:
     """The durable guard: an oracle the code under test does not read.
 
     ``scan_targets()`` performs no filesystem read under ``templates/`` -- it
-    joins strings from registry data and globs only ``scripts/``,
-    ``bootstrap/`` and ``bootstrap/_scaffold/``. So the working tree under
+    joins strings from registry data and globs only ``tests/``,
+    ``install/``, ``release/`` and ``install/_scaffold/``. So the working tree under
     ``templates/`` is a channel the subject never consumes, which is what makes
     this an ANTI-DRIFT check where its manifest-derived sibling above is only a
     conformance one. Under a real perturbation (a delivery registry stops
@@ -316,23 +316,22 @@ def test_every_templates_py_on_disk_is_release_scanned() -> None:
 
 def test_scan_targets_recurses_the_scaffold_engine_package(tmp_path, monkeypatch) -> None:
     """When the post-split engine package exists,
-    EVERY .py under bootstrap/_scaffold/ is scanned recursively (the engine's
-    guts can't fall out of the release Bandit gate), while bootstrap/tests/
-    (intentional attack fixtures) stays excluded. A no-op until Stage 0B creates
-    the package; this exercises the capability now against a throwaway tree."""
-    import bootstrap.security_check as sc
+    EVERY .py under install/_scaffold/ is scanned recursively (the engine's
+    guts can't fall out of the release Bandit gate), while test files
+    containing intentional attack fixtures stay excluded. This exercises the
+    capability against a throwaway tree."""
+    import release.security_check as sc
 
-    (tmp_path / "scripts").mkdir()
-    (tmp_path / "bootstrap" / "_scaffold" / "sub").mkdir(parents=True)
-    (tmp_path / "bootstrap" / "scaffold.py").write_text("x = 1\n", encoding="utf-8")
-    (tmp_path / "bootstrap" / "_scaffold" / "engine.py").write_text("y = 1\n", encoding="utf-8")
-    (tmp_path / "bootstrap" / "_scaffold" / "sub" / "deep.py").write_text("z = 1\n", encoding="utf-8")
-    (tmp_path / "bootstrap" / "tests").mkdir()
-    (tmp_path / "bootstrap" / "tests" / "attack_fixture.py").write_text("evil = 1\n", encoding="utf-8")
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "install" / "_scaffold" / "sub").mkdir(parents=True)
+    (tmp_path / "install" / "scaffold.py").write_text("x = 1\n", encoding="utf-8")
+    (tmp_path / "install" / "_scaffold" / "engine.py").write_text("y = 1\n", encoding="utf-8")
+    (tmp_path / "install" / "_scaffold" / "sub" / "deep.py").write_text("z = 1\n", encoding="utf-8")
+    (tmp_path / "tests" / "test_attack_fixture.py").write_text("evil = 1\n", encoding="utf-8")
     monkeypatch.setattr(sc, "CAIRN_ROOT", tmp_path)
 
     targets = set(sc.scan_targets())
-    assert "bootstrap/_scaffold/engine.py" in targets
-    assert "bootstrap/_scaffold/sub/deep.py" in targets, "recursion must reach nested modules"
-    assert "bootstrap/scaffold.py" in targets
-    assert "bootstrap/tests/attack_fixture.py" not in targets, "attack fixtures must stay excluded"
+    assert "install/_scaffold/engine.py" in targets
+    assert "install/_scaffold/sub/deep.py" in targets, "recursion must reach nested modules"
+    assert "install/scaffold.py" in targets
+    assert "tests/test_attack_fixture.py" not in targets, "attack fixtures must stay excluded"

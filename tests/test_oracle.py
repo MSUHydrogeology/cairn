@@ -31,7 +31,7 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests import _oracle as O
+from tests import _oracle as O
 
 from tests._repo_root import repository_root
 

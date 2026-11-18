@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import pytest
 
-from bootstrap.tests import _oracle_activation as A
+from tests import _oracle_activation as A
 
 
 # --------------------------------------------------------------------- roster

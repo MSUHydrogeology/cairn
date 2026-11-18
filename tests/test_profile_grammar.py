@@ -1004,7 +1004,7 @@ class TestNoRuntimeYamlDependency:
         driver = (
             "import sys\n"
             f"sys.path.insert(0, {str(CAIRN_ROOT)!r})\n"
-            "import bootstrap.scaffold\n"
+            "import install.scaffold\n"
             "print('yaml' in sys.modules)\n"
         )
         proc = subprocess.run([sys.executable, "-c", driver],

@@ -23,7 +23,7 @@ import tarfile
 
 import pytest
 
-from bootstrap.tests import _oracle_trust as T
+from tests import _oracle_trust as T
 
 
 # --------------------------------------------------------------------------- git

@@ -26,7 +26,7 @@ CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
 
 from bootstrap import security_check  # noqa: E402
-from bootstrap.tests import _gate_preflight as P  # noqa: E402
+from tests import _gate_preflight as P  # noqa: E402
 
 
 # ---------------------------------------------------------------------------

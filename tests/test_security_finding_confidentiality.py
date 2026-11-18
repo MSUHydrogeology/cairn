@@ -90,7 +90,7 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests.test_security_net import (  # noqa: E402
+from tests.test_security_net import (  # noqa: E402
     ENGINE_SRC,
     Fixture,
     make_cert,

@@ -991,7 +991,7 @@ class TestTheHighRiskDesignationChannels:
             assert (target / rel).read_bytes() == src.read_bytes(), rel
 
         import importlib
-        vi = importlib.import_module("bootstrap.verify_integrity")
+        vi = importlib.import_module("install.verify_integrity")
         assert vi.verify(target) == 0
 
         for rel, _src in channels:
@@ -1535,8 +1535,8 @@ class TestRealFacadesDrivenByTheRealDispatcher:
     def test_configured_api_dispatch_hands_only_validated_local_credentials(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """The installed pair runs the configured two-principal loopback matrix."""
-        from bootstrap.tests.test_security_net import Fixture, wait_for
-        from bootstrap.tests.test_api_access_security import (
+        from tests.test_security_net import Fixture, wait_for
+        from tests.test_api_access_security import (
             MARKER_P1, MARKER_P2, api_policy, api_responder, deployed_section,
         )
 
@@ -1647,7 +1647,7 @@ class TestRealFacadesDrivenByTheRealDispatcher:
 
     def test_missing_local_credential_refuses_without_broadening(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        from bootstrap.tests.test_api_access_security import (
+        from tests.test_api_access_security import (
             MARKER_P2, api_policy,
         )
 

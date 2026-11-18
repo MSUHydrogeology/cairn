@@ -50,7 +50,7 @@ from install.scaffold import (  # noqa: E402
     read_lockfile,
     reference_script_token_defaults,
 )
-from bootstrap.security_check import scan_targets  # noqa: E402
+from release.security_check import scan_targets  # noqa: E402
 
 from tests._repo_root import repository_root
 

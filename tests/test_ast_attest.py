@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from bootstrap.tests import _ast_attest as A
+from tests import _ast_attest as A
 
 # Post-0B the engine monolith lives in the private package's __init__; the
 # attestation reference re-pins here (the launcher bootstrap/scaffold.py is not

@@ -35,8 +35,8 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests import _gate_preflight as P
-from bootstrap.tests.test_repin import a_copy_of_this_interpreter
+from tests import _gate_preflight as P
+from tests.test_repin import a_copy_of_this_interpreter
 
 from tests._repo_root import repository_root
 
@@ -2469,7 +2469,7 @@ class TestTheRunbookAndTheRegistryAgree:
 # The ceremony bed is imported rather than rebuilt. Duplicating it would create
 # two beds that drift, and a drifting fixture is worse than an import: the copy
 # that stops resembling a real ceremony keeps passing.
-from bootstrap.tests.test_gate_preflight import (        # noqa: E402
+from tests.test_gate_preflight import (        # noqa: E402
     _ceremony_repo as _build_ceremony_repo,
     _n4_precondition as _key_withheld,
 )

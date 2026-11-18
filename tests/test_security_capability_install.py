@@ -47,7 +47,7 @@ from install._scaffold.install import (  # noqa: E402
     _CAPABILITY_NOTICE_MODULES,
     capability_install_notice_lines,
 )
-from bootstrap.verify_integrity import verify  # noqa: E402
+from install.verify_integrity import verify  # noqa: E402
 
 from tests._repo_root import repository_root
 

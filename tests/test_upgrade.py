@@ -1003,7 +1003,7 @@ class TestUpgradeModes:
         wrapper dst, so the verifier attests the tree the adopter actually
         ships.  The upgrade ancestor (``base_cache`` / ``base_hash``) is left
         intact."""
-        from bootstrap.verify_integrity import verify
+        from install.verify_integrity import verify
 
         assert _install(tmp_path) == 0
         ag = tmp_path / "AGENTS.md"
@@ -1065,7 +1065,7 @@ class TestUpgradeModes:
         have its wrapper record advanced to the real on-disk dst (CLAUDE.md),
         not left dangling at VENDOR.md.  Without the apply-time heal,
         ``verify_integrity`` after ``--apply`` fails on the missing VENDOR.md."""
-        from bootstrap.verify_integrity import verify
+        from install.verify_integrity import verify
 
         assert _install(tmp_path) == 0
         (tmp_path / "VENDOR.md").rename(tmp_path / "CLAUDE.md")  # adopter rename
@@ -2639,7 +2639,7 @@ class TestLivingStatePartition:
     def test_editing_living_state_does_not_fail_integrity(
         self, tmp_path: Path
     ) -> None:
-        from bootstrap.verify_integrity import verify
+        from install.verify_integrity import verify
 
         assert _install(tmp_path) == 0
         assert verify(tmp_path) == 0
@@ -2660,7 +2660,7 @@ class TestLivingStatePartition:
         """An older lockfile (no ``living_state`` flags) is migrated by
         ``--finalize``: the flag is stamped from the policy set, so a churned
         living-state file stops tripping the verifier."""
-        from bootstrap.verify_integrity import verify
+        from install.verify_integrity import verify
 
         assert _install(tmp_path) == 0
         lock = s.read_lockfile(tmp_path)
@@ -2686,7 +2686,7 @@ class TestLivingStatePartition:
         ``_LIVING_STATE_DSTS`` may not exclude itself from the tamper check by
         setting ``living_state: true`` -- otherwise a modified script could be
         hidden from ``verify_integrity`` by flipping one lockfile field."""
-        from bootstrap.verify_integrity import verify
+        from install.verify_integrity import verify
 
         assert _install(tmp_path) == 0
         assert verify(tmp_path) == 0
@@ -2710,7 +2710,7 @@ class TestLivingStatePartition:
     def test_old_changelog_record_migrates_without_repinning(
         self, tmp_path: Path, mode: str
     ) -> None:
-        from bootstrap.verify_integrity import verify
+        from install.verify_integrity import verify
 
         assert _install(tmp_path) == 0
         lock = s.read_lockfile(tmp_path)
