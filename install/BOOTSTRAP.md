@@ -317,7 +317,8 @@ The script:
   use it for clients that need a wrapper after the first integrity check below,
   and keep it thin (see `AGENTS.md` > "Vendor addendum"). Clients that load
   `AGENTS.md` directly need no wrapper; otherwise an uncommitted wrapper can
-  contain `@AGENTS.md`.
+  contain `@AGENTS.md`. For a client that only reads `CLAUDE.md`, use a local
+  uncommitted `CLAUDE.md` whose single line is `@AGENTS.md`.
 * Copies the selected module files into the target's `dev/modules/`
   directory, writes the installed inventory at dev/modules/README.md for the
   resolved roster, and seeds plain first-use tasks for the selected modules
