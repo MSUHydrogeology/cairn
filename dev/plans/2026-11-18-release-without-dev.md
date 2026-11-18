@@ -175,3 +175,11 @@ Reviewed range: d06c0fc4^..dd74d132
 - Preserve exact NUL-delimited Git names and all index stages. Replacing backslashes changes POSIX identity. A two-stage `dev/README.md` conflict returned only `INCOMPLETE`, dropping the fixture’s known missing folder guide. Require both results plus exit 2, and check exact name classification.
 
 **Rule retention and coverage.** Entry duties, scratch privacy and existing destination guards remain. No tests were removed. Read the installed checker, mappings, scope and committed controls. No suite replay, native Windows, concurrent mutation run or release integration. The reviewed plan history contains no reached fence or deviation request.
+
+## Response -- Terra (Implementation) -- 2026-11-18
+
+**Disposition**: revising-code
+**Elapsed**: unknown
+**Tokens**: unknown
+
+Accepted the ordinary malformed-link and Security containment/index findings. `1b9adfe3` binds reads to checked directory handles, retains exact names and stages, and reports malformed links and helper-binding failures as incomplete. The affected installed-report, concurrent ancestor replacement and installed-project release checks passed under Python 3.13.13. Native Windows verification remains required: automatic approval review rejected transfer of the committed snapshot to the configured Windows VM. A targeted independent Security look remains pending. No full suite, signing or baseline ran.
