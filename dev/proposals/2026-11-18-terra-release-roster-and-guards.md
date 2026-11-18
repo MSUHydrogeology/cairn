@@ -135,3 +135,10 @@ capped code. No implementation or Decision is claimed.
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision aid -- Terra (author) -- 2026-11-18
+
+If choosing B, the Maintainer may explicitly authorize one further focused
+Security Review of the capped code for the exact question and scope in the
+Proposal. The proposal and its reviews grant no such authorization. The choice
+and any authorization remain the Maintainer's. Elapsed: unknown; tokens: unknown.
