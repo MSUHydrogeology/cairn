@@ -1,7 +1,7 @@
 # Plan: Retry the isolated Git upgrade comparison
 
 **Source proposal**: dev/proposals/archive/2026-11-18-terra-retry-git-upgrade-comparison.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/development-environment.md
@@ -213,3 +213,104 @@ All plan review findings are accepted and folded into the operative plan text pe
 - **Canary false pass & `T0` ancestry (`gpt-6.2-sol`, blocking)**: Specified staging `/guard/canary` as mode `0600` owned by UID `1001` under a read-only `/guard` bind, proving positive writability via an unconfined UID-`1001` write using only a preopened host `guard-dirfd` (observed and restored by parent), then proving the confined child reads that exact same inode before receiving `EACCES`/`EPERM`/`EROFS` on a non-truncating write with unchanged digest (`ENOENT`/`ENOTDIR` fails C0). Added explicit `C2` check that reconstructed predecessor `T0` is the sole direct parent of candidate template `T1` and each synthetic adopter base commit via `git merge-base`.
 
 Elapsed: unknown. Tokens: unknown.
+
+## Implementation result -- retry-worker (Implementation, Medium) -- 2026-11-18
+
+**Disposition**: C1–C3 complete (re-run after fixing `b_clean` shadowing and staging clean hookless `/inputs/cand` `.git` checkout); ready for `awaiting-code-review` (not committed per coordinator instruction).
+
+### Environment and pinned hashes
+
+- **Guest platform**: `linux-dev` (`Linux 6.8.0-147-generic`, `aarch64`, Ubuntu 24.04 LTS, UID/GID `1001`, `util-linux` `2.39.3`, `apparmor_parser` `4.0.1`, `libseccomp.so.2`, `dpkg-query`, `sudo -n`).
+- **Guest Python**: `/usr/bin/python3.12` (`Python 3.12.3`), SHA256 `c86f21d0da9290ece2d7d49a3f7ed52aed59cb029abdf0ea25c79634f6cbe960`.
+- **Guest Git**: `/home/cairn/opt/git-2.56.1/bin/git` (`git version 2.56.1`), SHA256 `5f75b6f7c90eaa4f4d6cc9c1ae84505ad9f244593be064633efc6e6b877e1d38`.
+- **Pinned v0.5.0 source**: commit `3bb27388fccaf51ae490e80ca4b4ab94aa5e2206`, `git archive --format=tar` SHA256 `2abde9ec20489d7e129b1b4e61059cb368b4b0f6b0e750ce88b039a2d194da2e` (28,743,680 bytes).
+- **Pinned candidate source**: clean hookless, remote-free detached checkout of commit `5164bf36b1c6a1e7fc2be539bd6b59b68701c771` (`cand.tar` SHA256 `923cc487834c2414456993692913545d47834d55762a056a119cdf5612b4f8f4`, 166,479,360 bytes; `git_read` copy `/w/cand_checkout` verified `rev-parse HEAD == 5164bf36b1c6a1e7fc2be539bd6b59b68701c771` and clean `status --porcelain`).
+- **Verified Git read helper**: `dev/tools/git_read.py` and `templates/skills/_lib/git_read.py` at `5164bf36`, SHA256 `b67deb4e50eaee1e420d49af5ddac318aa110407bcd7c03d305091146cf15252`.
+- **Hostile test corpus**: `tests/test_upgrade_refuses_hostile_project_data.py` at `5164bf36`, SHA256 `7fbc7d3424cbb2a704a247ed97407ccb459563f381cb9ff1a4dda85cfd4158ac` (37 `def test_` functions).
+- **Trial profile (`profile.yml`)**: `project_name: UpgradeTrial`, `test_command: pytest`, `preset: solo-greenfield`.
+
+### C1: Guest setup, launch, and C0 controls (PASS)
+
+- **Supervisor & recovery metadata**: Ran via `sudo -n /usr/bin/python3.12 -I -B - --stage-dir /tmp/cairn-retry-stage` with `PR_SET_CHILD_SUBREAPER=1`, root-owned `mkdtemp` `/tmp/cairn-upgrade-t5u9g_gv` (`dev=64769`, `ino=561807`, `0700`), and sibling `0600` `fsync`ed recovery metadata `/tmp/cairn-upgrade-recovery-cairn-upgrade-e8d6d7dd03e978a842476aa62bdae365.json`.
+- **AppArmor profile**: `cairn-upgrade-e8d6d7dd03e978a842476aa62bdae365`, SHA256 `a907583a5366638916eaed18458a368fe04ab51495f1af5a880c1561ff9b9267`, loaded via `apparmor_parser -a -K` and verified `(enforce)` in `/sys/kernel/security/apparmor/profiles` (pre-flight count: 117).
+- **Namespace, privilege, and `pidfd` proofs (before `/guard/go`)**:
+  - Parent and guest `PID1`/`PID2` isolated in distinct `mnt`, `net`, `pid`, `ipc` namespaces; separate `os.pidfd_open` handles for monitor and `PID1`; zero `/dev/shm` or `/dev/mqueue` paths in guest `mountinfo` or policy.
+  - `PID2` verified `NoNewPrivs=1`, `CapEff/CapPrm/CapBnd/CapAmb=0000000000000000`, `PR_GET_DUMPABLE=0`, and `lsm_get_self_attr` (syscall 459, `CURRENT=100`, `SINGLE=1`, AppArmor ID `104`) returning `cairn-upgrade-e8d6d7dd03e978a842476aa62bdae365 (enforce)`.
+- **C0 controls**:
+  - **Constant print**: `/usr/bin/python3.12 -I -B -c` printed `CAIRN_TRIAL_OK` (exit `0`) under the final restrictive profile.
+  - **Canary positive control**: Unconfined UID-`1001` helper wrote 1 byte to `canary` using only preopened `guard-dirfd`; parent observed SHA256 change from `b2cd62a18011ab2843b887b565091d6d97391ec505a45c106bcd2e587e52c921` to `9281ef0b623f2adf1ae513d84395d3bfbf942f6194406e9080461c3f74eb4b6d`, then restored original bytes.
+  - **Canary negative control**: Confined `PID2` read `/guard/canary` (matching `dev=64769`, SHA256 `b2cd62a1...`); non-truncating `O_WRONLY` and `O_RDWR` opens failed with `EROFS` (`errno 30`), and parent-observed digest remained `b2cd62a1...`.
+  - **W outside sentinel**: Tampering `outside_sentinel.txt` changed SHA256 from `367ef15b44cfa4f4c34e1fd99a9df5de00829110cb305f6311d0f7e56ae68295` to `ad6d497521a94969b5ecedd78d20b7419b136e63f4b77d799b4b8abbd5b30c26`, detected and restored.
+  - **Loopback control**: Unconfined client reached `127.0.0.1` listener (`accepted=1`); confined `PID2` failed with `EPERM: Operation not permitted`, and listener count remained `1`.
+  - **Loader direct exec**: `/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1` failed with `EACCES: Permission denied`.
+  - **Git under profile**: `/opt/cairn-trial/bin/git --version` returned `git version 2.56.1` (exit `0`).
+  - **Verified `git_read.py`**: `run_git(..., ('rev-parse', '--show-toplevel'))` returned `state='completed'`, `returncode=0`, `/w/c0_gitread_repo`; `('push', '--all')` returned `state='failed'`, `reason='unsupported-read-form'` without launch.
+
+### C2: Baseline reconstruction, 6-cell comparison, and 37-case classification (PASS)
+
+- **Clean installs**: Old v0.5.0 `bootstrap/scaffold.py` exited `0` (`39` lockfile records); candidate `install/scaffold.py` exited `0` (`69` lockfile records).
+- **Baseline reconstruction (`T0`)**: Reconstructed all `39/39` recorded destinations from `dev/.cairn/cairn-lock.yml` and `dev/.cairn/base/` (verifying `base_hash`, `substitute_tokens`, `strip_conditional_regions`, `_rendered_onboarding_overlay` + `_substitute_slot` for `dev/PLANNING.md`, and `run_module_merge_pass` for `AGENTS.md`). Byte-comparison against clean `A_clean`: `39/39` matched, `0` mismatches. Unrecorded outputs in `A_clean`: `.gitignore`, `dev/.cairn/base/*` (24 cached bases), `dev/.cairn/cairn-lock.yml`, `dev/.cairn/local-env.json`, `dev/modules/onboarding/agent-team-onboarding.md`, `dev/modules/onboarding/dev-tour.md`.
+- **Git ancestry verification**: Across all 3 variants, `T0` (`94fa1d8ff683f0fb268e633e4c9fcc11966fa6a2`) was verified as sole direct parent (`parents == [T0]`) of non-empty `T1` (`3a00f7f673ae0afc5a5634195000bb541d31e0c0`, verified `>= 60` files via `git ls-tree`) and each `A_var` (`benign`: `85c5af1399288f82579bd0ac633a28b0ad752ec5`; `leaf_link`: `ab4031badc7b17595502ef330b09d8f30e9cfa6b`; `linked_parent`: `167eefe0d855d7263e3b4b77880ce358a800876f`), confirmed via `git rev-list --parents` and `git merge-base`.
+- **Matched 6-cell comparison** (total C2 elapsed: `7.9394s`; customizations: `TRIAL_SLOT_KEEP` in `AGENTS.md` `project-conventions` slot and `TRIAL_ORDINARY_KEEP` in `dev/README.md`):
+
+| Variant | Path | Exit | Conflicts / Refusal | Markers kept (`slot`, `ordinary`) | Outside sentinel | Elapsed |
+|---|---|---|---|---|---|---|
+| `benign` | Git template merge | `1` | 1 unmerged (`AGENTS.md`); `dev/README.md` merged cleanly | `True`, `True` | N/A | `0.0117s` |
+| `benign` | Public `upgrade --plan` | `2` | Refused at layout migration: `unproved ancestry; reconcile the old copy before moving it` (`scripts/` and `tools/` files) | `True`, `True` | N/A | `5.3413s` |
+| `leaf_link` | Git template merge | `1` | 3 unmerged (`AGENTS.md`, `dev/proposals/_template.md`, and its `~cairn_template` conflict entry) | `True`, `True` | Unchanged (`3be21218...`) | `0.0109s` |
+| `leaf_link` | Public `upgrade --plan` | `2` | Refused: record 19 `dst` `dev/proposals/_template.md` leads outside project | `True`, `True` | Unchanged (`3be21218...`) | `0.1771s` |
+| `linked_parent` | Git template merge | `1` | 3 unmerged (`AGENTS.md`, `dev/.cairn/base/dev/proposals/README.md`, `dev/.cairn/base/dev/proposals/archive/README.md`) | `True`, `True` | Unchanged (`ee9c04b2...`) | `0.0102s` |
+| `linked_parent` | Public `upgrade --plan` | `2` | Refused: record 19 `dst` `dev/proposals/_template.md` leads outside project | `True`, `True` | Unchanged (`ee9c04b2...`) | `0.1697s` |
+
+- **Limits**: In `benign`, `upgrade --plan` refused layout migration (`unproved ancestry; reconcile the old copy before moving it` on legacy `scripts/` and `tools/` files), so `--stage` and `--apply` did not run. Git merge left 1 conflict (`benign`) or 3 conflicts (`leaf_link`, `linked_parent`) requiring manual operator resolution and did not traverse the outside symlinks. No security-equivalence or replacement-readiness claim is made.
+
+#### 37-case hostile-test classification (`tests/test_upgrade_refuses_hostile_project_data.py` at `5164bf36`)
+
+| # | Function | Parameter classes | Status | Reason | Remaining mechanism |
+|---|---|---|---|---|---|
+| 1 | `test_apply_never_creates_a_profile_through_a_link` | no parameters | untested | `upgrade --plan` refused in all 3 variants so `--apply` did not run | `tests/test_upgrade_refuses_hostile_project_data.py::test_apply_never_creates_a_profile_through_a_link` |
+| 2 | `test_self_heal_writes_no_line_break_from_the_lockfile` | "where", ["preset", "axis", "token"] | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_self_heal_writes_no_line_break_from_the_lockfile` |
+| 3 | `test_self_heal_writes_nothing_when_a_profile_value_is_not_plain_text` | "value", [7, ["a"], {"a": 1}, "bad\u2028value", "esc\x1b[2J"] | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_self_heal_writes_nothing_when_a_profile_value_is_not_plain_text` |
+| 4 | `test_init_lock_never_creates_the_profile_template_through_a_link` | no parameters | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_init_lock_never_creates_the_profile_template_through_a_link` |
+| 5 | `test_init_lock_refuses_a_profile_that_is_a_link` | "how", ["existing-outside-file", "existing-inside-file", "dangling"] | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_init_lock_refuses_a_profile_that_is_a_link` |
+| 6 | `test_init_lock_refuses_a_cairn_folder_that_is_a_link` | "lockfile_behind_link", [True, False] | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_init_lock_refuses_a_cairn_folder_that_is_a_link` |
+| 7 | `test_init_lock_with_no_profile_still_writes_the_template` | no parameters | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_init_lock_with_no_profile_still_writes_the_template` |
+| 8 | `test_init_lock_with_a_complete_profile_still_writes_the_lockfile` | no parameters | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_init_lock_with_a_complete_profile_still_writes_the_lockfile` |
+| 9 | `test_init_lock_refuses_a_mapped_file_that_is_a_link` | "how", ["existing-outside-file", "existing-inside-file", "dangling"] | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_init_lock_refuses_a_mapped_file_that_is_a_link` |
+| 10 | `test_init_lock_refuses_a_mapped_file_below_a_linked_parent` | no parameters | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_init_lock_refuses_a_mapped_file_below_a_linked_parent` |
+| 11 | `test_init_lock_migrates_an_ordinary_mapped_file_with_its_digest` | no parameters | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_init_lock_migrates_an_ordinary_mapped_file_with_its_digest` |
+| 12 | `test_init_lock_with_a_lockfile_already_there_still_changes_nothing` | no parameters | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_init_lock_with_a_lockfile_already_there_still_changes_nothing` |
+| 13 | `test_plan_and_stage_refuse_a_profile_that_is_a_link` | "flag", ["--plan", "--stage"] | untested | profile file is regular in all 3 variants; link-profile variants not injected | `tests/test_upgrade_refuses_hostile_project_data.py::test_plan_and_stage_refuse_a_profile_that_is_a_link` |
+| 14 | `test_plan_and_stage_still_run_over_a_regular_or_absent_profile` | "flag", ["--plan", "--stage"]; "profile", ["regular", "absent"] | untested | profile file is regular in all 3 variants; link-profile variants not injected | `tests/test_upgrade_refuses_hostile_project_data.py::test_plan_and_stage_still_run_over_a_regular_or_absent_profile` |
+| 15 | `test_adoptions_refuse_a_profile_that_is_a_link` | "action", sorted(_ADOPTIONS) | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_adoptions_refuse_a_profile_that_is_a_link` |
+| 16 | `test_adoptions_still_run_over_a_regular_or_absent_profile` | "profile", ["regular", "absent"]; "action", sorted(_ADOPTIONS) | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_adoptions_still_run_over_a_regular_or_absent_profile` |
+| 17 | `test_finalize_is_not_stopped_by_a_profile_that_is_a_link` | "how", ["existing-outside-file", "dangling"] | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_finalize_is_not_stopped_by_a_profile_that_is_a_link` |
+| 18 | `test_a_lockfile_that_is_a_link_is_refused_and_never_written` | "what", ["valid-lockfile-elsewhere", "json-that-is-no-lockfile", "dangling"] | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_a_lockfile_that_is_a_link_is_refused_and_never_written` |
+| 19 | `test_a_lockfile_link_swapped_in_after_the_check_is_never_written_through` | no parameters | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_a_lockfile_link_swapped_in_after_the_check_is_never_written_through` |
+| 20 | `test_a_saved_commit_name_that_is_an_option_creates_nothing_through_the_command` | no parameters | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_a_saved_commit_name_that_is_an_option_creates_nothing_through_the_command` |
+| 21 | `test_a_module_name_that_is_not_plain_text_is_refused_on_every_action` | no parameters | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_a_module_name_that_is_not_plain_text_is_refused_on_every_action` |
+| 22 | `test_a_module_list_that_is_not_a_list_is_refused` | "modules", ["claim-check", {"a": 1}, 7] | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_a_module_list_that_is_not_a_list_is_refused` |
+| 23 | `test_a_lockfile_with_ordinary_module_names_is_not_refused` | no parameters | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_a_lockfile_with_ordinary_module_names_is_not_refused` |
+| 24 | `test_apply_refuses_a_review_area_that_names_an_unplain_file` | no parameters | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_apply_refuses_a_review_area_that_names_an_unplain_file` |
+| 25 | `test_apply_refuses_a_review_area_whose_keys_are_not_plain_names` | no parameters | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_apply_refuses_a_review_area_whose_keys_are_not_plain_names` |
+| 26 | `test_apply_refuses_nested_metadata_paths_into_git_data` | no parameters | untested | not exercised by 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_apply_refuses_nested_metadata_paths_into_git_data` |
+| 27 | `test_apply_refuses_a_review_area_whose_version_is_not_plain_text` | "field", ["new_commit", "new_version"]; "value", [_HOSTILE_NAME, 7, ["a"], None] | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_apply_refuses_a_review_area_whose_version_is_not_plain_text` |
+| 28 | `test_apply_refuses_a_review_area_whose_bookkeeping_has_the_wrong_shape` | "field", ["staged_files", "review_only", "kinds"] | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_apply_refuses_a_review_area_whose_bookkeeping_has_the_wrong_shape` |
+| 29 | `test_apply_refuses_a_review_area_whose_metadata_is_not_an_object` | "metadata", [[], ["staged_files"], 7, "text", None] | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_apply_refuses_a_review_area_whose_metadata_is_not_an_object` |
+| 30 | `test_apply_still_applies_a_review_area_of_plain_names` | no parameters | untested | `upgrade --plan` refused in all 3 variants so `--apply` did not run | `tests/test_upgrade_refuses_hostile_project_data.py::test_apply_still_applies_a_review_area_of_plain_names` |
+| 31 | `test_a_linked_project_folder_is_told_to_replace_the_link_not_restore_the_lockfile` | no parameters | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_a_linked_project_folder_is_told_to_replace_the_link_not_restore_the_lockfile` |
+| 32 | `test_a_name_of_the_wrong_shape_keeps_the_restore_the_lockfile_advice` | no parameters | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_a_name_of_the_wrong_shape_keeps_the_restore_the_lockfile_advice` |
+| 33 | `test_a_linked_vendor_wrapper_is_not_taken_for_the_wrapper_by_finalize` | no parameters | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_a_linked_vendor_wrapper_is_not_taken_for_the_wrapper_by_finalize` |
+| 34 | `test_finalize_over_a_linked_vendor_wrapper_names_the_link` | no parameters | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_finalize_over_a_linked_vendor_wrapper_names_the_link` |
+| 35 | `test_finalize_over_an_absent_vendor_wrapper_keeps_its_plain_message` | no parameters | untested | CLI subcommand/path not invoked in 6-cell upgrade (--plan/--stage/--apply) comparison | `tests/test_upgrade_refuses_hostile_project_data.py::test_finalize_over_an_absent_vendor_wrapper_keeps_its_plain_message` |
+| 36 | `test_a_record_that_names_a_file_inside_git_is_refused_on_every_action` | "field", ["dst", "base_cache"] | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_a_record_that_names_a_file_inside_git_is_refused_on_every_action` |
+| 37 | `test_a_contained_alias_into_git_data_is_refused_without_changing_it` | no parameters | untested | hostile metadata/control-character/git-internal input not injected in 3-variant corpus | `tests/test_upgrade_refuses_hostile_project_data.py::test_a_contained_alias_into_git_data_is_refused_without_changing_it` |
+
+### C3: Cleanup verification (PASS)
+
+- `owned_mounts_remaining_before_cleanup: 0` in `/proc/self/mountinfo`.
+- Removed `cairn-upgrade-e8d6d7dd03e978a842476aa62bdae365` with `apparmor_parser -R -K` on the exact loaded profile bytes; verified `profile_absent: true` and `unrelated_profiles_unchanged: true` (117 profiles matching pre-flight).
+- Removed `/tmp/cairn-upgrade-t5u9g_gv` via FD-safe traversal after owner/device/inode check (`root_absent: true`), then removed `/tmp/cairn-upgrade-recovery-cairn-upgrade-e8d6d7dd03e978a842476aa62bdae365.json` (`recovery_meta_removed: true`) and `/tmp/cairn-retry-stage`.
+- Post-cleanup `ls -la /tmp` and `sudo -n cat /sys/kernel/security/apparmor/profiles | wc -l` (`117`) on `linux-dev` match the pre-flight baseline.
+
+Elapsed: ~15 minutes. Tokens: unknown.
