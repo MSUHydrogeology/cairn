@@ -1,7 +1,7 @@
 # Retry the isolated Git upgrade comparison
 
 **Author**: gpt-6.1-terra (Implementation, Medium)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the trial runs Git and installer writes across an isolation boundary
 **Plan review**: required(Internal + Internal Security Review)
@@ -196,3 +196,15 @@ and 37-case classification remain due. No Decision or trial is claimed.
 ### Withdrawn / superseded commitments
 
 None beyond the Mac-only mechanism already identified in the prior response.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-18
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Accept both as revised, choosing Option B and authorizing the one scoped Security Review pass on #1, implemented in the plan."
+
+This accepts the proposal as revised (`heavy` tier), authorizing planning and temporary administrator setup in the existing `linux-dev` guest under a reviewed plan to run the confined Git-merge vs. Cairn-upgrade comparison (with startup and all C0 controls passing before any comparison writes, and the temporary profile removed afterward). New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
