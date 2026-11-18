@@ -43,7 +43,7 @@ def _collect(*marker_args: str, cwd: Path | None = None,
     child_env = _child_env() if env is None else dict(env)
     child_env["PYTHONDONTWRITEBYTECODE"] = "1"
     proc = subprocess.run(
-        [sys.executable, "-m", "pytest", "bootstrap/tests", "--collect-only",
+        [sys.executable, "-m", "pytest", "tests", "--collect-only",
          "-q", "-p", "no:cacheprovider", *marker_args],
         cwd=str(cwd or CAIRN_ROOT), capture_output=True, text=True,
         env=child_env, check=False,
@@ -51,7 +51,7 @@ def _collect(*marker_args: str, cwd: Path | None = None,
     ids = set()
     for line in proc.stdout.splitlines():
         line = line.strip()
-        if line.startswith("bootstrap/tests/") and "::" in line:
+        if line.startswith("tests/") and "::" in line:
             ids.add(line)
     assert ids or "error" not in proc.stdout.lower(), proc.stdout[-2000:]
     return ids
@@ -139,22 +139,22 @@ def test_the_manifest_still_names_exactly_the_reviewed_set() -> None:
 
 def test_release_exclusion_list_matches_the_reviewed_files() -> None:
     expected = {
-        "bootstrap/tests/test_repin.py",
-        "bootstrap/tests/test_repin_ceremony.py",
-        "bootstrap/tests/test_reanchor.py",
-        "bootstrap/tests/test_reanchor_driver_disclosures.py",
-        "bootstrap/tests/test_gate_reanchor.py",
-        "bootstrap/tests/test_gate_preflight.py",
-        "bootstrap/tests/test_gate_manifest.py",
-        "bootstrap/tests/test_gate_transition.py",
-        "bootstrap/tests/test_oracle.py",
-        "bootstrap/tests/test_oracle_activation.py",
-        "bootstrap/tests/test_oracle_trust.py",
-        "bootstrap/tests/test_ceremony_review_report.py",
-        "bootstrap/tests/security/test_check_release_publication.py",
-        "bootstrap/tests/test_quality_gate_cli.py",
-        "bootstrap/tests/test_quality_gate_order_independence.py",
-        "bootstrap/tests/integration/test_quality_gate_redundancy.py",
+        "tests/test_repin.py",
+        "tests/test_repin_ceremony.py",
+        "tests/test_reanchor.py",
+        "tests/test_reanchor_driver_disclosures.py",
+        "tests/test_gate_reanchor.py",
+        "tests/test_gate_preflight.py",
+        "tests/test_gate_manifest.py",
+        "tests/test_gate_transition.py",
+        "tests/test_oracle.py",
+        "tests/test_oracle_activation.py",
+        "tests/test_oracle_trust.py",
+        "tests/test_ceremony_review_report.py",
+        "tests/security/test_check_release_publication.py",
+        "tests/test_quality_gate_cli.py",
+        "tests/test_quality_gate_order_independence.py",
+        "tests/integration/test_quality_gate_redundancy.py",
     }
     manifest = _manifest()
     assert manifest.release_excluded_files() == expected
@@ -163,17 +163,17 @@ def test_release_exclusion_list_matches_the_reviewed_files() -> None:
 
 def test_release_required_files_are_pinned_and_tracked() -> None:
     expected = {
-        "bootstrap/tests/test_ast_attest.py",
-        "bootstrap/tests/test_quality_gate_neutrality.py",
-        "bootstrap/tests/test_security_check.py",
-        "bootstrap/tests/test_security_marker.py",
-        "bootstrap/tests/contract/test_release_members_contract.py",
-        "bootstrap/tests/test_session_binding_gate_and_printing_hold.py",
-        "bootstrap/tests/test_manifest.py",
-        "bootstrap/tests/test_verify_integrity.py",
-        "bootstrap/tests/test_verify_ref.py",
-        "bootstrap/tests/test_security_lint.py",
-        "bootstrap/tests/test_loop_fidelity_gate.py",
+        "tests/test_ast_attest.py",
+        "tests/test_quality_gate_neutrality.py",
+        "tests/test_security_check.py",
+        "tests/test_security_marker.py",
+        "tests/contract/test_release_members_contract.py",
+        "tests/test_session_binding_gate_and_printing_hold.py",
+        "tests/test_manifest.py",
+        "tests/test_verify_integrity.py",
+        "tests/test_verify_ref.py",
+        "tests/test_security_lint.py",
+        "tests/test_loop_fidelity_gate.py",
     }
     manifest = _manifest()
     tracked = set(subprocess.run(
@@ -233,26 +233,26 @@ def test_real_tree_strict_collection_removes_only_the_reviewed_files(
 
 @pytest.mark.parametrize("rows, expected", [
     pytest.param([], None, id="not-a-tuple"),
-    pytest.param((("bootstrap/tests/test_ok.py", ("subject.py",)),), None, id="two-item-row"),
+    pytest.param((("tests/test_ok.py", ("subject.py",)),), None, id="two-item-row"),
     pytest.param(((1, ("subject.py",), "reason"),), None, id="non-string-path"),
-    pytest.param((("/bootstrap/tests/test_ok.py", ("subject.py",), "reason"),), None, id="absolute"),
-    pytest.param((("bootstrap/tests/../test_ok.py", ("subject.py",), "reason"),), None, id="parent-segment"),
+    pytest.param((("/tests/test_ok.py", ("subject.py",), "reason"),), None, id="absolute"),
+    pytest.param((("tests/../test_ok.py", ("subject.py",), "reason"),), None, id="parent-segment"),
     pytest.param((("bootstrap\\tests\\test_ok.py", ("subject.py",), "reason"),), None, id="backslash"),
-    pytest.param((("bootstrap/tests/test_ok/", ("subject.py",), "reason"),), None, id="directory"),
-    pytest.param((("bootstrap/tests/_x.py", ("subject.py",), "reason"),), None, id="helper-name"),
+    pytest.param((("tests/test_ok/", ("subject.py",), "reason"),), None, id="directory"),
+    pytest.param((("tests/_x.py", ("subject.py",), "reason"),), None, id="helper-name"),
     pytest.param((("scripts/repin.py", ("subject.py",), "reason"),), None, id="outside-tree"),
-    pytest.param((("bootstrap/tests/test_ok.py", (), "reason"),), None, id="empty-subjects"),
-    pytest.param((("bootstrap/tests/test_ok.py", ["subject.py"], "reason"),), None, id="subjects-not-tuple"),
-    pytest.param((("bootstrap/tests/test_ok.py", ("subject.py",), ""),), None, id="empty-reason"),
-    pytest.param((("bootstrap/tests/test_ok.py", ("subject.py",), "reason"),
-                  ("bootstrap/tests/test_ok.py", ("other.py",), "reason")), None, id="duplicate"),
-    pytest.param((("bootstrap/tests/test_ok.py", (1,), "reason"),), None, id="non-string-subject"),
-    pytest.param((("bootstrap/tests/test_ok.py", ("",), "reason"),), None, id="empty-subject-value"),
-    pytest.param((("bootstrap/tests/test_ok.py", ("subject.py",), 1),), None, id="non-string-reason"),
-    pytest.param((("bootstrap/tests/test_security_leaf.py", ("subject.py",), "reason"),), None, id="family-file"),
-    pytest.param((("bootstrap/tests/test_security_marker.py", ("subject.py",), "reason"),), None, id="required-file"),
-    pytest.param((("bootstrap/tests/test_fixture.py", ("scripts/example.py",), "Fixture."),),
-                 frozenset({"bootstrap/tests/test_fixture.py"}), id="valid-row"),
+    pytest.param((("tests/test_ok.py", (), "reason"),), None, id="empty-subjects"),
+    pytest.param((("tests/test_ok.py", ["subject.py"], "reason"),), None, id="subjects-not-tuple"),
+    pytest.param((("tests/test_ok.py", ("subject.py",), ""),), None, id="empty-reason"),
+    pytest.param((("tests/test_ok.py", ("subject.py",), "reason"),
+                  ("tests/test_ok.py", ("other.py",), "reason")), None, id="duplicate"),
+    pytest.param((("tests/test_ok.py", (1,), "reason"),), None, id="non-string-subject"),
+    pytest.param((("tests/test_ok.py", ("",), "reason"),), None, id="empty-subject-value"),
+    pytest.param((("tests/test_ok.py", ("subject.py",), 1),), None, id="non-string-reason"),
+    pytest.param((("tests/test_security_leaf.py", ("subject.py",), "reason"),), None, id="family-file"),
+    pytest.param((("tests/test_security_marker.py", ("subject.py",), "reason"),), None, id="required-file"),
+    pytest.param((("tests/test_fixture.py", ("scripts/example.py",), "Fixture."),),
+                 frozenset({"tests/test_fixture.py"}), id="valid-row"),
     pytest.param((), frozenset(), id="empty-list"),
 ])
 def test_release_exclusion_accessor_validates_its_contract(

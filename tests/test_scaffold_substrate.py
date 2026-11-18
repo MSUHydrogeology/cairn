@@ -79,8 +79,8 @@ def test_facade_exposes_full_public_surface():
 def test_release_scan_now_covers_launcher_and_engine():
     from bootstrap.security_check import scan_targets  # noqa: PLC0415
     targets = set(scan_targets())
-    assert "bootstrap/scaffold.py" in targets, "the launcher must be scanned"
-    assert "bootstrap/_scaffold/__init__.py" in targets, "the engine must be scanned (recursive)"
+    assert "install/scaffold.py" in targets, "the launcher must be scanned"
+    assert "install/_scaffold/__init__.py" in targets, "the engine must be scanned (recursive)"
 
 
 # --- executable topology from an unrelated cwd (subprocess) -----------------

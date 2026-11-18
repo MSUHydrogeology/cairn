@@ -6,7 +6,7 @@ The shipped testing-discipline module tells adopters that a test's tier comes
 from where it lives, and says Cairn's own suite is tiered. Ordinary tests are
 grouped under ``unit/``, ``contract/``, ``integration/``, and ``security/``;
 workflow tests and protected apparatus remain at their approved paths. The
-recursively applied ``tools/test_tiers.json`` filename patterns assign tiers,
+recursively applied ``tests/test_tiers.json`` filename patterns assign tiers,
 and these checks keep every test placed exactly once.
 
 Promises:
@@ -205,7 +205,7 @@ def test_for_selects_imports_and_cited_paths_but_not_folder_sweepers(tmp_path):
 
 
 def test_for_matches_python_references_as_tokens_and_keeps_indirect_consumers(tmp_path):
-    target = tmp_path / "bootstrap" / "_scaffold" / "upgrade.py"
+    target = tmp_path / "install" / "_scaffold" / "upgrade.py"
     target.parent.mkdir(parents=True)
     target.write_text("VALUE = 1\n", encoding="utf-8")
     tests = _tests(tmp_path, "test_imports_upgrade", "test_cites_upgrade",
@@ -215,7 +215,7 @@ def test_for_matches_python_references_as_tokens_and_keeps_indirect_consumers(tm
     (tests / "test_imports_upgrade.py").write_text(
         "from install._scaffold import upgrade as UP\n", encoding="utf-8")
     (tests / "test_cites_upgrade.py").write_text(
-        'SOURCE = "bootstrap/_scaffold/upgrade.py"\n', encoding="utf-8")
+        'SOURCE = "install/_scaffold/upgrade.py"\n', encoding="utf-8")
     (tests / "test_runs_upgrade.py").write_text(
         'def test_public_command(project):\n    upgrade(project, "--apply")\n'
         'COMMAND = "scaffold.py upgrade --apply"\n',
@@ -235,7 +235,7 @@ def test_for_matches_python_references_as_tokens_and_keeps_indirect_consumers(tm
 
     out, err = io.StringIO(), io.StringIO()
     code = tiers_tool.main(
-        ["for", "bootstrap/_scaffold/upgrade.py"],
+        ["for", "install/_scaffold/upgrade.py"],
         config=_config(tmp_path, [{"name": "unit", "about": "", "patterns": ["test_*"]}]),
         test_dir=tests, root=tmp_path, out=out, err=err)
     assert code == 0
@@ -307,7 +307,7 @@ def test_for_keeps_named_readers_and_unions_other_changed_paths(tmp_path):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("fixture\n", encoding="utf-8")
 
-    tests = root / "bootstrap" / "tests"
+    tests = root / "tests"
     tests.mkdir(parents=True)
     sources = {
         "test_lock_mention.py": 'PATH = "dev/.cairn/cairn-lock.yml"\n',
@@ -347,11 +347,11 @@ def test_for_keeps_named_readers_and_unions_other_changed_paths(tmp_path):
 
     assert code == 0, err.getvalue()
     assert out.getvalue().splitlines() == [
-        "bootstrap/tests/contract/test_writing_rules_ship.py",
-        "bootstrap/tests/test_imports_example.py",
-        "bootstrap/tests/test_portable_security_sweeps.py",
-        "bootstrap/tests/test_review_stance_in_shipped_files.py",
-        "bootstrap/tests/test_review_sweep_ships.py",
+        "tests/contract/test_writing_rules_ship.py",
+        "tests/test_imports_example.py",
+        "tests/test_portable_security_sweeps.py",
+        "tests/test_review_stance_in_shipped_files.py",
+        "tests/test_review_sweep_ships.py",
     ]
 
 
@@ -605,27 +605,27 @@ def test_for_two_and_three_dot_ranges_preserve_empty_success(tmp_path):
 
 class TestTestTiersPhysicalBinding:
     def test_real_cli_executes_its_pinned_helper(self, tmp_path: Path) -> None:
-        _assert_bound_member_positive(tmp_path, "tools/test_tiers.py")
+        _assert_bound_member_positive(tmp_path, "tests/test_tiers.py")
 
     def test_real_cli_resolves_linked_tools_parent_with_caller_and_helper(
             self, tmp_path: Path) -> None:
-        _assert_linked_caller_parent_positive(tmp_path, "tools/test_tiers.py")
+        _assert_linked_caller_parent_positive(tmp_path, "tests/test_tiers.py")
 
     @pytest.mark.parametrize("mutation", _BINDING_MUTATIONS)
     def test_real_cli_refuses_each_binding_mutation(
             self, mutation: str, tmp_path: Path) -> None:
-        _assert_bound_member_mutation(tmp_path, "tools/test_tiers.py", mutation)
+        _assert_bound_member_mutation(tmp_path, "tests/test_tiers.py", mutation)
 
 
 def _seed_tier_route_repo(root: Path) -> None:
     root.mkdir()
     (root / "tools").mkdir()
-    (root / "bootstrap/tests").mkdir(parents=True)
-    (root / "tools/test_tiers.json").write_text(
+    (root / "tests").mkdir(parents=True)
+    (root / "tests/test_tiers.json").write_text(
         json.dumps({"tiers": [{"name": "one", "patterns": ["test_*"]}]}),
         encoding="utf-8",
     )
-    reader = root / "bootstrap/tests/test_reader.py"
+    reader = root / "tests/test_reader.py"
     reader.write_text(
         'OLD = "old governance rule has several useful words here"\n'
         'NEW = "new governance sentence changed by enough distinct words"\n',
@@ -644,8 +644,8 @@ def _seed_tier_route_repo(root: Path) -> None:
     })
     subprocess.run(["git", "init", "-q", str(root)], env=env,
                    check=True, capture_output=True)
-    subprocess.run(["git", "-C", str(root), "add", "AGENTS.md", "tools/test_tiers.json",
-                    "bootstrap/tests/test_reader.py"], env=env,
+    subprocess.run(["git", "-C", str(root), "add", "AGENTS.md", "tests/test_tiers.json",
+                    "tests/test_reader.py"], env=env,
                    check=True, capture_output=True)
     subprocess.run(["git", "-C", str(root), "commit", "-qm", "baseline"],
                    env=env, check=True, capture_output=True)
@@ -674,7 +674,7 @@ else:
     out, err = io.StringIO(), io.StringIO()
     code = module["main"](["for", "--range", "HEAD~1..HEAD", "AGENTS.md"],
                           out=out, err=err)
-    assert code == 0 and out.getvalue().splitlines() == ["bootstrap/tests/test_reader.py"]
+    assert code == 0 and out.getvalue().splitlines() == ["tests/test_reader.py"]
     assert "1 test files selected for the requested paths" in err.getvalue()
     out, err = io.StringIO(), io.StringIO()
     assert module["main"](["for", "--range", "HEAD..HEAD", "AGENTS.md"],
@@ -690,7 +690,7 @@ else:
 
 def test_tiers_governing_diff_refuses_target_local_path_git_route(tmp_path):
     clean, _safe, _unsafe = _assert_public_route_triplet(
-        tmp_path / "tiers-agents-diff", "tools/test_tiers.py", "_resolve_reviewed_range",
+        tmp_path / "tiers-agents-diff", "tests/test_tiers.py", "_resolve_reviewed_range",
         ("rev-parse", "--verify", "--end-of-options", "HEAD~1^{commit}"),
         _tier_route_driver("HEAD~1..HEAD"),
         _tier_route_driver("HEAD~1..HEAD", refusal=True),

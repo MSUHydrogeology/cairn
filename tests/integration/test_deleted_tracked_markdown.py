@@ -34,7 +34,8 @@ import pytest
 from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
-SCRIPTS = CAIRN_ROOT / "scripts"
+INSTALLED_TOOLS = CAIRN_ROOT / "dev" / "tools"
+CAIRN_TOOLS = CAIRN_ROOT / "tests"
 
 _SCANS = ["link_check", "sync_doc_snippets", "check_cairn"]
 # sync_doc_snippets reports snippet drift, not links, so it has no
@@ -70,7 +71,7 @@ def _make_repo(tmp_path: Path, *, with_dangling_symlink: bool) -> Path:
 
 
 def _run(script: str, repo: Path, *extra: str) -> subprocess.CompletedProcess:
-    argv = [sys.executable, "-B", str(SCRIPTS / f"{script}.py"),
+    argv = [sys.executable, "-B", str((CAIRN_TOOLS if script == "check_cairn" else INSTALLED_TOOLS) / f"{script}.py"),
             "--root", str(repo), *extra]
     return subprocess.run(argv, capture_output=True, text=True, cwd=str(repo))
 
