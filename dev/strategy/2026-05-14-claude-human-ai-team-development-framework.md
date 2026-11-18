@@ -21,7 +21,7 @@ Four practices carry that promise today:
 
 ### Evidence status
 
-* **Measured:** Cairn governs its own repository and two documented case studies under one Maintainer — `modflow_tools` (built AI-team-first; [`case-studies/modflow_tools.md`](../../case-studies/modflow_tools.md)) and `LHM` (a legacy MATLAB and Python landscape-hydrology model retrofitted with Cairn; [`case-studies/lhm.md`](../../case-studies/lhm.md)).
+* **Measured:** Cairn governs its own repository and two documented case studies under one Maintainer — `modflow_tools` (built AI-team-first; [`docs/case-studies/modflow_tools.md`](../../docs/case-studies/modflow_tools.md)) and `LHM` (a legacy MATLAB and Python landscape-hydrology model retrofitted with Cairn; [`docs/case-studies/lhm.md`](../../docs/case-studies/lhm.md)).
 * **Assumed from literature:** Each mechanism rests on published research in software engineering, cognitive science, and scientific peer review (the 23 anchors below). Literature grounding explains why a mechanism is plausible; it does not prove that the bundle pays for its overhead.
 * **Unmeasured (what would falsify or confirm it):** Deployments under a single Maintainer show use, not comparative efficacy. The serious alternative is not careless prompting; it is a scientist using a current coding agent, ordinary Git and tests, a short instruction file, and brief notes for major decisions. Cairn earns its keep only if its science-specific assurance and decision record beat that lighter baseline. Settling that question requires an outside adoption on real scientific changes alongside comparable work under the lighter baseline, with the threshold declared beforehand: recording total scientist attention, checking scientific outcomes against a basis independent of the code, and testing whether another person can later reproduce the result and state its assumptions.
 
@@ -31,13 +31,13 @@ Four practices carry that promise today:
 
 Cairn is a citable, DOI-bearing repository ([`CITATION.cff`](../../CITATION.cff), [`CHANGELOG.md`](../../CHANGELOG.md)), dual-licensed under CC BY 4.0 for prose and templates ([`LICENSE-CC-BY.md`](../../LICENSE-CC-BY.md)) and MIT for code and scripts ([`LICENSE-MIT.md`](../../LICENSE-MIT.md)). Its shipped surfaces are:
 
-* **[`doctrine/`](../../docs/methodology/README.md)** — the methodology reference: the lifecycle, single-stance Dual-Review, roles, session routines, coordination, documentation governance, onboarding, consolidation review, and the research rationale.
-* **[`templates/core/`](../../templates/core/) and [`templates/modules/`](../../templates/modules/README.md)** — the invariant kernel (`AGENTS.md`, `VENDOR.md`, `NOTICE.md`, and the `dev/` templates) plus default-on and team-gated modules.
-* **[`dimensions/`](../../dimensions/README.md)** — six project axes (`age`, `size`, `complexity`, `language`, `human-team`, `agent-team`) that size a deployment's module profile.
-* **[`bootstrap/`](../../bootstrap/BOOTSTRAP.md)** — the installer, 3-way lockfile-backed upgrade engine, integrity verifier (`verify_integrity.py`), and re-anchor runbook ([`bootstrap/REANCHOR_RUNBOOK.md`](../../bootstrap/REANCHOR_RUNBOOK.md)).
-* **[`on-ramp/`](../../on-ramp/README.md)** — three adoption depths: read the doctrine, copy the kernel by hand, or run the bootstrap installer.
-* **[`tools/`](../../tools/) and [`scripts/`](../../scripts/)** — operational utilities (`session.py`, `intent.py`, `board.py`) and prose/integrity gates (`claim_check.py`, `link_check.py`, `content_scan.py`, `quality_gate.py`, `repin.py`).
-* **[`docs/`](../../docs/README.md) and [`case-studies/`](../../case-studies/README.md)** — adopter-facing guides, [`docs/plain-language.md`](../../docs/plain-language.md), [`docs/glossary.md`](../../docs/glossary.md), and the `modflow_tools` and `LHM` case studies.
+* **[`docs/methodology/`](../../docs/methodology/README.md)** — the methodology reference: the lifecycle, single-stance Dual-Review, roles, session routines, coordination, documentation governance, onboarding, consolidation review, and the research rationale.
+* **[`templates/core/`](../../templates/core/) and [`templates/modules/`](../../docs/templates.md)** — the invariant kernel (`AGENTS.md`, `VENDOR.md`, `NOTICE.md`, and the `dev/` templates) plus default-on and team-gated modules.
+* **[`install/dimensions/`](../../install/dimensions/README.md)** — six project axes (`age`, `size`, `complexity`, `language`, `human-team`, `agent-team`) that size a deployment's module profile.
+* **[`install/`](../../install/BOOTSTRAP.md)** — the installer, 3-way lockfile-backed upgrade engine, integrity verifier (`verify_integrity.py`), and re-anchor runbook ([`release/REANCHOR_RUNBOOK.md`](../../release/REANCHOR_RUNBOOK.md)).
+* **[`install/on-ramp/`](../../install/on-ramp/README.md)** — three adoption depths: read the doctrine, copy the kernel by hand, or run the bootstrap installer.
+* **[`dev/tools/`](../tools/) and [`tests/`](../../tests/) plus [`release/`](../../release/)** — operational utilities (`session.py`, `intent.py`, `board.py`) and prose/integrity gates (`claim_check.py`, `link_check.py`, `content_scan.py`, `quality_gate.py`, `repin.py`).
+* **[`docs/`](../../docs/README.md) and [`docs/case-studies/`](../../docs/case-studies/README.md)** — adopter-facing guides, [`docs/plain-language.md`](../../docs/plain-language.md), [`docs/glossary.md`](../../docs/glossary.md), and the `modflow_tools` and `LHM` case studies.
 
 ### What the case-study pair shows
 

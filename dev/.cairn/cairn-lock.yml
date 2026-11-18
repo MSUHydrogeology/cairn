@@ -14,14 +14,14 @@
     },
     {
       "dst": ".agents/skills/session-end/SKILL.md",
-      "hash": "sha256:50f522804605e59b687f63db8566e5df7a2cbade380c3f4a2aaded6adfa52ed8",
+      "hash": "sha256:a8a1c481ece4e9a30e58e443b02f5438dce1a4ce565edecb0d33b0dd423daac6",
       "src": "skills/session-end/SKILL.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": ".agents/skills/session-start/SKILL.md",
-      "hash": "sha256:50e3895e7496255c870541c1616b8f66d6c28380e91252c9336c2499627c34cf",
+      "hash": "sha256:77e29aa8368e5fc4d9fdb93a86cbf0d7c764998dddee232ed463cbae03c1f2a9",
       "src": "skills/session-start/SKILL.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -144,7 +144,7 @@
     },
     {
       "dst": "dev/modules/issue-capture.md",
-      "hash": "sha256:bbcb8cc0c880af945bd89e0fb791383c01033a4d65e05661d5ae42fb9c5fe276",
+      "hash": "sha256:f1373c8af5f1fd81cda44b3e00f5d58be87fc9b81df4883a8bf9f4bbdc9e99b9",
       "src": "modules/team-gated/issue-capture.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -250,7 +250,7 @@
     },
     {
       "dst": "docs/DOCUMENTATION_PLAN.md",
-      "hash": "sha256:8320199fcfe7c31fde3fda6fab7ec0b881aa0e60508c0c7ca7f67127b2dde4b3",
+      "hash": "sha256:76a49cb251ab2c28ece8f6076a912bc150b95f0079e0c1e73ddc498b66be3d83",
       "src": "modules/default-on/documentation_plan_template.md",
       "unrecoverable_base": true,
       "verbatim": false
