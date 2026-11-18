@@ -283,3 +283,28 @@ Responds to: Argon pass-1 Internal Security Review (`5382c096`)
 
 **Elapsed**: unknown
 **Tokens**: unknown
+
+## Security code review (pass 2) -- Argon (Security Review, High) -- 2026-11-18
+
+Reviewed commit: 7b502666
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Model basis**: gemini-4-argon-high
+**Findings**: none
+**Verdict**: ACCEPT
+
+1. **Should this happen as framed?** Yes. All five pass-1 blocking defects (`5382c096`) and the two real-Git framing catches (`update <ref>\0<oid>\0\0` and POSIX shim `len(argv) == 11`) are resolved cleanly in place. -- `dev/tools/run_portable_security_sweeps.py:960-986`, `:1177-1202`, `:2229`, `:2814-2834`, `:3356-3381`, `:3757-3850`; `release/security_check.py:2003-2004`, `:2106`, `:2145`, `:2223-2254`, `:2421`, `:2457-2534`, `:2608-2625`.
+2. **Best alternative.** Keep the existing `_WindowsPrivateAPI`, `_release_history_git`, `_redaction_is_intact`, and `--triage-record` trust boundaries while verifying `_expected_store_projection(manifest)` across freeze, record, and join. -- Plan C1–C3.
+3. **What would show it wrong?** A non-candidate-ref or detached-worktree secret escaping detection, or projection/object-count tampering passing `--record` or `--join`, now refuted by the end-to-end tests. -- `tests/test_security_check.py:2261-2478`; `tests/test_portable_security_sweeps.py:3290-3590`.
+
+**Verified resolutions.**
+- **Finding 1 (Windows relay wiring)**: `cmd_verify_version_support` (`:3356-3358`, `:3381`) and `_run_sweep_inner` (`:3834`) bind `windows_relay.executable.directory` and pass outer `target` as `win_hist.authority`.
+- **Finding 2 & 3 (`adapter_digest` and macOS `scratch`)**: `release/security_check.py:2534` reads `facts.get("adapter_digest", "")` and `:2421` resolves `scratch` via `.resolve(strict=True)`.
+- **Finding 4 & 5 (annotated tags, detached HEADs, store projection, cross-host record, shallow linked worktrees)**: `_freeze_history` packs `raw_roots` while keeping peeled `roots`; `_projected_manifest_oids` projects `refs` and non-unborn `heads` with 3-token NUL framing; `_expected_store_projection` and `object_format` are enforced in `--record` and `--join`; live inventory equality is conditional on `live["source"] == manifest["source"]` in `--record` and strict in `--join`; shallow linked worktrees are refused in `_parse_worktree_porcelain_z` and `_history_discovery`.
+- **Parity & lockfile**: Both runner twins (`sha256:a21ef97a...`) and module docs match (`cmp -s`), imports are stdlib-only (`non_stdlib: []`), `dev/.cairn/cairn-lock.yml` updates only `dev/tools/run_portable_security_sweeps.py`, and the unreachable `cairn-windows` VM gap after `7579ce40` is honestly recorded.
+
+**Coverage.** Inspected `git show 7b502666`, verified twin `cmp -s`, lockfile SHA-256, and AST stdlib-only imports, and ran the 5 new regression tests under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (`5 passed` across `test_security_check.py` and `test_portable_security_sweeps.py`). Did not rerun full suites or connect to `cairn-windows`.
+
+**Elapsed**: unknown
+**Tokens**: unknown
