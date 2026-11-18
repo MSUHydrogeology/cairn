@@ -56,10 +56,10 @@ contributor reaches the other layers in one hop:
   newcomer.
 * **The methodology product Cairn builds** — the descriptive/published
   layer that `dev/` exists to evolve: [`docs/methodology/`](../docs/methodology/) (the
-  invariant core), [`dimensions/`](../dimensions/) (the adaptation
+  invariant core), [`install/dimensions/`](../install/dimensions/) (the adaptation
   axes), [`templates/`](../templates/) (the forkable files),
-  [`bootstrap/`](../bootstrap/) (the scaffold + procedure),
-  [`on-ramp/`](../on-ramp/), and [`case-studies/`](../case-studies/).
+  [`install/`](../install/) (the scaffold + procedure),
+  [`install/on-ramp/`](../install/on-ramp/), and [`docs/case-studies/`](../docs/case-studies/).
   When `dev/` deliberation lands, *these* are usually what changes.
 <!-- cairn:end cross-layer-doc-pointers -->
 

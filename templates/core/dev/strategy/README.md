@@ -16,7 +16,7 @@ are ready to propose. A **proposal is the Stage-1 registered report** — the
 commitment, design-and-evidence locked for review (see
 [`../proposals/_template.md`](../proposals/_template.md)). The exit from a
 strategy note is **promotion** (it becomes / feeds a proposal or plan); the
-closed end is [`archive/`](archive/).
+closed end is `archive/`.
 
 ## The defining discipline — inline-revised, not append-only
 
@@ -59,7 +59,7 @@ draft → reviewed → revised → settled → promoted (→ <proposal/plan>) / 
   proposal **or fed a plan** ("fed a plan" counts as promotion).
 * **`living`** — kept current / a durable companion; assigned by **role**, not
   by the literal last-edit word. Never promotes or archives.
-* **`archived`** — moved to [`archive/`](archive/) (adopted / superseded /
+* **`archived`** — moved to `archive/` (adopted / superseded /
   retired). A note in `archive/` is `archived` by its location.
 
 ### Status × Type validity
@@ -75,7 +75,7 @@ The two fields must not contradict:
 
 ## Archive trigger
 
-A note moves to [`archive/`](archive/) when its direction has been **adopted**
+A note moves to `archive/` when its direction has been **adopted**
 into a proposal/plan, **superseded** by a later note, or **retired**. Read an
 archived note for historical context; do **not** treat it as current direction
 unless a live proposal, plan, `dev/PLANNING.md` item, or doc cites it.

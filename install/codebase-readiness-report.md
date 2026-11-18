@@ -336,7 +336,7 @@ unless you share it.
 
 The mapping below is a guide, not a verdict.  Your maintainer
 judgment overrides it; the dimensional matrix in
-[`install/dimensions/`](../dimensions/) carries the full doctrine.
+[`install/dimensions/`](dimensions/) carries the full doctrine.
 
 * **Mostly Good (≥8 G)**: **install the profile your axes give**.
   Pick it from [`install/profiles/`](profiles/) and run
