@@ -187,14 +187,14 @@
     },
     {
       "dst": "dev/plans/_template.md",
-      "hash": "sha256:d78bf2ead5fef2dfdf15e06d673cc52925400cd0d2c7aa79a2371eb8bfe609ae",
+      "hash": "sha256:97b61016632fdf866fa7683a1aa0cf16b538b2528ca8ab81ed58068bf18b0802",
       "src": "core/dev/plans/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/proposals/_template.md",
-      "hash": "sha256:5928b634c14908550d2132da86580d5c455b46194bc130028bb267188e3c429c",
+      "hash": "sha256:63aaa9bbe4d8de17b044b3011b0ad837b432f1980d484ec4192eab68c0175025",
       "src": "core/dev/proposals/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
