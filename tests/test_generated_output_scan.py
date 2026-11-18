@@ -28,7 +28,7 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
@@ -36,7 +36,7 @@ sys.path.insert(0, str(CAIRN_ROOT))
 # content_scan is single-sourced as the content-security module script.
 sys.path.insert(0, str(CAIRN_ROOT / "templates" / "modules" / "team-gated"))
 
-from bootstrap.scaffold import main  # noqa: E402
+from install.scaffold import main  # noqa: E402
 import content_scan  # noqa: E402
 
 pytestmark = pytest.mark.skipif(

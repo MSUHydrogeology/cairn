@@ -78,7 +78,7 @@ nothing. When something can be removed, its report ends with the command below.
 **What `--remove-retired` does.** Run:
 
 ```
-python bootstrap/scaffold.py upgrade --target <repo> --remove-retired
+python install/scaffold.py upgrade --target <repo> --remove-retired
 ```
 
 It removes a copy only if all three are true. The path is on Cairn's own list of
@@ -87,7 +87,7 @@ commit holds the same bytes, so `git restore <path>` brings the file back. It
 then clears the file's lockfile record and, for a Markdown file, its cached
 template under `dev/.cairn/base/`. It also clears the record of a file you
 already deleted. It prints one line for each file and ends by telling you to
-commit. Commit the change, then run `python bootstrap/verify_integrity.py
+commit. Commit the change, then run `python install/verify_integrity.py
 --target <repo>`. You should see no `missing:` line for these files. If you do,
 run the step again: it finishes any record a stopped run left behind.
 
@@ -127,7 +127,7 @@ list; the tasks themselves are in `dev/PLANNING.md`),
 `dev/.cairn/onboarding-activated.jsonl` (the helper's log), and an old
 `dev/modules/onboarding/agent-team-onboarding.md` (it tells the reader to run
 the helper; you can replace it with Cairn's current
-`docs/agent-team-onboarding.md`).
+`templates/onboarding/agent-team-onboarding.md`).
 
 **The handoff note.** The next-session handoff is now a short local note at
 `dev/reflections/next-session.md`, a path git already ignores. At your next
@@ -144,7 +144,7 @@ or move the rules to `dev/agent_collaboration.md`. The `team-roster` slot now
 lives in `dev/agent_collaboration.md` under *The team*. Copy your roster across
 by hand. Filling the slot makes `verify_integrity` report that roles document as
 modified; read the whole file, then record the expected edit with
-`python bootstrap/scaffold.py upgrade --target <repo> --finalize dev/agent_collaboration.md`.
+`python install/scaffold.py upgrade --target <repo> --finalize dev/agent_collaboration.md`.
 A slot note that still names the old file can be ignored; fill the new slot.
 
 ## The two on-disk artifacts the install leaves
@@ -181,7 +181,7 @@ file to its ordinary supported path when one exists, move
 `dev/.cairn/cairn-lock.yml` to a backup name, then run:
 
 ```
-python bootstrap/scaffold.py upgrade --target <repo> --init-lock
+python install/scaffold.py upgrade --target <repo> --init-lock
 ```
 
 This makes a migrated lockfile from Cairn's current install map; it cannot
@@ -207,11 +207,11 @@ in `cairn_commit`; a tag name will not satisfy the required full-commit-prefix
 comparison.
 
 ```
-python bootstrap/scaffold.py upgrade --target <repo> --plan     # 1. inspect
-python bootstrap/scaffold.py upgrade --target <repo> --stage    # 2. stage
+python install/scaffold.py upgrade --target <repo> --plan     # 1. inspect
+python install/scaffold.py upgrade --target <repo> --stage    # 2. stage
 #    ... review dev/.cairn-upgrade/, resolve any conflict markers ...
-python bootstrap/scaffold.py upgrade --target <repo> --apply    # 3. apply
-python bootstrap/verify_integrity.py --target <repo>            # 4. verify
+python install/scaffold.py upgrade --target <repo> --apply    # 3. apply
+python install/verify_integrity.py --target <repo>            # 4. verify
 ```
 
 * If `--stage` stops on a name collision, run `upgrade --adopt-collisions`; see "New core-like files (and skills) added upstream".
@@ -437,7 +437,7 @@ slot**, so read before you record.
 3. **`git log -p -- <path>` is supplementary.** It shows committed history
    only, never uncommitted edits, so it cannot stand in for reading the file
    as it is now.
-4. **Then record the file:** `python bootstrap/scaffold.py upgrade --target
+4. **Then record the file:** `python install/scaffold.py upgrade --target
    <repo> --finalize <path>`. This records the whole file, not only your
    slot. The scoped form (with a path) also skips the edit check that a bare
    `--finalize` applies to the files it hashes and the lockfile (see "The edit
@@ -522,12 +522,12 @@ you what changed.
   finds, after refusing any mapped destination that is already a link in the
   stable tree; the concurrent replacement and separate manifest-reader limits
   above still apply.
-* **The session helper refuses links and unsafe table rows.** `tools/session.py`
+* **The session helper refuses links and unsafe table rows.** `dev/tools/session.py`
   (`session-start`, `session-end`) never writes through a link or outside the
   project. If `dev/`, `dev/reflections` or `dev/.cairn` is a link, `session-end`
   stops with exit 1 and a one-line note that names the link and says to replace
   it with a real folder; the full handoff refuses before it prunes anything, and
-  `tools/prune_reflections.py` refuses the same way (exit 2). On a machine that
+  `dev/tools/prune_reflections.py` refuses the same way (exit 2). On a machine that
   cannot make links, the copy fallback also stops, with a note, if `.gitignore`
   is a link or is read-only (add the line yourself, or make the file writable);
   `session-start` carries on. A row in `.agents/skills/_data/vendor_targets.yml`
@@ -550,7 +550,7 @@ you what changed.
   and rerun the scaffold install to rebind it.
 * **The lifecycle skills participate exactly like `core/`.** The canonical
   `.agents/skills/*/SKILL.md` files ride the token-/slot-aware 3-way merge
-  (base cache + provenance), and `tools/session.py` follows the verbatim
+  (base cache + provenance), and `dev/tools/session.py` follows the verbatim
   hash policy above. The gitignored vendor fan-out copies (where symlinks
   are unavailable) are **regenerated** from the canonical source on upgrade. A
   copy you edited in place is **moved aside** to `<file>.diverged.bak` (your
@@ -559,7 +559,7 @@ you what changed.
   **refuse, and write nothing**, if a copy's name (or its `.diverged.bak` name)
   is a link or sits under one, is a folder, or has a file where a folder must
   go. The message names the path relative to the project; remove or move that
-  item, then run `python tools/session.py session-start` (or install again). An
+  item, then run `python dev/tools/session.py session-start` (or install again). An
   `upgrade --apply` that meets this still finishes the upgrade and prints the
   refusal as a warning, because running the upgrade again does not redo the
   fan-out. (The bullet above is the *already-tracked* case; if your lockfile
@@ -575,7 +575,7 @@ it. `--plan` / `--stage` list these under **`new core/skills (added)`**, and
 `--apply`:
 
 * writes the file (a mergeable `SKILL.md` is token-substituted + base-cached
-  like any `core/` doc; a verbatim CLI such as `tools/session.py` is
+  like any `core/` doc; a verbatim CLI such as `dev/tools/session.py` is
   hash-tracked),
 * **records it in the lockfile** so the next upgrade tracks it, and
 * fans the skills out to your in-use vendor read-paths (e.g. `.claude/skills`)
@@ -589,7 +589,7 @@ under "new modules available (opt-in)", adopted deliberately — see below).
 
 An arbitrary root-level `*.md` wrapper discovered from its `@AGENTS.md`
 import must be recorded by name before it can be staged. Review the wrapper's
-full contents, then run `python bootstrap/scaffold.py upgrade --target <repo>
+full contents, then run `python install/scaffold.py upgrade --target <repo>
 --finalize VENDOR.md`. This scoped operation updates the existing wrapper
 record with its actual name and current contents. Review that lockfile change,
 then run `upgrade --stage` again.
@@ -673,7 +673,7 @@ a module's files (or filled its forkable template) without recording it in the
 lockfile, adopt it explicitly:
 
 ```
-python bootstrap/scaffold.py upgrade --target <repo> --adopt-module <name>
+python install/scaffold.py upgrade --target <repo> --adopt-module <name>
 ```
 
 This records each of the module's files in the lockfile (`src` / `dst` /
@@ -699,7 +699,7 @@ If you bootstrapped before this capability existed, or copied the kernel
 in by hand, your tree has no lockfile. Create one:
 
 ```
-python bootstrap/scaffold.py upgrade --target <repo> --init-lock
+python install/scaffold.py upgrade --target <repo> --init-lock
 ```
 
 This synthesizes `dev/.cairn/cairn-lock.yml` from your on-disk content and your
@@ -756,7 +756,7 @@ profile refuses one, because until now it carried no version signal at all —
 so an unknown key there was indistinguishable from a typo, and a typo silently
 dropped whatever it was meant to set. The profile's newly-reserved `schema:`
 key is what buys the lockfile's tolerance later; it does not buy it today
-(see `bootstrap/BOOTSTRAP.md` Appendix B, "Schema rules").
+(see `install/BOOTSTRAP.md` Appendix B, "Schema rules").
 
 **`source_repository` / `source_licenses` are declared, not
 attested.** Both are read from the source tree's `CITATION.cff` at
@@ -778,7 +778,7 @@ invisible from a clone, and neither is something an adopter can run.
 
 ## The forked-facade advisory, and what each note means
 
-Some tools Cairn installs are **facades**: a thin launcher (`tools/intent.py`)
+Some tools Cairn installs are **facades**: a thin launcher (`dev/tools/intent.py`)
 over an engine package beside it (`tools/_intent/`). If you edit the launcher
 but keep the engine, you run an un-maintained fork of the launcher while the
 maintained engine sits dormant, and upstream engine fixes never take effect.
@@ -864,7 +864,7 @@ filesystem may treat as `.git`.
 
 If upgrade refuses, inspect the lockfile and staged record. Correct or remove
 the offending record, or discard the untrusted stage and create a fresh one
-with `python bootstrap/scaffold.py upgrade --stage`. Re-run `--plan` before
+with `python install/scaffold.py upgrade --stage`. Re-run `--plan` before
 staging and review the result before `--apply`. Recovery never requires
 removing `.git` or other Git data.
 

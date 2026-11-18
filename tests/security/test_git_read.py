@@ -34,7 +34,7 @@ from pathlib import Path
 import pytest
 
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
 HELPER_PATH = ROOT / "templates/skills/_lib/git_read.py"

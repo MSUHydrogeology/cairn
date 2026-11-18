@@ -57,13 +57,13 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 import bootstrap.scaffold as s  # noqa: E402
-from bootstrap._scaffold.config import (  # noqa: E402
+from install._scaffold.config import (  # noqa: E402
     _MODULE_MAPPINGS,
     _MODULE_REQUIRED_TOKENS,
 )
-from bootstrap._scaffold.lockfile import read_lockfile  # noqa: E402
+from install._scaffold.lockfile import read_lockfile  # noqa: E402
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 MODULE = "portable-security-sweeps"

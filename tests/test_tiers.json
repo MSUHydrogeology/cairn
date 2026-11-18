@@ -1,5 +1,5 @@
 {
-  "about": "Cairn's test tiers. Each bootstrap/tests/test_*.py file belongs to the first tier whose patterns match its file name. python tools/test_tiers.py check fails on a file no tier matches or a pattern that places no file.",
+  "about": "Cairn's test tiers. Each tests/test_*.py file belongs to the first tier whose patterns match its file name. python tests/test_tiers.py check fails on a file no tier matches or a pattern that places no file.",
   "tiers": [
     {
       "name": "security",
@@ -61,6 +61,7 @@
         "test_next_session_local_note",
         "test_lockfile_provenance",
         "test_test_tiers",
+        "test_tiers",
         "test_board_closeout_warning"
       ]
     },

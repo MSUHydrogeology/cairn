@@ -31,10 +31,10 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap import scaffold as s  # noqa: E402
+from install import scaffold as s  # noqa: E402
 from bootstrap.verify_integrity import verify  # noqa: E402
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
 HANDOFF = "dev/NEXT_SESSION.md"

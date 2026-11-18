@@ -113,8 +113,8 @@ gate. The control is **detective + human**, not preventive-automated:
 * **Scope:** **dev/test-only**. `vermin` is never in the adopter runtime path,
   never installed by the scaffold, and never a dependency of the scaffold
   engine itself. It runs only in Cairn's own test suite
-  (`bootstrap/tests/test_python_floor.py`, run by
-  `python -m pytest bootstrap/tests`) to assert that the engine's detected
+  (`tests/test_python_floor.py`, run by
+  `python -m pytest install/tests`) to assert that the engine's detected
   Python minimum does not exceed the declared floor. **That test skips — and
   so passes green — whenever no usable `vermin` executable is found on `PATH`
   or beside the running interpreter.**
@@ -133,8 +133,8 @@ gate. The control is **detective + human**, not preventive-automated:
     orchestrator at audit time. `vermin` runs only in Cairn's own test suite.
   * **No network egress.** `vermin` is purely local static analysis; it sends
     nothing over the network.
-* **Dev dependency home:** `bootstrap/requirements-dev.txt`. Install with
-  `pip install -r bootstrap/requirements-dev.txt` to enable the floor check.
+* **Dev dependency home:** `install/requirements-dev.txt`. Install with
+  `pip install -r install/requirements-dev.txt` to enable the floor check.
   The test skips gracefully when `vermin` is absent (using `pytest.mark.skipif`),
   so the main test suite runs cleanly without it.
 * **Capability gate:** `vermin` is a dev tool; its absence does not degrade any
@@ -164,8 +164,8 @@ Four things it must state, each checkable:
   where an absent `vermin` *skips* the floor check and the skip reads as a pass.
   Verified by `test_absent_gitleaks_is_incomplete_not_clean` and
   `test_cairns_own_run_with_gitleaks_absent_is_incomplete` in
-  `bootstrap/tests/test_portable_security_sweeps.py`, run by a person typing
-  `python -m pytest bootstrap/tests` — **Cairn has no CI**, so nothing runs them
+  `tests/test_portable_security_sweeps.py`, run by a person typing
+  `python -m pytest install/tests` — **Cairn has no CI**, so nothing runs them
   automatically.
 * **Why this is not a new dependency.** The scaffold **installs no scanner and
   executes none during installation** — doing so would move an executable trust
@@ -250,7 +250,7 @@ is installed once per capability), on the same footing as Exception 3's table:
 ## The canonical interpreter — Python 3.13.x
 
 Every gate in this record assumes one interpreter. The gate manifest pins it
-(`bootstrap/tests/fixtures/gate_manifest.json`, `interpreter.version`), and
+(`tests/fixtures/gate_manifest.json`, `interpreter.version`), and
 running the suite under a different minor changes the results on an otherwise
 identical tree.
 

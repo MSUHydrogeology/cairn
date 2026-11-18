@@ -235,7 +235,7 @@ Does this profile look right before I install anything?
 ```
 
 When a `preset:` is used, this summary is generated **before installation**
-by `python bootstrap/scaffold.py --summary --config <profile>` (it resolves
+by `python install/scaffold.py --summary --config <profile>` (it resolves
 the preset + overrides + axes and prints this block without writing any
 files) — the durable pre-install acceptance artifact.
 
@@ -275,7 +275,7 @@ modules are installed and not others.
 Run the mechanical scaffold script from the Cairn repo:
 
 ```
-python bootstrap/scaffold.py \
+python install/scaffold.py \
     --config <profile.yml> \
     --target <path/to/target/repo>
 ```
@@ -314,8 +314,10 @@ The script:
 * Creates the `dev/` directory tree.
 * Copies `templates/core/` into the target — including the thin
   vendor wrapper `VENDOR.md` (`@AGENTS.md` + a harness-only addendum);
-  **rename it to your AI tool's auto-loaded file** (`CLAUDE.md`, …) once
-  the first integrity check below has passed, and keep it thin (see `AGENTS.md` > "Vendor addendum").
+  use it for clients that need a wrapper after the first integrity check below,
+  and keep it thin (see `AGENTS.md` > "Vendor addendum"). Clients that load
+  `AGENTS.md` directly need no wrapper; otherwise an uncommitted wrapper can
+  contain `@AGENTS.md`.
 * Copies the selected module files into the target's `dev/modules/`
   directory, writes the installed inventory at dev/modules/README.md for the
   resolved roster, and seeds plain first-use tasks for the selected modules
@@ -341,7 +343,7 @@ and the Maintainer.
 
 **Official-release route: verify before you edit anything.** On the Git-backed
 official-release route, run
-`python bootstrap/verify_integrity.py --target <path/to/target/repo>` from the
+`python install/verify_integrity.py --target <path/to/target/repo>` from the
 verified checkout as soon as the scaffold finishes, before you fill a slot
 (II-4) or rename `VENDOR.md`. The scaffold has just recorded a fingerprint
 (hash) of each file it wrote in the lockfile, so a mismatch here means the
@@ -664,7 +666,7 @@ complete.
       `quality_gate.py` sub-gate is the durable pre-cut gate.
 
 **Model-selection mapping** (only if `model-selection` was installed)
-- [ ] `python scripts/check_model_selection.py` exits 0. If not, ask the Maintainer which
+- [ ] `python dev/tools/check_model_selection.py` exits 0. If not, ask the Maintainer which
       model family fills each tier (high, medium, low). Record one row per assigned
       family using the existing mapping schema, naming the family and never a version;
       add rows when several families fill a tier. Record the Maintainer assignment and
@@ -677,7 +679,7 @@ complete.
       recorded.
 
 **Release-selection record (Git-backed official stable-release route)**
-- [ ] `python bootstrap/verify_integrity.py --target <target-repo>` succeeds.
+- [ ] `python install/verify_integrity.py --target <target-repo>` succeeds.
       This is the second run: the first came right after the scaffold (II-2),
       and this one follows recording the files you edited (II-4). Run it from the same
       verified checkout.
@@ -951,15 +953,15 @@ uniformly-indented document — a copy-paste out of a rendered page — is fine,
   with *"this profile declares schema 2; this engine understands 1 — upgrade
   Cairn"* rather than with an unhelpful unknown-key list.
 
-Every rule above has a command behind it: run `python bootstrap/scaffold.py
+Every rule above has a command behind it: run `python install/scaffold.py
 --summary --config <profile>` and read the refusal, or run `python -m pytest
-bootstrap/tests/test_profile_grammar.py`, which parses this appendix's own
+tests/test_profile_grammar.py`, which parses this appendix's own
 examples — and the `--help` example, and both profiles the engine itself
 writes — through the recognizer and asserts each equals `yaml.safe_load`'s
 value.
 
 Preview the resolved profile **without installing** with
-`python bootstrap/scaffold.py --summary --config <profile>` (the Act I-6
+`python install/scaffold.py --summary --config <profile>` (the Act I-6
 acceptance artifact).
 
 The `--target` flag tells the script where to write the installed

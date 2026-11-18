@@ -23,12 +23,12 @@ goes live.
 
 * [seed; id: try-session-start-skill]
   Try the `session-start` skill (`/session-start`): run
-  `python tools/session.py session-start` to orient at the top of a
+  `python dev/tools/session.py session-start` to orient at the top of a
   session. The lifecycle routines are now invokable skills installed under
   `.agents/skills/`; the canonical doctrine is `docs/methodology/session-routines.md`.
 
 * [seed; id: fill-readiness-report]
-  Fill `templates/codebase-readiness-report.md` for your legacy
+  Fill `install/codebase-readiness-report.md` for your legacy
   tree BEFORE engaging the team apparatus. The eleven-section
   assessment surfaces hidden state, scientific assumptions, and
   security boundaries; the readiness scores decide how much of
@@ -72,7 +72,7 @@ goes live.
   Install the work-intent git hooks, or record that you are skipping
   them. This preset is concurrent, so the scaffold *recommended* the
   hooks at install time but does **not** install them for you (it
-  never mutates `.git/hooks`). Run `python tools/intent.py
+  never mutates `.git/hooks`). Run `python dev/tools/intent.py
   install-hook` + `install-precommit`, then `hooks-status` to confirm.
   Without them, `dev/intents.jsonl` stays empty and the coordination
   signal never fires. To opt out (now or later), re-run either command
@@ -102,7 +102,7 @@ goes live.
   template (`.github/ISSUE_TEMPLATE/foldback.md`); the
   high-rigor-legacy profile installs the content-security scanner
   and the security-review checklist -- run `python
-  scripts/content_scan.py` over the drafted filing body and walk
+  dev/tools/content_scan.py` over the drafted filing body and walk
   the security-review checklist before it leaves the deployment.
 
 <!-- cairn:if complexity in moderate,complex -->
@@ -112,7 +112,7 @@ goes live.
   family fills each tier (high, medium, low). Record one row per assigned family using
   the existing schema, naming the family and never a version; add rows for additional
   families assigned to a tier, and record the Maintainer assignment and date. This is an
-  assignment, not a benchmark claim. Run `python scripts/check_model_selection.py` when
+  assignment, not a benchmark claim. Run `python dev/tools/check_model_selection.py` when
   filling the mapping; it checks shape and placeholders, not the assignment. Delete the
   Waiting line when it passes.
 <!-- cairn:endif -->

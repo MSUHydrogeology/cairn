@@ -34,10 +34,10 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
-sys.path.insert(0, str(CAIRN_ROOT / "scripts"))
+sys.path.insert(0, str(CAIRN_ROOT / "tests"))
 
 import check_cairn  # noqa: E402
 
@@ -509,3 +509,25 @@ class TestContentComposition:
         assert status == 0
         assert 'docs/example.md:1: temporary review ID R1' not in captured.err
         assert 'docs/example.md:2: temporary review ID R1' in captured.err
+
+
+@pytest.mark.parametrize("mutation", ["source", "unowned", "scripts", "tools"])
+def test_layout_command_rejects_each_broken_layout(tmp_path: Path, mutation: str) -> None:
+    """The public layout check catches bad sources, ownership and root tools."""
+    shutil.copytree(CAIRN_ROOT / "templates", tmp_path / "templates")
+    _commit_tree(tmp_path)
+    command = [sys.executable, str(CAIRN_ROOT / "tests/check_cairn.py"),
+               "--root", str(tmp_path), "--layout-only"]
+    clean = subprocess.run(command, capture_output=True, text=True, check=False)
+    assert clean.returncode == 0, clean.stderr
+    if mutation == "source":
+        (tmp_path / "templates/core/AGENTS.md").unlink()
+    else:
+        name = {"unowned": "dev/tools/extra.py", "scripts": "scripts/extra.py",
+                "tools": "tools/extra.py"}[mutation]
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# unexpected\n")
+        subprocess.run(["git", "-C", str(tmp_path), "add", name], check=True)
+    broken = subprocess.run(command, capture_output=True, text=True, check=False)
+    assert broken.returncode != 0, broken.stdout

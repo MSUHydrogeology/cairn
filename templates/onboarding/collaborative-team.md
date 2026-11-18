@@ -19,7 +19,7 @@ candidates upstream early, rather than letting the practice lapse.
 
 * [seed; id: try-session-start-skill]
   Try the `session-start` skill (`/session-start`): run
-  `python tools/session.py session-start` to orient at the top of a
+  `python dev/tools/session.py session-start` to orient at the top of a
   session. The lifecycle routines are now invokable skills installed under
   `.agents/skills/`; the canonical doctrine is `docs/methodology/session-routines.md`.
 
@@ -39,7 +39,7 @@ candidates upstream early, rather than letting the practice lapse.
   Install the work-intent git hooks, or record that you are skipping
   them. This preset is concurrent, so the scaffold *recommended* the
   hooks at install time but does **not** install them for you (it
-  never mutates `.git/hooks`). Run `python tools/intent.py
+  never mutates `.git/hooks`). Run `python dev/tools/intent.py
   install-hook` + `install-precommit`, then `hooks-status` to confirm.
   Without them, `dev/intents.jsonl` stays empty and the coordination
   signal never fires. To opt out (now or later), re-run either command
@@ -97,7 +97,7 @@ candidates upstream early, rather than letting the practice lapse.
   family fills each tier (high, medium, low). Record one row per assigned family using
   the existing schema, naming the family and never a version; add rows for additional
   families assigned to a tier, and record the Maintainer assignment and date. This is an
-  assignment, not a benchmark claim. Run `python scripts/check_model_selection.py` when
+  assignment, not a benchmark claim. Run `python dev/tools/check_model_selection.py` when
   filling the mapping; it checks shape and placeholders, not the assignment. Delete the
   Waiting line when it passes.
 <!-- cairn:endif -->

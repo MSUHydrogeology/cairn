@@ -913,11 +913,11 @@ _RETIRED_INSTALLS: tuple[
 #: sources are markdown -> substituted (so they get a base-template cache entry
 #: and a token-/slot-aware 3-way merge on upgrade, exactly like ``core/`` docs).
 _SKILLS_MAPPINGS: tuple[tuple[str, str, bool], ...] = (
-    ("skills/_lib/git_read.py",           "tools/git_read.py",                          True),
-    ("skills/_lib/session.py",           "tools/session.py",                         True),
-    ("skills/_lib/meter.py",             "tools/meter.py",                           True),
-    ("skills/_lib/pulse.py",             "tools/pulse.py",                           True),
-    ("skills/_lib/board.py",             "tools/board.py",                           True),
+    ("skills/_lib/git_read.py",           "dev/tools/git_read.py",                          True),
+    ("skills/_lib/session.py",           "dev/tools/session.py",                         True),
+    ("skills/_lib/meter.py",             "dev/tools/meter.py",                           True),
+    ("skills/_lib/pulse.py",             "dev/tools/pulse.py",                           True),
+    ("skills/_lib/board.py",             "dev/tools/board.py",                           True),
     ("skills/_data/vendor_targets.yml",  ".agents/skills/_data/vendor_targets.yml",  True),
     ("skills/session-start/SKILL.md",   ".agents/skills/session-start/SKILL.md",    False),
     ("skills/session-end/SKILL.md",     ".agents/skills/session-end/SKILL.md",      False),
@@ -1039,13 +1039,13 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # this standalone script allows independent invocation and offers a
         # keep-by-distinct-date window rather than a wall-clock cutoff.
         InstallSpec("default-on/prune_reflections.py",
-                    "tools/prune_reflections.py", verbatim=True),
+                    "dev/tools/prune_reflections.py", verbatim=True),
     ],
     "claim-check": [
         InstallSpec("default-on/claim-check.md",
                     "dev/modules/claim-check.md"),
         InstallSpec("default-on/claim_check.py",
-                    "scripts/claim_check.py", verbatim=True),
+                    "dev/tools/claim_check.py", verbatim=True),
         # Fold 1 (foldback-drain-tooling): stem-resolution checker.
         # Complements claim_check.py (repo-path/line-bounds) and link_check.py
         # (markdown links) -- verifies that every backticked date-prefixed stem
@@ -1054,7 +1054,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # Default-on with the claim-check module family because both are
         # lifecycle-hygiene checkers.
         InstallSpec("default-on/verify_stems.py",
-                    "scripts/verify_stems.py", verbatim=True),
+                    "dev/tools/verify_stems.py", verbatim=True),
     ],
     # The deployment-side measurement substrate the adaptive-doctrine
     # rate-limit gate (docs/methodology/rationale.md) evaluates against.
@@ -1077,7 +1077,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # fold-up-backlog checker (self-evolution-loop Part B). Reads the
         # incident trackers and emits rate-limit suggestions only.
         InstallSpec("default-on/evolution_infer.py",
-                    "tools/evolution_infer.py", verbatim=True),
+                    "dev/tools/evolution_infer.py", verbatim=True),
     ],
     # The placement-decision procedure for documentation and doctrine.
     # Default-on: every adopter benefits from a four-layer routing
@@ -1130,31 +1130,31 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # The work-intent tool ships verbatim alongside the
         # doctrine (1:many, the claim-check / lifecycle-metrics pattern).
         InstallSpec("team-gated/intent.py",
-                    "tools/intent.py", verbatim=True),
+                    "dev/tools/intent.py", verbatim=True),
         # intent-split (phase A, 2026-06): intent.py is now a thin launcher/facade
         # over an owned `_intent/` engine package; the seven package files install
         # verbatim beside the facade so `python tools/intent.py` (the CLI + the git
         # hooks) resolves its sibling engine at runtime.  Each is byte-for-byte code.
         InstallSpec("team-gated/_intent/__init__.py",
-                    "tools/_intent/__init__.py", verbatim=True),
+                    "dev/tools/_intent/__init__.py", verbatim=True),
         InstallSpec("team-gated/_intent/shared.py",
-                    "tools/_intent/shared.py", verbatim=True),
+                    "dev/tools/_intent/shared.py", verbatim=True),
         InstallSpec("team-gated/_intent/record_io.py",
-                    "tools/_intent/record_io.py", verbatim=True),
+                    "dev/tools/_intent/record_io.py", verbatim=True),
         InstallSpec("team-gated/_intent/identity.py",
-                    "tools/_intent/identity.py", verbatim=True),
+                    "dev/tools/_intent/identity.py", verbatim=True),
         InstallSpec("team-gated/_intent/conflict.py",
-                    "tools/_intent/conflict.py", verbatim=True),
+                    "dev/tools/_intent/conflict.py", verbatim=True),
         InstallSpec("team-gated/_intent/hooks.py",
-                    "tools/_intent/hooks.py", verbatim=True),
+                    "dev/tools/_intent/hooks.py", verbatim=True),
         InstallSpec("team-gated/_intent/cli.py",
-                    "tools/_intent/cli.py", verbatim=True),
+                    "dev/tools/_intent/cli.py", verbatim=True),
         # Fold 2 (foldback-drain-tooling): the prune-intents goodnight compaction
         # tool.  Ships with coordination-tiers because the goodnight intent-hygiene
         # extension (coordination-tiers module doc) prescribes the prune-intents step.
         # Self-contained (no import from tools.intent); reads dev/intents.jsonl directly.
         InstallSpec("team-gated/prune_intents.py",
-                    "tools/prune_intents.py", verbatim=True),
+                    "dev/tools/prune_intents.py", verbatim=True),
     ],
     "security-review": [
         InstallSpec("team-gated/security-review.md",
@@ -1172,12 +1172,12 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # GITHUB_TOKEN" error when no credential is found.
         InstallSpec(
             "team-gated/issue-capture/bootstrap_gitlab_labels.py",
-            "scripts/bootstrap_gitlab_labels.py",
+            "dev/tools/bootstrap_gitlab_labels.py",
             verbatim=True,
         ),
         InstallSpec(
             "team-gated/issue-capture/bootstrap_github_labels.py",
-            "scripts/bootstrap_github_labels.py",
+            "dev/tools/bootstrap_github_labels.py",
             verbatim=True,
         ),
     ],
@@ -1200,7 +1200,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         ),
         InstallSpec(
             "team-gated/check_model_selection.py",
-            "scripts/check_model_selection.py",
+            "dev/tools/check_model_selection.py",
             verbatim=True,
         ),
     ],
@@ -1210,7 +1210,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/testing-discipline.md",
                     "dev/modules/testing-discipline.md"),
         InstallSpec("team-gated/test_coupling.py",
-                    "scripts/test_coupling.py", verbatim=True),
+                    "dev/tools/test_coupling.py", verbatim=True),
     ],
     "doc-drift-prevention": [
         InstallSpec("team-gated/doc-drift-prevention.md",
@@ -1225,9 +1225,9 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # generator is deferred (an adopter slot/hook) -- it cannot ship
         # stack-neutrally.
         InstallSpec("team-gated/link_check.py",
-                    "scripts/link_check.py", verbatim=True),
+                    "dev/tools/link_check.py", verbatim=True),
         InstallSpec("team-gated/sync_doc_snippets.py",
-                    "scripts/sync_doc_snippets.py", verbatim=True),
+                    "dev/tools/sync_doc_snippets.py", verbatim=True),
     ],
     "examples-gallery": [
         InstallSpec("team-gated/examples-gallery.md",
@@ -1242,26 +1242,26 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/content-security.md",
                     "dev/modules/content-security.md"),
         InstallSpec("team-gated/content_scan.py",
-                    "scripts/content_scan.py", verbatim=True),
+                    "dev/tools/content_scan.py", verbatim=True),
         # Security-apparatus-enrichment Chunk B: the decomposed stdlib-only
         # advisory runner + its policy inputs (audited-roots manifest,
         # reviewed-residual baseline, URL allowlist).  All verbatim -- code +
         # policy data, not token-substituted templates.  The runner resolves
         # its policy siblings from its own scripts/ directory.
         InstallSpec("team-gated/content_scan_runner.py",
-                    "scripts/content_scan_runner.py", verbatim=True),
+                    "dev/tools/content_scan_runner.py", verbatim=True),
         InstallSpec("team-gated/content_scan_roots.txt",
-                    "scripts/content_scan_roots.txt", verbatim=True),
+                    "dev/tools/content_scan_roots.txt", verbatim=True),
         InstallSpec("team-gated/content_scan_residuals.txt",
-                    "scripts/content_scan_residuals.txt", verbatim=True),
+                    "dev/tools/content_scan_residuals.txt", verbatim=True),
         InstallSpec("team-gated/content_scan_allowlist.txt",
-                    "scripts/content_scan_allowlist.txt", verbatim=True),
+                    "dev/tools/content_scan_allowlist.txt", verbatim=True),
         InstallSpec("team-gated/prose_diff.py",
-                    "scripts/prose_diff.py", verbatim=True),
+                    "dev/tools/prose_diff.py", verbatim=True),
         InstallSpec("team-gated/exact_replace.py",
-                    "scripts/exact_replace.py", verbatim=True),
+                    "dev/tools/exact_replace.py", verbatim=True),
         InstallSpec("team-gated/prose_roots.txt",
-                    "scripts/prose_roots.txt", verbatim=True),
+                    "dev/tools/prose_roots.txt", verbatim=True),
     ],
     # The Python security gate stack (
     # surface 3).  Team-gated + opt-in -- never default-on, and never
@@ -1285,7 +1285,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # (egress opt-in).  Verbatim -- code, no token substitution; it reads
         # python_package + the installed roster from the lockfile at runtime.
         InstallSpec("team-gated/run_security_audit.py",
-                    "scripts/run_security_audit.py", verbatim=True),
+                    "dev/tools/run_security_audit.py", verbatim=True),
     ],
     # Portable offline security sweeps (portable-security-sweeps, 2026-08-05):
     # a team-gated, opt-in cross-language secret-exposure tripwire.  The module
@@ -1308,9 +1308,9 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/portable-security-sweeps.md",
                     "dev/modules/portable-security-sweeps.md"),
         InstallSpec("team-gated/run_portable_security_sweeps.py",
-                    "scripts/run_portable_security_sweeps.py", verbatim=True),
+                    "dev/tools/run_portable_security_sweeps.py", verbatim=True),
         InstallSpec("team-gated/portable_security_policy.json",
-                    "scripts/portable_security_policy.json", verbatim=True),
+                    "dev/tools/portable_security_policy.json", verbatim=True),
     ],
     # api-web-security-modules (2026-08-10): two narrow, independently
     # selectable network-security capabilities.  Team-gated and reachable only
@@ -1346,15 +1346,15 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/api-access-security.md",
                     "dev/modules/api-access-security.md"),
         InstallSpec("team-gated/api_access_security.py",
-                    "scripts/api_access_security.py", verbatim=True),
+                    "dev/tools/api_access_security.py", verbatim=True),
         InstallSpec("team-gated/_security_net/__init__.py",
-                    "scripts/_api_access_security/__init__.py", verbatim=True),
+                    "dev/tools/_api_access_security/__init__.py", verbatim=True),
         InstallSpec("team-gated/_security_net/policy.py",
-                    "scripts/_api_access_security/policy.py", verbatim=True),
+                    "dev/tools/_api_access_security/policy.py", verbatim=True),
         InstallSpec("team-gated/_security_net/net.py",
-                    "scripts/_api_access_security/net.py", verbatim=True),
+                    "dev/tools/_api_access_security/net.py", verbatim=True),
         InstallSpec("team-gated/_security_net/report.py",
-                    "scripts/_api_access_security/report.py", verbatim=True),
+                    "dev/tools/_api_access_security/report.py", verbatim=True),
         InstallSpec("team-gated/api_access_policy_stub.json",
                     "dev/.cairn/api-access-policy.json"),
     ],
@@ -1362,15 +1362,15 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/web-hosting-security.md",
                     "dev/modules/web-hosting-security.md"),
         InstallSpec("team-gated/web_hosting_security.py",
-                    "scripts/web_hosting_security.py", verbatim=True),
+                    "dev/tools/web_hosting_security.py", verbatim=True),
         InstallSpec("team-gated/_security_net/__init__.py",
-                    "scripts/_web_hosting_security/__init__.py", verbatim=True),
+                    "dev/tools/_web_hosting_security/__init__.py", verbatim=True),
         InstallSpec("team-gated/_security_net/policy.py",
-                    "scripts/_web_hosting_security/policy.py", verbatim=True),
+                    "dev/tools/_web_hosting_security/policy.py", verbatim=True),
         InstallSpec("team-gated/_security_net/net.py",
-                    "scripts/_web_hosting_security/net.py", verbatim=True),
+                    "dev/tools/_web_hosting_security/net.py", verbatim=True),
         InstallSpec("team-gated/_security_net/report.py",
-                    "scripts/_web_hosting_security/report.py", verbatim=True),
+                    "dev/tools/_web_hosting_security/report.py", verbatim=True),
         InstallSpec("team-gated/web_hosting_policy_stub.json",
                     "dev/.cairn/web-hosting-policy.json"),
     ],
@@ -1387,7 +1387,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/architecture_review_template.md",
                     "dev/architecture_review.md"),
         InstallSpec("team-gated/code_map.py",
-                    "tools/code_map.py", verbatim=True),
+                    "dev/tools/code_map.py", verbatim=True),
     ],
     # security-verification-activation Chunk A: the default-on local
     # security-verification dispatcher.  Registered here (opt-in, via this
@@ -1402,7 +1402,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("default-on/security-verification.md",
                     "dev/modules/security-verification.md"),
         InstallSpec("default-on/run_security_verification.py",
-                    "scripts/run_security_verification.py", verbatim=True),
+                    "dev/tools/run_security_verification.py", verbatim=True),
     ],
 }
 
@@ -1512,27 +1512,27 @@ _MODULE_REQUIRED_TOKENS: dict[str, tuple[str, ...]] = {
 # keys in step with _MODULE_MAPPINGS (test_module_roster pins completeness).
 _MODULE_DISCOVERY: dict[str, tuple[str, str, str, str]] = {
     "reflections": ("Keep a short record of what changed and what the next session needs.", "dev/reflections/README.md", "Read the module and reflection guide; write one session reflection.", "A local reflection in dev/reflections/."),
-    "claim-check": ("Check repository paths and line citations in durable records.", "scripts/claim_check.py", "Run the installed checker on one existing document.", "A report of checked path and line claims."),
+    "claim-check": ("Check repository paths and line citations in durable records.", "dev/tools/claim_check.py", "Run the installed checker on one existing document.", "A report of checked path and line claims."),
     "incident-trackers": ("Record recurring friction and incidents for later review.", "dev/modules/incident_log_template.md", "Copy the tracker template for one relevant incident class.", "A project tracker based on the shipped template."),
     "documentation-plan": ("Route project documentation to the right home.", "docs/DOCUMENTATION_PLAN.md", "Tailor the installed placement plan to this project.", "A project-specific documentation map."),
     "dual-review": ("Plan staffing for a Maintainer-called external read.", "dev/modules/dual-review.md", "Read the module and document a staffing approach if a read is called.", "A staffing choice, without creating a review obligation."),
     "domain-agents": ("Define bounded roles for specialist knowledge.", "dev/modules/domain-agents.md", "Identify one domain and a possible agent boundary.", "A candidate role boundary."),
     "legacy-agent": ("Focus agent work on inherited-system risks.", "dev/modules/legacy-agent.md", "Identify one inherited area where the guidance applies.", "A candidate legacy-system focus."),
     "dual-language-tests": ("Map behavior that crosses language boundaries.", "dev/modules/dual-language-tests.md", "Identify one behavior needing cross-language coverage.", "A candidate test mapping."),
-    "coordination-tiers": ("Coordinate concurrent work with explicit claims.", "tools/intent.py", "Read the module and inspect the intent command help.", "A first team coordination procedure."),
+    "coordination-tiers": ("Coordinate concurrent work with explicit claims.", "dev/tools/intent.py", "Read the module and inspect the intent command help.", "A first team coordination procedure."),
     "security-review": ("Identify trust boundaries that may need review.", "dev/modules/security-review.md", "Name one trust boundary and a candidate trigger for Maintainer consideration.", "A boundary and trigger proposal."),
     "issue-capture": ("Choose a route for capturing friction or gaps.", "dev/modules/issue-capture.md", "Choose how to record one gap; do not create an external issue without authorization.", "A capture route."),
     "model-selection": ("Record the team's actual model assignments.", "dev/.cairn/model-selection-mapping.yml", "Fill the mapping and run python scripts/check_model_selection.py.", "A checked model assignment map."),
-    "testing-discipline": ("Report Python tests that reach into project internals or lack promise lists.", "scripts/test_coupling.py", "Run the advisory report and review its worst-first findings.", "A report guiding promise-test consolidation; private reach is not a deletion list."),
-    "doc-drift-prevention": ("Check links and synchronized documentation snippets.", "scripts/link_check.py", "Run the installed link checker according to its help.", "A link report for the installed documentation."),
+    "testing-discipline": ("Report Python tests that reach into project internals or lack promise lists.", "dev/tools/test_coupling.py", "Run the advisory report and review its worst-first findings.", "A report guiding promise-test consolidation; private reach is not a deletion list."),
+    "doc-drift-prevention": ("Check links and synchronized documentation snippets.", "dev/tools/link_check.py", "Run the installed link checker according to its help.", "A link report for the installed documentation."),
     "examples-gallery": ("Track useful examples and their source of truth.", "dev/modules/examples-gallery.md", "Identify one example and its owning source.", "A candidate gallery entry."),
-    "content-security": ("Inspect chosen local content for prompt-injection patterns.", "scripts/content_scan.py", "Read the module and scanner usage, then scan a chosen local input.", "A scan report for human review."),
-    "python-security": ("Audit a declared Python package with configured tools.", "scripts/run_security_audit.py", "Configure the required package value before running the audit.", "A configured audit input; network access remains opt-in."),
-    "portable-security-sweeps": ("Run configured offline secret-exposure checks.", "scripts/run_portable_security_sweeps.py", "Configure the policy and required local adapter before a sweep.", "A configured offline sweep."),
+    "content-security": ("Inspect chosen local content for prompt-injection patterns.", "dev/tools/content_scan.py", "Read the module and scanner usage, then scan a chosen local input.", "A scan report for human review."),
+    "python-security": ("Audit a declared Python package with configured tools.", "dev/tools/run_security_audit.py", "Configure the required package value before running the audit.", "A configured audit input; network access remains opt-in."),
+    "portable-security-sweeps": ("Run configured offline secret-exposure checks.", "dev/tools/run_portable_security_sweeps.py", "Configure the policy and required local adapter before a sweep.", "A configured offline sweep."),
     "api-access-security": ("Check authorized cross-principal API access.", "dev/.cairn/api-access-policy.json", "Fill the policy for an authorized target before running its check.", "An authorized policy; no automatic network access."),
     "web-hosting-security": ("Check authorized web-hosting configuration.", "dev/.cairn/web-hosting-policy.json", "Fill the policy for an authorized target before running its check.", "An authorized policy; no automatic network access."),
     "architecture-review": ("Choose a review approach for inherited, new, or mixed architecture.", "dev/architecture_review.md", "Use the installed rubric to choose an approach.", "An adapted rubric; no expanded architecture obligation."),
-    "security-verification": ("Understand the installed dispatcher and its admitted capabilities.", "scripts/run_security_verification.py", "Inspect the dispatcher and its initially empty capability registry.", "A clear view of admitted checks; none is assumed."),
+    "security-verification": ("Understand the installed dispatcher and its admitted capabilities.", "dev/tools/run_security_verification.py", "Inspect the dispatcher and its initially empty capability registry.", "A clear view of admitted checks; none is assumed."),
 }
 
 # Required tokens and token gates answer opposite questions and must remain

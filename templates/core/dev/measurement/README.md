@@ -31,7 +31,7 @@ them.
   consent in `~/.cairn/meter.json`. Its private ledger is
   `~/.cairn/meter/ledger.json`; each configured project receives a sanitized
   `dev/measurement/meter.json` export. The recurring work and cost depend on
-  selected logs and are unmeasured. `python tools/meter.py refresh --report
+  selected logs and are unmeasured. `python dev/tools/meter.py refresh --report
   --json` reports the complete pulse and joins only the current configured
   project from that successful refresh. Partial or failed runs return a closed
   status and reason; an older project export is never used as fallback. Full
@@ -63,7 +63,7 @@ them.
   `--before-tier-inventory PATH`, or `--artifact-input PATH` to the report
   command to include named public files. They are bounded and are not found by
   discovery. Do not pass `--meter-aggregate` to `refresh --report`; the fresh
-  aggregate is joined in memory. Standalone `tools/pulse.py` and Gauge pulse
+  aggregate is joined in memory. Standalone `dev/tools/pulse.py` and Gauge pulse
   views remain available for explicit public inputs. `--commit-label`,
   `--python-label`, `--selection-label`, and `--seed-label` (with their
   `--before-` counterparts) are caller-supplied identifiers; they do not

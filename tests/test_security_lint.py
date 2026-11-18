@@ -38,12 +38,12 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap._scaffold.install import install_manifest  # noqa: E402
+from install._scaffold.install import install_manifest  # noqa: E402
 # The derived scan-target set and the Bandit allowlist are single-sourced in
 # the release command (bootstrap/security_check.py); the dev gate imports
 # them so the two never drift.

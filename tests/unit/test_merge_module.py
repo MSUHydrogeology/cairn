@@ -50,7 +50,7 @@ def _import_modules(pyfile: str) -> set[str]:
 
 
 def test_merge_depends_only_on_stdlib_and_the_slotmerge_leaf():
-    from bootstrap._scaffold import merge as M  # noqa: PLC0415
+    from install._scaffold import merge as M  # noqa: PLC0415
 
     for node in ast.walk(ast.parse(Path(M.__file__).read_text(encoding="utf-8"))):
         if isinstance(node, ast.ImportFrom):
@@ -64,7 +64,7 @@ def test_merge_depends_only_on_stdlib_and_the_slotmerge_leaf():
 
 
 def test_no_cycle_slotmerge_does_not_import_merge():
-    from bootstrap._scaffold import slotmerge as SM  # noqa: PLC0415
+    from install._scaffold import slotmerge as SM  # noqa: PLC0415
 
     assert not any(
         "merge" in mod and not mod.endswith("slotmerge")
@@ -73,7 +73,7 @@ def test_no_cycle_slotmerge_does_not_import_merge():
 
 
 def test_parse_slots_fails_closed_on_malformation():
-    from bootstrap._scaffold import merge as M  # noqa: PLC0415
+    from install._scaffold import merge as M  # noqa: PLC0415
 
     with pytest.raises(M.SlotError):
         M.parse_slots("<!-- cairn:slot a -->\n<!-- cairn:slot b -->\n")  # nested
@@ -86,7 +86,7 @@ def test_parse_slots_fails_closed_on_malformation():
 def test_three_way_merge_roundtrip_clean_and_needs_value(monkeypatch):
     import subprocess  # noqa: PLC0415
 
-    from bootstrap._scaffold import merge as M  # noqa: PLC0415
+    from install._scaffold import merge as M  # noqa: PLC0415
 
     real_run = subprocess.run
 

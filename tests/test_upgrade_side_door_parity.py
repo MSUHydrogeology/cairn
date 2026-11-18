@@ -38,12 +38,12 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap import scaffold as s  # noqa: E402
+from install import scaffold as s  # noqa: E402
 
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 
@@ -286,7 +286,7 @@ def test_accept_upstream_via_remove_and_restage(tmp_path: Path):
 def test_install_manifest_refuses_a_duplicate_destination(monkeypatch):
     # The published manifest -- and the lockfile
     # derived from it -- must refuse two rows for one destination.
-    import bootstrap._scaffold.install as inst  # noqa: PLC0415
+    import install._scaffold.install as inst  # noqa: PLC0415
     dup = inst._SKILLS_MAPPINGS + (
         ("skills/_lib/session.py", _TARGET, True),)
     monkeypatch.setattr(inst, "_SKILLS_MAPPINGS", dup)

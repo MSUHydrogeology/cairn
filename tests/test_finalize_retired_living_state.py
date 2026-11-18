@@ -32,11 +32,11 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap import scaffold as s  # noqa: E402
-from bootstrap._scaffold import config as C  # noqa: E402
+from install import scaffold as s  # noqa: E402
+from install._scaffold import config as C  # noqa: E402
 from bootstrap.verify_integrity import verify  # noqa: E402
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
 LOCK_REL = "dev/.cairn/cairn-lock.yml"

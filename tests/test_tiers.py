@@ -7,16 +7,16 @@ The testing-discipline module asks that a test's tier come from where it
 lives, never from a label someone remembers to apply. Cairn's ordinary tests
 are grouped under ``unit/``, ``contract/``, ``integration/``, and ``security/``;
 workflow tests and protected apparatus remain at their approved paths.
-``tools/test_tiers.json`` maps file-name patterns to tiers, and discovery stays
+``tests/test_tiers.json`` maps file-name patterns to tiers, and discovery stays
 recursive; the first tier whose pattern matches a file owns it. ``check`` fails
 when a test file matches no tier or a pattern matches no file, so a new test is
 placed automatically by its name or stopped until a pattern places it.
 
-  python tools/test_tiers.py check
-  python tools/test_tiers.py list [TIER]
-  python tools/test_tiers.py list --json
-  python tools/test_tiers.py files TIER    # paths for a scoped pytest run
-  python tools/test_tiers.py for [--range BASE..HEAD] PATH...
+  python tests/test_tiers.py check
+  python tests/test_tiers.py list [TIER]
+  python tests/test_tiers.py list --json
+  python tests/test_tiers.py files TIER    # paths for a scoped pytest run
+  python tests/test_tiers.py for [--range BASE..HEAD] PATH...
 
 ``files`` only prints paths. A tier larger than the broad-run guard allows
 is still refused by that guard outside a certifying run; this tool does not
@@ -45,17 +45,17 @@ _REPO_ROOT = ROOT
 _LIVING_FILES = frozenset({"dev/PLANNING.md", "CHANGELOG.md"})
 _PATH_READERS = {
     "dev/.cairn/cairn-lock.yml": frozenset({
-        "bootstrap/tests/test_portable_security_sweeps.py",
+        "tests/test_portable_security_sweeps.py",
     }),
     "dev/agent_collaboration.md": frozenset({
-        "bootstrap/tests/contract/test_writing_rules_ship.py",
-        "bootstrap/tests/test_review_stance_in_shipped_files.py",
-        "bootstrap/tests/test_review_sweep_ships.py",
+        "tests/contract/test_writing_rules_ship.py",
+        "tests/test_review_stance_in_shipped_files.py",
+        "tests/test_review_sweep_ships.py",
     }),
     "templates/core/dev/agent_collaboration.md": frozenset({
-        "bootstrap/tests/contract/test_writing_rules_ship.py",
-        "bootstrap/tests/test_review_stance_in_shipped_files.py",
-        "bootstrap/tests/test_review_sweep_ships.py",
+        "tests/contract/test_writing_rules_ship.py",
+        "tests/test_review_stance_in_shipped_files.py",
+        "tests/test_review_sweep_ships.py",
     }),
 }
 
@@ -65,7 +65,9 @@ _GIT_READ_MAX_BYTES = 256 * 1024
 
 def _load_verified_git_read():
     """Execute only the fixed, caller-pinned helper buffer from this delivery."""
-    path = os.path.abspath(os.path.join(_REPO_ROOT, "tools", "git_read.py"))
+    path = os.path.abspath(os.path.join(_REPO_ROOT, "dev", "tools", "git_read.py"))
+    if not os.path.exists(path):  # Before Cairn self-upgrades its installed copy.
+        path = os.path.abspath(os.path.join(_REPO_ROOT, "tools", "git_read.py"))
     chain = []
     current = os.path.splitdrive(path)[0] + os.sep
     for part in path[len(current):].split(os.sep):
@@ -163,8 +165,8 @@ def _load_verified_git_read():
 
 _GIT_READ = _load_verified_git_read()
 
-CONFIG = ROOT / "tools" / "test_tiers.json"
-TEST_DIR = ROOT / "bootstrap" / "tests"
+CONFIG = ROOT / "tests" / "test_tiers.json"
+TEST_DIR = ROOT / "tests"
 _INVENTORY_SCHEMA = "cairn-test-inventory/1"
 _INVENTORY_COUNTING_METHOD = "recursive-test-files-utf8-replace-splitlines-v1"
 

@@ -42,10 +42,10 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap import scaffold as s  # noqa: E402
+from install import scaffold as s  # noqa: E402
 from bootstrap import verify_integrity  # noqa: E402
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
@@ -350,7 +350,7 @@ class TestTemplateGatingSafety:
 
     def test_optional_contributor_file_is_selected_by_human_team(self) -> None:
         """The human-team axis selects the optional file, not core rules."""
-        from bootstrap._scaffold.config import select_optional_templates  # noqa: PLC0415,E501
+        from install._scaffold.config import select_optional_templates  # noqa: PLC0415,E501
         text = self._template()
         assert "cairn:if" not in text and "cairn:endif" not in text
         assert select_optional_templates({"human_team": "solo"}) == []
@@ -645,7 +645,7 @@ class TestUpgradeModes:
         adopter_before = (tmp_path / "AGENTS.md").read_bytes()
 
         if bad_evidence == "unreadable-cache":
-            from bootstrap._scaffold import upgrade as upgrade_module
+            from install._scaffold import upgrade as upgrade_module
             read_regular = upgrade_module._read_regular_bytes
 
             def read_with_unreadable_ancestor(path: Path):
@@ -1112,7 +1112,7 @@ class TestUpgradeModes:
         # __init__. (Patch the module object, not a dotted string: the launcher
         # aliases bootstrap.scaffold, so `bootstrap._scaffold` is not a plain
         # attribute of `bootstrap` for pytest's string-path walk.)
-        from bootstrap._scaffold import upgrade as _up  # noqa: PLC0415
+        from install._scaffold import upgrade as _up  # noqa: PLC0415
         monkeypatch.setattr(_up, "_cairn_is_git", lambda root: False)
         rc = s.main(["upgrade", "--target", str(tmp_path), "--plan",
                      "--to", "v0.1.0", "--cairn-root", str(CAIRN_ROOT)])
@@ -1234,7 +1234,7 @@ class TestUpgradeModes:
     ])
     def test_upgrade_report_supports_legacy_console_encoding(self, kind, name):
         from contextlib import redirect_stdout
-        from bootstrap._scaffold.upgrade import FilePlan, _print_upgrade_report
+        from install._scaffold.upgrade import FilePlan, _print_upgrade_report
 
         raw = io.BytesIO()
         console = io.TextIOWrapper(raw, encoding="cp1252", errors="strict")
@@ -1250,7 +1250,7 @@ class TestUpgradeModes:
     def test_discovery_records_use_windows_posix_keys(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from bootstrap._scaffold.upgrade import _record_discovery_outputs
+        from install._scaffold.upgrade import _record_discovery_outputs
 
         target = tmp_path.resolve()
         names = ["dev/PLANNING.md", "dev/modules/README.md"]
@@ -1642,13 +1642,13 @@ class TestInitLock:
             tmp_path, ["security-review"])
         source = TEMPLATES_ROOT / "core/dev/modules/README.md"
         original = source.read_text(encoding="utf-8")
-        from bootstrap._scaffold.install import _render_module_inventory
+        from install._scaffold.install import _render_module_inventory
         duplicate = _render_module_inventory(["security-review"])
         malformed = original.replace(
             "<!-- cairn:generated-modules:end -->",
             duplicate + "\n" + duplicate + "\n"
             "<!-- cairn:generated-modules:end -->")
-        from bootstrap._scaffold import upgrade as _up
+        from install._scaffold import upgrade as _up
         read_bytes = _up._theirs_bytes
         monkeypatch.setattr(
             _up, "_theirs_bytes",
@@ -1708,7 +1708,7 @@ class TestInitLock:
                 "<!-- cairn:generated-modules:end -->")
         # The source tree is shared with the running test process; supply the
         # malformed selected bytes at the renderer's real source-read boundary.
-        from bootstrap._scaffold import upgrade as _up
+        from install._scaffold import upgrade as _up
         read_bytes = _up._theirs_bytes
         monkeypatch.setattr(
             _up, "_theirs_bytes",
@@ -1752,10 +1752,10 @@ class TestInitLock:
     ) -> None:
         review, _installed, _ancestors = self._inventory_review_case(
             tmp_path, ["security-review"])
-        from bootstrap._scaffold import upgrade as _up
+        from install._scaffold import upgrade as _up
         helper = _up._git_read_helper()
         real_run_git = helper.run_git
-        from bootstrap._scaffold.install import _render_module_inventory
+        from install._scaffold.install import _render_module_inventory
         entry = _render_module_inventory(["security-review"]).replace(
             "Identify trust boundaries that may need review.",
             "Historical description.")
@@ -1780,7 +1780,7 @@ class TestInitLock:
     ) -> None:
         _review, installed_before, ancestors_before = self._inventory_review_case(
             tmp_path, ["security-review"])
-        from bootstrap._scaffold import upgrade as _up
+        from install._scaffold import upgrade as _up
         helper = _up._git_read_helper()
         real_run_git = helper.run_git
 
@@ -1804,7 +1804,7 @@ class TestInitLock:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         self._inventory_review_case(tmp_path, ["security-review"])
-        from bootstrap._scaffold import upgrade as _up
+        from install._scaffold import upgrade as _up
         helper = _up._git_read_helper()
         real_run_git = helper.run_git
 
@@ -2409,7 +2409,7 @@ class TestAdoptModule:
         ARRANGES its own known required token (per the plan's S2) rather
         than deriving an expectation from the live registry -- a test that
         reads its expectation from the thing it checks cannot fail."""
-        from bootstrap._scaffold import upgrade as UP  # noqa: PLC0415
+        from install._scaffold import upgrade as UP  # noqa: PLC0415
 
         target = tmp_path.resolve()
         _install(target)

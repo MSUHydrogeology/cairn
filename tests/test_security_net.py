@@ -50,7 +50,7 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 REPO_ROOT = repository_root(Path(__file__))
 ENGINE_SRC = REPO_ROOT / "templates" / "modules" / "team-gated" / "_security_net"

@@ -79,7 +79,7 @@ def _exclude_old_cases(root: Path) -> None:
         item for item in tree.body
         if isinstance(item, ast.FunctionDef) and item.name == OLD_NODE
     ]
-    import_line = "from bootstrap._scaffold.config import token_gated_modules  # noqa: E402\n"
+    import_line = "from install._scaffold.config import token_gated_modules  # noqa: E402\n"
     import_count = source.count(import_line)
     if not nodes and import_count == 0:
         return

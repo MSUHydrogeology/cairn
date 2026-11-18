@@ -10,14 +10,14 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap import scaffold as s  # noqa: E402
+from install import scaffold as s  # noqa: E402
 from bootstrap import verify_integrity  # noqa: E402
-from bootstrap._scaffold import install as engine  # noqa: E402
+from install._scaffold import install as engine  # noqa: E402
 
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 ATTRS = TEMPLATES_ROOT / "core" / "gitattributes.txt"

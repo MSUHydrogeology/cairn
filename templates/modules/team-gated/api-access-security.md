@@ -46,9 +46,9 @@ capability that reported CLEAN over an empty matrix would be worse than absent.
 | `local` | **loopback only** | GET/HEAD/POST/PUT/PATCH/DELETE | anyone, including an agent |
 | `deployed-passive` | the declared HTTPS origin | GET/HEAD only | the **Maintainer**, by hand |
 
-`python scripts/api_access_security.py local`
+`python dev/tools/api_access_security.py local`
 
-`python scripts/api_access_security.py deployed-passive --authorize-base-url <exact normalized base url>`
+`python dev/tools/api_access_security.py deployed-passive --authorize-base-url <exact normalized base url>`
 
 The deployed leg refuses unless that argument is **byte-for-byte** the
 normalized base URL in your policy's deployed section. A trailing slash, an
@@ -175,7 +175,7 @@ there.
 
 A DEGRADED caused by `engine_incomplete` means the module's engine package is
 partially installed. Re-run the scaffold upgrade for this module; do not edit the
-installed tree by hand, which `bootstrap/verify_integrity.py` will report.
+installed tree by hand, which `install/verify_integrity.py` will report.
 
 ## Deliberately absent, and what returns through its own proposal
 

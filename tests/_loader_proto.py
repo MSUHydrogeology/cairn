@@ -8,23 +8,23 @@ tested on the substrate *before* any privileged code moves.
 
 Why a bespoke loader at all
 ---------------------------
-``bootstrap/`` is a **namespace package** (no ``__init__.py``), so an attacker
-who lands a ``bootstrap/`` earlier on ``sys.path`` (a hostile ``PYTHONPATH``)
+``install/`` is a **namespace package** (no ``__init__.py``), so an attacker
+who lands a ``install/`` earlier on ``sys.path`` (a hostile ``PYTHONPATH``)
 can shadow the engine. A plain ``import
-bootstrap._scaffold`` trusts ``sys.path`` resolution; this loader does **not**.
+install._scaffold`` trusts ``sys.path`` resolution; this loader does **not**.
 It loads the engine package from a **verified absolute directory** computed
 relative to the launcher's own ``__file__`` (the stable on-disk location), and
 **fails closed** if any module it loads resolves to a path outside the Cairn
 root (``ScaffoldLoaderError``). ``sys.path`` is never consulted for engine
-resolution, so a decoy ``bootstrap/`` on the path cannot hijack it.
+resolution, so a decoy ``install/`` on the path cannot hijack it.
 
 Canonical identity
 ------------------
-The engine is registered under the single canonical name ``bootstrap._scaffold``
+The engine is registered under the single canonical name ``install._scaffold``
 in ``sys.modules``; ``load_engine`` is **idempotent** — a second call returns the
 same object. That guarantees **one ``sys.modules`` entry / one object identity
 per implementation file** no matter how the engine is reached (abs-path launcher,
-``from bootstrap.scaffold import X`` facade, ``import bootstrap._scaffold.<m>``),
+``from install.scaffold import X`` facade, ``import install._scaffold.<m>``),
 so the engine's mutable singletons are never duplicated into divergent copies.
 
 This module is stdlib-only and import-pure (defining it loads nothing, writes
@@ -62,7 +62,7 @@ def _verify_within_root(path: Path, cairn_root: Path) -> Path:
 def load_engine(
     package_dir: str | Path,
     cairn_root: str | Path,
-    canonical_name: str = "bootstrap._scaffold",
+    canonical_name: str = "install._scaffold",
 ) -> ModuleType:
     """Load the engine package at ``package_dir`` under ``canonical_name``.
 
@@ -110,7 +110,7 @@ def load_submodule(
     submodule: str,
     package_dir: str | Path,
     cairn_root: str | Path,
-    canonical_name: str = "bootstrap._scaffold",
+    canonical_name: str = "install._scaffold",
 ) -> ModuleType:
     """Load ``<canonical_name>.<submodule>`` from ``<package_dir>/<submodule>.py``,
     file-relative and fail-closed, under the same canonical namespace. Idempotent."""

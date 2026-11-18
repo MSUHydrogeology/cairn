@@ -29,7 +29,7 @@ import pytest
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap.scaffold import (  # noqa: E402
+from install.scaffold import (  # noqa: E402
     KNOWN_TOKENS,
     _DEFAULT_ON_MODULES,
     _minimal_yaml_parse,
@@ -334,7 +334,7 @@ class TestInstallCore:
         changelog.write_bytes(history)
         cfg = tmp_path / "profile.yml"
         cfg.write_text("project_name: SkipTest\ntest_command: pytest\nmodules: []\n")
-        from bootstrap.scaffold import main
+        from install.scaffold import main
 
         assert main(["--config", str(cfg), "--target", str(tmp_path),
                      "--cairn-root", str(cairn_root)]) == 0
@@ -446,7 +446,7 @@ class TestNewTeamGatedModules:
             "  - security-review\n"
             "  - issue-capture\n"
         )
-        from bootstrap.scaffold import main
+        from install.scaffold import main
 
         rc = main(
             [
@@ -543,7 +543,7 @@ class TestModelSelectionWired:
     def test_install_command_escapes_supplied_module_name(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
     ) -> None:
-        from bootstrap import scaffold
+        from install import scaffold
 
         target = tmp_path / "target"
         target.mkdir()
@@ -561,7 +561,7 @@ class TestModelSelectionWired:
     def test_unpaired_slot_warning_escapes_supplied_source_and_slot(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch,
     ) -> None:
-        from bootstrap._scaffold import install as install_module
+        from install._scaffold import install as install_module
 
         target = tmp_path / "target"
         target.mkdir()
@@ -662,7 +662,7 @@ class TestRulesMdStarter:
         rules.write_bytes(original)
         cfg = tmp_path / "profile.yml"
         cfg.write_text("project_name: RulesTest\ntest_command: pytest\nmodules: []\n")
-        from bootstrap.scaffold import main
+        from install.scaffold import main
 
         assert main(["--config", str(cfg), "--target", str(tmp_path),
                      "--cairn-root", str(cairn_root)]) == 0
@@ -674,7 +674,7 @@ class TestRulesMdStarter:
         rules.write_text("local rules\n", encoding="utf-8")
         cfg = tmp_path / "profile.yml"
         cfg.write_text("project_name: RulesForce\ntest_command: pytest\nmodules: []\n")
-        from bootstrap.scaffold import main
+        from install.scaffold import main
 
         assert main(["--config", str(cfg), "--target", str(tmp_path),
                      "--cairn-root", str(cairn_root), "--force"]) == 0
@@ -707,7 +707,7 @@ class TestCLI:
         cfg.write_text("project_name: DryRunTest\ntest_command: pytest\nmodules:\n  - reflections\n")
         config_before = cfg.read_bytes()
 
-        from bootstrap.scaffold import main
+        from install.scaffold import main
         rc = main(
             [
                 "--config", str(cfg),
@@ -721,7 +721,7 @@ class TestCLI:
         assert cfg.read_bytes() == config_before
 
     def test_missing_config_returns_error(self, tmp_path: Path) -> None:
-        from bootstrap.scaffold import main
+        from install.scaffold import main
         rc = main(
             [
                 "--config", str(tmp_path / "nonexistent.yml"),
@@ -733,7 +733,7 @@ class TestCLI:
     def test_missing_target_returns_error(self, tmp_path: Path) -> None:
         cfg = tmp_path / "profile.yml"
         cfg.write_text("project_name: Test\n")
-        from bootstrap.scaffold import main
+        from install.scaffold import main
         rc = main(
             [
                 "--config", str(cfg),
@@ -753,7 +753,7 @@ class TestCLI:
             pytest.skip("Cairn templates not available")
         cfg = tmp_path / "profile.yml"
         cfg.write_text("project_name: DefaultOnTest\ntest_command: pytest\n")
-        from bootstrap.scaffold import main
+        from install.scaffold import main
         rc = main(
             [
                 "--config", str(cfg),
@@ -788,7 +788,7 @@ class TestCLI:
             "project_name: SkipTest\ntest_command: pytest\nmodules: []\n"
         )
         # First install
-        from bootstrap.scaffold import main
+        from install.scaffold import main
         rc1 = main(
             [
                 "--config", str(cfg),
@@ -831,7 +831,7 @@ class TestCLI:
         cfg.write_text(
             "project_name: ForceTest\ntest_command: pytest\nmodules: []\n"
         )
-        from bootstrap.scaffold import main
+        from install.scaffold import main
         rc1 = main(
             [
                 "--config", str(cfg),
@@ -870,7 +870,7 @@ class TestCLI:
         cfg.write_text(
             "project_name: NoModulesTest\ntest_command: pytest\nmodules: []\n"
         )
-        from bootstrap.scaffold import main
+        from install.scaffold import main
         rc = main(
             [
                 "--config", str(cfg),

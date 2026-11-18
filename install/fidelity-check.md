@@ -45,7 +45,7 @@ copies) references a **Cairn-internal-only path** (`docs/methodology/*`, or the
 retired `doctrine/*` spelling) that is neither
 transplanted into the install set nor marked a deliberate citation. When run:
 `python scripts/check_cairn.py` — at review time, and in the **maintainer-run**
-release checklist (`bootstrap/security_check.py` invokes it, when a maintainer
+release checklist (`install/security_check.py` invokes it, when a maintainer
 runs that). Such a reference resolves in the Cairn source tree (so the generic
 `link_check` passes it) but **dangles once installed** in an adopter — the
 failure that produced fold-back #57 and the un-shipped 9-lens review roster.
@@ -252,7 +252,7 @@ against the installed file will see sections absent from the install
 — this is correct and expected, not a gap.  To reproduce the
 expected installed content, apply the strip with the profile's axes
 (the `strip_conditional_regions` function in
-`bootstrap/_scaffold/config.py`).  The strip runs consistently at
+`install/_scaffold/config.py`).  The strip runs consistently at
 **every** materialization point (install, lockfile expected hash, and
 the 3-way merge ancestor/`theirs` sides), so the lockfile's recorded
 hash matches the *stripped* installed file for any given profile —
@@ -394,7 +394,7 @@ this dimension is skipped with an informational note. This sharpens
 two-check hard constraint holds.
 
 **Mechanized.** The body-coverage dimension ships as
-`bootstrap/check_module_body_coverage.py` (stdlib-only; same-stem
+`install/check_module_body_coverage.py` (stdlib-only; same-stem
 matching; a loose-substring heading-name proxy; graceful-fail on a
 missing source). Run it from the adopter tree against a Cairn checkout:
 
@@ -432,13 +432,13 @@ this probe keeps an *install* from silently shipping incomplete.
 
 <!-- vendor-ok-begin: case-study reference list; the modflow_tools cite is legitimate doctrine -->
 Project-specific reference manifests live alongside their case
-studies, not in `bootstrap/`.  The current reference is:
+studies, not in `install/`.  The current reference is:
 
 * `modflow_tools` — see
   [`../case-studies/modflow_tools-fidelity-manifest.yml`](../case-studies/modflow_tools-fidelity-manifest.yml).
 <!-- vendor-ok-end -->
 
-Keeping `bootstrap/` project-neutral mirrors the R-G vendor-neutral
+Keeping `install/` project-neutral mirrors the R-G vendor-neutral
 discipline in spirit: project-name leak is not as serious as
 vendor-name leak, but it is the same shape of structural violation.
 A fidelity manifest is a *case-study artifact*, not a bootstrap

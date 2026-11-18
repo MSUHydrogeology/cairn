@@ -12,7 +12,7 @@ to understand each agent's experience before writing the next plan.
   *session* gets a distinct one: `<date>-<agent>-<session>.md` (the
   `<agent>-<session>` tail reads as one identity). `<session>` resolves, in
   order: **(1)** the coordination/intent per-session token when that module is
-  installed — `python tools/intent.py whoami --session-token` — so the
+  installed — `python dev/tools/intent.py whoami --session-token` — so the
   `<agent>-<session>` tail equals the intent log's `agent` field and the
   reflection links to its session's `dev/intents.jsonl` entries; **(2)** else
   the raw harness session id where exposed; **(3)** else a short **random**

@@ -36,14 +36,14 @@ from types import ModuleType
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 TOOL_SRC = TEMPLATES_ROOT / "modules" / "default-on" / "evolution_infer.py"
 
 sys.path.insert(0, str(CAIRN_ROOT))
-from bootstrap.scaffold import _MODULE_MAPPINGS, main as scaffold_main  # noqa: E402
+from install.scaffold import _MODULE_MAPPINGS, main as scaffold_main  # noqa: E402
 
 pytestmark = pytest.mark.skipif(
     not TEMPLATES_ROOT.exists(), reason="Cairn templates not available"

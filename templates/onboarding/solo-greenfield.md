@@ -16,7 +16,7 @@ no multi-agent coordination, no legacy-tree pre-pass.
 
 * [seed; id: try-session-start-skill]
   Try the `session-start` skill (`/session-start`): run
-  `python tools/session.py session-start` to orient at the top of a
+  `python dev/tools/session.py session-start` to orient at the top of a
   session. The lifecycle routines are now invokable skills installed under
   `.agents/skills/`; the canonical doctrine is `docs/methodology/session-routines.md`.
 

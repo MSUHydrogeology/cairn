@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
 SCRIPT = ROOT / "tools" / "code_map.py"
@@ -151,7 +151,7 @@ def test_cli_requires_isolated_python_mode(tmp_path: Path) -> None:
 def test_isolated_cli_ignores_planted_project_and_adjacent_modules(
     tmp_path: Path,
 ) -> None:
-    from bootstrap.scaffold import create_dev_tree, install_modules
+    from install.scaffold import create_dev_tree, install_modules
 
     create_dev_tree(tmp_path)
     install_modules(ROOT / "templates", tmp_path, {}, ["architecture-review"])
@@ -362,7 +362,7 @@ def test_real_cli_rejects_changed_path_escape(tmp_path: Path) -> None:
 
 
 def test_installed_copy_is_identical_and_runs(tmp_path: Path) -> None:
-    from bootstrap.scaffold import _MODULE_MAPPINGS, create_dev_tree, install_modules
+    from install.scaffold import _MODULE_MAPPINGS, create_dev_tree, install_modules
 
     mapping = {spec.dst: spec for spec in _MODULE_MAPPINGS["architecture-review"]}
     assert mapping["tools/code_map.py"].src == "team-gated/code_map.py"

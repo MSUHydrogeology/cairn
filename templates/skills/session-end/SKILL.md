@@ -1,6 +1,6 @@
 ---
 name: session-end
-description: Manual lifecycle routine -- session-end (goodnight). Invoke only on an explicit operator request to wrap up; reflection-only by default. Not a conversational helper and not a response to chatter such as "goodnight". Mechanics live in tools/session.py; the canonical doctrine is Cairn's published session-routines method.
+description: Manual lifecycle routine -- session-end (goodnight). Invoke only on an explicit operator request to wrap up; reflection-only by default. Not a conversational helper and not a response to chatter such as "goodnight". Mechanics live in dev/tools/session.py; the canonical doctrine is Cairn's published session-routines method.
 disable-model-invocation: true
 ---
 External-repo paths: `docs/methodology/session-routines.md`
@@ -16,7 +16,7 @@ roadmap). The canonical doctrine for *what* this routine is and *why* lives in
 ## 1. Run the mechanizable step
 
 ```
-python tools/session.py session-end $ARGUMENTS
+python dev/tools/session.py session-end $ARGUMENTS
 ```
 
 `$ARGUMENTS` is whatever follows the command (e.g. `/session-end
@@ -34,7 +34,7 @@ python tools/session.py session-end $ARGUMENTS
   `--dry-run` also suppresses the reflection scaffold.
 
   ```
-  python tools/session.py session-end --prepare-handoff
+  python dev/tools/session.py session-end --prepare-handoff
   ```
 
 ## 2. Judgment steps (yours, not the tool's)
@@ -74,7 +74,7 @@ invocations, foldback capture) lives there, not in this generic skill. A missing
 file or a missing section means no custom steps.
 
 At every explicitly requested goodnight, including reflection-only, run
-`python tools/meter.py refresh --report --json` once when Meter is installed.
+`python dev/tools/meter.py refresh --report --json` once when Meter is installed.
 If a project-specific Goodnight step runs that same report, use its result and
 do not refresh a second time for this report. Put the complete sanitized
 `cairn-pulse/1` record in the reflection on success. If the output is a closed
@@ -111,7 +111,7 @@ command. Do not run the prune as the agent.
 Give the user this exact command:
 
 ```
-CAIRN_HANDOFF_OWNER=1 python tools/session.py session-end --handoff
+CAIRN_HANDOFF_OWNER=1 python dev/tools/session.py session-end --handoff
 ```
 
 The command may repeat the reflection preview. Under the existing

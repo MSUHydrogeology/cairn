@@ -38,7 +38,7 @@ from types import ModuleType
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
@@ -47,11 +47,11 @@ _CHECKER_SRC = _TEAM_GATED / "check_model_selection.py"
 _STUB_SRC = _TEAM_GATED / "model_selection_mapping_stub.yml"
 
 sys.path.insert(0, str(CAIRN_ROOT))
-from bootstrap.scaffold import _MODULE_MAPPINGS, main as scaffold_main  # noqa: E402
-from bootstrap._scaffold.install import (  # noqa: E402
+from install.scaffold import _MODULE_MAPPINGS, main as scaffold_main  # noqa: E402
+from install._scaffold.install import (  # noqa: E402
     capture_model_selection_mapping,
 )
-from bootstrap._scaffold.security import ScaffoldSecurityError  # noqa: E402
+from install._scaffold.security import ScaffoldSecurityError  # noqa: E402
 
 pytestmark = pytest.mark.skipif(
     not TEMPLATES_ROOT.exists(), reason="Cairn templates not available"
@@ -1013,7 +1013,7 @@ class TestCaptureWritesByReplacing:
     def test_real_interactive_install_refuses_link_without_leaking_target(
         self, tmp_path: Path, monkeypatch, capsys
     ) -> None:
-        from bootstrap._scaffold import cli
+        from install._scaffold import cli
 
         class Terminal(io.StringIO):
             def isatty(self) -> bool:

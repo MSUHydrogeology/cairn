@@ -26,7 +26,7 @@ read [`getting-started.md`](getting-started.md) and
 > number nobody measured cannot be checked.
 
 If you are evaluating Cairn for a real project, start here, then
-return to the [on-ramp](../on-ramp/README.md) once you trust the
+return to the [on-ramp](../install/on-ramp/README.md) once you trust the
 shape.
 
 ## What you need
@@ -87,7 +87,7 @@ workspace).  Then paste:
 
 This clone is for a throwaway trial only. For a real project, do not clone the
 default branch. Choose a stable release and build a verified checkout first, as
-[the provenance guide](../bootstrap/PROVENANCE.md#choosing-an-adopter-verification-route) describes, and use that
+[the provenance guide](../install/PROVENANCE.md#choosing-an-adopter-verification-route) describes, and use that
 checkout in place of this clone.
 
 A development checkout can contain template prose that has not yet received
@@ -150,7 +150,7 @@ The install creates `CHANGELOG.md` from Cairn's template, so the example
 starts without one. On a real project, Cairn preserves an existing
 `CHANGELOG.md` byte-for-byte. Because that file differs from the clean
 template, the install cannot create an upgrade baseline; use the profile
-and migration steps in [`UPGRADE.md`](../bootstrap/UPGRADE.md#the-workflow)
+and migration steps in [`UPGRADE.md`](../install/UPGRADE.md#the-workflow)
 if you want Cairn to manage future upgrades. `upgrade --init-lock` needs a
 complete profile, and files with customized text, including an existing
 changelog, are marked for manual review on later upgrades rather than
@@ -159,7 +159,7 @@ automatically merged.
 > **The commands below run code from this copy.** Before you install Cairn
 > into anything you care about, the Maintainer should choose a release route
 > before candidate code runs. For a stable official release, the ordinary
-> route in `bootstrap/PROVENANCE.md` checks the official release selection and
+> route in `install/PROVENANCE.md` checks the official release selection and
 > exact checkout without signing-key setup; it does not authenticate the
 > publisher. The optional stronger route verifies the signed tag against
 > independently checked fingerprints. For this throwaway you can skip those
@@ -180,7 +180,7 @@ A profile tells the installer how much of Cairn your project needs.
 This recipe uses the smallest one, `solo-greenfield`: one person, one
 agent, a new codebase.  Paste:
 
-> Copy `cairn/bootstrap/profiles/solo-greenfield.yml` into the
+> Copy `cairn/install/profiles/solo-greenfield.yml` into the
 > `quickstart` folder as `profile.yml`, and show me what is in it.
 
 <details>
@@ -192,7 +192,7 @@ agent, a new codebase.  Paste:
 <td>
 
 ```bash
-cp "$CAIRN/bootstrap/profiles/solo-greenfield.yml" profile.yml
+cp "$CAIRN/install/profiles/solo-greenfield.yml" profile.yml
 ```
 
 </td>
@@ -223,8 +223,8 @@ preset: solo-greenfield
 The full file starts with a comment listing the six-axis profile this
 preset expresses and the modules it installs.  The other shipped
 profiles
-([`collaborative-team.yml`](../bootstrap/profiles/collaborative-team.yml),
-[`high-rigor-legacy.yml`](../bootstrap/profiles/high-rigor-legacy.yml))
+([`collaborative-team.yml`](../install/profiles/collaborative-team.yml),
+[`high-rigor-legacy.yml`](../install/profiles/high-rigor-legacy.yml))
 have the same shape with different presets.
 
 ## Step 3 -- preview, then install
@@ -232,7 +232,7 @@ have the same shape with different presets.
 **Preview first.**  Paste:
 
 > In the `quickstart` folder, run
-> `python ../cairn/bootstrap/scaffold.py --config profile.yml --target . --summary`
+> `python ../cairn/install/scaffold.py --config profile.yml --target . --summary`
 > and show me the list of modules it would install.  Do not install
 > anything yet.
 
@@ -249,13 +249,13 @@ The `--summary` flag only previews: nothing is written.  For the
 > **agent_team** (one agent to several). `solo-greenfield` takes the
 > smallest setting on every axis, so it installs the fewest modules. Larger
 > projects take larger values and get more modules; see
-> [`dimensions/README.md`](../dimensions/README.md).
+> [`install/dimensions/README.md`](../install/dimensions/README.md).
 
 **Then install.**  Paste:
 
 > Run the same command without `--summary` to install, and show me the
 > report it prints.  Then commit what it installed (`AGENTS.md`,
-> `VENDOR.md`, `NOTICE.md`, `.gitattributes`, `.gitignore`, `dev/`, `tools/`, `scripts/`,
+> `VENDOR.md`, `NOTICE.md`, `.gitattributes`, `.gitignore`, `dev/`,
 > `.agents/`, `docs/` and `CHANGELOG.md`) with the message
 > `Install Cairn kernel + default-on modules`.  Leave `profile.yml`
 > uncommitted.
@@ -269,8 +269,8 @@ The `--summary` flag only previews: nothing is written.  For the
 <td>
 
 ```bash
-python "$CAIRN/bootstrap/scaffold.py" --config profile.yml --target . --summary
-python "$CAIRN/bootstrap/scaffold.py" --config profile.yml --target .
+python "$CAIRN/install/scaffold.py" --config profile.yml --target . --summary
+python "$CAIRN/install/scaffold.py" --config profile.yml --target .
 ```
 
 </td>
@@ -288,7 +288,7 @@ python "$CAIRN\bootstrap\scaffold.py" --config profile.yml --target .
 Then commit the install; the commands are the same in both terminals:
 
 ```text
-git add AGENTS.md VENDOR.md NOTICE.md .gitattributes .gitignore dev/ tools/ scripts/ .agents/ docs/ CHANGELOG.md
+git add AGENTS.md VENDOR.md NOTICE.md .gitattributes .gitignore dev/ .agents/ docs/ CHANGELOG.md
 git commit -q -m "Install Cairn kernel + default-on modules"
 ```
 
@@ -312,14 +312,14 @@ For this recipe you only need two things:
   module.  `dev/.cairn/` holds the lockfile and install state that
   updates use; you never need to read it.
 
-`tools/`, `scripts/` and `.agents/` hold helper tools and the
+`dev/tools/` and `.agents/` hold helper tools and the
 `session-start` / `session-end` routines. After this exercise, see the
 [session journey](tool-usage.md#starting-and-ending-a-session) and the
 [upgrade journey](tool-usage.md#upgrading-an-existing-install).
 
 The report also lists **19 unfilled block slots** -- placeholders
 your agent fills in a real adoption (see
-[`bootstrap/BOOTSTRAP.md`](../bootstrap/BOOTSTRAP.md) Act II-4) -- and
+[`install/BOOTSTRAP.md`](../install/BOOTSTRAP.md) Act II-4) -- and
 lists separately the 2 slots that belong to modules this profile did
 not install.  This recipe leaves them: the tagline does not need them, and the report's
 "Next steps **for a real adoption**" are for a real project.
@@ -546,8 +546,8 @@ Remove-Item -Recurse -Force cairn-try
   did not need a plan.
 * **The dimensional matrix.**  The minimal profile installed only the
   default modules.  A larger project picks more (see
-  [`bootstrap/profiles/`](../bootstrap/profiles/) and
-  [`dimensions/`](../dimensions/)).
+  [`install/profiles/`](../install/profiles/) and
+  [`install/dimensions/`](../install/dimensions/)).
 
 ## What to do next
 
@@ -564,7 +564,7 @@ In order:
   locally first; the template's "What to check in" section names
   the safer default check-in posture.
 * **Hand the assessment to your agent** -- the
-  [bootstrap-lite prompt](../bootstrap/prompts/bootstrap-lite.md) has
+  [bootstrap-lite prompt](../install/prompts/bootstrap-lite.md) has
   the agent score the six axes and recommend a profile, so you do not
   fill in the Act I templates by hand.  It keeps the same rule as this
   recipe: you, the Maintainer, accept the result before anything is
@@ -572,12 +572,12 @@ In order:
 * **Install Cairn into the real project** -- run Steps 2 and 3
   against your own repository, with the profile the assessment points
   to, from the stable official tag selected under either route in
-  `bootstrap/PROVENANCE.md` > "Choosing an adopter verification route".
+  `install/PROVENANCE.md` > "Choosing an adopter verification route".
   After integrity verification, record its URL, tag, version and full commit
   in the same target commit as the installed files and lockfile, and read that
   message back. Then do the four steps the installer prints
-  for a real adoption (`bootstrap/BOOTSTRAP.md` Act II-3 to II-6).
-  The [on-ramp](../on-ramp/README.md) has the profile table, and what
+  for a real adoption (`install/BOOTSTRAP.md` Act II-3 to II-6).
+  The [on-ramp](../install/on-ramp/README.md) has the profile table, and what
   to do if you copied the kernel in by hand.
 * **Read the methodology** -- [`docs/methodology/`](methodology/) explains
   *why* the lifecycle works as it does.  Start with
@@ -591,4 +591,4 @@ later: fewer repeated decisions, fewer forgotten assumptions, fewer
 agent collisions, and less rework after unreviewed scientific
 choices.  Keep the apparatus only as heavy as your codebase and team
 earn -- the profile you choose is that calibration (see the
-[on-ramp](../on-ramp/README.md)).
+[on-ramp](../install/on-ramp/README.md)).

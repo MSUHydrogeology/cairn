@@ -41,15 +41,15 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap import scaffold as s  # noqa: E402
-from bootstrap._scaffold import install as _install_mod  # noqa: E402
-from bootstrap._scaffold.install import (  # noqa: E402
+from install import scaffold as s  # noqa: E402
+from install._scaffold import install as _install_mod  # noqa: E402
+from install._scaffold.install import (  # noqa: E402
     _CAPABILITY_NOTICE_MODULES,
     capability_install_notice_lines,
 )
 from bootstrap.verify_integrity import verify  # noqa: E402
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 

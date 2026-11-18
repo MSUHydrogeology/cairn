@@ -49,12 +49,12 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap import scaffold as s  # noqa: E402
-from bootstrap._scaffold.lockfile import _cairn_provenance, _emit_lock_yaml  # noqa: E402
+from install import scaffold as s  # noqa: E402
+from install._scaffold.lockfile import _cairn_provenance, _emit_lock_yaml  # noqa: E402
 
 from bootstrap.tests.test_upgrade import _install, _seed_profile  # noqa: E402
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"

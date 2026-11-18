@@ -47,14 +47,14 @@ from types import ModuleType
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 MODULE_PATH = CAIRN_ROOT / "templates" / "modules" / "team-gated" / "link_check.py"
 sys.path.insert(0, str(CAIRN_ROOT))
 sys.path.insert(0, str(CAIRN_ROOT / 'scripts'))
 
-from bootstrap.scaffold import main as scaffold_main  # noqa: E402
+from install.scaffold import main as scaffold_main  # noqa: E402
 import check_cairn  # noqa: E402
 
 pytestmark = pytest.mark.skipif(

@@ -81,16 +81,16 @@ mechanism (from the `coordination-tiers` module) starts to pay off.
 Each agent claims the files it will edit:
 
 ```bash
-python tools/intent.py claim --files <paths> --action "<short summary>"
+python dev/tools/intent.py claim --files <paths> --action "<short summary>"
 ```
 
 If both agents try to edit the same file, the second sees the first's
 claim and coordinates instead of colliding. The claims are recorded in
 `dev/intents.jsonl`.
 
-Release a claim by hand with `python tools/intent.py release <id>`, or
+Release a claim by hand with `python dev/tools/intent.py release <id>`, or
 turn on the post-commit hook, which is opt-in: run
-`python tools/intent.py install-hook` once, and each commit then
+`python dev/tools/intent.py install-hook` once, and each commit then
 releases your claims on the paths it touched.
 
 ## Where to next

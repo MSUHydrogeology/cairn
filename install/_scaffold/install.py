@@ -706,7 +706,7 @@ def render_compatibility_matrix(templates_root: Path) -> str:
         "# Skills compatibility matrix",
         "",
         "<!-- GENERATED from templates/skills/_data/vendor_targets.yml by",
-        "     bootstrap.scaffold.render_compatibility_matrix; hand edits are",
+        "     install.scaffold.render_compatibility_matrix; hand edits are",
         "     replaced on the next render.  Levels are CLAIMED-pending-fixture",
         "     (II3): a target is `native-tested` only once a fixture proves",
         "     install + invoke on it. -->",
@@ -1964,7 +1964,7 @@ def print_report(
             print(
                 "  [note] Could not count CRLF files in the Git index. Run "
                 "git ls-files --eol; if any line starts with i/crlf, follow "
-                "bootstrap/BOOTSTRAP.md, II-2b before committing."
+                "install/BOOTSTRAP.md, II-2b before committing."
             )
         elif crlf_count > 0:
             print(
@@ -1974,7 +1974,7 @@ def print_report(
             print(
                 "         The new .gitattributes makes Git show them as modified "
                 "until they are renormalized. Commit .gitattributes alone "
-                "first, then follow bootstrap/BOOTSTRAP.md, II-2b. Do not "
+                "first, then follow install/BOOTSTRAP.md, II-2b. Do not "
                 "renormalize while other work is uncommitted."
             )
 
@@ -2056,7 +2056,7 @@ def print_report(
     print()
     print("Next steps for a real adoption (BOOTSTRAP.md Act II):")
     print("  Before you edit any file (official-release route): run")
-    print("  `python bootstrap/verify_integrity.py --target <target>` from the")
+    print("  `python install/verify_integrity.py --target <target>` from the")
     print("  checkout whose release you confirmed (II-2). Skip it if the install ends with")
     print("  `cairn-lock.yml NOT written`, and follow that message's remedy first.")
     print("  3. Confirm the installed files match the accepted profile (II-3).")
@@ -2169,7 +2169,7 @@ def git_provenance_warning(cairn_root: Path) -> str | None:
     """
     unavailable = (
         "provenance: Git verification is unavailable for this Cairn source; "
-        "the tree could not be classified. See bootstrap/PROVENANCE.md."
+        "the tree could not be classified. See install/PROVENANCE.md."
     )
     try:
         git_read = _git_read_helper()
@@ -2209,7 +2209,7 @@ def git_provenance_warning(cairn_root: Path) -> str | None:
     return (
         f"provenance: scaffolding from a Cairn source where "
         f"{' and '.join(issues)} ({cairn_root}). Prefer a tagged release "
-        f"(see bootstrap/PROVENANCE.md); pass --allow-dev to silence."
+        f"(see install/PROVENANCE.md); pass --allow-dev to silence."
     )
 
 
@@ -2412,10 +2412,10 @@ def write_install_lockfile(
         # as none, and --init-lock is then the right advice.
         if read_lockfile(target) is not None:
             remedy = ("the existing lockfile is kept unchanged; run `python "
-                      "bootstrap/scaffold.py upgrade --target <repo> --plan` "
+                      "install/scaffold.py upgrade --target <repo> --plan` "
                       "to bring this tree up to date instead.")
         else:
-            remedy = ("run `python bootstrap/scaffold.py upgrade --init-lock "
+            remedy = ("run `python install/scaffold.py upgrade --init-lock "
                       "--target <repo>` to synthesize one from the current "
                       "tree instead.")
         print(

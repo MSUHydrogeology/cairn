@@ -25,7 +25,7 @@ Merged into the coordination section:
 > touched). It is a courtesy signal, not a lock. An empty active set
 > means "nobody declared", never "nobody is working" —
 > version-control state stays the source of truth. Cairn ships the
-> tool that implements this (`tools/intent.py`, installed with this
+> tool that implements this (`dev/tools/intent.py`, installed with this
 > module); see "The work-intent tool" below.
 >
 > **Required scope (this concurrent team).** A `claim` is
@@ -57,7 +57,7 @@ discipline.
 ## The work-intent tool
 
 Selecting this module installs a runnable reference tool —
-`tools/intent.py`, a stdlib-only CLI — so the Tier-2 protocol is a
+`dev/tools/intent.py`, a stdlib-only CLI — so the Tier-2 protocol is a
 command, not homework. (The doctrine above is the *why*; this is the
 *how*.) The scaffold also seeds `dev/intents.jsonl` into `.gitignore`
 (the log is session-local coordination state, never a tracked
@@ -65,33 +65,33 @@ artifact).
 
 > **Running it.**
 >
-> * `python tools/intent.py claim --files <paths> --action "<summary>"`
+> * `python dev/tools/intent.py claim --files <paths> --action "<summary>"`
 >   — record a claim before editing a collision-prone surface. The
 >   claim runs an immediate **conflict-check** against active claims and
 >   warns you about overlaps, so the signaler gets immediate, actionable
 >   value at the moment of signaling.
-> * `python tools/intent.py list [--conflicts-with <paths>]` — show
+> * `python dev/tools/intent.py list [--conflicts-with <paths>]` — show
 >   active intents (optionally only those overlapping given paths).
-> * `python tools/intent.py release <id>` — close a claim manually
+> * `python dev/tools/intent.py release <id>` — close a claim manually
 >   (rarely needed; the hook does this automatically).
-> * `python tools/intent.py install-hook` — **opt-in**: install a
+> * `python dev/tools/intent.py install-hook` — **opt-in**: install a
 >   post-commit hook that auto-releases the committing session's claims
 >   whose paths the commit touched. The scaffold prints this command but
 >   never runs it for you; the installer chains onto an existing
 >   `post-commit` hook and **refuses** (without modifying the file) a
 >   framework-managed (pre-commit / husky), non-shell, or non-executable
 >   hook. `--uninstall` removes it.
-> * `python tools/intent.py install-precommit` — **opt-in**: install the
+> * `python dev/tools/intent.py install-precommit` — **opt-in**: install the
 >   **work-intent pre-commit check** (below). Narrower than `install-hook`:
 >   it installs only into an absent `pre-commit` hook or one already
 >   carrying the intent sentinel, and **refuses** (without modifying the
 >   file) any foreign / framework-managed hook. `--uninstall` removes it.
-> * `python tools/intent.py hooks-status` — report whether each of the
+> * `python dev/tools/intent.py hooks-status` — report whether each of the
 >   two hooks (post-commit auto-release, pre-commit work-intent check) is
 >   installed. The one stable command session-start points at.
 
 **Enforce mode.** The pre-commit check is **opt-in**; install it with
-`python tools/intent.py install-precommit`. Once installed, the default
+`python dev/tools/intent.py install-precommit`. Once installed, the default
 `warn` mode only warns. The opt-in `block` mode refuses only when a fresh
 claim from a provably different live session overlaps a staged path. An
 unclaimed path warns but does not block.
@@ -111,13 +111,13 @@ for unclaimed paths and unknown identity. (Doctrine: Cairn's
 
 Use the same session-specific label for the claim, commit, and inherited
 post-commit auto-release. Prefer the harness-derived identity and compare
-`python tools/intent.py whoami` in relevant command environments when
+`python dev/tools/intent.py whoami` in relevant command environments when
 diagnosing a mismatch. An explicit `CAIRN_AGENT` override is just a label and
 must be supplied separately in each fresh shell that needs it, including the
 shell that commits and launches the hook. For example:
 
 ```sh
-CAIRN_AGENT=synthetic-codex-a python tools/intent.py claim --files src/a.py --action "edit a"
+CAIRN_AGENT=synthetic-codex-a python dev/tools/intent.py claim --files src/a.py --action "edit a"
 CAIRN_AGENT=synthetic-codex-a git commit -- src/a.py
 ```
 
@@ -129,12 +129,12 @@ ownership. Labels and logs coordinate cooperative contributors; they do not
 authenticate them.
 
 **Claim before you edit.** The Tier-2 workflow is one habit: before
-touching a collision-prone surface, run `python tools/intent.py claim`; the
+touching a collision-prone surface, run `python dev/tools/intent.py claim`; the
 immediate conflict-check tells you on the spot whether another session
 already holds it. The post-commit hook then closes your claim when the work
 lands, so the steady-state ceremony is a single `claim` per piece of
 work. The session-start routine (`docs/methodology/session-routines.md`) carries
-the *read* half — `python tools/intent.py list` before the first edit.
+the *read* half — `python dev/tools/intent.py list` before the first edit.
 
 **The opt-in work-intent pre-commit check** is the structural *opening*
 counterpart to the post-commit auto-release. Where the post-commit hook
@@ -279,7 +279,7 @@ sequenced alongside the goodnight routine in
 > * **Prune-intents** — after the owner completes the reflection,
 >   roadmap scrub, next-session note, custom steps and handoff
 >   commit, the user runs
->   `CAIRN_HANDOFF_OWNER=1 python tools/session.py session-end --handoff`.
+>   `CAIRN_HANDOFF_OWNER=1 python dev/tools/session.py session-end --handoff`.
 >   It compacts completed claim/release pairs past a grace
 >   window; active claims are reported and never removed.
 >   The owner's `--prepare-handoff` run only lists current intents;

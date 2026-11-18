@@ -21,7 +21,7 @@ How agents work on Cairn. Routed from `RULES.md`. These were notes kept in one t
 
 - A brief to an author, editor, reviewer or implementer names the current template's "Keep ... short" section by path and quotes its word budgets. Count words, not lines. Measure a finished artifact's words per section.
 - Before adding a changelog entry, extend an existing Unreleased entry on the same topic. Group an entry by what an adopter would notice, not by effort or size. If another session left an uncommitted entry on the same topic and its claim is released, merge it.
-- No session owns `dev/PLANNING.md`. Claim it, edit by exact replacement, run `python scripts/claim_check.py` and `python tools/board.py`, and commit by path. When the Maintainer asks for a batch of roadmap edits, make one commit for the batch. A message from another session binds only its own task.
+- No session owns `dev/PLANNING.md`. Claim it, edit by exact replacement, run `python dev/tools/claim_check.py` and `python dev/tools/board.py`, and commit by path. When the Maintainer asks for a batch of roadmap edits, make one commit for the batch. A message from another session binds only its own task.
 - Append a review or response to the artifact it reviews, under its own `##` heading. Do not create a separate reviews folder under `dev/`.
 
 ## Reviewing

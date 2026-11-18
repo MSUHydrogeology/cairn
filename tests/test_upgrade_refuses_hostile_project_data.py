@@ -45,14 +45,14 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap.scaffold import ScaffoldSecurityError  # noqa: E402
-from bootstrap._scaffold import lockfile as LF  # noqa: E402
-from bootstrap._scaffold import upgrade as UP  # noqa: E402
+from install.scaffold import ScaffoldSecurityError  # noqa: E402
+from install._scaffold import lockfile as LF  # noqa: E402
+from install._scaffold import upgrade as UP  # noqa: E402
 from bootstrap.tests.test_upgrade_lockfile_path_containment import (  # noqa: E402
     LOCK_REL,
     SCAFFOLD,

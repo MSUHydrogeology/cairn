@@ -48,7 +48,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap._scaffold import upgrade as U  # noqa: E402
+from install._scaffold import upgrade as U  # noqa: E402
 
 _LS = shutil.which("ls")
 _WC = shutil.which("wc")
@@ -147,9 +147,9 @@ def test_a_mode_only_edit_counts_unless_filemode_is_off(tmp_path: Path) -> None:
 
 import shutil  # noqa: E402
 
-from bootstrap import scaffold as s  # noqa: E402
+from install import scaffold as s  # noqa: E402
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
 REAL_GIT = shutil.which("git")
@@ -730,7 +730,7 @@ def _mutated_scaffold_root(tmp_path: Path) -> Path:
 def _run_mutated_upgrade(copied_root: Path, target: Path, *flags: str):
     runner = (
         "import sys\n"
-        "from bootstrap import scaffold\n"
+        "from install import scaffold\n"
         "raise SystemExit(scaffold.main(sys.argv[1:]))\n"
     )
     env = {key: value for key, value in os.environ.items()

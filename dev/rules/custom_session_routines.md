@@ -3,7 +3,7 @@
 ## Session start
 
 At an attended, explicitly requested session-start, offer the opt-in Meter only
-when `tools/meter.py` is installed, no enabled consent config exists, and no
+when `dev/tools/meter.py` is installed, no enabled consent config exists, and no
 remembered refusal appears in this routine. Show the exact provider-log roots
 and project paths proposed for consent, the private ledger at
 `~/.cairn/meter/ledger.json`, each sanitized project export path, and that
@@ -20,7 +20,7 @@ means no offer.
 ## Goodnight
 
 **Usage report, every goodnight (reflection-only included).** When Meter is
-installed, run `python tools/meter.py refresh --report --json` once, or use the
+installed, run `python dev/tools/meter.py refresh --report --json` once, or use the
 result if the session-end skill has already run it. On success, include the
 complete sanitized `cairn-pulse/1` record in the reflection. For a closed
 `partial`, `unavailable` or `disabled` receipt, include only the status and
@@ -37,7 +37,7 @@ For a full handoff, run Cairn's local fast/default smoke selection from the
 repository root:
 
 ```sh
-python -m pytest bootstrap/tests/test_profiles_smoke.py
+python -m pytest tests/test_profiles_smoke.py
 ```
 
 Use the canonical project Python 3.13 interpreter. Record the exact command,

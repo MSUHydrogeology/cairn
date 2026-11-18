@@ -16,12 +16,12 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap.scaffold import expand_preset, format_profile_summary, main  # noqa: E402
+from install.scaffold import expand_preset, format_profile_summary, main  # noqa: E402
 
 PRESETS = ("solo-greenfield", "collaborative-team", "high-rigor-legacy")
 NO_PRESET_MODULE_SENTINELS = {

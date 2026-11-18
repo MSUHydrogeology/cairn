@@ -66,13 +66,13 @@ from typing import NamedTuple
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap.scaffold import ScaffoldSecurityError  # noqa: E402  (the facade loads the engine)
-from bootstrap._scaffold import upgrade as UP  # noqa: E402
+from install.scaffold import ScaffoldSecurityError  # noqa: E402  (the facade loads the engine)
+from install._scaffold import upgrade as UP  # noqa: E402
 
 SCAFFOLD = CAIRN_ROOT / "bootstrap" / "scaffold.py"
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"

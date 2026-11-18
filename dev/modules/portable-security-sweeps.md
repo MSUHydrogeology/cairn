@@ -7,7 +7,7 @@ result for a scan that did not happen. Team-gated and **opt-in**: no preset
 selects it, and selecting it is how a project takes on the external tool.
 
 **Adds to:** the project's `dev/modules/` doctrine set (this file), plus a
-standard-library orchestrator (`scripts/run_portable_security_sweeps.py`) and a strict JSON
+standard-library orchestrator (`dev/tools/run_portable_security_sweeps.py`) and a strict JSON
 policy. The module **installs no scanner**; the adapter binary is a host
 executable the project supplies.
 
@@ -186,16 +186,16 @@ candidate repository controls.
 ## Running it
 
 ```
-python scripts/run_portable_security_sweeps.py --target . --policy scripts/portable_security_policy.json
-python scripts/run_portable_security_sweeps.py --json          # the deterministic summary
-python scripts/run_portable_security_sweeps.py --security-verification   # the bounded child document
+python dev/tools/run_portable_security_sweeps.py --target . --policy dev/tools/portable_security_policy.json
+python dev/tools/run_portable_security_sweeps.py --json          # the deterministic summary
+python dev/tools/run_portable_security_sweeps.py --security-verification   # the bounded child document
 ```
 
 Admitting a candidate version — an operator act, never part of a sweep and
 never reachable from a standing command:
 
 ```
-python scripts/run_portable_security_sweeps.py --verify-version-support /abs/path/to/candidate \
+python dev/tools/run_portable_security_sweeps.py --verify-version-support /abs/path/to/candidate \
     --confirm-executing-an-unadmitted-binary
 ```
 

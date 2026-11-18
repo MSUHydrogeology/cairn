@@ -40,12 +40,12 @@ import pytest
 # Allow tests to import scaffold without installing a package.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap.scaffold import (  # noqa: E402
+from install.scaffold import (  # noqa: E402
     _DEFAULT_ON_MODULES,
     main,
 )
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
@@ -75,7 +75,7 @@ _NO_YAML_DRIVER = (
     "import sys\n"
     "sys.modules['yaml'] = None\n"
     "sys.path.insert(0, {root!r})\n"
-    "from bootstrap.scaffold import main\n"
+    "from install.scaffold import main\n"
     "sys.exit(main(['--summary', '--config', {cfg!r}]))\n"
 )
 
@@ -360,7 +360,7 @@ class TestSoloLegacyRecipe:
             "import sys\n"
             "sys.modules['yaml'] = None\n"
             f"sys.path.insert(0, {str(CAIRN_ROOT)!r})\n"
-            "from bootstrap.scaffold import main\n"
+            "from install.scaffold import main\n"
             f"sys.exit(main(['--summary', '--config', {str(cfg)!r}]))\n"
         )
         result = subprocess.run(

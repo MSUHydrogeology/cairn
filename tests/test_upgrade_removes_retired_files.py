@@ -33,10 +33,10 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap import scaffold as s  # noqa: E402
-from bootstrap._scaffold import config as C  # noqa: E402
+from install import scaffold as s  # noqa: E402
+from install._scaffold import config as C  # noqa: E402
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
 EMPTY_FILE_DIGEST = hashlib.sha256(b"").hexdigest()
@@ -65,8 +65,8 @@ import shutil  # noqa: E402
 import stat  # noqa: E402
 import time  # noqa: E402
 
-from bootstrap._scaffold import security as SEC  # noqa: E402
-from bootstrap._scaffold import upgrade as U  # noqa: E402
+from install._scaffold import security as SEC  # noqa: E402
+from install._scaffold import upgrade as U  # noqa: E402
 
 posix_only = pytest.mark.skipif(
     os.name == "nt", reason="the stand-in git programs here are shell scripts")
@@ -687,7 +687,7 @@ def test_retired_fifo_is_refused_in_a_bounded_owned_child(tmp_path: Path) -> Non
     code = "\n".join((
         "from pathlib import Path",
         "import sys",
-        "from bootstrap._scaffold import security as S",
+        "from install._scaffold import security as S",
         "p, t = Path(sys.argv[1]), Path(sys.argv[2])",
         "try:",
         "    S._remove_unchanged_file(p, t, b'payload')",
@@ -805,8 +805,8 @@ def test_the_walk_runs_only_when_open_unlink_rmdir_and_stat_all_take_dir_fd(
 import functools  # noqa: E402
 import json  # noqa: E402
 
-from bootstrap._scaffold.config import strip_conditional_regions  # noqa: E402
-from bootstrap._scaffold.slotmerge import substitute_tokens  # noqa: E402
+from install._scaffold.config import strip_conditional_regions  # noqa: E402
+from install._scaffold.slotmerge import substitute_tokens  # noqa: E402
 from bootstrap.verify_integrity import verify  # noqa: E402
 
 LOCK_REL = "dev/.cairn/cairn-lock.yml"

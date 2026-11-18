@@ -40,7 +40,7 @@ import pytest
 # Allow tests to import scaffold without installing a package.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap.scaffold import (  # noqa: E402
+from install.scaffold import (  # noqa: E402
     _DEFAULT_ON_MODULES,
     _PRESETS,
     _TEAM_STAFFING_GATED,
@@ -48,11 +48,11 @@ from bootstrap.scaffold import (  # noqa: E402
     expand_preset,
 )
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
-PROFILES_DIR = CAIRN_ROOT / "bootstrap" / "profiles"
-SCAFFOLD = CAIRN_ROOT / "bootstrap" / "scaffold.py"
+PROFILES_DIR = CAIRN_ROOT / "install" / "profiles"
+SCAFFOLD = CAIRN_ROOT / "install" / "scaffold.py"
 
 # The three profile YAMLs that ship in this package, paired with
 # the preset name each is expected to reference.

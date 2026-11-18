@@ -100,7 +100,7 @@ Enabling this module installs a standalone, **standard-library-only**
 orchestrator. Run it with no arguments — no pytest, no dev dependency required
 to invoke it:
 
-> `python scripts/run_security_audit.py`
+> `python dev/tools/run_security_audit.py`
 
 It composes the adopter's self-audit passes in order:
 

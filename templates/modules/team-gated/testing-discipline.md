@@ -5,7 +5,7 @@ and wants a coherent **test-tier scheme**.
 
 **Adds to:** a test-doctrine note in the adopting repo's `tests/` guide
 (and a cross-reference from `dev/agent_collaboration.md`), plus the optional
-standard-library Python report `scripts/test_coupling.py`.
+standard-library Python report `dev/tools/test_coupling.py`.
 
 This module gives the suite a shape, a way to choose tests, and a budget. The
 guidance below is a practical summary, not a complete testing curriculum.
@@ -97,7 +97,7 @@ Merged into the project's `tests/` guide:
 > tests your project's release or security records name as guards, and refusal,
 > hostile-state and negative-guard tests.
 >
-> **Advisory report.** `python scripts/test_coupling.py` reports private reach and
+> **Advisory report.** `python dev/tools/test_coupling.py` reports private reach and
 > missing promise lists worst first. It names its Python-only gap, keeps refusal
 > and hostile-state tests, and is a review prompt, not a deletion list. `--strict`
 > exits nonzero for a gap or scan failure; default is advisory and exits zero.

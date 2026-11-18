@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Cairn bootstrap scaffold engine — the private ``bootstrap/_scaffold`` package.
+"""Cairn bootstrap scaffold engine — the private ``install/_scaffold`` package.
 
-This is the install/upgrade engine that ``bootstrap/scaffold.py`` (the thin,
+This is the install/upgrade engine that ``install/scaffold.py`` (the thin,
 fail-closed launcher + facade) loads under the single canonical identity
-``bootstrap._scaffold``. It is **not** a public import surface: adopters and
-tooling reach it only through ``bootstrap/scaffold.py`` (``python
-bootstrap/scaffold.py --help`` for the CLI; that command's help text is the
+``install._scaffold``. It is **not** a public import surface: adopters and
+tooling reach it only through ``install/scaffold.py`` (``python
+install/scaffold.py --help`` for the CLI; that command's help text is the
 docstring of the ``cli`` submodule, which owns ``main`` / ``build_arg_parser``).
 
 Topology (scaffold-split, 2026-06): the former single-file monolith is split into
@@ -14,7 +14,7 @@ loader:
 
 * ``_guard``      — the engine import boundary (``EngineFinder`` + path checks),
                     installed by this ``__init__`` as its first action so every
-                    ``bootstrap._scaffold.*`` import is mediated and fail-closed.
+                    ``install._scaffold.*`` import is mediated and fail-closed.
 * ``security``    — the containment leaf (``ScaffoldSecurityError`` +
                     ``_assert_safe_write`` / ``_assert_fanout_contained``).
 * ``slotmerge``   — token / slot / module-merge templating helpers.
@@ -30,7 +30,7 @@ loader:
 
 This module is a thin prologue + verifying loader + **pure re-export facade**: it
 defines no functions or classes of its own; it installs ``_guard`` and re-exports
-each submodule's public surface so ``from bootstrap.scaffold import X`` and every
+each submodule's public surface so ``from install.scaffold import X`` and every
 historical internal reference are unchanged.
 """
 
@@ -45,12 +45,12 @@ from typing import Any, NamedTuple
 
 # Engine import boundary: install BEFORE any
 # `from . import <child>` below (Stages 1-8) and before any direct
-# `import bootstrap._scaffold.<m>` can resolve a child -- the engine __init__ is
+# `import install._scaffold.<m>` can resolve a child -- the engine __init__ is
 # the one place that necessarily runs first for every engine submodule import,
 # whether the launcher loaded us or a caller imported a child directly. It
 # rejects a preloaded polluted child and installs a finder that verifies every
 # future child's real source is within the Cairn root before execution.
-_ENGINE_DIR = Path(__file__).resolve().parent        # <cairn>/bootstrap/_scaffold
+_ENGINE_DIR = Path(__file__).resolve().parent        # <cairn>/install/_scaffold
 _CAIRN_ROOT = Path(__file__).resolve().parents[2]     # <cairn>
 
 # `_guard` is itself the one engine child resolved BEFORE the finder exists, so
@@ -84,7 +84,7 @@ from .security import (  # noqa: E402
 # Configuration / tokens / profile resolution -> _scaffold/config.py
 # -----------------------------------------------------------------------
 # Extracted to the config leaf (scaffold-split Stage 4); pure stdlib. Re-exported
-# here so the engine's internal references and the ``bootstrap.scaffold`` facade
+# here so the engine's internal references and the ``install.scaffold`` facade
 # are unchanged. The trust anchor ``_MODULE_MAPPINGS`` is owned here now (plan
 # 0B.3); security_check.py imports it from this narrow owner. The dev-tree /
 # gitignore / fan-out WRITE functions stay in the engine (they consume this data).
@@ -126,7 +126,7 @@ from .config import (  # noqa: F401  (re-exported for the facade)
 # Token / slot / module-merge templating helpers -> _scaffold/slotmerge.py
 # ---------------------------------------------------------------------------
 # Extracted to the slotmerge leaf (scaffold-split Stage 2). Re-exported here so
-# the engine's internal references and the ``bootstrap.scaffold`` facade are
+# the engine's internal references and the ``install.scaffold`` facade are
 # unchanged. ``run_module_merge_pass`` stays in the engine below (install-time
 # orchestrator coupling to ``_MODULE_MAPPINGS`` / ``InstallSpec``; it joins
 # install.py at Stage 6).
@@ -163,7 +163,7 @@ from .slotmerge import (  # noqa: F401  (re-exported for the facade)
 # Extracted to the install module (scaffold-split Stage 6); layer-6 subsystem
 # depending downward on config/security/slotmerge/lockfile. Re-exported here so
 # the engine's internal references (upgrade/cli call sites) and the
-# ``bootstrap.scaffold`` facade are unchanged. The shared _cairn_root/
+# ``install.scaffold`` facade are unchanged. The shared _cairn_root/
 # _find_cairn_root helpers and the upgrade-time _MANIFEST_SEARCH_DIRS stay below.
 from .install import (  # noqa: F401  (re-exported for the facade)
     InstallResult,
@@ -206,7 +206,7 @@ from .install import (  # noqa: F401  (re-exported for the facade)
 # Extracted to the upgrade module (scaffold-split Stage 7); layer-7, depends
 # downward on config/security/merge/slotmerge/lockfile/install. Re-exported here
 # so the engine's internal references (the cli's main/dispatch) and the
-# ``bootstrap.scaffold`` facade are unchanged. The canonical root resolver
+# ``install.scaffold`` facade are unchanged. The canonical root resolver
 # _cairn_root / _find_cairn_root is owned here now (cli reads it from upgrade).
 from .upgrade import (  # noqa: F401  (re-exported for the facade)
     FilePlan,
@@ -271,7 +271,7 @@ from .upgrade import (  # noqa: F401  (re-exported for the facade)
 # Lockfile data / read / emit / classify core -> _scaffold/lockfile.py
 # -----------------------------------------------------------------------
 # Extracted to the lockfile leaf (scaffold-split Stage 5); pure stdlib. Re-exported
-# here so the engine's internal references and the ``bootstrap.scaffold`` facade
+# here so the engine's internal references and the ``install.scaffold`` facade
 # are unchanged. The trust anchor (read_lockfile + lock constants + _LIVING_STATE_DSTS)
 # is owned here now (plan 0B.3); verify_integrity.py imports it from this narrow
 # owner. The install-time WRITER write_install_lockfile + _lock_file_list stay in
@@ -301,7 +301,7 @@ from .lockfile import (  # noqa: F401  (re-exported for the facade)
 # Extracted to the merge module (scaffold-split Stage 3); depends on the
 # slotmerge leaf. Re-exported here so the engine's internal references (the
 # upgrade machinery's merge_file / SlotError call sites) and the
-# ``bootstrap.scaffold`` facade are unchanged. classify_verbatim (the verbatim
+# ``install.scaffold`` facade are unchanged. classify_verbatim (the verbatim
 # hash policy) stays below -- it is never a text merge and couples to
 # _sha256_hex (the lockfile cluster migrating at Stage 5).
 from .merge import (  # noqa: F401  (re-exported for the facade)
@@ -320,7 +320,7 @@ from .merge import (  # noqa: F401  (re-exported for the facade)
 # -----------------------------------------------------------------------
 # Extracted to the cli module (scaffold-split Stage 8); the top layer -- imports
 # downward from every subsystem. Re-exported here so the launcher
-# (bootstrap/scaffold.py -> _engine.main()) and the bootstrap.scaffold facade are
+# (install/scaffold.py -> _engine.main()) and the install.scaffold facade are
 # unchanged. cli.py carries a copy of this module docstring so build_arg_parser's
 # ``description=__doc__`` --help text is byte-preserved.
 from .cli import build_arg_parser, main  # noqa: F401  (re-exported for the facade + launcher)

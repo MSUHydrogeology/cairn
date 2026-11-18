@@ -25,9 +25,9 @@ provides that system-wide review when an adopter needs it.
   Challenge" meta-section, and program governance. The adopter fills the
   lenses with their own system's seams and failure signals; the frame
   ships the *questions*, not the answers.
-* **`tools/code_map.py`** -- a bounded, read-only filesystem map and advisory
+* **`dev/tools/code_map.py`** -- a bounded, read-only filesystem map and advisory
   function neighbors. With a trusted Python runtime and installed copy, run
-  `python -I tools/code_map.py --root PATH`; add `--changed src/file.py` for
+  `python -I dev/tools/code_map.py --root PATH`; add `--changed src/file.py` for
   changed-function neighbors or `--release` for whole-scope comparisons.
   JSON output names omissions and incomplete analysis. Similarity is a lead,
   not evidence of equivalent behavior or permission to delete. Unsupported

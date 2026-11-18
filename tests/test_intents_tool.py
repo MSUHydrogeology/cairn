@@ -58,7 +58,7 @@ import pytest
 # Allow tests to import scaffold without installing a package.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap.scaffold import (  # noqa: E402
+from install.scaffold import (  # noqa: E402
     _DEV_DIRS,
     _GITIGNORE_SEEDS,
     _MODULE_MAPPINGS,
@@ -68,7 +68,7 @@ from bootstrap.scaffold import (  # noqa: E402
     seed_gitignore,
 )
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
@@ -651,7 +651,7 @@ class TestGitignoreSeedWritesByReplacing:
     def test_swapped_hardlink_never_receives_appended_bytes(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        from bootstrap._scaffold import install as I
+        from install._scaffold import install as I
 
         ignore = tmp_path / ".gitignore"
         ignore.write_bytes(b"existing\n")
@@ -695,7 +695,7 @@ class TestGitignoreSeedWritesByReplacing:
     def test_non_utf8_bytes_preserved_and_preflight_does_not_read(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        from bootstrap._scaffold import install as I
+        from install._scaffold import install as I
         ignore = tmp_path / ".gitignore"
         ignore.write_bytes(b"\xff\xfe\nold\n")
         with monkeypatch.context() as mp:

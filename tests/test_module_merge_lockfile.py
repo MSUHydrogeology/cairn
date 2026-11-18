@@ -65,12 +65,12 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap.scaffold import main  # noqa: E402
-from bootstrap._scaffold import install as INS  # noqa: E402
-from bootstrap._scaffold.config import InstallSpec  # noqa: E402
-from bootstrap._scaffold.lockfile import read_lockfile  # noqa: E402
+from install.scaffold import main  # noqa: E402
+from install._scaffold import install as INS  # noqa: E402
+from install._scaffold.config import InstallSpec  # noqa: E402
+from install._scaffold.lockfile import read_lockfile  # noqa: E402
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 _PKG = CAIRN_ROOT / "bootstrap" / "_scaffold"

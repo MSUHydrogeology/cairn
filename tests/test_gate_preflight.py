@@ -41,7 +41,7 @@ import pytest
 from bootstrap.tests import _gate_manifest as G
 from bootstrap.tests import _gate_preflight as P
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 _REPO = repository_root(Path(__file__))
 

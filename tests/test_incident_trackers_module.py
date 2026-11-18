@@ -28,13 +28,13 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap.scaffold import (  # noqa: E402
+from install.scaffold import (  # noqa: E402
     _DEFAULT_ON_MODULES,
     _MODULE_MAPPINGS,
     main,
 )
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
@@ -72,7 +72,7 @@ class TestRegistration:
     def test_manifest_and_dry_run_include_archive_marker(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
     ) -> None:
-        from bootstrap.scaffold import install_manifest  # noqa: PLC0415
+        from install.scaffold import install_manifest  # noqa: PLC0415
 
         manifest = install_manifest(modules=[MODULE])
         assert (
@@ -152,7 +152,7 @@ class TestInstallPath:
         outside.mkdir()
         (measurement / "archive").symlink_to(outside, target_is_directory=True)
 
-        from bootstrap._scaffold.security import (  # noqa: PLC0415
+        from install._scaffold.security import (  # noqa: PLC0415
             ScaffoldSecurityError,
         )
 

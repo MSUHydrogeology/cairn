@@ -24,7 +24,7 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 
@@ -162,8 +162,8 @@ def test_an_installed_onboarding_copy_equals_its_page(page: str, copy: str) -> N
 def _engine_token_rules():
     import sys
     sys.path.insert(0, str(CAIRN_ROOT))
-    from bootstrap._scaffold.config import KNOWN_TOKENS
-    from bootstrap._scaffold.slotmerge import find_unfilled_tokens
+    from install._scaffold.config import KNOWN_TOKENS
+    from install._scaffold.slotmerge import find_unfilled_tokens
     return KNOWN_TOKENS, find_unfilled_tokens
 
 def _mergeable_template_files() -> list[str]:

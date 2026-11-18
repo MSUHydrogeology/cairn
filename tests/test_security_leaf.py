@@ -29,7 +29,7 @@ from pathlib import Path
 
 import pytest
 
-_PKG = Path(__file__).resolve().parents[1] / "_scaffold"
+_PKG = Path(__file__).resolve().parents[1] / "install" / "_scaffold"
 _GUARD_CALLS = {
     "_assert_safe_write", "_assert_fanout_contained", "_assert_git_binding_path"
 }
@@ -77,7 +77,7 @@ class TestReadRegularBytesRefusesAnythingElse:
     def test_link_swapped_between_probe_and_open_is_refused(
         self, tmp_path, monkeypatch
     ):
-        from bootstrap._scaffold import security as S
+        from install._scaffold import security as S
         candidate = tmp_path / "candidate"
         candidate.write_bytes(b"initial")
         victim = tmp_path / "victim"
@@ -100,7 +100,7 @@ class TestReadRegularBytesRefusesAnythingElse:
 
     @pytest.mark.skipif(os.name != "posix", reason="POSIX device files")
     def test_posix_special_files_refused_without_blocking(self, tmp_path):
-        from bootstrap._scaffold import security as S
+        from install._scaffold import security as S
         directory = tmp_path / "directory"
         directory.mkdir()
         with pytest.raises(S.ScaffoldSecurityError):
@@ -119,7 +119,7 @@ class TestWriteByReplacing:
 
     @pytest.mark.skipif(os.name != "posix", reason="POSIX permission bits")
     def test_permissions_strip_execute_and_special_bits(self, tmp_path):
-        from bootstrap._scaffold import security as S
+        from install._scaffold import security as S
         dst = tmp_path / "file"
         dst.write_bytes(b"old")
         dst.chmod(0o4755)
@@ -132,7 +132,7 @@ class TestWriteByReplacing:
 
     # Declared exception (internal hook): monkeypatches os.fchmod and secrets.token_hex to swap the staged temp to a victim file; no public route swaps a temp mid-write.
     def test_swapped_temp_cannot_change_victim_mode(self, tmp_path, monkeypatch):
-        from bootstrap._scaffold import security as S
+        from install._scaffold import security as S
         if not hasattr(os, "fchmod"):
             pytest.skip("descriptor mode setting unavailable")
         target = tmp_path / "target"
@@ -188,7 +188,7 @@ def test_guarded_write_functions_still_call_a_containment_guard():
 
 def test_public_seed_gitignore_refuses_outside_symlink_with_facade_exception(
         tmp_path):
-    from bootstrap import scaffold
+    from install import scaffold
 
     target = tmp_path / "target"
     target.mkdir()
@@ -209,8 +209,8 @@ def test_public_seed_gitignore_refuses_outside_symlink_with_facade_exception(
 @pytest.mark.parametrize("failure", ["open", "fstat", "read"])
 def test_public_seed_gitignore_normalizes_read_errors(
         tmp_path, monkeypatch, failure):
-    from bootstrap import scaffold
-    from bootstrap._scaffold import security as S
+    from install import scaffold
+    from install._scaffold import security as S
 
     target = tmp_path / "target"
     target.mkdir()
@@ -259,8 +259,8 @@ def test_public_seed_gitignore_normalizes_read_errors(
 @pytest.mark.parametrize("failure", ["write", "fchmod"])
 def test_public_seed_gitignore_staging_failure_preserves_destination_and_cleans_owned_temp(
         tmp_path, monkeypatch, failure):
-    from bootstrap import scaffold
-    from bootstrap._scaffold import security as S
+    from install import scaffold
+    from install._scaffold import security as S
 
     target = tmp_path / "target"
     target.mkdir()
@@ -304,8 +304,8 @@ def test_public_seed_gitignore_staging_failure_preserves_destination_and_cleans_
 @pytest.mark.skipif(os.name != "posix", reason="POSIX hard links and descriptor mode setting")
 def test_public_seed_gitignore_rejects_hardlink_swap_during_staging_without_deleting_unowned_name(
         tmp_path, monkeypatch):
-    from bootstrap import scaffold
-    from bootstrap._scaffold import security as S
+    from install import scaffold
+    from install._scaffold import security as S
 
     target = tmp_path / "target"
     target.mkdir()
@@ -336,8 +336,8 @@ def test_public_seed_gitignore_rejects_hardlink_swap_during_staging_without_dele
 # Declared exception (internal hook): monkeypatches the private _assert_safe_write to hardlink-swap the staged file after its snapshot; no public route creates that race.
 def test_public_seed_gitignore_rejects_hardlink_swap_after_staged_identity_snapshot(
         tmp_path, monkeypatch):
-    from bootstrap import scaffold
-    from bootstrap._scaffold import security as S
+    from install import scaffold
+    from install._scaffold import security as S
 
     target = tmp_path / "target"
     target.mkdir()

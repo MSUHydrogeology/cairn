@@ -6,7 +6,7 @@ Written in Cairn Plain Language 1.0
 
 List decisions, approvals and other next steps only the Maintainer can take.
 Use one bullet for each wait. Keep the marker at the start of that bullet so
-`python tools/board.py --maintainer` can find it. Remove the bullet when the
+`python dev/tools/board.py --maintainer` can find it. Remove the bullet when the
 Maintainer responds.
 
 When a wait belongs to work in a release table, put its marker on a separate

@@ -30,7 +30,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
 
@@ -74,7 +74,7 @@ _CLAUSE_RE = re.compile(_spaced(SKILL_BULLET_CLAUSE) + r",\s+")
 # An install writes the day-one list and two tour pages, and nothing that runs.
 # --------------------------------------------------------------------------
 
-from bootstrap import scaffold as s  # noqa: E402
+from install import scaffold as s  # noqa: E402
 
 PROFILES = ("solo-greenfield", "collaborative-team", "high-rigor-legacy")
 TOUR_PAGES = ("agent-team-onboarding.md", "dev-tour.md")

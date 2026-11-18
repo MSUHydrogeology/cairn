@@ -30,7 +30,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap.scaffold import (  # noqa: E402
+from install.scaffold import (  # noqa: E402
     _CORE_MAPPINGS,
     _MODULE_MAPPINGS,
     format_manifest,
@@ -39,7 +39,7 @@ from bootstrap.scaffold import (  # noqa: E402
     main,
 )
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
@@ -170,7 +170,7 @@ class TestProvenanceWarning:
 
     def test_malformed_checkout_confirmation_is_unavailable(
             self, tmp_path: Path, monkeypatch) -> None:
-        from bootstrap._scaffold import install as install_impl
+        from install._scaffold import install as install_impl
 
         completed = types.SimpleNamespace(state="completed", returncode=0)
         confirmation = types.SimpleNamespace(

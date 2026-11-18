@@ -2,7 +2,7 @@
 # Module: model-selection
 
 **Selected when:** the project sits at **moderate or complex** on
-the Complexity axis (`dimensions/complexity.md`) — Review weight
+the Complexity axis (`install/dimensions/complexity.md`) — Review weight
 and verification depth are non-trivial, capability-floor failures
 have real cost. A greenfield experimental project at low
 complexity does not install this module; if its complexity
@@ -169,7 +169,7 @@ not transfer the orchestrator's authority or its review obligations.
 medium, low), copying the shape of the seeded row. In `model`, name the model family,
 never a version; add another row for every additional family assigned to that tier. Put
 the Maintainer assignment and date in `source` and `date_verified`. The assignment does
-not claim benchmark evidence. `python scripts/check_model_selection.py` exits 0 once no
+not claim benchmark evidence. `python dev/tools/check_model_selection.py` exits 0 once no
 placeholder remains and at least one row exists. It checks shape, not truth or
 authorization, and nothing reads `date_verified`; a person checks the assignment. The
 installing agent runs the check at acceptance; after that a person runs it because

@@ -3,7 +3,7 @@
      itself, so the paths deliberately do not resolve here; the reviewed sources
      are `templates/modules/team-gated/api_access_security.py` and
      `templates/modules/team-gated/web_hosting_security.py`.
-     `scripts/run_security_verification.py` is the same class for a DEFAULT-ON
+     `dev/tools/run_security_verification.py` is the same class for a DEFAULT-ON
      module: it is the adopter-tree destination of the security-verification
      dispatcher, which Cairn deliberately does not self-host (see that plan's
      Scope, "Cairn does not self-host the dispatcher"). Its reviewed source is
@@ -40,7 +40,7 @@ scientific data, source code snippets, or any other target-repo
 content into any Cairn file.
 
 If a case study is written for a target project and it will appear
-in the Cairn `case-studies/` directory, the Maintainer must
+in the Cairn `docs/case-studies/` directory, the Maintainer must
 explicitly approve each piece of content before it is committed to
 Cairn.  See Rule 5.
 
@@ -67,7 +67,7 @@ any of the above.
 ## Rule 3 — Case studies require explicit Maintainer approval
 
 Before any case-study content is committed to the Cairn
-`case-studies/` directory, the Maintainer of the *target* project
+`docs/case-studies/` directory, the Maintainer of the *target* project
 must explicitly approve:
 
 1. That the project may be named publicly as a Cairn case study.
@@ -158,13 +158,13 @@ proof or a replacement for the human read.
 
 * **Published methodology** (`docs/methodology/*.md`) —
   scanned and injection-reviewed on change.
-* **Other docs / case-study prose** (`docs/*.md`, `case-studies/*.md`) —
+* **Other docs / case-study prose** (`docs/*.md`, `docs/case-studies/*.md`) —
   scanned and injection-reviewed on change.
 * **Executable code** — Layer 4 (Bandit + the symlink/containment
   hardening), not the prose scanner. This class is the **whole shipped
   Python surface**, not only the scaffold: the scaffold engine — the thin
-  **launcher + facade** `bootstrap/scaffold.py` over the private
-  `bootstrap/_scaffold/` **engine package** (eight owned modules —
+  **launcher + facade** `install/scaffold.py` over the private
+  `install/_scaffold/` **engine package** (eight owned modules —
   `security`, `slotmerge`, `merge`, `config`, `lockfile`, `install`,
   `upgrade`, `cli` — plus the verifying loader `_guard.py`; *every module
   under that package is Layer-4 code*, scanned **recursively**) — *and*
@@ -178,17 +178,17 @@ proof or a replacement for the human read.
   `link_check.py`, `sync_doc_snippets.py`, and the
   `content-security` / `python-security` apparatus —
   `content_scan_runner.py`, `run_security_audit.py`; **plus the session
-  kernel `session.py` → `tools/session.py` and the board view
-  `board.py` → `tools/board.py`**, which install
+  kernel `session.py` → `dev/tools/session.py` and the board view
+  `board.py` → `dev/tools/board.py`**, which install
   verbatim and **unconditionally** to every adoption as the command-line
   backend behind the `session-start` / `session-end` routines) *and* Cairn's
   own dev tools (`check_cairn.py`, `content_scan.py`, `security_check.py`,
   `verify_integrity.py`). The Bandit gate derives its scan set from the
   **published install manifest** — every file the scaffold ships
   byte-for-byte as Python, the same enumeration behind
-  `scaffold.py --manifest` — plus `scripts/` + `bootstrap/`,
-  and it **recurses the `bootstrap/_scaffold/` engine package** (excluding the
-  `bootstrap/tests/` attack fixtures), so a newly-shipped script *or a
+  `scaffold.py --manifest` — plus `scripts/` + `install/`,
+  and it **recurses the `install/_scaffold/` engine package** (excluding the
+  `tests/` attack fixtures), so a newly-shipped script *or a
   newly-extracted engine module* is covered automatically; a reviewer must
   know a change ships **as code** (Layer 4), not prose.
   **What that derivation closes, and the residuals it does not.** The manifest
@@ -202,13 +202,13 @@ proof or a replacement for the human read.
     `scan_targets()` filters on `verbatim and src.endswith('.py')`. A `.py`
     added there therefore **cannot** be scanned by the gate. Measured
     2026-08-03: 17 core rows, none verbatim, and no `.py` among them today.
-  * `_OPTIONAL_TEMPLATES` in `bootstrap/_scaffold/config.py` ships axis-gated
+  * `_OPTIONAL_TEMPLATES` in `install/_scaffold/config.py` ships axis-gated
     project-root templates and never reaches the manifest at all (and installs
     token-substituted, so the `verbatim` filter would drop it even if it did).
 
   Both residuals are held **by the dev suite, not by the gate** —
   `test_every_templates_py_on_disk_is_release_scanned` in
-  `bootstrap/tests/test_security_lint.py` globs `templates/` **on disk** and
+  `tests/test_security_lint.py` globs `templates/` **on disk** and
   subtracts the scan set, so a shipped-but-unscanned `.py` reddens it wherever
   it was registered. Verified by perturbation, 2026-08-03: writing a real
   `.py` under `templates/optional/` reddens that node (with
@@ -230,11 +230,11 @@ accepted* under the stated threat model (no concurrent filesystem
 attacker; no untrusted code path), recorded here so a future reviewer can
 tell "known and accepted" from "missed": (1) a small TOCTOU window between
 the scaffold engine's `_assert_safe_write` containment check and the write
-(the check lives in `bootstrap/_scaffold/security.py`, its single-source
+(the check lives in `install/_scaffold/security.py`, its single-source
 identity preserved across the split; installs made before 0.5 keep the retired
 onboarding helper, which Cairn no longer scans, until `upgrade --remove-retired` removes it,
 and its accepted residual risk is this same race window; the
-session kernel `tools/session.py` has it too, for a parent folder swapped for a
+session kernel `dev/tools/session.py` has it too, for a parent folder swapped for a
 link between its `_assert_not_linked` check and a write -- the last name is not
 exposed, because its writes are an exclusive temp file and a rename); the
 model-selection capture, lockfile writers and `.gitignore` append now use the
@@ -295,7 +295,7 @@ executable from `PATH` (its argv head is `sys.executable`) and it opens no
 socket. Five facts, and (d) is the one that must not be softened.
 
 * **(a) The scaffold now ships a file that executes a child process in an
-  adopter tree.** `scripts/run_security_verification.py` launches a
+  adopter tree.** `dev/tools/run_security_verification.py` launches a
   capability's own local runner as `[sys.executable, "-I", <registry runner
   path>, <registry argv mode>]`, `shell=False`, under a timeout and an
   output byte cap, with strict UTF-8 and strict JSON on the way back. Every
@@ -382,7 +382,7 @@ applied to the substitution surface.
 trust roots, and `PATH` resolution *is* execution authority
 
 The `portable-security-sweeps` module installs a script
-(`scripts/run_portable_security_sweeps.py`) that invokes **host executables**.
+(`dev/tools/run_portable_security_sweeps.py`) that invokes **host executables**.
 That is a new boundary in this module family, and the distinction matters: the
 existing `python-security` runner executes `[sys.executable, "-I", "-m", …]` — a
 known interpreter — and uses `which()` only as *presence detection*. This runner
@@ -486,7 +486,7 @@ they leave open.
 
 Both capabilities are **explicit-selection only** — no preset selects them and
 they are not in the default-on set — and each installs a facade
-(`scripts/api_access_security.py`, `scripts/web_hosting_security.py`) over one
+(`dev/tools/api_access_security.py`, `dev/tools/web_hosting_security.py`) over one
 shared four-member engine package installed once per capability.  The engine is
 **standard-library-only**; see
 [`DEPENDENCY_BUDGET.md`](DEPENDENCY_BUDGET.md) > *No exception*.
@@ -614,13 +614,13 @@ reach is worse than no control.**
   deployed credential and none contacts a real host.  That is the Maintainer
   fence working as intended, and it means the successful-deployed-request path
   itself is **unexercised by Cairn's suite** — run by a person typing
-  `python -m pytest bootstrap/tests`; **Cairn has no CI**.
+  `python -m pytest install/tests`; **Cairn has no CI**.
 * **Point 10 is held by *structural absence*, not by redaction — and one channel
   is recorded as uncovered.**  There is no shipped code path that writes a
   peer-supplied or credential string to stdout, to stderr, or to the report; the
   sanitizing helper is defence in depth over two fields nothing reads.  The
-  cross-runner sweep (`bootstrap/tests/test_security_finding_confidentiality.py`,
-  run by a person typing `python -m pytest bootstrap/tests` — **Cairn has no
+  cross-runner sweep (`tests/test_security_finding_confidentiality.py`,
+  run by a person typing `python -m pytest install/tests` — **Cairn has no
   CI**) plants a distinct high-entropy marker per channel and, for **nine**
   channels, proves the runner actually reaches the channel by *injecting* the
   leak on a throwaway copy and requiring the sweep to find it, before requiring
@@ -678,7 +678,7 @@ verifier exit status and pinned policy.
 ## Rule 13 — The re-anchor ceremony's pre-candidate trust set is enumerated,
 and every member is recorded rather than resolved
 
-The re-anchor ceremony runs a launcher (`bootstrap/reanchor-launcher.template.sh`,
+The re-anchor ceremony runs a launcher (`release/reanchor-launcher.template.sh`,
 instantiated by the builder and read by a fresh local reader) which verifies an authorization packet and the authority
 closure **before** the first candidate byte executes. Everything the launcher
 runs in that window is *pre-candidate*: it decides whether candidate code starts,

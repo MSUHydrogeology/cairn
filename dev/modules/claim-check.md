@@ -101,7 +101,7 @@ already true — not as something the reviewer has to catch.
 Merged into `AGENTS.md`:
 
 > **Verify before asserting.** Before committing a proposal, plan,
-> or doc, run the claim checker (`python scripts/claim_check.py`) over
+> or doc, run the claim checker (`python dev/tools/claim_check.py`) over
 > it: it hard-flags broken repo paths and out-of-bounds line
 > citations. A hard flag is resolved before commit; a deliberate
 > forward-reference is *marked*, not left to assert, and a
@@ -112,9 +112,9 @@ Merged into `AGENTS.md`:
 > snapshot, register a live invariant — rather than a write-time count
 > flag (retired 2026-06-05).
 
-The `python scripts/claim_check.py` token is filled from the adopter's
+The `python dev/tools/claim_check.py` token is filled from the adopter's
 profile YAML with whatever invocation runs their checker (e.g.
-`python scripts/claim_check.py`).
+`python dev/tools/claim_check.py`).
 
 The checker is a **discipline aid, not a gate** — the
 verify-before-asserting habit is the doctrine; the tool only
@@ -125,11 +125,11 @@ shifts its cheap, mechanical part left, ahead of review.
 **The scaffold installs a runnable checker.** Enabling this module
 writes `claim_check.py` into the target's `scripts/` directory (copied
 verbatim -- no token substitution over the code) and fills
-`python scripts/claim_check.py` to point at it. The script is vendor-neutral and **standard-library
+`python dev/tools/claim_check.py` to point at it. The script is vendor-neutral and **standard-library
 only**: it hard-flags broken repo paths and out-of-bounds line
 citations. Run it via the command the module installs:
 
-> `python scripts/claim_check.py`
+> `python dev/tools/claim_check.py`
 
 Nothing to clone, port, or reimplement -- the default is a working tool.
 
@@ -178,7 +178,7 @@ code -- no drift between what Cairn preaches and what it hands out.
 
 ## Out of scope (deferred)
 
-A **git `pre-commit` hook wrapping `python scripts/claim_check.py`** was
+A **git `pre-commit` hook wrapping `python dev/tools/claim_check.py`** was
 floated during Phase 2 of the Cairn methodology repo construction
 and is deliberately deferred from v1:
 
@@ -202,7 +202,7 @@ choice.
 
 **Not to be confused with the work-intent pre-commit check.** The
 deferred hook above is the **Markdown content gate** — a `pre-commit`
-wrapping *this* checker (`python scripts/claim_check.py`), which scans
+wrapping *this* checker (`python dev/tools/claim_check.py`), which scans
 proposals / plans / docs for broken path claims and out-of-bounds line
 citations. It is **distinct** from the **work-intent pre-commit check**
 shipped (opt-in) by the team-gated `coordination-tiers` module, which

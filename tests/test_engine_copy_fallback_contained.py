@@ -48,13 +48,13 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap.scaffold import ScaffoldSecurityError, main  # noqa: E402  (the facade loads the engine)
-from bootstrap._scaffold import install as INS  # noqa: E402
+from install.scaffold import ScaffoldSecurityError, main  # noqa: E402  (the facade loads the engine)
+from install._scaffold import install as INS  # noqa: E402
 
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 SCAFFOLD = CAIRN_ROOT / "bootstrap" / "scaffold.py"
@@ -681,7 +681,7 @@ def test_an_upgrade_that_adds_the_skills_warns_and_finishes_when_the_fan_out_is_
     stage folder behind after the lockfile has already moved on."""
     import shutil
 
-    from bootstrap.scaffold import _emit_lock_yaml, read_lockfile
+    from install.scaffold import _emit_lock_yaml, read_lockfile
 
     target, outside, profile = _world(tmp_path)
     assert main(_argv(target, profile)) == 0
@@ -722,7 +722,7 @@ def test_upgrade_prints_a_forged_cairn_version_as_one_escaped_line(tmp_path, cap
     and a forged line, over a forked facade, through the real `upgrade`."""
     import hashlib
 
-    from bootstrap.scaffold import _emit_lock_yaml, read_lockfile
+    from install.scaffold import _emit_lock_yaml, read_lockfile
 
     target = tmp_path.resolve() / "proj"
     target.mkdir()

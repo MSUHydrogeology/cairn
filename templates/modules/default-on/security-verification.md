@@ -15,8 +15,8 @@ adopter opts out explicitly with `modules_remove: [security-verification]`.
 
 This module installs a **route, not any evidence**. It ships one
 standard-library, fixed-registry, local-only dispatcher:
-`scripts/run_security_verification.py`. Run it with `python
-scripts/run_security_verification.py local`.
+`dev/tools/run_security_verification.py`. Run it with `python
+dev/tools/run_security_verification.py local`.
 
 The dispatcher runs **no check itself**. It reads which security
 capabilities the project has installed, looks each up in a **source-owned
@@ -31,7 +31,7 @@ what comes back, and prints one aggregate verdict.
 Merged into `AGENTS.md` (mechanically, via this file's `cairn:merge-target`
 directive below):
 
-> **Security verification.** `python scripts/run_security_verification.py
+> **Security verification.** `python dev/tools/run_security_verification.py
 > local` runs every selected security capability's local evidence leg
 > through the dispatcher's fixed registry and prints one aggregate verdict.
 > A `NOT APPLICABLE` result means no installed security capability is selected
@@ -171,13 +171,13 @@ the content-security apparatus uses immutable digests and has no policy file.
 ## Command separation is not actor authentication
 
 A shell process cannot prove who invoked it. An agent with the operator's
-terminal and credentials could run `scripts/run_security_verification.py`,
+terminal and credentials could run `dev/tools/run_security_verification.py`,
 or any capability's own runner, directly — the dispatcher does not, and
 cannot, distinguish a human process from an agent process. Its authority is
 strictly **narrowing**: it can only ever refuse or downgrade a result, never
 grant a capability an adopter file did not already select and Cairn's own
 registry did not already admit. This is the same non-claim
-`bootstrap/SAFETY.md` records for Cairn's own tree.
+`install/SAFETY.md` records for Cairn's own tree.
 
 ## Trusted-checkout scope
 
@@ -199,7 +199,7 @@ capability's own runner may open a connection under its own `local` /
 
 <!-- cairn:merge-target: AGENTS.md > security-verification -->
 <!-- cairn:merge-content-start -->
-**Security verification.** `python scripts/run_security_verification.py
+**Security verification.** `python dev/tools/run_security_verification.py
 local` runs every selected security capability's local evidence leg through
 the dispatcher's fixed registry and prints one aggregate verdict. A `NOT
 APPLICABLE` result means no installed capability with a registry entry was

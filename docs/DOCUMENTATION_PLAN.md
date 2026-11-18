@@ -8,8 +8,8 @@ documentation and doctrine are organized.  It states the documentation
 **vision**, derives every artifact's placement from it, and tells
 contributors -- human or AI -- *where new content goes* and *what
 voice to use*.  It is the load-bearing artifact behind the structure:
-`bootstrap/fidelity-check.md` plays this role for the scaffold's
-fidelity contract, `bootstrap/BOOTSTRAP.md` for the install
+`install/fidelity-check.md` plays this role for the scaffold's
+fidelity contract, `install/BOOTSTRAP.md` for the install
 sequence; this file plays it for Cairn's documentation and doctrine.
 
 The `documentation-plan` default-on module ships **a forkable copy**
@@ -74,9 +74,9 @@ how something is built or organized**.  The layer has two ranges:
   organization of *one domain* and lives **in that domain**.  A
   domain-governance doc names the things it governs without living
   among each of them.  Examples in the Cairn tree:
-  * `cairn/bootstrap/BOOTSTRAP.md` governs the install sequence +
+  * `cairn/install/BOOTSTRAP.md` governs the install sequence +
     scaffold contract; lives in `bootstrap/`.
-  * `cairn/bootstrap/fidelity-check.md` governs the fidelity
+  * `cairn/install/fidelity-check.md` governs the fidelity
     contract; lives in `bootstrap/`.
   * **This file** (`cairn/docs/DOCUMENTATION_PLAN.md`) governs
     documentation placement and lives in `docs/`.  Organizing
@@ -126,7 +126,7 @@ Cairn's `docs/` is tier-light (not stratified into quickstart /
 user-guide / theory / reference / developer the way a domain
 project's `docs/` typically is); the methodology's surface area is
 narrower than a domain codebase.  The descriptive layer also hosts
-`cairn/case-studies/` (current-state pedagogical content describing
+`cairn/docs/case-studies/` (current-state pedagogical content describing
 real deployments).
 
 Person-facing guidance explains what a person can ask and decide. An
@@ -147,7 +147,7 @@ question -- *what is it doing?*
   explain their rationale but does not replace them.
 * **Prescribing how *one domain* is organized** -> the governing
   layer's domain-local range, **in that domain** (e.g.,
-  `cairn/bootstrap/BOOTSTRAP.md`, `cairn/bootstrap/fidelity-
+  `cairn/install/BOOTSTRAP.md`, `cairn/install/fidelity-
   check.md`, this file in `cairn/docs/`).
 * **Deliberating what to build, or how the team decides** -> the
   **deliberation layer**, `cairn/dev/` (Goal 1 substrate; the
@@ -163,13 +163,13 @@ question -- *what is it doing?*
 
 The one qualifier that does the most work is **cross-cutting**.
 "Prescribes how to build" alone is too broad: a section of
-`cairn/bootstrap/BOOTSTRAP.md` saying "to add a default-on module,
+`cairn/install/BOOTSTRAP.md` saying "to add a default-on module,
 update `_DEFAULT_ON_MODULES` and `_MODULE_MAPPINGS`" prescribes
 steps, but it is *local* how-to for one surface (the scaffold's
 module registry) as it exists today, not cross-cutting doctrine.
 It is descriptive-layer content -- description of current reality
 plus the procedure to extend it -- and stays in
-`cairn/bootstrap/`.  Local procedure does not promote a file to
+`cairn/install/`.  Local procedure does not promote a file to
 root governing doctrine; only cross-cutting, always-relevant
 prescription does.
 
@@ -184,15 +184,15 @@ studies/`, and the `cairn/templates/` surface that ships
 adopter-facing doctrine), **not** every directory.
 
 **Outside the map** -- software and its fixtures: the bootstrap
-machinery (`cairn/bootstrap/scaffold.py` + the test harness under
-`cairn/bootstrap/tests/`), the helper scripts (`cairn/scripts/`),
+machinery (`cairn/install/scaffold.py` + the test harness under
+`cairn/tests/`), the helper scripts (`cairn/tests/`),
 the module + dimension assets (`cairn/templates/modules/`,
 `cairn/templates/dimensions/`, `cairn/templates/onboarding/`,
 `cairn/templates/presets/`).  A directory's landmark files
 (`README.md`, `BOOTSTRAP.md`) are in the map even when the
 directory's contents are not.
 
-`cairn/case-studies/` is *in* the map -- a descriptive-layer
+`cairn/docs/case-studies/` is *in* the map -- a descriptive-layer
 satellite -- because a case study is a pedagogical description
 of a deployment.  `cairn/templates/` is *out*: it is a runnable
 asset library the docs cite, not documentation itself.
@@ -206,7 +206,7 @@ navigate *to* as a starting point.  The UPPERCASE set, repo-wide:
 
 * **Entry** -- `README.md`, `BOOTSTRAP.md`, `CHANGELOG.md`,
   `SECURITY.md`, `PROVENANCE.md`, `SAFETY.md`.
-* **Domain-governance maps** -- `cairn/bootstrap/BOOTSTRAP.md`,
+* **Domain-governance maps** -- `cairn/install/BOOTSTRAP.md`,
   `cairn/docs/DOCUMENTATION_PLAN.md`.
 * **Roadmap boards** (self-hosted in `cairn/dev/`) --
   `cairn/dev/PLANNING.md`.
@@ -432,3 +432,11 @@ do not auto-propagate.
 * **Doc-governance rule**: `cairn/docs/methodology/doc-governance.md`
   carries the layer-2 / layer-3 split's *methodology rationale*
   (this file carries its *concrete placement procedure*).
+
+## Repository folder roles
+
+`install/` contains the installer and its inputs; `templates/` contains files
+installed into projects. `tests/` contains Cairn tests and supporting tools;
+`release/` contains release and re-anchor machinery. `dev/` holds Cairn records,
+state and installed tools under `dev/tools/`. Case studies live in
+`docs/case-studies/`.

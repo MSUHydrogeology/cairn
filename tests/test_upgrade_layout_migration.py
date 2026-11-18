@@ -10,8 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap import scaffold
-from bootstrap._scaffold import layout_migration as migration
+from install import scaffold
+from install._scaffold import layout_migration as migration
 
 
 LOCK = "dev/.cairn/cairn-lock.yml"

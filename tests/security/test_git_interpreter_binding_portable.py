@@ -20,8 +20,8 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap._scaffold import install
-from bootstrap._scaffold.cli import main as scaffold_main
+from install._scaffold import install
+from install._scaffold.cli import main as scaffold_main
 
 
 SESSION_PATH = Path(__file__).resolve().parents[3] / "tools" / "session.py"

@@ -7,10 +7,10 @@ Promises:
 """
 from pathlib import Path
 
-from bootstrap import scaffold
+from install import scaffold
 
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 _PLAN_TEMPLATES = (

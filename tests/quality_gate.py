@@ -142,7 +142,7 @@ class GateReport:
 # Every run echoes the exact seed used; first-failure reports its
 # seed so the failure is reproducible.
 
-_DEFAULT_TEST_DIR = "bootstrap/tests"
+_DEFAULT_TEST_DIR = "tests"
 
 
 def _run_order_independence(
@@ -244,7 +244,7 @@ _PROJECT_DENYLIST: frozenset[str] = frozenset({
 _ALL_NEUTRALITY_TOKENS = _VENDOR_DENYLIST | _PROJECT_DENYLIST
 
 _NEUTRALITY_SCAN_ROOTS = (
-    "dimensions", "bootstrap", "scripts", "on-ramp", "docs", "examples",
+    "install", "docs", "examples",
 )
 
 _VENDOR_OK_BEGIN_RE = re.compile(
@@ -316,7 +316,10 @@ def _scan_neutrality_file(
                     ))
         return findings
 
-    # Rule: <!-- case-study --> outside cairn/case-studies/ fails
+    if rel.startswith("docs/case-studies/"):
+        return [Finding("neutrality", "info", rel, 1, "case-study directory exemption")]
+
+    # Rule: <!-- case-study --> outside cairn/docs/case-studies/ fails
     # (cannot silence prose elsewhere via a misplaced marker).
     # A case-study mention inside prose (backticks / mid-sentence) is
     # documentation of the syntax, not a live marker -- require the
@@ -324,12 +327,12 @@ def _scan_neutrality_file(
     case_study_exempt = False
     for lineno, line in enumerate(lines, start=1):
         if _CASE_STUDY_RE.search(line) and _is_directive_only_line(line):
-            if rel.startswith("case-studies/"):
+            if rel.startswith("docs/case-studies/"):
                 case_study_exempt = True
             else:
                 findings.append(Finding(
                     "neutrality", "fail", rel, lineno,
-                    "case-study marker outside cairn/case-studies/ "
+                    "case-study marker outside cairn/docs/case-studies/ "
                     "(cannot exempt non-case-study files)",
                 ))
     if case_study_exempt:
@@ -468,12 +471,9 @@ def _scan_neutrality_file(
 #: comment lines included, and for the directive-forbidden rule, since
 #: those files ship to adopter trees and a leak would propagate.
 _NEUTRALITY_FILE_SUFFIXES: dict[str, tuple[str, ...]] = {
-    "dimensions": (".md",),
-    "on-ramp": (".md",),
     "docs": (".md",),
     "examples": (".md", ".yml", ".yaml"),
-    "bootstrap": (".md",),  # BOOTSTRAP.md, SAFETY.md, and bootstrap/tests/ .md
-    "scripts": (".md",),    # rare; scripts/*.md if any, NOT .py code
+    "install": (".md",),
     "templates": (".md", ".yml", ".yaml", ".py", ".toml", ".json", ".txt"),
 }
 
@@ -526,7 +526,7 @@ def _run_neutrality(repo_root: Path) -> list[Finding]:
 
 _DEFAULT_SHINGLE_SIZE = 5
 _DEFAULT_JACCARD_THRESHOLD = 0.75
-_R1_SCAN_ROOTS = ("dimensions", "on-ramp", "docs")
+_R1_SCAN_ROOTS = ("install/dimensions", "install/on-ramp", "docs")
 #: R6 scans production code under these roots only.  ``bootstrap/tests/``
 #: is excluded because pytest discovers test classes / functions by
 #: name pattern (``Test*`` / ``test_*``), not by static reference --
@@ -535,9 +535,9 @@ _R1_SCAN_ROOTS = ("dimensions", "on-ramp", "docs")
 #: false-positive class, add to ``_UNUSED_DEF_WHITELIST`` rather than
 #: expanding this list.
 _R6_SCAN_ROOTS = (
-    "scripts", "bootstrap", "templates/modules",
+    "install", "release", "templates/modules",
 )
-_R6_EXCLUDE_DIRS = ("bootstrap/tests",)
+_R6_EXCLUDE_DIRS = ("tests",)
 
 
 def _word_shingles(text: str, size: int) -> set[tuple[str, ...]]:

@@ -26,14 +26,14 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 sys.path.insert(0, str(CAIRN_ROOT))
 
 from bootstrap import verify_integrity  # noqa: E402
-from bootstrap.scaffold import main, read_lockfile  # noqa: E402
+from install.scaffold import main, read_lockfile  # noqa: E402
 
 pytestmark = pytest.mark.skipif(
     not TEMPLATES_ROOT.exists(), reason="Cairn templates not available"
@@ -204,7 +204,7 @@ def test_main_documented_invocation(tmp_path: Path) -> None:
 # Forked-facade / dormant-engine advisory (foldback rollup #4)
 # ---------------------------------------------------------------------------
 
-from bootstrap._scaffold.lockfile import (  # noqa: E402
+from install._scaffold.lockfile import (  # noqa: E402
     forked_facade_findings,
     format_forked_facade_warning,
 )
@@ -272,7 +272,7 @@ import subprocess  # noqa: E402
 import time  # noqa: E402
 from typing import Callable, NamedTuple  # noqa: E402
 
-from bootstrap._scaffold.lockfile import _emit_lock_yaml  # noqa: E402
+from install._scaffold.lockfile import _emit_lock_yaml  # noqa: E402
 
 _VERIFY_PY = CAIRN_ROOT / "bootstrap" / "verify_integrity.py"
 _CAP = 256 * 1024
@@ -992,7 +992,7 @@ def test_a_file_swapped_for_a_symlink_after_the_path_walk_is_refused(
 # The slot note: which slots it lists, what it says, what it never prints
 # ---------------------------------------------------------------------------
 
-from bootstrap._scaffold import slotmerge as engine_slots  # noqa: E402
+from install._scaffold import slotmerge as engine_slots  # noqa: E402
 
 _HELD = "still holds the text Cairn shipped"
 

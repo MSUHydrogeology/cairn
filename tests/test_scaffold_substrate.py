@@ -39,7 +39,7 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 LAUNCHER = CAIRN_ROOT / "bootstrap" / "scaffold.py"
@@ -179,7 +179,7 @@ def test_trust_anchor_imports_are_owner_specific_not_runtime_isolated(tmp_path):
     probe = textwrap.dedent(f"""
         import sys
         sys.path.insert(0, {str(CAIRN_ROOT)!r})
-        import bootstrap.security_check  # imports from bootstrap._scaffold.config
+        import bootstrap.security_check  # imports from install._scaffold.config
         loaded = sorted(
             n.split(".")[-1] for n in sys.modules
             if n.startswith("bootstrap._scaffold.")
@@ -237,7 +237,7 @@ def test_F1_sitecustomize_canonical_preload_is_refused(tmp_path):
     (decoy / "bootstrap" / "_scaffold" / "__init__.py").write_text(
         'HIJACKED = True\ndef main(): print("PWNED"); return 0\n', encoding="utf-8"
     )
-    (decoy / "sitecustomize.py").write_text("import bootstrap._scaffold\n", encoding="utf-8")
+    (decoy / "sitecustomize.py").write_text("import install._scaffold\n", encoding="utf-8")
     proc = _run([str(LAUNCHER)], cwd=tmp_path, env_extra={"PYTHONPATH": str(decoy)})
     assert "PWNED" not in proc.stdout, "attacker main() executed -- preload bypass"
     assert proc.returncode != 0
@@ -300,7 +300,7 @@ def test_F4_failed_load_leaves_clean_namespace_and_retry_is_clean(tmp_path):
 
 # --- the import boundary mediates DIRECT engine child imports --------------
 #
-# The launcher-installed finder did not mediate `import bootstrap._scaffold.<m>`
+# The launcher-installed finder did not mediate `import install._scaffold.<m>`
 # (no launcher in the call path) -- the route Stages 4/5 + the canonical-identity
 # contract use. The boundary now lives in bootstrap/_scaffold/_guard.py, installed
 # by the engine __init__ as its first action, so it runs before ANY child resolves.
@@ -311,7 +311,7 @@ def test_R1_guard_rejects_a_polluted_cached_child(tmp_path, monkeypatch):
     """A `bootstrap._scaffold.*` child preloaded from outside the engine dir must
     be refused -- a polluted cached namespace is not the Cairn engine."""
     import types  # noqa: PLC0415
-    from bootstrap._scaffold import _guard as G  # noqa: PLC0415
+    from install._scaffold import _guard as G  # noqa: PLC0415
     evil = types.ModuleType("bootstrap._scaffold.evilchild")
     evil.__file__ = str(tmp_path / "evil.py")            # outside the engine dir
     monkeypatch.setitem(sys.modules, "bootstrap._scaffold.evilchild", evil)
@@ -322,7 +322,7 @@ def test_R1_guard_rejects_a_polluted_cached_child(tmp_path, monkeypatch):
 def test_R1_direct_child_symlink_escape_is_refused_end_to_end(tmp_path):
     """The reviewer's direct-import reproducer, against the real guard
     architecture: a fake engine whose __init__ installs the guard (as the real
-    one does) refuses a symlinked-out child on `import bootstrap._scaffold.<m>`."""
+    one does) refuses a symlinked-out child on `import install._scaffold.<m>`."""
     root = tmp_path / "cairn"
     eng = root / "bootstrap" / "_scaffold"
     eng.mkdir(parents=True)
@@ -339,7 +339,7 @@ def test_R1_direct_child_symlink_escape_is_refused_end_to_end(tmp_path):
     (eng / "security.py").symlink_to(outside / "security.py")
     # cwd=tmp_path has no bootstrap/ at its top, so the fake engine (on PYTHONPATH)
     # wins over the real repo -- a neutral cwd is essential here.
-    proc = _run(["-c", "import bootstrap._scaffold.security"], cwd=tmp_path,
+    proc = _run(["-c", "import install._scaffold.security"], cwd=tmp_path,
                 env_extra={"PYTHONPATH": str(root)})
     assert proc.returncode != 0, "direct symlinked-child import was not refused"
     assert "escapes the Cairn root" in proc.stderr
@@ -374,9 +374,9 @@ def test_RR2_symlinked_guard_refused_via_launcher(tmp_path):
 
 
 def test_RR2_symlinked_guard_refused_via_direct_import(tmp_path):
-    """Finding 1: same defense on the direct `import bootstrap._scaffold` path."""
+    """Finding 1: same defense on the direct `import install._scaffold` path."""
     boot = _real_engine_with_symlinked_guard(tmp_path)
-    proc = _run(["-c", "import bootstrap._scaffold"], cwd=tmp_path,
+    proc = _run(["-c", "import install._scaffold"], cwd=tmp_path,
                 env_extra={"PYTHONPATH": str(boot.parent)})
     assert "PWNED_GUARD" not in proc.stdout, "symlinked guard executed (direct import)"
     assert proc.returncode != 0
@@ -388,7 +388,7 @@ def test_RR2_cached_child_without_file_is_rejected(monkeypatch):
     """Finding 2: a synthetic cached child with no __file__ cannot satisfy source
     verification -- it must be refused, not trusted by omission."""
     import types  # noqa: PLC0415
-    from bootstrap._scaffold import _guard as G  # noqa: PLC0415
+    from install._scaffold import _guard as G  # noqa: PLC0415
     evil = types.ModuleType("bootstrap._scaffold.evil_nofile")   # deliberately no __file__
     monkeypatch.setitem(sys.modules, "bootstrap._scaffold.evil_nofile", evil)
     with pytest.raises(G.ScaffoldLoaderError, match="no source path"):

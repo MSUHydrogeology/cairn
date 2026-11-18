@@ -30,7 +30,7 @@ from tests.test_verify_counts import (
     _BINDING_MUTATIONS,
 )
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
 GAUGE = ROOT / "tools" / "gauge.py"

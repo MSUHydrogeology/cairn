@@ -34,7 +34,7 @@ The guidance below is a practical summary, not a complete testing curriculum.
 > preservation, the writer round trip and the public `main` result. Its
 > independent synthetic row checks P=100, ET=30, runoff=20, recharge=40 and
 > dS=10 mm; closure alone is not treated as proof that the inputs were
-> preserved. The example has no private reach in `scripts/test_coupling.py`.
+> preserved. The example has no private reach in `dev/tools/test_coupling.py`.
 
 > **Worked useful/vacuous/broken contrast.** For a synthetic monthly row,
 > predeclare P=100, ET=30, runoff=20 and recharge=40 mm; the stated balance
@@ -176,7 +176,7 @@ reads would list every new plan as waiting.
 
 ### Plan template: The summary line
 
-`python tools/board.py --json` prints
+`python dev/tools/board.py --json` prints
 it as `in_brief` and a view shows it in place of the title; a longer `## In brief`
 section below the header is separate and is not read by the board.
 

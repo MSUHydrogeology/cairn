@@ -58,19 +58,19 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 if str(CAIRN_ROOT) not in sys.path:
     sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap._scaffold.config import (  # noqa: E402
+from install._scaffold.config import (  # noqa: E402
     ProfileGrammarError,
     load_config,
 )
-from bootstrap.scaffold import main  # noqa: E402
-from bootstrap._scaffold import config as _config  # noqa: E402
-from bootstrap._scaffold.config import (  # noqa: E402
+from install.scaffold import main  # noqa: E402
+from install._scaffold import config as _config  # noqa: E402
+from install._scaffold.config import (  # noqa: E402
     ProfileGrammarError,
     _minimal_yaml_parse,
     load_config,
@@ -718,7 +718,7 @@ class TestReservedSchemaKey:
     that ordering the reserved key buys nothing."""
 
     def _load(self, tmp_path: Path, text: str):
-        from bootstrap._scaffold.config import load_config  # noqa: PLC0415
+        from install._scaffold.config import load_config  # noqa: PLC0415
         path = tmp_path / "profile.yml"
         path.write_text(text, encoding="utf-8")
         return load_config(path)
@@ -765,7 +765,7 @@ def _help_block() -> str:
     """The profile example inside ``cli.__doc__``, at its **raw** four-space
     indentation -- which is exactly the copy-paste-out-of-a-rendered-page shape
     the grammar has to accept."""
-    from bootstrap._scaffold import cli  # noqa: PLC0415
+    from install._scaffold import cli  # noqa: PLC0415
     doc = cli.__doc__ or ""
     assert doc.count(_HELP_ANCHOR) == 1, (
         f"expected exactly one {_HELP_ANCHOR!r} in cli.__doc__, found "
@@ -787,7 +787,7 @@ def _writer_outputs(tmp_path: Path) -> dict[str, str]:
     temp tree.  Never reconstructed by the test: the first revision of this
     scope verified the init-lock writer against a *synthesized* template and
     the claim was true of the synthesis and false of the writer."""
-    from bootstrap._scaffold.upgrade import (  # noqa: PLC0415
+    from install._scaffold.upgrade import (  # noqa: PLC0415
         _PROFILE_REL, _self_heal_profile_config,
         _write_init_lock_profile_template,
     )
@@ -930,7 +930,7 @@ class TestParityCorpusSweep:
         """The corpus is not only *parseable* -- it passes the closed key set
         too, so the documentation Cairn ships is a profile an adopter can
         actually install."""
-        from bootstrap._scaffold.config import load_config  # noqa: PLC0415
+        from install._scaffold.config import load_config  # noqa: PLC0415
 
         bootstrap_md = _BOOTSTRAP_MD.read_text(encoding="utf-8")
         texts = [
@@ -955,7 +955,7 @@ class TestNoRuntimeYamlDependency:
         "import sys\n"
         "sys.modules['yaml'] = None\n"
         "sys.path.insert(0, {root!r})\n"
-        "from bootstrap.scaffold import main\n"
+        "from install.scaffold import main\n"
         "sys.exit(main({argv!r}))\n"
     )
 

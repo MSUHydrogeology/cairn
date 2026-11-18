@@ -36,7 +36,7 @@ from types import ModuleType, SimpleNamespace
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 MODULE_PATH = CAIRN_ROOT / "templates" / "skills" / "_lib" / "session.py"

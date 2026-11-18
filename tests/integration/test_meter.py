@@ -28,11 +28,11 @@ from types import SimpleNamespace
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(ROOT))
-from bootstrap.scaffold import main as scaffold_main  # noqa: E402
+from install.scaffold import main as scaffold_main  # noqa: E402
 METER = ROOT / "tools/meter.py"
 spec = importlib.util.spec_from_file_location("meter_reader", METER)
 meter = importlib.util.module_from_spec(spec)

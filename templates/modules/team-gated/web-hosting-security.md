@@ -49,9 +49,9 @@ which is which. Every check reports `present` / `missing` / `invalid` on its own
 | `local` | **loopback only** | GET/HEAD | anyone, including an agent |
 | `deployed-passive` | the declared HTTPS origin | GET/HEAD only | the **Maintainer**, by hand |
 
-`python scripts/web_hosting_security.py local`
+`python dev/tools/web_hosting_security.py local`
 
-`python scripts/web_hosting_security.py deployed-passive --authorize-base-url <exact normalized https origin>`
+`python dev/tools/web_hosting_security.py deployed-passive --authorize-base-url <exact normalized https origin>`
 
 The deployed leg is **unauthenticated in v1**, sends only declared `GET` and
 `HEAD`, performs **no crawl** and sends **no payload**, and refuses unless

@@ -146,22 +146,21 @@ gets installed. Start with the smallest configuration that fits the work.
 An install writes ordinary files into your repository:
 
 - **`AGENTS.md` and `VENDOR.md`** — the operational rules your agent reads
-  (`VENDOR.md` is renamed to the file your tool loads automatically, such as
-  `CLAUDE.md` or `GEMINI.md`).
+  (`VENDOR.md` is available as a thin wrapper for tools that need one).
 - **`dev/`** — templates for proposals and plans, roadmap boards, and one guide
   per installed module, plus `dev/.cairn/` to store the lockfile and install
   state.
-- **`tools/` and `scripts/`** — standard-library Python helpers for session
-  handoffs (`tools/session.py`), reading the board (`tools/board.py`),
-  coordinating file edits (`tools/intent.py`), checking file and line citations
-  (`scripts/claim_check.py`), checking Markdown links (`scripts/link_check.py`),
-  and scanning agent-instruction files (`scripts/run_portable_security_sweeps.py`).
+- **`dev/tools/`** — standard-library Python helpers for session
+  handoffs (`dev/tools/session.py`), reading the board (`dev/tools/board.py`),
+  coordinating file edits (`dev/tools/intent.py`), checking file and line citations
+  (`dev/tools/claim_check.py`), checking Markdown links (`dev/tools/link_check.py`),
+  and scanning agent-instruction files (`dev/tools/run_portable_security_sweeps.py`).
 
 Your project conventions and local instructions remain yours to change. Updates
 use a three-way merge so local customizations are retained, with conflicts
 resolved explicitly.
 
-See [the on-ramp](on-ramp/README.md) for choosing a profile,
+See [the on-ramp](install/on-ramp/README.md) for choosing a profile,
 [tool usage](docs/tool-usage.md) for the command-line helpers, and
 [the glossary](docs/glossary.md) for unfamiliar terms. Useful adaptations can
 be proposed back to Cairn.
@@ -183,27 +182,27 @@ Then choose how much to adopt:
 - **Read the guidance.** Use [the methodology](docs/methodology/) as a handbook without
   installing anything.
 - **Install it into a project.** Copy a starter profile from
-  [`bootstrap/profiles/`](bootstrap/profiles/), preview what it will write, and
-  run the installer (full walkthrough in [the bootstrap procedure](bootstrap/BOOTSTRAP.md)):
+  [`install/profiles/`](install/profiles/), preview what it will write, and
+  run the installer (full walkthrough in [the bootstrap procedure](install/BOOTSTRAP.md)):
 
   Before running a release checkout, choose the ordinary official-channel or
   optional signature-verified route in
-  [the provenance guide](bootstrap/PROVENANCE.md#choosing-an-adopter-verification-route).
+  [the provenance guide](install/PROVENANCE.md#choosing-an-adopter-verification-route).
   A failed check on the signature-verified route is a stop; it never falls back
   to the ordinary route. Run the commands below from the checkout that route
   gives you, not from a clone you have not checked. On the official-release
-  route, run `python bootstrap/verify_integrity.py --target /path/to/your-repo`
+  route, run `python install/verify_integrity.py --target /path/to/your-repo`
   from that checkout right after the install, before you edit any file, and put
   the release line in the install commit message
-  ([how](bootstrap/PROVENANCE.md#record-the-selection-in-the-target-repository)).
+  ([how](install/PROVENANCE.md#record-the-selection-in-the-target-repository)).
 
   ```bash
-  python bootstrap/scaffold.py --config profile.yml --target /path/to/your-repo --summary
-  python bootstrap/scaffold.py --config profile.yml --target /path/to/your-repo
+  python install/scaffold.py --config profile.yml --target /path/to/your-repo --summary
+  python install/scaffold.py --config profile.yml --target /path/to/your-repo
   ```
 
 For an existing scientific codebase, the
-[readiness report](templates/codebase-readiness-report.md) helps identify gaps
+[readiness report](install/codebase-readiness-report.md) helps identify gaps
 in tests, data handling, reproducibility, and scientific assumptions before
 choosing a configuration.
 
@@ -213,7 +212,7 @@ Cairn is in active development. This checkout is version **0.7.0**
 (2026-11-13); see [the changelog](CHANGELOG.md) for its changes.
 
 Cairn was developed by Anthony Kendall through work on
-[modflow_tools](case-studies/modflow_tools.md) and [LHM](case-studies/lhm.md),
+[modflow_tools](docs/case-studies/modflow_tools.md) and [LHM](docs/case-studies/lhm.md),
 and this repository uses the method for its own development. These are
 deployments by the same human maintainer, not independent adoptions.
 
@@ -236,17 +235,21 @@ Cairn's scanners and integrity checks have limits; a clean result is not proof
 that a file or operation is safe. Read [the security statement](SECURITY.md)
 before installing third-party instructions or running agents on sensitive work.
 
+See [the documentation plan](docs/DOCUMENTATION_PLAN.md) for folder roles.
+
 ## Repository guide
 
 | Directory | Contents |
 | --- | --- |
 | [docs/methodology/](docs/methodology/) | The methodology: decisions, review, roles, session continuity, and rationale. |
 | [templates/](templates/) | Instructions, document templates, and optional modules installed into a project. |
-| [dimensions/](dimensions/) | How the configuration varies with the codebase and team. |
-| [bootstrap/](bootstrap/) | Installation, upgrades, integrity checks, and their tests. |
+| [install/dimensions/](install/dimensions/) | How the configuration varies with the codebase and team. |
+| [install/](install/) | Installation, upgrades, and integrity checks. |
+| [tests/](tests/) | Cairn tests and their supporting tools. |
+| [release/](release/) | Release and re-anchor machinery. |
 | [docs/](docs/README.md) | Start here: a map of the guides. |
 | [examples/](examples/) | Small repositories showing the workflow. |
-| [case-studies/](case-studies/) | Accounts of using Cairn in research-software projects. |
+| [docs/case-studies/](docs/case-studies/) | Accounts of using Cairn in research-software projects. |
 | [dev/](dev/) | Cairn's own proposals, plans, strategy, and development record. |
 
 ## License and citation

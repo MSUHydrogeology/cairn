@@ -2,36 +2,36 @@
 """Scaffold launcher + facade.
 
 The scaffold *engine* (install / upgrade / 3-way merge / lockfile / containment)
-lives in the private package ``bootstrap/_scaffold/``. This module is the **thin
+lives in the private package ``install/_scaffold/``. This module is the **thin
 launcher and public facade**: every existing entry point — ``from
-bootstrap.scaffold import main`` / ``read_lockfile`` / ``_MODULE_MAPPINGS`` / …,
-``from bootstrap import scaffold as s; s.X``, and ``python bootstrap/scaffold.py
+install.scaffold import main`` / ``read_lockfile`` / ``_MODULE_MAPPINGS`` / …,
+``from install import scaffold as s; s.X``, and ``python install/scaffold.py
 …`` — keeps working unchanged.
 
 Security boundary
 -----------------
-``bootstrap/`` is a **namespace package** (no ``__init__.py``), so plain
-``import bootstrap._scaffold`` would trust ``sys.path``. The launcher defends the
+``install/`` is a **namespace package** (no ``__init__.py``), so plain
+``import install._scaffold`` would trust ``sys.path``. The launcher defends the
 launcher load path:
 
 1. **File-relative, fail-closed parent load.** The engine package is loaded from
    a directory computed next to *this* file, never via ``sys.path``, and refused
    if it resolves outside the Cairn root.
-2. **Verified canonical cache.** A pre-existing ``sys.modules["bootstrap._scaffold"]``
+2. **Verified canonical cache.** A pre-existing ``sys.modules["install._scaffold"]``
    is accepted only if its ``__file__`` / ``__path__`` match the expected engine
    (a hostile ``sitecustomize`` preload is refused), and its cached child
    namespace is re-validated through the engine guard.
-3. **Clean failure.** If init fails, every newly-added ``bootstrap._scaffold`` /
-   ``bootstrap._scaffold.*`` entry is removed so a retry starts clean.
+3. **Clean failure.** If init fails, every newly-added ``install._scaffold`` /
+   ``install._scaffold.*`` entry is removed so a retry starts clean.
 
-The **engine submodule** boundary — every ``bootstrap._scaffold.<child>`` import,
+The **engine submodule** boundary — every ``install._scaffold.<child>`` import,
 including the **direct** imports Stages 4/5 and the canonical-identity contract
-use — is owned by ``bootstrap/_scaffold/_guard.py``, which the engine ``__init__``
+use — is owned by ``install/_scaffold/_guard.py``, which the engine ``__init__``
 installs as its first action (it necessarily runs before any child resolves,
 launcher path or direct). See that module.
 
-Identity + patch-through: the launcher makes ``bootstrap.scaffold``
-**the same object** as ``bootstrap._scaffold`` (``sys.modules[__name__] = engine``)
+Identity + patch-through: the launcher makes ``install.scaffold``
+**the same object** as ``install._scaffold`` (``sys.modules[__name__] = engine``)
 — one identity per file, the full public surface present by construction, and
 patch-through for free.
 """
@@ -41,7 +41,7 @@ import importlib.util
 import sys
 from pathlib import Path
 
-_CANONICAL = "bootstrap._scaffold"
+_CANONICAL = "install._scaffold"
 
 
 class ScaffoldLoaderError(RuntimeError):
@@ -62,7 +62,7 @@ def _verify_within_root(path: Path, cairn_root: Path) -> Path:
 
 
 def _verify_cached_engine(cached, engine_init: Path, engine_dir: Path) -> None:
-    """A pre-existing ``bootstrap._scaffold`` must match the expected engine
+    """A pre-existing ``install._scaffold`` must match the expected engine
     (``__file__`` and search locations) — a hostile preload must not satisfy the
     canonical name."""
     cached_file = getattr(cached, "__file__", None)
@@ -92,7 +92,7 @@ def _revalidate_cached_namespace(cached, engine_dir: Path, cairn_root: Path) -> 
 
 
 def _load_engine():
-    launcher_dir = Path(__file__).resolve().parent           # <cairn>/bootstrap
+    launcher_dir = Path(__file__).resolve().parent           # <cairn>/install
     cairn_root = launcher_dir.parent                         # <cairn>
     engine_dir = launcher_dir / "_scaffold"
     engine_init = engine_dir / "__init__.py"
@@ -138,6 +138,6 @@ _engine = _load_engine()
 if __name__ == "__main__":
     sys.exit(_engine.main())
 else:
-    # Facade: bootstrap.scaffold IS the engine object (single identity +
+    # Facade: install.scaffold IS the engine object (single identity +
     # patch-through). Must be the last statement.
     sys.modules[__name__] = _engine

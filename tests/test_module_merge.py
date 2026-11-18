@@ -42,7 +42,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap.scaffold import (  # noqa: E402
+from install.scaffold import (  # noqa: E402
     DuplicateSlotError,
     check_slot_fidelity,
     parse_module_merge_directives,
@@ -53,8 +53,8 @@ from bootstrap.scaffold import (  # noqa: E402
 def test_public_install_escapes_merge_and_fidelity_slot_names(
     tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch,
 ) -> None:
-    from bootstrap import scaffold
-    from bootstrap._scaffold import cli
+    from install import scaffold
+    from install._scaffold import cli
 
     target = tmp_path / "target"
     target.mkdir()
@@ -109,7 +109,7 @@ def test_rerunning_an_install_merges_only_empty_slots_and_gives_each_conflict_it
 
     The Cairn root is a copy of ``templates/`` in which the module declares a
     second merge slot, since the shipped module declares only one."""
-    from bootstrap import scaffold
+    from install import scaffold
 
     cairn_root = Path(__file__).resolve().parent.parent.parent
     root = tmp_path / "cairn-root"

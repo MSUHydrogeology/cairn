@@ -97,7 +97,7 @@ from bootstrap.tests.test_security_net import (  # noqa: E402
     tls_server_context,
 )
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 REPO_ROOT = repository_root(Path(__file__))
 TEMPLATE_DIR = REPO_ROOT / "templates" / "modules" / "team-gated"

@@ -11,7 +11,7 @@ Usage
 -----
 ::
 
-    python bootstrap/scaffold.py --config profile.yml --target /path/to/repo
+    python install/scaffold.py --config profile.yml --target /path/to/repo
 
 Config YAML format
 ------------------
@@ -42,7 +42,7 @@ Config YAML format
 
 The ``--cairn-root`` flag overrides the auto-detected Cairn repo
 root (defaults to the directory two levels above this script's
-location: ``bootstrap/scaffold.py`` → ``bootstrap/`` → ``cairn/``).
+location: ``install/scaffold.py`` → ``bootstrap/`` → ``cairn/``).
 
 The ``--dry-run`` flag prints the plan without writing any files.
 """
@@ -406,7 +406,7 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"  [info] dimension profile selects optional template(s): "
             f"{names}.  Record each under `optional_templates:` in the "
-            "fidelity manifest (bootstrap/fidelity-check.md) so the gate "
+            "fidelity manifest (install/fidelity-check.md) so the gate "
             "is auditable.",
             file=sys.stderr,
         )

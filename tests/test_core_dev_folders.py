@@ -25,10 +25,10 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap import scaffold as s  # noqa: E402
+from install import scaffold as s  # noqa: E402
 from bootstrap import verify_integrity  # noqa: E402
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
@@ -100,7 +100,7 @@ class TestScaffoldCompleteness:
         assert _install(tmp_path) == 0
         body = (tmp_path / "dev" / "strategy" / "README.md").read_text(encoding="utf-8")
         # strategy README carries no {{...}} tokens (no project_name ref)
-        from bootstrap.scaffold import find_unfilled_tokens
+        from install.scaffold import find_unfilled_tokens
         unfilled = find_unfilled_tokens(body)
         assert not unfilled, (
             f"Unfilled token(s) in dev/strategy/README.md: {unfilled}"

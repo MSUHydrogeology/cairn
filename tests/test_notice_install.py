@@ -31,10 +31,10 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap.scaffold import install_manifest, main  # noqa: E402
-from bootstrap._scaffold.lockfile import read_lockfile  # noqa: E402
+from install.scaffold import install_manifest, main  # noqa: E402
+from install._scaffold.lockfile import read_lockfile  # noqa: E402
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 

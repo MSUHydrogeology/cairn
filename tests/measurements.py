@@ -56,7 +56,9 @@ _GIT_READ_MAX_BYTES = 256 * 1024
 
 def _load_verified_git_read():
     """Execute only the fixed, caller-pinned helper buffer from this delivery."""
-    path = os.path.abspath(os.path.join(_REPO_ROOT, "tools", "git_read.py"))
+    path = os.path.abspath(os.path.join(_REPO_ROOT, "dev", "tools", "git_read.py"))
+    if not os.path.exists(path):
+        path = os.path.abspath(os.path.join(_REPO_ROOT, "tools", "git_read.py"))
     chain = []
     current = os.path.splitdrive(path)[0] + os.sep
     for part in path[len(current):].split(os.sep):
@@ -281,7 +283,7 @@ def count_preset_modules(root: Path, target: str) -> int:
     engine; that is a Maintainer-accepted trade for guarding a count the
     quickstart mirrors but that no bounded file scan can derive."""
     import sys
-    bootstrap = (root / 'bootstrap').resolve()
+    bootstrap = (root / 'install').resolve()
     if str(bootstrap) not in sys.path:
         sys.path.insert(0, str(bootstrap))
     from _scaffold import expand_preset  # Cairn's own engine; resolve-only

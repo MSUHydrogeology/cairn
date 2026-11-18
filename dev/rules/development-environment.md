@@ -79,7 +79,7 @@ Checked 2026-11-13 by a read-only directory listing and `where` over SSH.
 
 - **OpenSSL.** `test_web_hosting_security.py` (16 setup errors in the x64 run,
   one in the ARM64 run) builds certificate fixtures with `openssl`, through the
-  fixture at `bootstrap/tests/test_security_net.py:948`, and stops with
+  fixture at `tests/test_security_net.py:948`, and stops with
   "openssl is required to generate the A-7 certificate fixtures" when `PATH`
   has none. `where openssl` finds nothing on the VM. The copy found is the one
   Git for Windows ships: `C:\Program Files\Git\usr\bin\openssl.exe`.
@@ -122,7 +122,7 @@ Measured 2026-11-16 over SSH.
 - **pytest's temp folders are owner-only.** `icacls` on
   `%TEMP%\pytest-of-cairn` shows explicit entries (SYSTEM, Administrators and
   `OWNER RIGHTS`, all full control) instead of the folder above it, which
-  inherits. The meter's project `.git/config` read (`tools/meter.py`,
+  inherits. The meter's project `.git/config` read (`dev/tools/meter.py`,
   `check_acl` with role `ancestor`) refuses a project under such a folder, so a
   real meter read there reports `project_remote_unavailable`. A folder made with
   the default mode under `%TEMP%` passes; a `tempfile.mkdtemp` folder failed the

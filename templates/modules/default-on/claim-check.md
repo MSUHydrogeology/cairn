@@ -115,7 +115,7 @@ Merged into `AGENTS.md`:
 
 The `{{claim_check_command}}` token is filled from the adopter's
 profile YAML with whatever invocation runs their checker (e.g.
-`python scripts/claim_check.py`).
+`python dev/tools/claim_check.py`).
 
 The checker is a **discipline aid, not a gate** — the
 verify-before-asserting habit is the doctrine; the tool only

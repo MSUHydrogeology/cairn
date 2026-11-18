@@ -1,9 +1,9 @@
 """Engine import-boundary guard.
 
-The launcher (`bootstrap/scaffold.py`) defends the *launcher* load path. But the
+The launcher (`install/scaffold.py`) defends the *launcher* load path. But the
 accepted architecture also imports engine submodules **directly**
-(`import bootstrap._scaffold.config` at Stages 4/5; the canonical-identity
-contract names `import bootstrap._scaffold.<m>` as a supported route; the
+(`import install._scaffold.config` at Stages 4/5; the canonical-identity
+contract names `import install._scaffold.<m>` as a supported route; the
 circular-import gate imports each module clean). A finder installed only by the
 launcher does not mediate those — Python's default `PathFinder` would resolve and
 execute the child, following a submodule symlink outside the Cairn root.
@@ -11,17 +11,17 @@ execute the child, following a submodule symlink outside the Cairn root.
 This module moves the boundary to a place that **necessarily runs before every
 engine child import**: the engine package's own `__init__` installs it as its
 first action. Because Python imports a package before any of its submodules, the
-guard is in place before any `bootstrap._scaffold.<child>` resolves — whether the
+guard is in place before any `install._scaffold.<child>` resolves — whether the
 engine was loaded by the launcher or imported directly.
 
 It does two things (`install`):
 
-1. **Rejects an already-cached polluted child.** Any `bootstrap._scaffold.*`
+1. **Rejects an already-cached polluted child.** Any `install._scaffold.*`
    module already in `sys.modules` whose real source is outside the engine
    directory is refused — a preloaded child must not be trusted as the engine
    (the cached-child route the re-review flagged).
 2. **Installs a verifying finder** ahead of `PathFinder` that resolves every
-   future `bootstrap._scaffold.*` source and verifies its **real** path is within
+   future `install._scaffold.*` source and verifies its **real** path is within
    the Cairn root **before** the import machinery executes it.
 
 Threat-model note (per the re-review): a hostile `sitecustomize` / `PYTHONPATH`
@@ -38,11 +38,11 @@ import importlib.util
 import sys
 from pathlib import Path
 
-_CANONICAL = "bootstrap._scaffold"
+_CANONICAL = "install._scaffold"
 
 
 class ScaffoldLoaderError(RuntimeError):
-    """Fail-closed engine-import rejection: a `bootstrap._scaffold.*` module
+    """Fail-closed engine-import rejection: a `install._scaffold.*` module
     resolves to a path outside the Cairn root (import hijack / symlink escape)."""
 
 
@@ -58,7 +58,7 @@ def verify_within_root(path: Path, cairn_root: Path) -> Path:
 
 
 class EngineFinder(importlib.abc.MetaPathFinder):
-    """Mediates every ``bootstrap._scaffold.<sub>`` import: maps the dotted name to
+    """Mediates every ``install._scaffold.<sub>`` import: maps the dotted name to
     a source under the engine directory, verifies the **real** source is within
     the Cairn root before building the spec, and refuses an escape."""
 

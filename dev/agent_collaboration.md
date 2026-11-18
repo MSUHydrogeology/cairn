@@ -280,9 +280,9 @@ A plan is finished when accepted agent-owned scope, required reviews and applica
 ## Working tree and commits
 
 Edit functional prose (tracked text under the base-revision union of
-content-scanner roots and `scripts/prose_roots.txt`) by exact replacement or
-patch (`scripts/exact_replace.py` makes the exact replacement); never regenerate or rewrap it, list deliberate rule changes in commit
-bodies, and include `scripts/prose_diff.py` output in trivial-lane commit
+content-scanner roots and `dev/tools/prose_roots.txt`) by exact replacement or
+patch (`dev/tools/exact_replace.py` makes the exact replacement); never regenerate or rewrap it, list deliberate rule changes in commit
+bodies, and include `dev/tools/prose_diff.py` output in trivial-lane commit
 bodies, with any removed or changed rule making the edit non-trivial.
 
 For each documentation change, judge agent-directed instructions and
@@ -340,7 +340,7 @@ Anything that must survive a handoff goes in the committed `dev/` tree.
 `git commit` takes another agent's staged work under your name — always commit
 with explicit paths.
 
-**On a shared worktree, claim before you edit.** `tools/intent.py` records a
+**On a shared worktree, claim before you edit.** `dev/tools/intent.py` records a
 pre-edit work-intent so a second session can see an overlap. Both hooks are
 opt-in. The pre-commit check warns about unclaimed paths and overlaps; in its
 opt-in `block` mode it refuses only a fresh overlapping claim from a

@@ -18,7 +18,7 @@ from pathlib import Path
 from types import ModuleType
 
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
 QUALITY_GATE = ROOT / "scripts" / "quality_gate.py"

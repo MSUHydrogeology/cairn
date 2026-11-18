@@ -94,7 +94,7 @@ waits as Maintainer-gated final chunks; queue those outcomes before opening
 their work. Keep
 `<what>` under 48 characters, the board's cell width; the detail stays in the
 plan. The colon sits outside the bold, exactly as shown: with the colon
-inside the bold the board does not read the line. `python tools/board.py --maintainer` lists
+inside the bold the board does not read the line. `python dev/tools/board.py --maintainer` lists
 every artifact that carries it.
 
 ## Review

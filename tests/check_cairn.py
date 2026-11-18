@@ -109,8 +109,8 @@ _LINK_CHECK_SRC = (
 #: every self-check.  Both are deliberately NOT installed into adopters
 #: (not in ``_CORE_MAPPINGS``), and check_cairn is itself Cairn-only, so
 #: wiring them here keeps the verifier out of every adopter tree.
-_VERIFY_COUNTS_SRC = Path(__file__).resolve().parents[1] / 'scripts' / 'verify_counts.py'
-_MEASUREMENTS_SRC = Path(__file__).resolve().parents[1] / 'scripts' / 'measurements.py'
+_VERIFY_COUNTS_SRC = Path(__file__).resolve().parent / 'verify_counts.py'
+_MEASUREMENTS_SRC = Path(__file__).resolve().parent / 'measurements.py'
 
 
 def _load_module(name: str, path: Path, what: str):
@@ -625,6 +625,33 @@ def check_tree(root: Path, files: list[Path],
     return result
 
 
+def check_layout(root: Path) -> list[str]:
+    """Check the installed-source and tracked self-hosted layout."""
+    import importlib.util
+    launcher = Path(__file__).resolve().parents[1] / "install" / "scaffold.py"
+    spec = importlib.util.spec_from_file_location("_cairn_layout_scaffold", launcher)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("layout installer unavailable")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    manifest = sys.modules[spec.name].install_manifest()
+    source_root = (root / "templates").resolve()
+    errors = []
+    for source, destination, _verbatim in manifest:
+        path = (source_root / source).resolve()
+        if source_root not in path.parents or not path.is_file():
+            errors.append(f"invalid template source: {source}")
+    owned = {destination for _source, destination, _verbatim in manifest
+             if destination.startswith("dev/tools/")}
+    tracked = link_check._tracked_index_paths(root)
+    for path in tracked:
+        if path.startswith("dev/tools/") and path not in owned:
+            errors.append(f"unowned installed tool: {path}")
+        if path.startswith(("scripts/", "tools/")):
+            errors.append(f"root tool remains: {path}")
+    return errors
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog='check_cairn',
@@ -655,12 +682,27 @@ def main(argv: list[str] | None = None) -> int:
                              'archived links rot by design). Mirrors the '
                              'shipped link_check default; ignored when '
                              'explicit files are named.')
+    parser.add_argument('--layout-only', action='store_true',
+                        help='Check the tracked repository layout only.')
     args = parser.parse_args(argv)
 
     root = args.root.resolve() if args.root else repo_root()
     if not root.is_dir():
         print(f'check_cairn: root is not a directory: {root}', file=sys.stderr)
         return 2
+    if args.layout_only or not args.files:
+        try:
+            layout_errors = check_layout(root)
+        except (RuntimeError, OSError, ValueError) as exc:
+            print(f'check_cairn: layout check failed: {exc}', file=sys.stderr)
+            return 2
+        if layout_errors:
+            for error in layout_errors:
+                print(f'check_cairn: {error}', file=sys.stderr)
+            return 1
+        if args.layout_only:
+            print('check_cairn: layout OK')
+            return 0
     try:
         if args.files:
             selected = [f.resolve() for f in args.files]

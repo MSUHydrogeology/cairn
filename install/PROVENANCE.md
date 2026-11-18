@@ -64,7 +64,7 @@ document, not a subtlety you are missing.
   hand-maintained — run:
 
   ```
-  python bootstrap/scaffold.py --manifest
+  python install/scaffold.py --manifest
   ```
 
   The manifest lists each `(source → destination)` pair (and whether the
@@ -242,7 +242,7 @@ chooses, including the stronger route where its tag is signed.
 
 Right after the install, or after upgrade `--apply`, and before you edit any
 installed file, run, from the checkout you installed or upgraded with,
-`python bootstrap/verify_integrity.py --target <target-repo>`. A failure or
+`python install/verify_integrity.py --target <target-repo>`. A failure or
 reported mismatch means the installed apparatus was altered or is incomplete;
 stop and do not report a successful install under this route. The check keeps
 only a hash, so it cannot tell an edit of yours from tampering; that is why it
@@ -358,7 +358,7 @@ the artifact cannot authenticate the artifact.
 
 Export the three inputs, then run the block. It is exactly the block
 Cairn's own test suite extracts from this file and executes against
-fixture repositories (`bootstrap/tests/test_verify_ref.py`), so a change
+fixture repositories (`tests/test_verify_ref.py`), so a change
 here that breaks the procedure fails Cairn's suite rather than an
 adopter's install. For the official Cairn release route, set
 `CAIRN_CANDIDATE` to the literal
@@ -532,7 +532,7 @@ host key, with the same properties and the same limits.
    ```
 
    Verified behaviour (`git 2.53.0`, `as_of 2026-08-03`, pinned by
-   `bootstrap/tests/test_verify_ref.py`): git checks the window against
+   `tests/test_verify_ref.py`): git checks the window against
    the **tagger timestamp inside the signed payload**, not against the
    current clock — a tag dated before `valid-before` verifies, one dated
    after refuses. Read the timestamp being judged with
@@ -555,7 +555,7 @@ channels before each upgrade if that risk matters to you.
 
 ## `verify-ref.sh` — a convenience, downstream of the bootstrap
 
-`bootstrap/container/verify-ref.sh` performs the same resolve →
+`install/container/verify-ref.sh` performs the same resolve →
 name-bind → verify-the-object-id sequence with one command, and the
 contained-kernel recipe uses it as its Phase 1 gate.
 
@@ -565,7 +565,7 @@ Use it *after* the bootstrap above has established that the checkout is
 what it claims to be, never instead of it.
 
 ```sh
-bootstrap/container/verify-ref.sh --signers ~/.config/cairn/release-signers <cairn> v0.4.0
+install/container/verify-ref.sh --signers ~/.config/cairn/release-signers <cairn> v0.4.0
 ```
 
 Its exit contract, which is what a caller should judge:
@@ -656,9 +656,9 @@ maintainer's:
   tag archived beside a claim of signing is not correctable in place.
 * **The security gate runs against the clean commit first; the tag is
   signed second, naming that same commit.** Run
-  `python bootstrap/security_check.py --record <external-path>` on native
+  `python install/security_check.py --record <external-path>` on native
   Mac and Windows, then have the Maintainer run
-  `python bootstrap/security_check.py --join <mac-record> <windows-record>`
+  `python install/security_check.py --join <mac-record> <windows-record>`
   from a clean checkout of the final candidate (see [`SECURITY.md`](../SECURITY.md)
   > *Release security checklist*). Each local result is `INCOMPLETE`; only
   the join prints `PASS`. The join refuses a dirty or moved worktree and
@@ -700,6 +700,6 @@ by a lockfile (install-side) is the fully-provenanced state.
 *signed*: `source_repository` and `source_licenses` are declarations
 read from `CITATION.cff`, the per-file hashes attest that the bytes in
 your tree match the bytes that were installed (not that those bytes came
-from a signed release), and `python bootstrap/scaffold.py --manifest`
+from a signed release), and `python install/scaffold.py --manifest`
 emits an unsigned listing. Source-side signing is what this document
 fixed; install-side attestation is not built.

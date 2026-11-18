@@ -29,7 +29,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-_PKG = Path(__file__).resolve().parents[1] / "_scaffold"
+_PKG = Path(__file__).resolve().parents[1] / "install" / "_scaffold"
 _SECURITY_CHECK = Path(__file__).resolve().parents[1] / "security_check.py"
 
 _MOVED = (
@@ -48,7 +48,7 @@ _MOVED = (
 
 def test_strip_conditional_keep_on_match():
     """Semantic 1: value in set → keep body, strip both marker lines."""
-    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+    from install._scaffold.config import strip_conditional_regions  # noqa: PLC0415
 
     text = (
         "preamble\n"
@@ -63,7 +63,7 @@ def test_strip_conditional_keep_on_match():
 
 def test_strip_conditional_remove_otherwise():
     """Semantic 2: axis present, value NOT in set → remove markers + body."""
-    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+    from install._scaffold.config import strip_conditional_regions  # noqa: PLC0415
 
     text = (
         "before\n"
@@ -78,7 +78,7 @@ def test_strip_conditional_remove_otherwise():
 
 def test_strip_conditional_keep_on_missing_axis():
     """Semantic 3: axis absent from axes dict → keep body (safe default)."""
-    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+    from install._scaffold.config import strip_conditional_regions  # noqa: PLC0415
 
     text = (
         "<!-- cairn:if size in large -->\n"
@@ -92,7 +92,7 @@ def test_strip_conditional_keep_on_missing_axis():
 
 def test_strip_conditional_raise_on_unclosed():
     """Semantic 4a: open cairn:if with no cairn:endif → ValueError."""
-    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+    from install._scaffold.config import strip_conditional_regions  # noqa: PLC0415
     import pytest  # noqa: PLC0415
 
     text = (
@@ -105,7 +105,7 @@ def test_strip_conditional_raise_on_unclosed():
 
 def test_strip_conditional_raise_on_stray_endif():
     """Semantic 4b: stray cairn:endif with no open → ValueError."""
-    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+    from install._scaffold.config import strip_conditional_regions  # noqa: PLC0415
     import pytest  # noqa: PLC0415
 
     text = "<!-- cairn:endif -->\n"
@@ -115,7 +115,7 @@ def test_strip_conditional_raise_on_stray_endif():
 
 def test_strip_conditional_raise_on_nesting():
     """Semantic 4c: a second cairn:if before the first closes → ValueError."""
-    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+    from install._scaffold.config import strip_conditional_regions  # noqa: PLC0415
     import pytest  # noqa: PLC0415
 
     text = (
@@ -131,7 +131,7 @@ def test_strip_conditional_raise_on_nesting():
 
 def test_strip_conditional_identity_no_directives():
     """Semantic 5: text with no cairn:if returns byte-identical."""
-    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+    from install._scaffold.config import strip_conditional_regions  # noqa: PLC0415
 
     text = "# Just a normal doc\n\nNo directives here.\n"
     result = strip_conditional_regions(text, {"agent_team": "single"})
@@ -141,7 +141,7 @@ def test_strip_conditional_identity_no_directives():
 
 def test_strip_conditional_determinism():
     """Semantic: same (text, axes) → byte-identical output every call."""
-    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+    from install._scaffold.config import strip_conditional_regions  # noqa: PLC0415
 
     text = (
         "header\n"
@@ -158,7 +158,7 @@ def test_strip_conditional_determinism():
 
 def test_strip_conditional_multiple_regions():
     """Multiple non-nested regions in one text are processed independently."""
-    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+    from install._scaffold.config import strip_conditional_regions  # noqa: PLC0415
 
     text = (
         "intro\n"
@@ -177,7 +177,7 @@ def test_strip_conditional_multiple_regions():
 
 def test_strip_conditional_no_spurious_blank_lines():
     """Removing a region must not leave a residue blank line."""
-    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+    from install._scaffold.config import strip_conditional_regions  # noqa: PLC0415
 
     text = (
         "line-before\n"

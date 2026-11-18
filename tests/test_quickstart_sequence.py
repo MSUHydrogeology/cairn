@@ -56,11 +56,11 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
-PROFILES_DIR = CAIRN_ROOT / "bootstrap" / "profiles"
-SCAFFOLD = CAIRN_ROOT / "bootstrap" / "scaffold.py"
+PROFILES_DIR = CAIRN_ROOT / "install" / "profiles"
+SCAFFOLD = CAIRN_ROOT / "install" / "scaffold.py"
 SOLO_GREENFIELD_YAML = PROFILES_DIR / "solo-greenfield.yml"
 
 # Sentinel constant.  Documents that Layer B is lifecycle-shape
@@ -181,7 +181,7 @@ class TestLayerAStepsOneThroughThree:
             "dev/plans/_template.md",
             "dev/modules/reflections.md",
             "dev/modules/claim-check.md",
-            "scripts/claim_check.py",
+            "dev/tools/claim_check.py",
             "dev/.cairn/cairn-lock.yml",
             ".gitattributes",
             "CHANGELOG.md",

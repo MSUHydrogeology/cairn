@@ -61,7 +61,7 @@ from typing import Any, NamedTuple
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 if str(CAIRN_ROOT) not in sys.path:
@@ -476,7 +476,7 @@ def write_lockfile(target: Path, lock: dict[str, Any]) -> None:
 
 def findings_for(case: Case, *, upstream: bool = True) -> list[dict[str, Any]]:
     """Run the detector over *case*, with or without a trusted upstream."""
-    from bootstrap._scaffold.lockfile import (  # noqa: PLC0415
+    from install._scaffold.lockfile import (  # noqa: PLC0415
         UpstreamSource,
         forked_facade_findings,
     )
@@ -509,7 +509,7 @@ def install_forked_target(
     exactly the property ``trusted_upstream`` pins: the trusted map is not
     narrowed by anything the target says about itself.
     """
-    from bootstrap.scaffold import (  # noqa: PLC0415
+    from install.scaffold import (  # noqa: PLC0415
         _emit_lock_yaml,
         main,
         read_lockfile,
@@ -538,7 +538,7 @@ def install_forked_target(
 
 def relock(target: Path, **record_overrides: Any) -> None:
     """Rewrite the planted ``tools/intent.py`` record in place (no re-install)."""
-    from bootstrap.scaffold import _emit_lock_yaml, read_lockfile  # noqa: PLC0415
+    from install.scaffold import _emit_lock_yaml, read_lockfile  # noqa: PLC0415
 
     lock = read_lockfile(target)
     for rec in lock["files"]:
@@ -554,7 +554,7 @@ def relock(target: Path, **record_overrides: Any) -> None:
 
 def upgrade_stderr(target: Path, capsys, *extra: str) -> tuple[int, str]:
     """Run ``cmd_upgrade`` against *target* and return ``(rc, stderr)``."""
-    from bootstrap._scaffold.upgrade import cmd_upgrade  # noqa: PLC0415
+    from install._scaffold.upgrade import cmd_upgrade  # noqa: PLC0415
 
     capsys.readouterr()
     rc = cmd_upgrade(["--target", str(target), "--cairn-root", str(CAIRN_ROOT),
@@ -728,7 +728,7 @@ def test_node10_the_two_callers_differ_on_the_opt_out_and_on_to_ref(
     Perturbation: make ``cmd_upgrade`` honour ``fork_acknowledged``.
     """
     from bootstrap import verify_integrity  # noqa: PLC0415
-    from bootstrap._scaffold.upgrade import cmd_upgrade  # noqa: PLC0415
+    from install._scaffold.upgrade import cmd_upgrade  # noqa: PLC0415
 
     target = tmp_path / "t"
     target.mkdir()
@@ -809,7 +809,7 @@ def test_node17_a1_trusted_upstream_takes_only_a_cairn_root(tmp_path) -> None:
     remains a written rule enforced by this node and by review, and this plan
     does not claim otherwise.
     """
-    from bootstrap._scaffold.install import (  # noqa: PLC0415
+    from install._scaffold.install import (  # noqa: PLC0415
         install_manifest,
         trusted_upstream,
     )

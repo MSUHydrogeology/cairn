@@ -39,7 +39,7 @@ from tests.test_verify_counts import (
     _BINDING_MUTATIONS,
 )
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
 _spec = importlib.util.spec_from_file_location("_test_tiers_tool", ROOT / "tools" / "test_tiers.py")
@@ -213,7 +213,7 @@ def test_for_matches_python_references_as_tokens_and_keeps_indirect_consumers(tm
                    "test_parenthesized_import_upgrade",
                    "test_incidental_upgrade_words")
     (tests / "test_imports_upgrade.py").write_text(
-        "from bootstrap._scaffold import upgrade as UP\n", encoding="utf-8")
+        "from install._scaffold import upgrade as UP\n", encoding="utf-8")
     (tests / "test_cites_upgrade.py").write_text(
         'SOURCE = "bootstrap/_scaffold/upgrade.py"\n', encoding="utf-8")
     (tests / "test_runs_upgrade.py").write_text(
@@ -223,7 +223,7 @@ def test_for_matches_python_references_as_tokens_and_keeps_indirect_consumers(tm
     (tests / "test_cites_upgrade_helper.py").write_text(
         'PROTECTED = "_apply_upgrade"\n', encoding="utf-8")
     (tests / "test_parenthesized_import_upgrade.py").write_text(
-        "from bootstrap._scaffold import (\n"
+        "from install._scaffold import (\n"
         "    install,\n"
         "    upgrade as UP,\n"
         "    lockfile,\n"

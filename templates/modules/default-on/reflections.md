@@ -32,7 +32,7 @@ process-doctrine file):
 >   component so it reads as one identity string. `<session>` is, in
 >   resolution order: **(1)** the per-session token of the
 >   coordination/intent identity *when that module is installed* — `python
->   tools/intent.py whoami --session-token` (the 8-hex `sha256` of the
+>   dev/tools/intent.py whoami --session-token` (the 8-hex `sha256` of the
 >   harness session id), so the `<agent>-<session>` tail reconstructs the
 >   intent log's `agent` field and a reflection links to its session's
 >   `dev/intents.jsonl` entries; **(2)** else the raw harness session id

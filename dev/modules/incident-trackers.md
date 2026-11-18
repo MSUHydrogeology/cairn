@@ -53,7 +53,7 @@ the event taxonomy is per-deployment.
 ## Sensing write-path (automatic detector → recorder)
 
 The goodnight migration is **no longer the only writer.** When the
-`coordination-tiers` work-intent **pre-commit hook** (`tools/intent.py`)
+`coordination-tiers` work-intent **pre-commit hook** (`dev/tools/intent.py`)
 detects a *provably-different live session's* claim on a staged path, it
 **auto-appends an incident row** to the configured tracker — connecting the
 detector to the recorder without a hand-migration step (the gap the
@@ -125,7 +125,7 @@ rolling-window boundary the adopter chose (typically 14 days; the
 tracker's "What counts" sub-section pins the per-tracker boundary).
 
 The gate is **machine-evaluable**, not normative-only: the
-deterministic, zero-token `tools/evolution_infer.py` (installed with
+deterministic, zero-token `dev/tools/evolution_infer.py` (installed with
 this module; self-evolution-loop Part B) reads each tracker, sources
 the rolling window from the tracker's `**Rolling window**:` line, counts
 `Impact = occurred` rows of each event class within it, and **suggests**
@@ -134,7 +134,7 @@ a doctrine proposal when the count meets the recurrence threshold
 is unparseable is reported and not silently defaulted (the gate cannot
 be evaluated until the adopter sets it). The tool **only suggests** —
 the decision to open a proposal stays human. The full handoff runs it
-read-only; run it any time with `python tools/evolution_infer.py`.
+read-only; run it any time with `python dev/tools/evolution_infer.py`.
 
 ## Forking the template
 

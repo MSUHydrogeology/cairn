@@ -46,7 +46,7 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
@@ -605,12 +605,12 @@ class TestUnrecognizedKeyRefusal:
 # independently and the installed tree on disk.
 # ===========================================================================
 
-from bootstrap.scaffold import (  # noqa: E402
+from install.scaffold import (  # noqa: E402
     expand_preset, format_profile_summary, main as scaffold_main,
 )
-from bootstrap._scaffold.config import _DEFAULT_ON_MODULES  # noqa: E402
-from bootstrap._scaffold.install import module_merge_directives  # noqa: E402
-from bootstrap._scaffold.slotmerge import check_slot_fidelity  # noqa: E402
+from install._scaffold.config import _DEFAULT_ON_MODULES  # noqa: E402
+from install._scaffold.install import module_merge_directives  # noqa: E402
+from install._scaffold.slotmerge import check_slot_fidelity  # noqa: E402
 
 MODULE = "security-verification"
 PRESETS = ("solo-greenfield", "collaborative-team", "high-rigor-legacy")

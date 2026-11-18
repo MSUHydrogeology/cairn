@@ -3,7 +3,7 @@ Written in [Cairn Plain Language 1.0](dev/agent_collaboration.md).
 
 @AGENTS.md
 
-Rename this file to your AI tool's auto-loaded file (`CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`), and keep it thin: only habits specific to that one tool. The import line above gives the tool the shared `AGENTS.md`; adjust that one line if the tool imports another way.
+For a client that needs a wrapper, use its auto-loaded file and keep it thin: only habits specific to that one tool. The import line above gives the tool the shared `AGENTS.md`; adjust that one line if the tool imports another way. A client that loads `AGENTS.md` directly needs no wrapper.
 
 ## Tool-specific habits
 

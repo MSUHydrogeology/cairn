@@ -37,7 +37,7 @@ from types import ModuleType
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 CLAIM_CHECK_SRC = (

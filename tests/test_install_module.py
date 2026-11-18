@@ -28,7 +28,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-_PKG = Path(__file__).resolve().parents[1] / "_scaffold"
+_PKG = Path(__file__).resolve().parents[1] / "install" / "_scaffold"
 _GUARD_CALLS = {
     "_assert_safe_write", "_assert_fanout_contained", "_assert_git_binding_path"
 }
@@ -42,7 +42,7 @@ _INSTALL_GUARDED_WRITERS = {
 
 
 def test_dev_tree_and_core_install_smoke(tmp_path):
-    from bootstrap._scaffold import install as INS  # noqa: PLC0415
+    from install._scaffold import install as INS  # noqa: PLC0415
 
     created = INS.create_dev_tree(tmp_path)
     assert (tmp_path / "dev").is_dir()

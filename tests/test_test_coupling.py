@@ -18,11 +18,11 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from bootstrap.scaffold import main as scaffold_main  # noqa: E402
+from install.scaffold import main as scaffold_main  # noqa: E402
 
 
 TOOL = Path(__file__).resolve().parents[2] / "scripts" / "test_coupling.py"
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 

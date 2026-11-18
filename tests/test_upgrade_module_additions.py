@@ -37,13 +37,13 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap import scaffold as s  # noqa: E402
-from bootstrap._scaffold.config import InstallSpec, _MODULE_MAPPINGS  # noqa: E402
+from install import scaffold as s  # noqa: E402
+from install._scaffold.config import InstallSpec, _MODULE_MAPPINGS  # noqa: E402
 
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 
@@ -186,7 +186,7 @@ class TestLockfileWritersWriteByReplacing:
 class TestLockCommitWritesThroughExclusiveTemporaries:
     # Declared exception (internal hook): forces os.replace to fail inside internal _commit_lock_and_caches; no public way to fail the replace.
     def test_failed_commit_removes_its_staged_files(self, tmp_path: Path, monkeypatch):
-        from bootstrap._scaffold import upgrade as U
+        from install._scaffold import upgrade as U
         target = tmp_path / "target"
         target.mkdir()
         _install(target)
@@ -768,7 +768,7 @@ def test_adoption_replaces_hardlinked_discovery_without_changing_victim(
 def test_adoption_failed_board_stage_does_not_record_success(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from bootstrap._scaffold import upgrade as U
+    from install._scaffold import upgrade as U
 
     target = tmp_path.resolve()
     _install(target)
@@ -833,7 +833,7 @@ def test_duplicate_destination_ownership_is_refused(tmp_path: Path, monkeypatch)
     lock = s.read_lockfile(target)
     # Inject a second adopted-module spec that claims an already-claimed NEW
     # destination (the first package file) -> a mapping-ownership conflict.
-    import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
+    import install._scaffold.upgrade as UP  # noqa: PLC0415
     dup = _PKG_DSTS[0]
     patched = dict(UP._MODULE_MAPPINGS)
     # Append a colliding spec to an adopted module's mapping list.
@@ -867,7 +867,7 @@ def test_malformed_module_destination_is_refused_at_stage(tmp_path: Path, monkey
 
     # Inject a hypothetical malformed hard-coded InstallSpec.dst with traversal
     # (a real src so the template resolves; the dst escapes the target).
-    import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
+    import install._scaffold.upgrade as UP  # noqa: PLC0415
     lock = s.read_lockfile(target)
     patched = dict(UP._MODULE_MAPPINGS)
     adopted = next(m for m in lock.get("modules", []) if m in patched)
@@ -918,7 +918,7 @@ def test_module_destination_colliding_with_core_is_refused(tmp_path: Path, monke
     target = tmp_path.resolve()
     _install(target)
 
-    import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
+    import install._scaffold.upgrade as UP  # noqa: PLC0415
     core_dst = UP._CORE_MAPPINGS[0][1]   # an existing core destination
     lock = s.read_lockfile(target)
     patched = dict(UP._MODULE_MAPPINGS)
@@ -936,7 +936,7 @@ def test_duplicate_with_absent_first_source_is_refused(tmp_path: Path, monkeypat
     target = tmp_path.resolve()
     _install(target)
 
-    import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
+    import install._scaffold.upgrade as UP  # noqa: PLC0415
     lock = s.read_lockfile(target)
     patched = dict(UP._MODULE_MAPPINGS)
     adopted = next(m for m in lock.get("modules", []) if m in patched)
@@ -1257,7 +1257,7 @@ def test_commit_lock_and_caches_is_atomic_on_lockfile_failure(tmp_path, monkeypa
     # An interrupted multi-file commit leaves the prior authority coherent --
     # the old lockfile is unchanged and no live cache was replaced.
     import os  # noqa: PLC0415
-    import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
+    import install._scaffold.upgrade as UP  # noqa: PLC0415
     target = tmp_path.resolve()
     _install(target)
     lock = s.read_lockfile(target)

@@ -25,7 +25,7 @@ Merged into the project's docs guide:
 
 > **Scan untrusted text before agents ingest it.** Files that enter the
 > working tree from outside the team — PR diffs, pasted specs, vendored
-> docs — are scanned by `python scripts/content_scan.py <files>` for
+> docs — are scanned by `python dev/tools/content_scan.py <files>` for
 > prompt-injection and
 > obfuscation patterns (imperative overrides, egress-to-URL, suspicious
 > URLs, zero-width / bidi / default-ignorable / homoglyph Unicode,
@@ -38,7 +38,7 @@ Merged into the project's docs guide:
 > files or files guarding them, use a trusted, up-to-date checkout.** Fetch
 > the pull request as data, write each changed instruction file to a scratch
 > folder with `git show FETCH_HEAD:<path>`, and run your own
-> `python -I scripts/content_scan.py <scratch-files>`. Never check out the
+> `python -I dev/tools/content_scan.py <scratch-files>`. Never check out the
 > pull request branch or run its scanner. Discuss every finding before
 > merging; each added `cairn-accept` marker is itself a hit to discuss. Read
 > the changed text and ask whether an agent or check following it would now
@@ -59,7 +59,7 @@ directory (copied **verbatim** — no token substitution over the code). It is
 vendor-neutral and **standard-library only**. Run it over specific files or
 a PR's changed set:
 
-> `python scripts/content_scan.py <file> [<file> ...]`
+> `python dev/tools/content_scan.py <file> [<file> ...]`
 
 Nothing to clone or reimplement — the default is a working tool. The scanner
 is a **witness, not a safety proof**: a static pattern set is high-noise and
@@ -72,7 +72,7 @@ Alongside the raw scanner, the module installs a **standard-library-only
 advisory runner** that turns `content_scan.py` into a repeatable self-audit
 pass over your project's whole agent-loaded surface. Run it with no arguments:
 
-> `python scripts/content_scan_runner.py`
+> `python dev/tools/content_scan_runner.py`
 
 It resolves the audited set, scans it, compares each flag against a reviewed
 baseline, and prints a fail-closed result. It is the content-scan half of the
@@ -164,7 +164,7 @@ The roots manifest, residual baseline, and URL allowlist are installed policy.
 Before changing one, review the intended content and scope. From the Cairn
 checkout, reconcile only the reviewed destination with:
 
-> `python bootstrap/scaffold.py upgrade --target <adopter-root> --finalize <selected-policy-path>`
+> `python install/scaffold.py upgrade --target <adopter-root> --finalize <selected-policy-path>`
 
 Name each changed policy destination explicitly. Then review the policy diff
 and its `dev/.cairn/cairn-lock.yml` hash change together and commit them

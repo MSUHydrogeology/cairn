@@ -36,7 +36,7 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests._repo_root import repository_root
+from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
@@ -156,7 +156,7 @@ def test_content_security_module_installs_scanner_verbatim(tmp_path: Path) -> No
     """The content-security module ships content_scan.py verbatim to an
     adopter's scripts/ + its doctrine doc, single-sourced from the same file
     Cairn's own check_cairn composes."""
-    from bootstrap.scaffold import _MODULE_MAPPINGS, main
+    from install.scaffold import _MODULE_MAPPINGS, main
     dsts = {s.dst: s for s in _MODULE_MAPPINGS["content-security"]}
     assert dsts["scripts/content_scan.py"].verbatim is True
     assert "dev/modules/content-security.md" in dsts
