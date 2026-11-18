@@ -21,6 +21,16 @@ goes live.
 
 ## Tasks
 
+* [seed; id: write-style-guide]
+  Survey and record existing practice before inventing rules. Write a human style guide in the descriptive docs and a short,
+  actionable agent version in project-owned rules, routed from `RULES.md`
+  (or in `AGENTS.md` project conventions if no router exists). Add a note to
+  keep them aligned; optional preferences may drift. Binding rules and higher
+  security, dependency and license duties govern decisions. Report conflicts
+  and propose correction. If `modules/documentation-plan.md` exists relative
+  to this board, see its Style guide section and use the installed documentation
+  plan to choose the human guide's home.
+
 * [seed; id: try-session-start-skill]
   Try the `session-start` skill (`/session-start`): run
   `python dev/tools/session.py session-start` to orient at the top of a

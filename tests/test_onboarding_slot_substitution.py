@@ -60,7 +60,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def _scaffold(target: Path, preset: str | None) -> int:
+def _scaffold(target: Path, preset: str | None, *, without_documentation: bool = False) -> int:
     """Scaffold into *target* via the real CLI.
 
     *preset* None -> no `preset:` key (explicit-modules path);
@@ -72,6 +72,8 @@ def _scaffold(target: Path, preset: str | None) -> int:
         body += "modules:\n  - reflections\n"  # explicit-modules path
     else:
         body += f"preset: {preset}\n"
+    if without_documentation:
+        body += "modules_remove:\n  - documentation-plan\n"
     cfg.write_text(body)
     return main(
         ["--config", str(cfg), "--target", str(target),
@@ -120,6 +122,28 @@ class TestInstallPath:
         assert "* [ ]" in slot_body
         assert "[seed;" not in slot_body
         assert "<!-- preset:" not in slot_body
+
+    @pytest.mark.parametrize("preset", PRESETS)
+    @pytest.mark.parametrize("without_documentation", [False, True])
+    def test_style_task_delivered_with_or_without_module(
+        self, tmp_path: Path, preset: str, without_documentation: bool,
+    ) -> None:
+        """The task survives opt-out; an available board-relative guide resolves."""
+        assert _scaffold(tmp_path, preset, without_documentation=without_documentation) == 0
+        board = (tmp_path / "dev/PLANNING.md").read_text(encoding="utf-8")
+        tasks = board.split("* [ ]")
+        reference = "modules/documentation-plan.md"
+        matches = [task for task in tasks if reference in task]
+        assert len(matches) == 1
+        task = matches[0].split("\n\n", 1)[0]
+        # This is a conditional code path, not a hyperlink to an absent file.
+        assert f"]({reference}" not in task
+        installed = tmp_path / "dev" / reference
+        if without_documentation:
+            assert not installed.exists()
+        else:
+            assert installed.is_file()
+            assert "## Style guide" in installed.read_text(encoding="utf-8")
 
     @pytest.mark.parametrize("preset", PRESETS)
     def test_slot_seed_count_matches_source(
@@ -171,7 +195,7 @@ class TestOnboardingDocDelivery:
         onboarding = tmp_path / "dev" / "modules" / "onboarding"
         for name in self.DOC_NAMES:
             installed = onboarding / name
-            source = CAIRN_ROOT / "docs" / name
+            source = CAIRN_ROOT / "templates" / "onboarding" / name
             assert installed.is_file(), (
                 f"onboarding doc {name} not shipped for preset={preset}"
             )

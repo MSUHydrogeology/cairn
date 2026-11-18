@@ -39,8 +39,9 @@ even when that folder is absent.
 
 ## What does NOT live here
 
-* **Descriptive software docs** — naming/style, library pitfalls,
-  architecture. Those belong in `docs/` per your documentation plan.
+* **Descriptive software docs** — style explanations, library pitfalls and
+  architecture belong in `docs/` per your documentation plan. A short,
+  actionable agent style extract may live here and be indexed from `RULES.md`.
 * **Coordination / lifecycle process** — the proposal/plan lifecycle,
   review tiers, work-intents. That stays in `dev/agent_collaboration.md`
   and other top-level `dev/` coordination docs.
