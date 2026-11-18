@@ -168,8 +168,9 @@ A plan is one file by default: reviews, responses and records are appended to it
   do not copy template instructions or the `## Implementation closeout`, `## Plan review`,
   and `## Code review` sections until those lifecycle steps occur.
 * **Scripts and task briefs stay out.** A checker lives in a script or a test
-  file, not in the plan. A task brief for a sub-agent is a short note or file,
-  cited by path and commit.
+  file, not in the plan. Put temporary briefs, drafts and script scratch output
+  in the ignored dev/scratch/ folder; keep durable conclusions in existing
+  records. Cite a committed task brief by path and commit.
   The plan carries the criterion and the result, not the code behind them.
 * **A log entry is a pointer.** Commit bodies hold the facts. The entry names
   the commit and adds only a decision, a finding, or a departure from the

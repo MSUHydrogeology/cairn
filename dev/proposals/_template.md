@@ -121,8 +121,9 @@ The proposal stays one file: reviews, responses and decisions are appended to it
   template instructions, slot comments, or the `## Review`, `## Response`, and
   `## Decision` skeletons until that lifecycle step occurs.
 * **Scripts and task briefs stay out.** A checker lives in a script or a test
-  file, not in the plan. A task brief for a sub-agent is a short note or file,
-  cited by path and commit.
+  file, not in the plan. Put temporary briefs, drafts and script scratch output
+  in the ignored dev/scratch/ folder; keep durable conclusions in existing
+  records. Cite a committed task brief by path and commit.
   The proposal carries the criterion and the result, not the code behind them.
 * **Cite evidence concisely.** Point to reproducible tests or scripts and state
   their outcome; do not copy probe inventories into lifecycle records.
