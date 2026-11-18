@@ -51,3 +51,20 @@ Expected work window: several focused sessions; installer integrity interactions
 ## Verification
 
 Before implementation run `python tests/tier_inventory.py for <changed paths>` and run only mapped tests, plus applicable prose gates. Map the installed command cases into `tests/test_verify_counts.py`, install and integrity cases into `tests/test_manifest.py`, and preservation into `tests/test_upgrade_module_additions.py`; use the public entry points. For security negative controls, mutate a count, use an unknown key and escaping targets, and alter the pinned helper; pair each refusal with a valid control. Check that registry edits pass integrity while support edits fail. Run claim, link, snippet and neutrality gates for prose and applicable release gates. Use `/Users/kendal30/conda_envs/lhm/bin/python3.13` and record results and limits. Independent scientific check: N/A, as accepted. Independent ordinary and Security code reviews remain required. Record benefit versus cost and any separate human operation's unpassed evidence before archive.
+
+## Plan review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: 91a3f77bbdad3373bc64fb452f44dda42c8ab638
+**Obligation**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the plan preserves the accepted tools, data boundary, upgrade protection, documented use and public checks while keeping human release operations separate. -- Source proposal, Scope, Acceptance criteria
+2. **Best alternative.** Reusing the existing counters, parser, installer and pinned Git reader is simpler than maintaining a second measurement and installation system. -- Scope, Reuse, `tests/measurements.py`, `install/_scaffold/config.py`
+3. **What would show it wrong?** A disposable public install or upgrade that loses an edited registry, accepts an escaping count or changed helper, or cannot run either command would falsify delivery. -- C1–C3, Verification
+
+The criteria focus permanent checks on public promises; developmental probes are removed. The module guides are the installed homes for the new procedures, and no governing rule is removed. Parent-owned joined integration is named in Sequence. Coverage: compared the committed plan with the accepted proposal, template and review rules; did not run commands, tests or upgrades, inspect implementation, or assess the security boundary. Security Review remains a separate obligation.
