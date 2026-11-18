@@ -167,3 +167,23 @@ Recovered from `git -c core.fsmonitor=false show 546959c1~1:dev/measurement/prom
 - **Committed-HEAD connected gate fixture (`84e4d9c8`)**: `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q tests/test_security_check.py::test_committed_fixture_connects_real_record_and_join_entrypoints` in an isolated detached worktree of `84e4d9c8` -> `1 passed, 3 warnings in 26.65s`.
 
 Elapsed: unknown. Tokens: unknown.
+
+
+## Code review -- Hydrogen (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: 58aafbd4 (covering `4f3887e6`, `a61cec86`, `cbdeca91`, `84e4d9c8`, `58aafbd4`)
+**Obligation**: Internal
+**Verdict**: ACCEPT
+**Elapsed**: ~1 minute. **Tokens**: unknown.
+
+**Steelman.** Reconcile the native release-test roster and setup-phase skip markers with current Mac and Windows behavior, preserve public claims-tool protections under the single lifted fence, and resolve all 28 historical `KEPT-BY-RULE` guards without masking out-of-scope defects.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 converts remaining in-body platform and capability skips to setup-phase `@pytest.mark.skipif` / `pytest.param` across the affected test files, splits `test_named_pipe_entry_fails_loudly_without_hanging` in `tests/test_board_json_contract.py`, fixes `tests/measurements.py` routing in `tests/test_verify_counts.py`, and aligns `tests/security_manifest.py` (`63` `nt`, `362` `posix`, `sha256:de890081...`) and `tests/test_security_check.py`.
+2. **Best alternative.** Retaining all 28 historical guards and keeping in-body skips would avoid provisional removals, but would leave native-only setup skips misclassified and omit the accepted Option B public-witness assessment.
+3. **What would show it wrong?** A silent call-phase skip accepted as a pass, a widened claims-family fence, an unmapped `KEPT-BY-RULE` guard, or a masked Windows failure would falsify the record.
+
+**Findings.** None. In `tests/test_intents_tool.py` (C2 single lifted fence), only the two `os.mkfifo` skips (`test_pipe_refused_before_open`, `test_strict_claim_reader_refuses_leaf_swap_before_open[fifo]`) move to `skipif` markers while warn-default, explicit-block, and distinct public refusal checks remain intact. All 28 historical `KEPT-BY-RULE` rows from `546959c1~1:dev/measurement/promise-testing-worklist-2026-11-11.csv` are accounted for (26 retained; 2 `test_doc_drift_tools.py` helper tests from `a61cec86` provisionally retired pending the separate authorized High Security code review). Recorded verification—including `cbdeca91` (`29 passed`), Mac (`24 passed, 1 skipped`; `2 passed, 79 deselected`), Windows `[fchmod]` (`11 passed, 13 skipped`), committed-HEAD fixture (`1 passed`), and the unmasked out-of-scope `install/_scaffold/security.py:61-87` `[WinError 32]` observation—is accurate and complete.
+
+**Coverage.** Inspected committed plan `58aafbd4`, accepted proposal, historical CSV at `546959c1~1`, and committed diffs `4f3887e6`, `a61cec86`, `cbdeca91`, `84e4d9c8`, and `58aafbd4`. Did not execute tests or perform Security Review.
