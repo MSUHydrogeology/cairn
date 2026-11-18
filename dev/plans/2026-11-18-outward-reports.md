@@ -23,10 +23,6 @@ For dependency reports, check the dependency's repository contribution guide and
 
 **Reuse.** Searched `dev/upstream/`, `templates/core/dev/upstream/`, `.github/ISSUE_TEMPLATE/` and `.github/PULL_REQUEST_TEMPLATE/`: dependency drafting and forge forms already exist. Extend those and the existing core mapping, not a new reporting service.
 
-Proposed paths:
-- `templates/core/dev/upstream/foldback.md`
-- `dev/upstream/foldback.md`
-
 ## Sequence
 
 | # | Chunk | Gate | Ships |
@@ -108,3 +104,22 @@ each initial draft and what reaches the Maintainer. **Disposition**: finding
 resolved; ready for the plan readiness transition.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation evidence -- Terra (Implementation) -- 2026-11-18
+
+Added the shared fold-back protocol and mapping, dependency and collaboration
+routes, forge pointers and matching navigation. Under Python 3.13.13 the
+public fresh-install and pre-addition upgrade tests passed (2 in 2.37 seconds);
+`--manifest` named the expected source and destination. In a disposable copy,
+removing the mapping made the fresh-install test and upgrade destination test
+fail, and the manifest row disappear. The unmodified controls passed. The
+existing new-core linked-collision refusal test passed (4 cases in 5.86 seconds);
+it covers its existing core examples, not every possible destination.
+
+A synthetic dependency template and fallback walkthrough checked redacted
+evidence in initial drafts and the simulated material for approval. A synthetic
+Cairn draft and PR body, attachment and full diff were checked and reread; no
+report was filed. These are demonstrations, not a guarantee that a real report
+contains no private material. Claim, link, snippet, neutrality and Cairn prose
+checks passed; no full suite or wording test ran. Elapsed: unknown; tokens:
+unknown.

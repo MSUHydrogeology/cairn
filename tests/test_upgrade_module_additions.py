@@ -1013,6 +1013,26 @@ def _prepare_new_core_upgrade(target: Path, dst: str) -> None:
     (target / dst).unlink()
 
 
+def test_new_foldback_template_is_manifested_and_upgrades(tmp_path: Path, capsys):
+    dst = "dev/upstream/foldback.md"
+    src = "core/dev/upstream/foldback.md"
+    target = tmp_path.resolve()
+    _install(target)
+    lock = s.read_lockfile(target)
+    lock["files"] = [r for r in lock["files"] if r["dst"] != dst]
+    _write_lock(target, lock)
+    (target / dst).unlink(missing_ok=True)
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--stage"]) == 0
+    assert s.main(base + ["--apply"]) == 0
+    assert (target / dst).is_file()
+    record = next(r for r in s.read_lockfile(target)["files"] if r["dst"] == dst)
+    assert record["src"] == src
+    capsys.readouterr()
+    assert s.main(["--manifest"]) == 0
+    assert f"{dst}\t{src}\t" in capsys.readouterr().out
+
+
 def _printed_core_adoption_triple(output: str, dst: str) -> str:
     match = re.search(re.escape(dst) + r"@[0-9a-f]{64}@[0-9a-f]{64}", output)
     assert match, f"stage did not print the ready-to-use {dst} adoption command"

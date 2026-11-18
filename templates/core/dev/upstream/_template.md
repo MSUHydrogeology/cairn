@@ -39,7 +39,8 @@ What should happen.
 
 ## Actual behavior
 
-What actually happens. Include error messages / tracebacks verbatim.
+What actually happens. Sanitize error messages, tracebacks and other evidence
+before inserting them into this draft; never copy sensitive content verbatim.
 
 ## Analysis
 
@@ -55,5 +56,5 @@ maintainer; skip if you are not yet sure.
 
 ---
 
-*Move this file to `dev/upstream/archive/` once filed and resolved
-(or abandoned). Update the Status field before moving.*
+*Update the Status field and move this file to `dev/upstream/archive/` once
+filed, resolved, superseded or abandoned.*

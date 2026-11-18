@@ -254,6 +254,15 @@ leaves it unselected. Neither an offer nor an upgrade grants credential access
 or resets prior consent. The separate rules-folder offer retains its existing
 threshold, answer record and approval for changes to project rules.
 
+## Outward reports
+
+When a task finds a Cairn or dependency problem, draft it in `dev/upstream/`.
+The folder README routes each channel to its template and publication protocol.
+Check and reread the full public material, then obtain explicit approval of the
+actual report and destination for each filing. The Human Maintainer submits
+Cairn pull requests by hand; an agent may file an individually approved Cairn
+issue. Separate channels require separate drafts and approvals.
+
 ## Surfacing judgment calls to the Maintainer
 
 Acceptance, rejection, and supersession are the Maintainer's call. An agent

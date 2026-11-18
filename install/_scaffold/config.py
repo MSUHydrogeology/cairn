@@ -562,6 +562,7 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     # archive/.gitkeep is verbatim (an empty placeholder, not a template).
     ("core/dev/upstream/README.md",                 "dev/upstream/README.md"),
     ("core/dev/upstream/_template.md",              "dev/upstream/_template.md"),
+    ("core/dev/upstream/foldback.md",               "dev/upstream/foldback.md"),
     ("core/dev/upstream/archive/.gitkeep",          "dev/upstream/archive/.gitkeep"),
     # Project-owned agent-discipline detail folder: the folder + README
     # ship from Cairn; the rule files inside are entirely the adopter's own

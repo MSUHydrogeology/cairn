@@ -65,6 +65,8 @@ class TestScaffoldCompleteness:
             "dev/upstream/README.md missing"
         assert (tmp_path / "dev" / "upstream" / "_template.md").is_file(), \
             "dev/upstream/_template.md missing"
+        assert (tmp_path / "dev" / "upstream" / "foldback.md").is_file(), \
+            "dev/upstream/foldback.md missing"
         assert (tmp_path / "dev" / "upstream" / "archive").is_dir(), \
             "dev/upstream/archive/ missing"
         assert (tmp_path / "dev" / "upstream" / "archive" / ".gitkeep").is_file(), \

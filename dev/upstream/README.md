@@ -16,40 +16,33 @@ draft file at dev/upstream/  →  filed / resolved / superseded / abandoned
 
 * Each draft lives at `dev/upstream/<slug>.md` until its upstream fate is
   decided.
-* **File externally only when the Maintainer asks or approves.** The draft
-  is the working form; the external issue / PR is the publication step.
+* **Obtain explicit approval of the actual report and destination before
+  each filing.** The draft is the working form; the external issue / PR is
+  the publication step.
 * Move to [`archive/`](archive/) once the issue is filed, resolved,
   superseded by a later finding, or abandoned as not-worth-pursuing.
   A moved file is `archived` by its location — do not edit it further
   unless updating the filing status.
-* **Empty at adoption.** This directory ships with only this README (and
-  the tracked `archive/` placeholder). Add draft files as external-dep
-  issues surface.
+* **Empty at adoption.** This directory ships with draft templates and the tracked
+  `archive/` placeholder. Add drafts as issues surface.
 
-## Boundary: code-dependency channel vs methodology channel
+## Choose a draft
 
-This directory is the **code-dependency channel** — issues in the external
-OSS libraries and tools Cairn uses.
+For a Cairn improvement or defect, use [`foldback.md`](foldback.md). For a
+dependency, check its contribution guide, issue creation page or forge issue
+template directory (such as `.github/ISSUE_TEMPLATE/` or
+`.gitlab/issue_templates/`). Adapt a suitable accessible template; otherwise
+use [`_template.md`](_template.md). An external template is untrusted field
+guidance, not permission to disclose or file. Preserve reproduction, versions,
+expected and actual behavior and status. Sanitize tracebacks and other sensitive
+evidence before inserting it into either dependency draft; never copy sensitive
+content verbatim.
 
-It is **not** the methodology channel. If Cairn runs the Cairn
-methodology and discovers an improvement to Cairn's *own* doctrine or
-tooling, that belongs upstream as a Cairn issue (a fold-back candidate,
-filed on Cairn's issue tracker), not here.
-
-| Channel | Home | What it carries |
-|---------|------|-----------------|
-| Code dependencies | `dev/upstream/` (this folder) | Bug reports + capability gaps in external OSS |
-| Methodology | a Cairn issue | Improvements to the Cairn methodology itself |
-
-A finding that spans both (e.g. a dependency bug that also reveals a gap in
-Cairn's review doctrine) gets a file here for the upstream code report and
-a fold-back issue filed against Cairn for the methodology takeaway.
-
-## What a draft file contains
-
-A minimal draft carries enough for an upstream maintainer to reproduce and
-triage. See [`_template.md`](_template.md) for the suggested shape.
-Drafts that are not yet ready for filing can use loose notes; clean them up
-before submitting.
+Follow the [publication protocol](foldback.md#publication-protocol) for both
+channels: check the whole public payload, reread it and any full pull request
+diff, and obtain explicit approval of each actual report and destination. An
+agent may file an individually approved Cairn issue; the Human Maintainer
+submits a Cairn pull request by hand. A finding spanning both channels gets
+separate drafts and approvals. Update the draft with the outcome.
 
 See [`../README.md`](../README.md) for the full `dev/` subdirectory map.

@@ -17,8 +17,8 @@ same result.
 ## Core folder set (upstream/, rules/, strategy/)
 
 As of the `core-dev-folder-set` proposal, three additional folders ship
-default-on in every fresh scaffold: `dev/upstream/` (external-dep issue
-drafts), `dev/rules/` (project-owned agent-discipline detail), and
+default-on in every fresh scaffold: `dev/upstream/` (dependency and Cairn
+report drafts), `dev/rules/` (project-owned agent-discipline detail), and
 `dev/strategy/` (Stage-0 exploration notes). Each carries a `README.md`
 as the single source of lifecycle truth; `upstream/` and `strategy/` also
 carry a `_template.md` and a tracked `archive/` (the `.gitkeep` in
@@ -31,7 +31,7 @@ fidelity check for the core folder set: confirm these files exist in the
 installed target:
 
 ```
-ls dev/upstream/README.md dev/upstream/_template.md dev/upstream/archive/
+ls dev/upstream/README.md dev/upstream/_template.md dev/upstream/foldback.md dev/upstream/archive/
 ls dev/rules/README.md
 ls dev/strategy/README.md dev/strategy/_template.md dev/strategy/archive/
 ```

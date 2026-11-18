@@ -6,16 +6,9 @@ labels: ['foldback']
 assignees: []
 ---
 
-<!-- The fold-back ledger and its doctrine were retired 2026-08-26;
-     a Cairn issue IS the channel now, and this template is the
-     surviving statement of the protocol.
-
-     The maintainer of the source deployment fills the sections below
-     before submitting.  An AI agent may have drafted the body, but
-     the maintainer reviews +
-     submits by hand (the agent does not submit autonomously, per
-     the export-boundary bright-line).
--->
+<!-- Follow the shared protocol in dev/upstream/foldback.md. An agent may
+     file this issue only after the Human Maintainer approves this actual issue
+     and its destination. -->
 
 ## Source deployment
 
@@ -60,31 +53,9 @@ assignees: []
 
 ## Export-safety affirmation
 
-<!-- This affirmation is now the WHOLE export boundary, not half of one.
-     The machine-half scrub (foldback_export_scan.py) was retired with
-     the fold-back ledger on 2026-08-26; it is not available, and no
-     command replaces it.  Read the two boxes below as the control
-     itself rather than as a second opinion on a scanner's output. -->
+Follow the shared protocol in `dev/upstream/foldback.md` before filing.
 
-**Read this before you tick the boxes.** A Cairn issue is **public**. This
-template exists because a fold-back candidate is written by someone working
-inside a research repository, where the surrounding context is often
-unpublished. Nothing scans this body for you.
-
-I affirm that, to the best of my judgment, this issue body contains:
-
-- [ ] **No unpublished data hints** -- no descriptive references to
-  data, results, or findings that have not been published by the
-  source deployment.
-- [ ] **No proprietary domain detail** -- no client / project /
-  customer specifics whose generalized form would be acceptable but
-  whose verbatim shape is not.
-- [ ] **I read the body once more with those two classes in mind**,
-  after writing it -- not only while writing it.
-
----
-
-<!-- Cairn maintainers reviewing this issue: the fold-back doctrine that
-     defined the active-surfacing protocol and the no-export class
-     taxonomy was retired on 2026-08-26 along with the ledger; this
-     template is the surviving statement of both. -->
+- [ ] I checked the complete body and attachments for unpublished data or hints,
+  proprietary project or customer detail, and credentials, and reread them
+  after writing.
+- [ ] The Human Maintainer approved this actual issue and its destination.

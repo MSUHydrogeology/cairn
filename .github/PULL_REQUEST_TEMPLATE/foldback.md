@@ -1,15 +1,6 @@
-<!-- Cairn fold-back PR template.
-
-     For a deployment with working code to contribute, not just an
-     idea.  The fold-back ledger and its doctrine were retired
-     2026-08-26; a Cairn PR IS the channel now, and this template is
-     the surviving statement of the protocol.
-
-     The maintainer of the source deployment fills the sections below
-     before submitting.  An AI agent may have drafted the body from
-     the PR diff, but the maintainer reviews + submits by hand (the
-     agent does not submit autonomously, per the export-boundary
-     bright-line). -->
+<!-- Follow the shared protocol in dev/upstream/foldback.md. The Human
+     Maintainer approves this actual pull request and destination, then submits
+     it by hand. -->
 
 ## Source proposal / plan
 
@@ -45,34 +36,10 @@
 
 ## Export-safety affirmation
 
-<!-- This affirmation is now the WHOLE export boundary, not half of
-     one.  The machine-half scrub (foldback_export_scan.py) was
-     retired with the fold-back ledger on 2026-08-26; it is not
-     available, and no command replaces it. -->
+Follow the shared protocol in `dev/upstream/foldback.md` before submitting.
 
-I affirm that, to the best of my judgment, this PR's body AND every
-file it adds / modifies contain:
-
-- [ ] **No unpublished data hints** -- no descriptive references to
-  data, results, or findings that have not been published by the
-  source deployment.
-- [ ] **No proprietary domain detail** -- no client / project /
-  customer specifics whose generalized form would be acceptable but
-  whose verbatim shape is not.
-
-- [ ] **I read the diff once more with those two classes in mind**,
-  after writing it -- not only while writing it.
-
-**There is no machine-half scrub.** `foldback_export_scan.py` was retired
-with the fold-back ledger on 2026-08-26 and no command replaces it, so this
-affirmation is the whole export boundary rather than a second opinion on a
-scanner's output. A Cairn pull request is **public**; every changed file
-carries the same obligation as the description.
-
----
-
-<!-- Cairn maintainers reviewing this PR: the fold-back doctrine that
-     defined this protocol was retired 2026-08-26 along with the
-     ledger; this template is the surviving statement of it.  Squash-merge per Cairn
-     convention; the deployment-side archived artifacts (above) are
-     the durable deliberation home. -->
+- [ ] I checked the complete body, attachments and every changed file for
+  unpublished data or hints, proprietary project or customer detail, and
+  credentials, and reread the full payload and diff after writing.
+- [ ] The Human Maintainer approved this actual pull request and destination
+  and submits it by hand.
