@@ -133,3 +133,20 @@ The ordinary review raised no findings.
 
 The Mac-only execution mechanism is replaced by the explicit Linux guest option;
 the original confinement outcomes, stop conditions and comparison remain.
+
+## Review -- Terra (Reviewer, Medium, pass 2) -- 2026-11-18
+
+**Reviewed commit**: ef494b3befb1fb7479dd6a2fad4b7f3e204dad30
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the Maintainer can choose temporary guest administrator setup for a bounded retry or leave the comparison incomplete, with setup, review and cleanup costs acknowledged. -- Decision summary, Proposal, Alternatives considered
+2. **Best alternative.** Stop with the existing incomplete result; it avoids administrator setup and cleanup but leaves the six cells and hostile-case classification unknown. -- Context, Alternatives considered
+3. **What would show it wrong?** A failed confined startup or C0 control stops comparison writes; an unmatched baseline, outside write or missing cell prevents a complete favorable result. -- Proposal, Evidence / verification plan
+
+The widened candidate keeps both reconstruction fixes, matched variants and all 37 classifications. It prohibits global policy weakening and effects on other projects, drops privilege for the trial and removes its temporary profile. It is expressly untested; the reviewed plan must bind the setup and controls, with novel boundary design at the applicable High floor. No Maintainer technical trial is planned. No doctrine or installed contract change is proposed. Coverage: compared the committed revision, prior reviews, response and archived C0–C1; did not set up the guest, probe its kernel, run controls or assess the security boundary. A separate Security Review of the widened proposal remains required.
