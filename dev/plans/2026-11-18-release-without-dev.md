@@ -183,3 +183,27 @@ Reviewed range: d06c0fc4^..dd74d132
 **Tokens**: unknown
 
 Accepted the ordinary malformed-link and Security containment/index findings. `1b9adfe3` binds reads to checked directory handles, retains exact names and stages, and reports malformed links and helper-binding failures as incomplete. The affected installed-report, concurrent ancestor replacement and installed-project release checks passed under Python 3.13.13. Native Windows verification remains required: automatic approval review rejected transfer of the committed snapshot to the configured Windows VM. A targeted independent Security look remains pending. No full suite, signing or baseline ran.
+
+## Code review -- Codex Sol (Security Review, High), pass 2 -- 2026-11-18
+
+Reviewed commit: 1b9adfe35fb43b03542c5a84c6542efb3864f95a
+Reviewed range: dd74d132..1b9adfe3
+
+**Obligation**: Internal Security Review
+**Verdict**: REVISE
+**Bounding**: WIDER RUN REQUIRED. Add focused evidence for the changed refusal paths below.
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The new anchored traversal, exact Git names and retained stages address the original design gaps. The revised refusal paths introduce the defects below. See `_boundary_read`, `_boundary_index` and the installed entry tests.
+2. **Best alternative.** Keep anchored traversal, check the leaf through its parent handle before opening, and apply binding-failure handling after recognizing the selected CLI mode. See the installed link checker.
+3. **What would show it wrong?** An open observed on a FIFO or a traceback on the equals form with the pinned helper absent. Both reproduced on copied committed bytes under Python 3.13.13.
+
+**Blocking findings**
+
+- The new POSIX reader opens a nonregular leaf before checking its type. An instrumented FIFO probe observed that call only after the revision. Restore no-follow leaf inspection through the parent handle, use `O_NOCTTY` and verify the opened identity before reading.
+- With the pinned helper absent, the spaced form returned `INCOMPLETE` / 2 and `--release-boundary=scope.json` returned a traceback / 1. Require deterministic incomplete status for both accepted spellings.
+- The new native Windows drive control uses an unmatched selector, so file opening never reaches the component guard. Test the nested drive component in the scope filename and require its refusal.
+
+**Coverage.** Scoped to newly revised code and controls. No rules or tests removed. No suite replay or native Windows run. The stage-aware index implementation and conflicted-guide control showed no new defect on inspection.
