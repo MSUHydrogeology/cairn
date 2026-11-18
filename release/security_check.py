@@ -1265,18 +1265,20 @@ def _fsck_from_sterile_context(repo_root: Path) -> None:
 
 
 @contextmanager
-def _detached_checkout(head: str) -> Iterator[Path]:
-    """Yield an exact-byte detached worktree for *head*, then remove it."""
+def _detached_checkout(head: str, *, parent_repo: Path | None = None) -> Iterator[Path]:
+    """Yield an exact-byte detached worktree from the selected repository."""
+    if parent_repo is None:
+        parent_repo = CAIRN_ROOT
     # Before materialising anything executable from this repository, prove its
     # object graph is structurally sound -- from a context the candidate cannot
     # configure away. Fails closed.
-    _fsck_from_sterile_context(CAIRN_ROOT)
+    _fsck_from_sterile_context(parent_repo)
     with tempfile.TemporaryDirectory(prefix="cairn-release-") as parent:
         checkout = Path(parent) / "checkout"
         added = False
         try:
-            proc = _git("worktree", "add", "--detach", "--no-checkout",
-                        str(checkout), head)
+            proc = _git_at(parent_repo, "worktree", "add", "--detach", "--no-checkout",
+                           str(checkout), head)
             if proc.returncode != 0:
                 raise _RepoStateError(
                     "could not create detached release checkout "
@@ -1289,7 +1291,7 @@ def _detached_checkout(head: str) -> Iterator[Path]:
             _verify_committed_checkout(checkout, head)
         finally:
             if added:
-                proc = _git("worktree", "remove", "--force", str(checkout))
+                proc = _git_at(parent_repo, "worktree", "remove", "--force", str(checkout))
                 if proc.returncode != 0:
                     raise _RepoStateError(
                         "could not remove detached release checkout "
