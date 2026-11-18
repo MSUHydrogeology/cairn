@@ -28,7 +28,7 @@ profile names a `forge:` (`gitlab` / `github`), the scaffold
 root (non-clobber — a re-scaffold preserves any customizations you've
 made). Without a `forge:`, copy the tree for your forge in by hand.
 Either way, extend `labels.yml` with project-specific routing (e.g. a
-`domain::<area>` set). See `issue-capture/reference/README.md`.
+`domain::<area>` set). See `cairn/docs/templates.md` > "issue-capture — forge-specific reference starters".
 
 ## Template content
 

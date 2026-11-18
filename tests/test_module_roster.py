@@ -4,7 +4,7 @@ Promises:
 - The module roster lists only modules that ship.
 - Every selectable module has a discovery entry point and first task, and the entry point is an installed file.
 
-`templates/modules/README.md` carries a table of modules an adopter can select.
+`docs/templates.md` carries a table of modules an adopter can select.
 It is curated, not exhaustive -- there are more module files than rows -- so the
 checkable property runs one way only: **a row must name a module that ships.**
 
@@ -22,8 +22,9 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-_TEMPLATES = Path(__file__).resolve().parent.parent.parent / "templates"
-_ROSTER = _TEMPLATES / "modules" / "README.md"
+_ROOT = Path(__file__).resolve().parent.parent
+_TEMPLATES = _ROOT / "templates"
+_ROSTER = _ROOT / "docs" / "templates.md"
 
 #: A roster row: `| <set> | `<module>` | <when selected> |`. The set column is
 #: prose (it names tiers like `token-gated` that are not directories), so the

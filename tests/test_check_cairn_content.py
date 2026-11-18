@@ -511,19 +511,38 @@ class TestContentComposition:
         assert 'docs/example.md:2: temporary review ID R1' in captured.err
 
 
-@pytest.mark.parametrize("mutation", ["source", "unowned", "scripts", "tools"])
-def test_layout_command_rejects_each_broken_layout(tmp_path: Path, mutation: str) -> None:
+@pytest.fixture
+def outside_template_link(tmp_path: Path, request):
+    if request.node.callspec.params["mutation"] != "source":
+        return None
+    outside = tmp_path / "outside-template.txt"
+    outside.write_text("outside templates\n")
+    probe = tmp_path / "symlink-probe"
+    try:
+        probe.symlink_to(outside)
+    except (OSError, NotImplementedError):
+        pytest.skip("creating a symbolic link is unavailable on this host")
+    probe.unlink()
+    return outside
+
+
+@pytest.mark.parametrize("mutation", ["source", "unused", "unowned", "scripts", "tools"])
+def test_layout_command_rejects_each_broken_layout(
+        tmp_path: Path, mutation: str, outside_template_link: Path | None) -> None:
     """The public layout check catches bad sources, ownership and root tools."""
-    shutil.copytree(CAIRN_ROOT / "templates", tmp_path / "templates")
+    shutil.copytree(CAIRN_ROOT / "templates", tmp_path / "templates",
+                    ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     _commit_tree(tmp_path)
     command = [sys.executable, str(CAIRN_ROOT / "tests/check_cairn.py"),
                "--root", str(tmp_path), "--layout-only"]
     clean = subprocess.run(command, capture_output=True, text=True, check=False)
     assert clean.returncode == 0, clean.stderr
     if mutation == "source":
-        (tmp_path / "templates/core/AGENTS.md").unlink()
+        source = tmp_path / "templates/core/AGENTS.md"
+        source.unlink()
+        source.symlink_to(outside_template_link)
     else:
-        name = {"unowned": "dev/tools/extra.py", "scripts": "scripts/extra.py",
+        name = {"unused": "templates/unused.txt", "unowned": "dev/tools/extra.py", "scripts": "scripts/extra.py",
                 "tools": "tools/extra.py"}[mutation]
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)

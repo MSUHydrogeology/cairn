@@ -31,6 +31,7 @@ New to Cairn? Start with the [quickstart](quickstart.md).
   choose a profile, and run the installer.
 * [Upgrading an install](../install/UPGRADE.md) -- how to pull a newer Cairn
   release into an adopted repository without losing local edits.
+* [Templates and modules](templates.md) -- the installed files and how to use them.
 * [Dimensions](../install/dimensions/README.md) -- how the setup changes with the
   codebase and the team.
 * [Solo legacy recipe](solo-legacy-recipe.md) -- one person adopting Cairn on

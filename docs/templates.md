@@ -102,3 +102,86 @@ governing-doctrine file; doctrine specific to one agent tool goes
 in a separate file that imports `AGENTS.md`, so the shared content
 stays single-sourced. The `core/` templates ship that split as the
 model, not as an afterthought.
+
+# Modules
+
+`modules/` holds the **dimension-selected add-ons** — the parts of
+the apparatus an adoption installs only when its dimensional
+profile (`install/dimensions/`) calls for them. The invariant kernel is in
+`core/`; everything here is conditional.
+
+## Two sets
+
+* **`default-on/`** — installed *unless* a dimension removes them.
+  A typical adoption keeps all of them.
+* **`team-gated/`** — installed only when the team has the
+  structure to *run* them. A team-gated module is not "advanced";
+  it is simply unstaffable below a certain team shape.
+
+## How a module is structured
+
+Each module is one Markdown file that states, at its top:
+
+* **Selected when** — the dimensional condition that installs it.
+* **Adds to** — where its content goes: a section merged into a
+  `core/` file, or a new file.
+
+The body is the module's **template content** — the doctrine
+fragment, role, or tool contract the module contributes, carrying
+`{{placeholder}}` tokens like any other template. A module that
+ships a tool generalizes it from the methodology's reference
+instance; the module file states the tool's contract.
+
+## The modules
+
+The scaffold writes a project-specific inventory to
+dev/modules/README.md. That inventory lists only the resolved roster and
+points to a first-use action and installed entry point for each selected
+module. A fresh planning board receives one plain first-use task per selected
+module. Neither artifact runs commands or makes a module mandatory. After the
+task is written, the planning board belongs to the project; later installs and
+repeat adoption do not restore or reconcile tasks. If you copy a module by
+hand, run `upgrade --adopt-module` for that module. First adoption appends its
+task at the end of the board and updates the inventory and lockfile; repeat
+adoption can update the inventory without changing the board.
+
+| Set | Module | Selected when |
+|-----|--------|---------------|
+| default-on | `claim-check` | default |
+| default-on | `reflections` | multi-agent adoptions; a solo, single-agent project may omit (the cross-agent handoff function disappears) |
+| default-on | `content-security` | default; explicit `modules_remove` opt-out for operator-attached-only workflows |
+| default-on | `security-verification` | default; installs the local evidence *route* — the dispatcher plus its source-owned registry, which ships **empty**, so an adopter with no admitted security capability gathers nothing and is told so |
+| token-gated | `python-security` | selected when `python_package` is declared and filled; never for a non-Python adopter |
+| team-gated | `dual-review` | the team has two agent types, or multiple humans |
+| team-gated | `domain-agents` | the codebase is large *and* the agent team is multiple |
+| team-gated | `legacy-agent` | the codebase is legacy (the Age axis) |
+| team-gated | `dual-language-tests` | the codebase is multi-language |
+| team-gated | `coordination-tiers` | the agent team is concurrent, or high-concurrency |
+| team-gated | `security-review` | the project has a non-trivial trust boundary (untrusted input meets the system); trust-boundary-first, complexity tunes cadence/depth |
+| team-gated | `issue-capture` | the team uses an issue tracker for gap / friction capture (the User Agent surface) |
+| team-gated | `architecture-review` | the codebase's architecture *accreted rather than was deliberately designed* (inherited legacy, merged prototypes, vibe-coded growth); not gated on team shape — a solo maintainer with an inherited legacy codebase qualifies |
+
+The kernel's own review — a fresh reviewer who did not write the work —
+runs without the `dual-review` module; the module *adds* guidance for a
+team with two agent types or several people on staffing a read the
+Maintainer has called.
+
+# issue-capture — forge-specific reference starters
+
+The `issue-capture` module works with any issue tracker. It defines four
+types of reports — Bug, Gap, Friction, and Wish — and when to review them,
+without requiring a particular hosting service. The `templates/modules/team-gated/issue-capture/reference/` directory provides
+starter files for GitLab and GitHub so adopters can use the guidance without
+building forms from the field lists.
+
+* `.gitlab/` — issue templates (GitLab's web UI auto-discovers
+  `issue_templates/`) + a `labels.yml` manifest applied by a bootstrap
+  script.
+* `.github/` — `ISSUE_TEMPLATE/` markdown forms (YAML frontmatter
+  carries the labels) + a `labels.yml` for `gh label` / a label-sync
+  action.
+
+**These are starters, not rules.** Copy the directory for your hosting
+service into your repository root. Then add any project-specific routing
+labels to `labels.yml` (for example, `domain::<area>` or `legacy`). The
+starter labels are the minimum assumed by the triage guidance.

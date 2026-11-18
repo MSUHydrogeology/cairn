@@ -634,16 +634,41 @@ def check_layout(root: Path) -> list[str]:
         raise RuntimeError("layout installer unavailable")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    manifest = sys.modules[spec.name].install_manifest()
+    scaffold = sys.modules[spec.name]
+    manifest = scaffold.install_manifest()
     source_root = (root / "templates").resolve()
+    catalog = sys.modules["install._scaffold.layout_catalog"]
+    sources = {source for source, _destination, _verbatim in manifest}
+    sources.update(row[0] for row in scaffold._OPTIONAL_TEMPLATES)
+    sources.update(f"onboarding/{name}.md" for name in scaffold._ONBOARDING_PRESETS)
+    sources.update(new.removeprefix("templates/")
+                   for _old, new, _destination in catalog.ONBOARDING_GUIDES)
+
+    # The forge writer itself reads every admitted reference leaf in dry-run;
+    # derive the inputs from its actual results, not a permissive folder rule.
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix="cairn-layout-") as directory:
+        target = Path(directory)
+        for forge, forge_dir in scaffold._FORGE_REFERENCE_DIRS.items():
+            reference = source_root / "modules/team-gated/issue-capture/reference" / forge_dir
+            if any(source_root not in path.resolve().parents
+                   for path in reference.rglob("*") if path.is_file()):
+                raise ValueError(f"forge reference escapes templates: {forge}")
+            for destination, _unfilled, _slots, _status in scaffold.install_issue_capture_reference(
+                    source_root, target, forge, dry_run=True):
+                sources.add("modules/team-gated/issue-capture/reference/"
+                            + destination.relative_to(target).as_posix())
     errors = []
-    for source, destination, _verbatim in manifest:
+    for source in sorted(sources):
         path = (source_root / source).resolve()
         if source_root not in path.parents or not path.is_file():
             errors.append(f"invalid template source: {source}")
+    tracked = link_check._tracked_index_paths(root)
+    for path in tracked:
+        if path.startswith("templates/") and path.removeprefix("templates/") not in sources:
+            errors.append(f"unused template: {path}")
     owned = {destination for _source, destination, _verbatim in manifest
              if destination.startswith("dev/tools/")}
-    tracked = link_check._tracked_index_paths(root)
     for path in tracked:
         if path.startswith("dev/tools/") and path not in owned:
             errors.append(f"unowned installed tool: {path}")

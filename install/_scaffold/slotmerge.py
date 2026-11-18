@@ -468,7 +468,7 @@ def check_slot_fidelity(
 #: at write-time by a document author (e.g., a reviewer writing a
 #: Review section).  The scaffold does not substitute these and the
 #: post-scaffold "unfilled token" report excludes them.  Documented in
-#: BOOTSTRAP.md Appendix A and templates/README.md.
+#: BOOTSTRAP.md Appendix A and docs/templates.md.
 _DOC_AUTHOR_TOKENS: frozenset[str] = frozenset(
     {
         "Maintainer",
