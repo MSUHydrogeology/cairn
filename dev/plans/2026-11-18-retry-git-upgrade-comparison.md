@@ -314,3 +314,27 @@ Elapsed: unknown. Tokens: unknown.
 - Post-cleanup `ls -la /tmp` and `sudo -n cat /sys/kernel/security/apparmor/profiles | wc -l` (`117`) on `linux-dev` match the pre-flight baseline.
 
 Elapsed: ~15 minutes. Tokens: unknown.
+
+## Code review -- Hydrogen (Reviewer, Medium) -- 2026-11-18
+
+Reviewed commit: `4e2cafcd`
+
+**Obligation**: Internal code review
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: ACCEPT (non-blocking findings)
+
+The implementation completes C1–C3 on `linux-dev` under the reviewed AppArmor and namespace boundary, honestly recording `upgrade --plan` exit-2 refusals across all three variants rather than bypassing them or falsifying `--apply`.
+
+1. **Should this happen as framed?** Yes: C1 verifies the guest confinement controls before C2, C2 reconstructs `39/39` v0.5.0 destinations (`0` mismatches against `A_clean`), verifies `T0` sole-parent ancestry for non-empty `T1` (`>= 60` files) and all three `A_var` commits, and runs all six matched cells, and C3 verifies clean profile and workspace removal (`117` unrelated profiles unchanged).
+2. **Best alternative.** Recording the observed `upgrade --plan` layout-ancestry (`benign`) and outside-link (`leaf_link`, `linked_parent`) refusals and marking all 37 hostile tests `untested` with their remaining mechanisms preserves the accepted scope without inventing a new driver or relaxing protections.
+3. **What would show it wrong?** A silent C0 bypass, unverified `T0` ancestry, missing cell, or residual guest profile/mount/tmpdir would invalidate the trial; none of those occurred in the recorded evidence.
+
+**Non-blocking findings:**
+
+- **37-case parameter-class inaccuracies (C2):** Against `tests/test_upgrade_refuses_hostile_project_data.py` at `5164bf36`, seven rows misstate `Parameter classes`: rows `#1`, `#21`, `#24`, `#25`, and `#26` state `no parameters` despite `@pytest.mark.parametrize` decorators (`how`, `value`, `field`/`name`, `field`, and `("field", "member")`), while rows `#13` and `#15` omit their second `how` parameter. Update those seven cells before archiving.
+- **Minor evidence-log omissions (C1–C2):** C1 records `dev=64769` for `/guard/canary` without printing its matching `ino`, and does not explicitly log lifeline EOF or the known-absent marker; C2 does not explicitly list engine modules exercised.
+
+**Coverage:** Inspected committed revisions `34644c4e`, `5164bf36`, and `4e2cafcd`, the accepted proposal, `5164bf36:tests/test_upgrade_refuses_hostile_project_data.py`, and `5164bf36:dev/tools/git_read.py`, plus `claim_check.py`. Did not inspect uncommitted working-tree files, access `linux-dev`, re-run the guest trial, or perform Security Review.
+
+Elapsed: ~3 minutes. Tokens: unknown.
