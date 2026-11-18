@@ -2,7 +2,7 @@
 
 **Author**: gpt-6.1-terra (Implementation, Medium)
 **Source proposal**: dev/proposals/archive/2026-11-18-terra-release-roster-and-guards.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/development-environment.md
@@ -107,3 +107,63 @@ at its designated step.
 ## Response -- Terra (author) -- 2026-11-18
 
 Both findings are accepted. Sequence and C3 require Security coverage of all applicable new protected changes and identify the one authorized old-code scope without resetting its cap. The same formal High-tier code review assesses proposed retirement dispositions before they become final; unproven guards are restored. C3 and Verification bind selected checks and inputs to the final candidate; the arc owner’s later joined integration no longer gates this plan. **Disposition**: ready-to-implement. Elapsed: unknown; tokens: unknown.
+
+## C1 and C2 Implementation Checkpoint -- 2026-11-18
+
+**Status**: C1 and C2 implementation committed at `84e4d9c8` and verified on Mac and Windows; awaiting independent ordinary and authorized High Security code reviews.
+
+### C1 Roster and Skip-Marker Repairs (`84e4d9c8`)
+
+- Moved remaining in-body platform/capability skips to setup-phase `@pytest.mark.skipif` / `pytest.param(..., marks=...)` across the 11 C1/C2 test files, split `TestSymlinkedSourcesAreNotRead::test_named_pipe_entry_fails_loudly_without_hanging` in `tests/test_board_json_contract.py`, and fixed the `tests/measurements.py` route path in `tests/test_verify_counts.py`.
+- Updated the three `fchmod` skip markers (`tests/test_security_leaf.py` lines 134 and 259; `tests/test_session_writes_contained.py` line 740) to `os.name != "posix" or not hasattr(os, "fchmod")` so Windows does not execute POSIX-only descriptor mode tests even when `os.fchmod` exists.
+- `tests/security_manifest.py` validated at **63 Windows / 362 POSIX** (`NATIVE_ONLY_POLICY_ID = sha256:de890081f7b98a2db4a6e2bcfad77db161ac99ceaccef9a477e7ec66b33a4466`); `tests/test_security_check.py` `_connected_runner_fixture` updated to `362` POSIX entries.
+
+### C2 Claims-Tool Inspection (`tests/test_intents_tool.py`)
+
+- Only `tests/test_intents_tool.py` changed in the claims family (C2 fence lifted solely for this file); no unrelated claims fence was lifted.
+- Changes convert two in-body `os.mkfifo` skips (`TestGitignoreSeedWritesByReplacing::test_pipe_refused_before_open` and `test_strict_claim_reader_refuses_leaf_swap_before_open[fifo]`) to decorator/parameter `skipif` markers while preserving warn-default, explicit blocking, and distinct public refusal checks with no tautology or over-mocking.
+
+### C2 Disposition of 28 Historical `KEPT-BY-RULE` Guards
+
+Recovered from `git -c core.fsmonitor=false show 546959c1~1:dev/measurement/promise-testing-worklist-2026-11-11.csv` (all 28 `KEPT-BY-RULE` rows):
+
+| # | Current Test Node | Disposition | Named Public Promise / Witness |
+|---|---|---|---|
+| 1 | `tests/test_doc_drift_tools.py::TestLinkCheck::test_default_discovery_uses_all_tracked_markdown_with_literal_decoy` | Provisionally retired (`a61cec86`), pending authorized High Security code review | Public CLI witness `tests/test_doc_drift_tools.py::TestGitReadPhysicalBindings::test_real_discovery_cli_keeps_broken_file_with_decoy_and_catches_literal_mutant` (`link` param) proves tracked markdown discovery with literal `*.md` decoy and inherited `GIT_LITERAL_PATHSPECS`, plus wildcard negative control. |
+| 2 | `tests/test_doc_drift_tools.py::TestSnippetSync::test_default_discovery_uses_all_tracked_markdown_with_literal_decoy` | Provisionally retired (`a61cec86`), pending authorized High Security code review | Public CLI witness `tests/test_doc_drift_tools.py::TestGitReadPhysicalBindings::test_real_discovery_cli_keeps_broken_file_with_decoy_and_catches_literal_mutant` (`snippet` param) proves tracked markdown discovery with literal `*.md` decoy and inherited `GIT_LITERAL_PATHSPECS`, plus wildcard negative control. |
+| 3 | `tests/test_portable_security_sweeps.py::test_native_windows_worker_translates_a_bounded_version_timeout` | Retained | Native Windows worker translates bounded `git --version` timeouts into structured refusal rather than hanging or passing unverified. |
+| 4 | `tests/test_security_check.py::test_the_conftest_recognizes_the_same_token_pair` | Retained (parity check) | `tests/conftest.py` and `release/security_check.py` recognize the exact same release-gate token pair. |
+| 5 | `tests/test_security_leaf.py::TestWriteByReplacing::test_permissions_strip_execute_and_special_bits` | Retained | Atomic replace-write strips execute and special permission bits before publishing target files. |
+| 6 | `tests/test_security_marker.py::test_the_manifest_still_names_exactly_the_reviewed_set` | Retained (release procedure) | Security manifest membership matches the exact reviewed release set. |
+| 7 | `tests/test_security_net.py::test_channel_passthrough_is_empty_in_shipped_source` | Retained (shipped reference) | Shipped D-2 channel passthrough surface remains an empty frozen set with no writer. |
+| 8 | `tests/test_session_binding_gate_and_printing_hold.py::test_raw_child_write_mutant_is_caught_by_real_child_contract` | Retained | Real child contract catches raw child-write mutations bypassing session binding gates. |
+| 9 | `tests/test_session_binding_untracked.py::test_a_tracked_legacy_file_does_not_replace_the_git_admin_binding` | Retained | Tracked legacy binding files cannot override or replace the git-admin session binding. |
+| 10 | `tests/test_session_binding_untracked.py::test_a_vanished_interpreter_keeps_the_stale_message` | Retained | Vanished bound interpreter refuses execution and preserves the specific stale-binding message. |
+| 11 | `tests/test_session_binding_untracked.py::test_when_git_cannot_answer_the_binding_is_not_trusted` | Retained | Session binding is untrusted and refused whenever git cannot answer binding state. |
+| 12 | `tests/test_session_writes_contained.py::test_the_temporary_file_mode_is_set_on_the_open_descriptor_not_by_name` | Retained | Temporary file mode is applied via open descriptor (`os.fchmod`) on POSIX, never by path name. |
+| 13 | `tests/test_upgrade_edit_check_runs_no_project_programs.py::test_a_missing_or_untracked_name_is_handled_as_git_status_does` | Retained | Upgrade edit-check classifies missing or untracked paths consistently with `git status` without running project programs. |
+| 14 | `tests/test_upgrade_edit_check_runs_no_project_programs.py::test_a_staged_then_reverted_file_counts_as_edited` | Retained | Staged-then-reverted files still register as edited in the upgrade dirty-tree guard. |
+| 15 | `tests/test_upgrade_edit_check_runs_no_project_programs.py::test_an_untracked_recorded_name_is_not_returned_and_no_lockfile_gives_an_empty_set` | Retained | Untracked lockfile entries are excluded from tracked edit checks and absent lockfiles yield an empty set. |
+| 16 | `tests/test_upgrade_edit_check_runs_no_project_programs.py::test_below_the_floor_a_project_with_no_partial_clone_setting_is_still_guarded` | Retained | Projects below the Git version floor without partial-clone settings remain guarded by the edit check. |
+| 17 | `tests/test_upgrade_edit_check_runs_no_project_programs.py::test_core_filemode_false_makes_a_mode_only_edit_not_count` | Retained | `core.filemode=false` prevents mode-only changes from triggering false-positive dirty-tree refusals. |
+| 18 | `tests/test_upgrade_edit_check_runs_no_project_programs.py::test_git_that_cannot_start_or_does_not_answer_at_any_step_is_no_guard_or_cannot_tell` | Retained | Unstartable or non-responsive git at any edit-check step fails closed as no-guard / cannot-tell. |
+| 19 | `tests/test_upgrade_edit_check_runs_no_project_programs.py::test_names_go_in_groups_of_at_most_100` | Retained | Upgrade edit-check batches path arguments in groups of at most 100 to avoid command-line truncation. |
+| 20 | `tests/test_upgrade_edit_check_runs_no_project_programs.py::test_with_no_names_the_lockfiles_recorded_names_are_asked_about` | Retained | When no explicit names are supplied, upgrade edit-check queries the lockfile's recorded paths. |
+| 21 | `tests/test_upgrade_removes_retired_files.py::test_a_missing_file_counts_as_removed_and_a_folder_in_its_place_is_not` | Retained | Retired-file removal treats missing files as removed and refuses to treat a directory in its place as removed. |
+| 22 | `tests/test_upgrade_removes_retired_files.py::test_an_unchanged_file_is_removed_and_its_emptied_folder_with_it` | Retained | Unchanged retired files are removed cleanly along with their emptied parent directories. |
+| 23 | `tests/test_upgrade_removes_retired_files.py::test_committed_copy_matches_passes_only_on_exactly_the_bytes` | Retained | Committed-copy verification for retired-file removal passes only on an exact byte-for-byte match. |
+| 24 | `tests/test_upgrade_removes_retired_files.py::test_committed_copy_matches_refuses_a_name_that_is_not_a_plain_project_path` | Retained | Committed-copy verification refuses non-plain or escaping project paths. |
+| 25 | `tests/test_upgrade_removes_retired_files.py::test_confirming_that_nothing_is_at_the_name_removes_nothing` | Retained | Absence confirmation during retired-file cleanup performs no removal when nothing exists at the target path. |
+| 26 | `tests/test_upgrade_removes_retired_files.py::test_git_version_is_read_once_per_process` | Retained | Retired-file cleanup reads `git --version` once per process rather than re-probing per file. |
+| 27 | `tests/test_upgrade_removes_retired_files.py::test_the_walk_runs_only_when_open_unlink_rmdir_and_stat_all_take_dir_fd` | Retained | Directory-fd-confined retired-file walk runs only when `open`, `unlink`, `rmdir`, and `stat` all support `dir_fd`. |
+| 28 | `tests/test_verify_ref.py::test_cairn_roster_names_one_principal` | Retained (shipped reference) | Cairn's internal gate roster names exactly one principal (`as_of 2026`). |
+
+### Verification Evidence
+
+- **Defect fix (`cbdeca91`, separate post-archive fix from `b0aafcf8`)**: `tests/test_security_marker.py:29` (`CAIRN_ROOT = TESTS_DIR.parent`); `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q tests/test_security_marker.py` -> `29 passed in 28.64s`.
+- **Mac focused C1/C2 set** (`/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest` on all 15 modified/split nodes across 10 files): `24 passed, 1 skipped in 16.41s` (skip is Windows-only `test_replacer_reads_rewritten_windows_fragment_after_creation`); `test_real_discovery_cli_keeps_broken_file_with_decoy_and_catches_literal_mutant` -> `2 passed, 79 deselected in 3.82s`.
+- **Windows focused C1 set** (`C:/ProgramData/miniconda3/envs/lhm/python.exe -m pytest -q -p no:cacheprovider -rfsE` on the 15 modified/split nodes with `[fchmod]` in a disposable archive on `cairn-windows`): `11 passed, 13 skipped in 15.33s` (all 13 skips are setup-phase `skipif` policy skips).
+- **Pre-existing out-of-scope Windows observation**: running unparametrized `test_public_seed_gitignore_staging_failure_preserves_destination_and_cleans_owned_temp` on `cairn-windows` failed `[write]` (`tests/test_security_leaf.py:296`) with `[WinError 32]` because `install/_scaffold/security.py:61-87` (`_stage_exclusive`) opens the temp stream with `closefd=False` and calls `tmp.unlink()` inside `except BaseException:` before `finally: os.close(fd)`. Kept unmasked and left untouched outside plan scope (high-risk AST-pinned surface) for Maintainer disposition.
+- **Committed-HEAD connected gate fixture (`84e4d9c8`)**: `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q tests/test_security_check.py::test_committed_fixture_connects_real_record_and_join_entrypoints` in an isolated detached worktree of `84e4d9c8` -> `1 passed, 3 warnings in 26.65s`.
+
+Elapsed: unknown. Tokens: unknown.
