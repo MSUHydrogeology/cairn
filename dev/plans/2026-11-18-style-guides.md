@@ -1,7 +1,7 @@
 # Plan: Style guides and onboarding
 
 **Source proposal**: dev/proposals/archive/2026-11-12-claude-style-guides.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/working-agreements.md, dev/rules/protected-surfaces.md
@@ -142,3 +142,14 @@ optional router is absent.
 public checks and recorded evidence. The three stale-path cases passed on
 targeted retry. No runs were replayed; live agent interpretation and hostile
 project-authored prose were outside this pass.
+
+## Implementation closeout -- Terra -- 2026-11-18
+
+C1 and C2 held: the two guide audiences, authority, preset tasks, opt-out and board preservation are evidenced at `ed58c8b8` and in Implementation evidence. C3 held: independent ordinary and Security code reviews accepted with no findings; no dispositions are needed. The repaired onboarding test resolves its existing source-delivery promise after the layout move.
+
+Not run: joined Group 4 integration. Home: `dev/PLANNING.md`, Group 4 sequence and arc owner.
+Not covered: live agent interpretation or hostile project-authored prose. Home: `dev/PLANNING.md`, outside-adopter trial and normal security review.
+
+**Benefit versus cost**: unknown -- guidance for two audiences and three presets; the installed section adds 115 words and the delivery check adds six parameterized cases. Remaining upkeep and agent impact are unknown; revisit if task completion or stale guidance shows the burden exceeds benefit.
+
+**Elapsed**: unknown. **Tokens**: unknown.
