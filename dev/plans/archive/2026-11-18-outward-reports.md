@@ -193,3 +193,21 @@ The two protocol copies are byte-identical. Python 3.13.13 claim, link, snippet,
 neutrality and Cairn prose checks passed. No real search, publication, wording
 test or suite was run. Ordinary and second Security code reviews remain due.
 Elapsed: unknown; tokens: unknown.
+
+## Post-archive code review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: 0b4a11bea93a8fbe3c3cf840bc3f7c5947b1711c
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Steelman.** Restore discoverable, safe reporting duties while keeping the approved filing boundary in one installed protocol.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The protocol requires safe generalized duplicate searches, records unknown when unavailable, and retains approval of each actual report and destination and hand submission of Cairn PRs (`templates/core/dev/upstream/foldback.md`, Publication protocol).
+2. **Best alternative.** Route onboarding and session guidance to that protocol: this gives agents an installed authoritative home while retaining optional capture, empty-capture success, team coordination, and the high-rigor scanner and security checklist (`docs/methodology/session-routines.md`, upstream capture; `templates/onboarding/collaborative-team.md` and `high-rigor-legacy.md`, fold-back seeds).
+3. **What would show it wrong?** A fresh adopter following a fold-back seed who cannot find the installed protocol, or a simulated report that proceeds without approval of its actual contents and destination, would falsify the route or boundary (C1–C2; `templates/onboarding/solo-greenfield.md`, fold-back seed).
+
+**Coverage.** Compared the committed repair with the accepted proposal, plan and changed onboarding and session routes; assessed the audience and retained duties. The author records matching protocol copies and prose checks in Post-archive repair. I did not rerun tests or scenarios, search a real tracker, file a report, or assess a real payload. Security Review is separate.
