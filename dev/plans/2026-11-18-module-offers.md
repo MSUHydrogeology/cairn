@@ -1,7 +1,7 @@
 # Plan: Offer unselected modules
 
 **Source proposal**: dev/proposals/archive/2026-11-18-terra-module-offers.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md
