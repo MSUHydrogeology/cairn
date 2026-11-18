@@ -318,3 +318,16 @@ remains pending. Two format reviews had zero findings and zero findings-prose
 words each, not zero total prose. No full suite or override was used. Elapsed
 for this verification: unknown; tokens: unknown.
 
+## Closeout -- Codex (Implementation) -- 2026-11-18
+
+The implementation and its recorded verification are complete. The only
+remaining real-merge trial has a permanent home in the board's Deferred
+follow-ups, with its trigger and the Maintainer's 2026-11-13 instruction:
+
+> "Put that into the deferred list. We have no other developers right now. It's just us".
+
+Archiving this accepted light proposal removes a misleading active
+implementation suggestion; it neither claims the trial ran nor cancels it.
+No implementation changed and no checks were replayed. The earlier evidence
+and its limitations remain above. Elapsed and tokens: unknown.
+
