@@ -388,11 +388,11 @@ faithful at all three checkpoints of the loop:
    surface references a Cairn-internal-only path (`docs/methodology/*`) that is neither
    transplanted into the install set nor marked a deliberate citation — a
    reference that resolves in the Cairn source but **dangles once installed**.
-   When run: `python scripts/check_cairn.py` — at review time, and in the
-   **maintainer-run** release checklist (`bootstrap/security_check.py` invokes
+   When run: `python tests/check_cairn.py` — at review time, and in the
+   **maintainer-run** release checklist (`release/security_check.py` invokes
    it, when a maintainer runs that). This is the automatable flagship; its
    mechanics live in
-   [`../../bootstrap/fidelity-check.md`](../../bootstrap/fidelity-check.md) >
+   [`../../install/fidelity-check.md`](../../install/fidelity-check.md) >
    "The loop-fidelity gate".
 3. **Adoption → canonical (#54) — drift surfacing.** A session-start / goodnight
    check **surfaces** (informational; never blocks) when an adopter's installed
@@ -736,7 +736,7 @@ leaving the roadmap.
 
 The lifecycle is part of the **invariant kernel** — no adaptation
 dimension removes it. What scales with the team is the *review*
-applied within it (see `dual-review.md` and `dimensions/`): a
+applied within it (see `dual-review.md` and `install/dimensions/`): a
 solo, single-agent team runs the lifecycle with a lighter review
 tier; it still runs the lifecycle. The forkable proposal and plan
 templates live in `templates/`; this document explains what they

@@ -2,11 +2,11 @@
 
 ## Why a view is built, never hand-kept
 
-A **view** is any web page, table, or summary panel built from the board's output so a reader can see at a glance what needs attention and what is in flight across `dev/`. When you run `python tools/board.py --json`, the board prints its facts as **JSON** (JavaScript Object Notation, a plain-text data format of named fields and lists that standard-library tools in any language can read without scraping a terminal table). Cairn ships no view, no `--html` flag, and no bundled page script, because every research team wants a slightly different layout while relying on the same underlying facts. Any page you build from this guide is regenerated straight from the repository's files whenever you want a fresh look and is never hand-kept: if a row on the page looks wrong, you fix the header line in the proposal or plan and regenerate the page.
+A **view** is any web page, table, or summary panel built from the board's output so a reader can see at a glance what needs attention and what is in flight across `dev/`. When you run `python dev/tools/board.py --json`, the board prints its facts as **JSON** (JavaScript Object Notation, a plain-text data format of named fields and lists that standard-library tools in any language can read without scraping a terminal table). Cairn ships no view, no `--html` flag, and no bundled page script, because every research team wants a slightly different layout while relying on the same underlying facts. Any page you build from this guide is regenerated straight from the repository's files whenever you want a fresh look and is never hand-kept: if a row on the page looks wrong, you fix the header line in the proposal or plan and regenerate the page.
 
 ## Field reference
 
-`python tools/board.py --json` emits one JSON object on standard output. It reads the `# ` title line and the `**Field**: value` header lines above the first `## ` heading of each proposal and plan, plus the rows of [`dev/PLANNING.md`](../dev/PLANNING.md) that carry the `**Waiting on Maintainer**:` marker in row form. It derives no value.
+`python dev/tools/board.py --json` emits one JSON object on standard output. It reads the `# ` title line and the `**Field**: value` header lines above the first `## ` heading of each proposal and plan, plus the rows of [`dev/PLANNING.md`](../dev/PLANNING.md) that carry the `**Waiting on Maintainer**:` marker in row form. It derives no value.
 
 ### Top-level keys
 
@@ -85,7 +85,7 @@ This lookup is the doctrine's stage table, not a check that a status is current 
 
 ## Advisory `--next` output
 
-`python tools/board.py --next` is separate from `cairn-board/1`. It reads the
+`python dev/tools/board.py --next` is separate from `cairn-board/1`. It reads the
 written status, review headings, Decision and proposal-plan join, then prints
 one advisory role, tier, full artifact path and move. `--next --json` uses the
 separate `cairn-board-next/1` schema with `role`, `tier`, `artifact` and `move`,
@@ -137,7 +137,7 @@ Several things are **not derivable** from the board's data:
 
 * **"Blocked" and "an agent is working right now" are not derivable.** An external blocker is visible only when an author writes a `**Waiting on Maintainer**:` line, and whether an agent process is actively editing a file is local working-tree state outside git-committed headers.
 * **General roadmap rows without a wait marker are not in the data.** `roadmap_waits` includes only `dev/PLANNING.md` rows that carry `**Waiting on Maintainer**:` in row form. Adding unmarked roadmap rows has a single revival condition: the Maintainer asks for general roadmap items on a view once the wait marker has had real use.
-* **The fence advisory stays in the terminal view only.** Active plans that mention `MAINTAINER-GATED` or `MAINTAINER-ONLY` in their body without declaring a wait are not a key in the JSON data and not a recipe; run `python tools/board.py --maintainer` in the terminal to see that advisory line.
+* **The fence advisory stays in the terminal view only.** Active plans that mention `MAINTAINER-GATED` or `MAINTAINER-ONLY` in their body without declaring a wait are not a key in the JSON data and not a recipe; run `python dev/tools/board.py --maintainer` in the terminal to see that advisory line.
 
 Keep three trust boundaries in mind when reading any generated page:
 
@@ -147,14 +147,14 @@ Keep three trust boundaries in mind when reading any generated page:
 
 ## Reaching it and running it
 
-Adopters do not receive `docs/` when they scaffold or upgrade a project. This guide is read in Cairn's published documentation (`cairn/docs/build-a-board-view.md`, cited at the bottom of `python tools/board.py --help`).
+Adopters do not receive `docs/` when they scaffold or upgrade a project. This guide is read in Cairn's published documentation (`cairn/docs/build-a-board-view.md`, cited at the bottom of `python dev/tools/board.py --help`).
 
-The board tool itself arrived after Cairn 0.3.0, and `--json` arrived after that. In an older install, `tools/board.py` may be absent altogether, or running `python tools/board.py --json` may exit with code `2` and `unrecognized arguments: --json`. Either result means the project has an older Cairn install; follow [`install/UPGRADE.md`](../install/UPGRADE.md) for the upgrade path.
+The board tool itself arrived after Cairn 0.3.0, and `--json` arrived after that. In an older install, `dev/tools/board.py` may be absent altogether, or running `python dev/tools/board.py --json` may exit with code `2` and `unrecognized arguments: --json`. Either result means the project has an older Cairn install; follow [`install/UPGRADE.md`](../install/UPGRADE.md) for the upgrade path.
 
 
 ## Worked example: a regenerated HTML board page
 
-The script below uses only the Python standard library. It runs `tools/board.py --json` and `git rev-parse HEAD`, groups live items in the order `Maintainer`, `author`, `reviewer`, `implementer`, `none named` with counts, prints the raw `status` beside each row, uses `in_brief` (or `title` when `in_brief` is null or empty) as the label, and writes the page only after both commands succeed.
+The script below uses only the Python standard library. It runs `dev/tools/board.py --json` and `git rev-parse HEAD`, groups live items in the order `Maintainer`, `author`, `reviewer`, `implementer`, `none named` with counts, prints the raw `status` beside each row, uses `in_brief` (or `title` when `in_brief` is null or empty) as the label, and writes the page only after both commands succeed.
 
 Every free-text string is flattened to one line, truncated to 120 characters, passed through `html.escape(..., quote=True)`, and then scanned so any Unicode control or format character (category starting with `C`, such as `U+001B` or `U+202E`) is shown as a visible `U+XXXX` code. Invisible filler characters outside category `C` (`U+3164`, `U+115F`, `U+034F`, `U+FE0F`, `U+E0100`) pass through raw.
 
@@ -243,7 +243,7 @@ def render_page(doc: dict, commit: str) -> str:
     foot = [
         f"<p>Built from commit <code>{_clean(commit.strip())}</code> (working tree).</p>",
         f"<p>{brief_n} of {len(live)} live rows carry an In brief line.</p>",
-        "<p>Advisories for plans with a fence and no declared wait are not shown; run <code>python tools/board.py --maintainer</code>.</p>",
+        "<p>Advisories for plans with a fence and no declared wait are not shown; run <code>python dev/tools/board.py --maintainer</code>.</p>",
     ]
     if not doc["roadmap_read"]:
         foot.append("<p>Page incomplete: dev/PLANNING.md was not read.</p>")
@@ -253,7 +253,7 @@ def render_page(doc: dict, commit: str) -> str:
 
 
 def build_view(out_path: Path) -> None:
-    board_proc = subprocess.run([sys.executable, "tools/board.py", "--json"], capture_output=True, text=True, check=True)
+    board_proc = subprocess.run([sys.executable, "dev/tools/board.py", "--json"], capture_output=True, text=True, check=True)
     git_proc = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True)
     out_path.write_text(render_page(json.loads(board_proc.stdout), git_proc.stdout), encoding="utf-8")
 
@@ -271,7 +271,7 @@ An item waits on the Maintainer when it is a live (`not archived`) proposal or p
 The function `waiting_on_maintainer(doc)` in `view-example` above implements that exact rule once so the page and any standalone script stay in step:
 
 ```python
-doc = json.loads(subprocess.check_output([sys.executable, "tools/board.py", "--json"], text=True))
+doc = json.loads(subprocess.check_output([sys.executable, "dev/tools/board.py", "--json"], text=True))
 entries, caveats = waiting_on_maintainer(doc)
 ```
 
@@ -327,9 +327,9 @@ if __name__ == "__main__":
 
 ### Joining active work-intent claims (a hint only)
 
-If your project uses the optional `work-intent` module (`tools/intent.py`), you can join `python tools/intent.py list --format json` (`schema` `"cairn-intent-list/1"`) with the board's JSON output by matching each claim's `stem` to a live artifact's `id`. Claims with an empty `stem`, or a `stem` that matches no live artifact on the board, stay in an unattached list and are never attached by guessing from file paths.
+If your project uses the optional `work-intent` module (`dev/tools/intent.py`), you can join `python dev/tools/intent.py list --format json` (`schema` `"cairn-intent-list/1"`) with the board's JSON output by matching each claim's `stem` to a live artifact's `id`. Claims with an empty `stem`, or a `stem` that matches no live artifact on the board, stay in an unattached list and are never attached by guessing from file paths.
 
-Treat this join as a **hint only**: the intent log is gitignored and local to one working tree, a terminated session's claim continues to read as active until it expires or is cleared, and the intent tool belongs to a team-gated module that `tools/board.py` does not depend on.
+Treat this join as a **hint only**: the intent log is gitignored and local to one working tree, a terminated session's claim continues to read as active until it expires or is cleared, and the intent tool belongs to a team-gated module that `dev/tools/board.py` does not depend on.
 
 ```python intent-recipe
 import json
@@ -360,13 +360,13 @@ def join_intents(
 
 if __name__ == "__main__":
     b_out = subprocess.run(
-        [sys.executable, "tools/board.py", "--json"],
+        [sys.executable, "dev/tools/board.py", "--json"],
         capture_output=True,
         text=True,
         check=True,
     ).stdout
     i_out = subprocess.run(
-        [sys.executable, "tools/intent.py", "list", "--format", "json"],
+        [sys.executable, "dev/tools/intent.py", "list", "--format", "json"],
         capture_output=True,
         text=True,
         check=True,
@@ -379,10 +379,10 @@ if __name__ == "__main__":
 
 A generated page updates only when something runs the script: a person running it directly (for example as a session-end step) or a local `post-commit hook` that the adopter installs. Cairn's scaffold `never writes` `.git/hooks`. With neither trigger in place, the file on disk is a point-in-time `snapshot`, and the commit hash in its footer says which `HEAD` was checked out when it was built.
 
-Always `regenerate` the page from the repository's files and never edit the HTML by hand. If a row on the page is wrong, fix the header line in the proposal or plan (or the row in `dev/PLANNING.md`) and regenerate. Because the script runs both subprocesses before opening the output file, a failure exits nonzero and never overwrites the previous page. Remember that the footer stamp comes from `git rev-parse HEAD` while `tools/board.py` reads the `working tree`, so an uncommitted edit to a header line will appear under the current `HEAD` stamp.
+Always `regenerate` the page from the repository's files and never edit the HTML by hand. If a row on the page is wrong, fix the header line in the proposal or plan (or the row in `dev/PLANNING.md`) and regenerate. Because the script runs both subprocesses before opening the output file, a failure exits nonzero and never overwrites the previous page. Remember that the footer stamp comes from `git rev-parse HEAD` while `dev/tools/board.py` reads the `working tree`, so an uncommitted edit to a header line will appear under the current `HEAD` stamp.
 
-**Hook safety warning:** a `post-commit hook` runs the board tool and view script of `whatever commit is checked out` when a commit finishes. Checking out a branch from someone else and making a commit will execute that branch's copy of `tools/board.py` (and of the view script, if it lives inside the repository). Install a hook only in repositories where you trust `tools/`, or point the hook at a copy of the board and view script kept outside the working tree.
+**Hook safety warning:** a `post-commit hook` runs the board tool and view script of `whatever commit is checked out` when a commit finishes. Checking out a branch from someone else and making a commit will execute that branch's copy of `dev/tools/board.py` (and of the view script, if it lives inside the repository). Install a hook only in repositories where you trust `dev/tools/`, or point the hook at a copy of the board and view script kept outside the working tree.
 
 ## Handing this guide to an AI agent
 
-If you want a richer layout—such as filtering by date, custom styling, or a multi-panel dashboard—hand this guide and the output of `python tools/board.py --json` to an AI coding agent and ask it to write a generator script for your team, keeping the rule that the page is regenerated from `cairn-board/1` data rather than edited by hand.
+If you want a richer layout—such as filtering by date, custom styling, or a multi-panel dashboard—hand this guide and the output of `python dev/tools/board.py --json` to an AI coding agent and ask it to write a generator script for your team, keeping the rule that the page is regenerated from `cairn-board/1` data rather than edited by hand.

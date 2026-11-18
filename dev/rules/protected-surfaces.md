@@ -5,7 +5,7 @@ What needs a proposal, which surfaces are high risk, and who re-anchors. Routed 
 Doctrine or scaffold-engine changes need a proposal. A one-line engine change
 also needs Security Review unless it qualifies as the documented cheap defect
 repair. High-risk surfaces include `install/scaffold.py` and
-`bootstrap/_scaffold/`; protected tests/control machinery (`conftest.py`,
+`install/_scaffold/`; protected tests/control machinery (`conftest.py`,
 `security_manifest.py`, `_ast_attest.py`, `_loader_proto.py`, `_gate_*`,
 `_oracle*`, and gate/AST fixtures); install/fidelity/gate manifests, lockfile
 schema and published install manifest; vendor-neutral methodology; Python
@@ -28,7 +28,7 @@ The installer uses a per-worktree binding in Git administration. The reader
 `templates/skills/_lib/session.py` is copied byte-for-byte to `dev/tools/session.py`;
 the writer is in `install/_scaffold/install.py`. Rebind after copying a Git
 administration directory. The portable sweep is also kept byte-identical
-between `scripts/` and `templates/modules/team-gated/`; it resolves and
+between `dev/tools/` and `templates/modules/team-gated/`; it resolves and
 revalidates host executables immediately before invocation, treats absence as
 incomplete and has no egress path.
 

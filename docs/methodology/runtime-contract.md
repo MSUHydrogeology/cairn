@@ -10,9 +10,9 @@ matrix. It supersedes any other claim in the repository.
 
 **`requires-python = ">=3.11"`**
 
-The engine (`bootstrap/_scaffold/`, ~6,044 lines across eight owned
+The engine (`install/_scaffold/`, ~6,044 lines across eight owned
 modules plus the verifying loader `_guard`) was measured with `vermin`
-(see `bootstrap/tests/`) against
+(see `tests/`) against
 the post-scaffold-split topology. The measured **syntactic** minimum
 is **Python 3.7** — the engine is written conservatively and uses no
 syntax newer than 3.7. The declared **supported** minimum, however, is
@@ -28,7 +28,7 @@ so this document is the **authoritative** floor declaration (the floor is
 not machine-enforced at install time). If Cairn ever gains a
 `pyproject.toml`, it should carry `requires-python = ">=3.11"`.
 
-The previous claim of "Python 3.10+" in `bootstrap/prompts/bootstrap-lite.md`
+The previous claim of "Python 3.10+" in `install/prompts/bootstrap-lite.md`
 and an implicit "scaffold.py syntax is 3.10+" are **refuted** by
 measurement — the engine is syntactically 3.7-clean, comfortably within the
 declared `>=3.11` support line. (`templates/modules/team-gated/intent.py`'s
@@ -38,9 +38,9 @@ floor is the 3.11 policy, not the syntactic floor.)
 **Engine topology (post-scaffold-split, 2026-06).** The scaffold
 engine is split across two surfaces:
 
-* `bootstrap/scaffold.py` — a **143-line fail-closed launcher and
+* `install/scaffold.py` — a **143-line fail-closed launcher and
   facade**; the public entry point for all import and CLI uses.
-* `bootstrap/_scaffold/` — the **engine** (~6,044 lines): eight owned
+* `install/_scaffold/` — the **engine** (~6,044 lines): eight owned
   modules in an acyclic DAG (`security`, `slotmerge`, `merge`,
   `config`, `lockfile`, `install`, `upgrade`, `cli`) plus the verifying
   loader (`_guard`). This is the surface measured for the floor check.
@@ -80,9 +80,9 @@ by OS and Python installation method:
 `python` resolves to the expected interpreter. Document scripts with
 `python3` as the default launcher; accept `py` in Windows docs.
 
-The scaffold CLI entry point (`python bootstrap/scaffold.py`) and the
+The scaffold CLI entry point (`python install/scaffold.py`) and the
 shebang on that file (`#!/usr/bin/env python3`) both use `python3`.
-Invoke it as: `python3 bootstrap/scaffold.py --help`.
+Invoke it as: `python3 install/scaffold.py --help`.
 
 ### Required external executables
 
@@ -174,33 +174,33 @@ It is explicit, named, and visible — not inferred.
 ## The dependency budget
 
 Cairn's scaffold engine is **stdlib-only by default** — no third-party
-packages are required to run `bootstrap/scaffold.py install` or
+packages are required to run `install/scaffold.py install` or
 `upgrade`. This is a deliberate constraint: a stdlib-only engine means
 "just an interpreter, no pip or PyPI to vet" — a genuine saving for a
 non-Python team provisioning Python for the contained-kernel recipe.
 
 Declared exceptions to this default are in
-`bootstrap/DEPENDENCY_BUDGET.md`. Dev-only and test-only tools (e.g.,
+`install/DEPENDENCY_BUDGET.md`. Dev-only and test-only tools (e.g.,
 `vermin` for the floor check) are not adopted-runtime dependencies
-and are listed in `bootstrap/requirements-dev.txt`; they are noted in
+and are listed in `tests/requirements-dev.txt`; they are noted in
 the budget ledger but do not affect the stdlib-only runtime contract.
 
 ## Floor check
 
-A test in `bootstrap/tests/test_python_floor.py` runs `vermin` over
-the engine (`bootstrap/_scaffold/`) and asserts that the detected
+A test in `tests/test_python_floor.py` runs `vermin` over
+the engine (`install/_scaffold/`) and asserts that the detected
 minimum does not **exceed** the declared floor (>=3.11). The check
 skips gracefully if `vermin` is not importable or on PATH. Install
 dev dependencies to run it:
 
 ```
-pip install -r bootstrap/requirements-dev.txt
-python3 -m pytest bootstrap/tests/test_python_floor.py -v
+pip install -r tests/requirements-dev.txt
+python3 -m pytest tests/test_python_floor.py -v
 ```
 
 The `vermin` syntactic check is the unit-suite mechanism. The
 **Maintainer-run contained floor check** is stronger
-(`bootstrap/container/floor-gate.sh`): it runs `vermin` **plus** a runtime
+(`install/container/floor-gate.sh`): it runs `vermin` **plus** a runtime
 conformance slice (CLI help, a clean install, and a controlled upgrade) in
 a floor/compat image pinned to the declared floor (3.11), so a
 **runtime-only** incompatibility fails too, not just raised syntax — and a
@@ -215,7 +215,7 @@ the Markdown self-check, the engine suite and the quality gate; its native
 Mac/Windows record and Maintainer join are described in
 [`SECURITY.md`](../../SECURITY.md) and
 [`docs/release-process.md`](../release-process.md). It does **not** invoke
-`floor-gate.sh`. Nor does the suite: `bootstrap/tests/test_python_floor.py`
+`floor-gate.sh`. Nor does the suite: `tests/test_python_floor.py`
 runs `vermin` directly on the host. So the container slice is a
 Maintainer-run check whose scheduling is a person's memory, and calling it
 a "gate" overstated what enforces it. Both native release runs require the
@@ -227,7 +227,7 @@ IDs may have an eligible skip.
 The engine is **stdlib-only Python**; a team whose application stack is
 **not** Python runs it **only at the install/upgrade boundary**, in a
 throwaway, contained container, via the reference recipe at
-[`bootstrap/container/recipe.md`](../../bootstrap/container/recipe.md)
+[`install/container/recipe.md`](../../install/container/recipe.md)
 (a digest-pinned `Dockerfile`, a `verify-ref.sh` provenance gate, the
 `floor-gate.sh` floor check, and the `acceptance.sh` two-version
 conformance test). The mutation phase runs **offline** (`--network=none`),

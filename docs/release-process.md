@@ -73,7 +73,7 @@ scanner code and policy inputs:
 
 ```bash
 python tests/check_cairn.py
-python scripts/content_scan_runner.py
+python dev/tools/content_scan_runner.py
 ```
 
 Before either command, verify that checkout `HEAD` is the candidate and that
@@ -168,7 +168,7 @@ started_ns=$(python -c 'import time; print(time.time_ns())') || exit 1
 pytest_status=0
 CAIRN_FULL_SUITE=1 python -m pytest tests --quality-gate-shuffle-seed=0 --junitxml="$report" || pytest_status=$?
 compare_status=0
-python scripts/check_release_test_members.py "$report" --started-ns "$started_ns" || compare_status=$?
+python release/check_release_test_members.py "$report" --started-ns "$started_ns" || compare_status=$?
 test "$pytest_status" -eq 0 || exit "$pytest_status"
 test "$compare_status" -eq 0 || exit "$compare_status"
 )
@@ -194,7 +194,7 @@ including the files the strict run leaves out.
 
 This is file-level presence and reported outcomes only, not every required node,
 command provenance or semantic adequacy. It does not authenticate forged XML.
-The separate `install/security_check.py` run and all existing safety, security
+The separate `release/security_check.py` run and all existing safety, security
 and release checks remain required at their own triggers. A goodnight smoke
 result does not replace any of them.
 
@@ -205,8 +205,8 @@ under Python 3.13. Give each run a new absolute record path outside its
 checkout:
 
 ```bash
-python install/security_check.py --record /absolute/path/mac.json
-python install/security_check.py --record /absolute/path/windows.json
+python release/security_check.py --record /absolute/path/mac.json
+python release/security_check.py --record /absolute/path/windows.json
 ```
 
 Each local run preserves both orders of the shipped-only selection
@@ -221,7 +221,7 @@ The Maintainer joins the two records from a clean checkout at the same final
 commit:
 
 ```bash
-python install/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json
+python release/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json
 ```
 
 Only the join can print `PASS`. It checks the fixed source-reviewed native-ID
@@ -254,7 +254,7 @@ leaves its file in every project, and nothing warns. Before each cut, run
 `git diff --name-status --no-renames --diff-filter=D <previous-tag> <new-tag> -- templates`.
 Then run the manifest comparison, which the diff cannot do and which also sees
 a template that stays while its mapping drops the destination: extract each
-tag with `git archive <tag>`, run `python bootstrap/scaffold.py --manifest` in
+tag with `git archive <tag>`, run `python install/scaffold.py --manifest` in
 each extraction, and list the destinations the old manifest has and the new one
 lacks. Add a row for each template an install could have written, with the
 SHA-256 of the template at the previous tag, at the new tag and at the commit
@@ -308,7 +308,7 @@ produces the confidence the cut rests on.
   independently recorded gate commit:
 
   ```bash
-  python scripts/check_release_publication.py \
+  python release/check_release_publication.py \
     --repository OWNER/REPO \
     --tag <tag> \
     --expected-commit <full-gate-commit>

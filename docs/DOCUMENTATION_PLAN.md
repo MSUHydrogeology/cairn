@@ -38,11 +38,9 @@ where it lives.
 
 ### 1. Entry layer -- "What is this, and how do I enter?"
 
-`cairn/README.md` (the methodology front door), `cairn/BOOTSTRAP.md`
-(the install sequence + scaffolding contract), `cairn/CHANGELOG.md`
-(the release record), `cairn/SECURITY.md` (the security disclosure
-surface), `cairn/PROVENANCE.md` (the methodology lineage),
-`cairn/SAFETY.md` (the safety threat model).  These live at the
+`cairn/README.md` (the methodology front door), `cairn/CHANGELOG.md`
+(the release record), and `cairn/SECURITY.md` (the security disclosure
+surface).  These live at the
 repo **root** because *external convention* puts them there -- a
 visitor expects `README.md`; the Keep a Changelog convention
 expects `CHANGELOG.md`; the security disclosure convention expects
@@ -78,6 +76,8 @@ how something is built or organized**.  The layer has two ranges:
     scaffold contract; lives in `install/`.
   * `cairn/install/fidelity-check.md` governs the fidelity
     contract; lives in `install/`.
+  * `cairn/install/PROVENANCE.md` and `cairn/install/SAFETY.md`
+    govern release provenance and the install safety threat model.
   * **This file** (`cairn/docs/DOCUMENTATION_PLAN.md`) governs
     documentation placement and lives in `docs/`.  Organizing
     documentation is the documentation domain's own concern -- so
@@ -179,16 +179,16 @@ This map routes **documentation and doctrine artifacts** -- the
 files telling a contributor what Cairn is, how to build it, what
 it should become, and how the methodology works.  "Whole-repo"
 means it spans every documentation home (root, `cairn/docs/methodology/`,
-`cairn/dev/` (Goal 1 substrate), `cairn/docs/`, `cairn/case-
-studies/`, and the `cairn/templates/` surface that ships
+`cairn/dev/` (Goal 1 substrate), `cairn/docs/`, `cairn/install/`,
+`cairn/docs/case-studies/`, and the `cairn/templates/` surface that ships
 adopter-facing doctrine), **not** every directory.
 
 **Outside the map** -- software and its fixtures: the bootstrap
 machinery (`cairn/install/scaffold.py` + the test harness under
 `cairn/tests/`), the helper scripts (`cairn/tests/`),
-the module + dimension assets (`cairn/templates/modules/`,
-`cairn/templates/dimensions/`, `cairn/templates/onboarding/`,
-`cairn/templates/presets/`).  A directory's landmark files
+the installed assets (`cairn/templates/`) and install inputs
+(`cairn/install/dimensions/`, `cairn/install/on-ramp/`,
+`cairn/install/profiles/`).  A directory's landmark files
 (`README.md`, `BOOTSTRAP.md`) are in the map even when the
 directory's contents are not.
 
@@ -204,8 +204,9 @@ layered content is lowercase.  A landmark is a directory's entry
 point, roadmap board, or domain-governance map -- the file you
 navigate *to* as a starting point.  The UPPERCASE set, repo-wide:
 
-* **Entry** -- `README.md`, `BOOTSTRAP.md`, `CHANGELOG.md`,
-  `SECURITY.md`, `PROVENANCE.md`, `SAFETY.md`.
+* **Entry** -- `README.md`, `CHANGELOG.md`, `SECURITY.md`.
+* **Install landmarks** -- `cairn/install/BOOTSTRAP.md`,
+  `cairn/install/PROVENANCE.md`, `cairn/install/SAFETY.md`.
 * **Domain-governance maps** -- `cairn/install/BOOTSTRAP.md`,
   `cairn/docs/DOCUMENTATION_PLAN.md`.
 * **Roadmap boards** (self-hosted in `cairn/dev/`) --
@@ -435,8 +436,9 @@ do not auto-propagate.
 
 ## Repository folder roles
 
-`install/` contains the installer and its inputs; `templates/` contains files
-installed into projects. `tests/` contains Cairn tests and supporting tools;
+`install/` contains the installer and its inputs, including dimensions and the
+on-ramp; `templates/` contains exactly the files installed into projects, with
+its catalog in `docs/templates.md`. `tests/` contains Cairn tests and supporting tools;
 `release/` contains release and re-anchor machinery. `dev/` holds Cairn records,
 state and installed tools under `dev/tools/`. Case studies live in
 `docs/case-studies/`.

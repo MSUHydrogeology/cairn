@@ -46,10 +46,10 @@ You are helping me bring Cairn into this repository. Before you
 do anything, read:
 
   * cairn/AGENTS.md — the apparatus you will operate under
-  * cairn/dimensions/README.md and the per-axis docs
+  * cairn/install/dimensions/README.md and the per-axis docs
     (age.md, size.md, complexity.md, language.md, human-team.md,
     agent-team.md) — the six axes you will score
-  * cairn/on-ramp/README.md — the two ways in, and the profile table
+  * cairn/install/on-ramp/README.md — the two ways in, and the profile table
 
 You may also read cairn/docs/methodology/README.md and
 cairn/docs/methodology/lifecycle.md if you want grounding before scoring,
@@ -89,11 +89,11 @@ Step 3 — recommend ONE of the three named governance presets:
 For the recommended preset, briefly say which axes pushed you to
 it and which axes were close calls. If none of the three is a
 clean fit, say so — the Maintainer can still scaffold with
-modules: instead of preset: (see cairn/bootstrap/BOOTSTRAP.md
+modules: instead of preset: (see cairn/install/BOOTSTRAP.md
 Act I-5 — Derive the module selection), but flag the mismatch.
 
 Step 4 — propose the profile YAML for me to review. Copy the
-template from cairn/bootstrap/profiles/<recommended-preset>.yml
+template from cairn/install/profiles/<recommended-preset>.yml
 and:
 
   * set project_name and test_command from Step 1;
@@ -108,7 +108,7 @@ I (the Maintainer) will read your axis scoring and the proposed
 profile, and either accept it, ask follow-up questions, or
 adjust it. After I accept, I will run
 
-    python cairn/bootstrap/scaffold.py \
+    python cairn/install/scaffold.py \
         --config profile.yml \
         --target . \
         --summary
@@ -129,7 +129,7 @@ in cairn/docs/quickstart.md.
   <!-- cairn-accept: suspicious-url reason="Literal Cairn clone URL the adopter needs to copy" reviewer="Claude" date=2026-05-28 -->
   (`git clone https://github.com/MSUHydrogeology/cairn.git cairn`).
 * You have a working Python 3.11+ environment for
-  `bootstrap/scaffold.py`.
+  `install/scaffold.py`.
 * You have one AI coding agent connected to your target repo
   with read + write access to its working tree.
 
@@ -155,7 +155,7 @@ in cairn/docs/quickstart.md.
   `high-rigor-legacy`).
 * `../../docs/quickstart.md` — the short throwaway-repo
   walk-through; the on-ramp *before* bootstrap-lite.
-* `../../on-ramp/README.md` — the two ways in, and how to choose a
+* `../on-ramp/README.md` — the two ways in, and how to choose a
   profile.
-* `../../dimensions/README.md` and the six per-axis docs — the
+* `../dimensions/README.md` and the six per-axis docs — the
   doctrine the agent uses to score axes during Step 2.

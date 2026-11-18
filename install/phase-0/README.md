@@ -10,7 +10,7 @@ Both are presented to the Maintainer for acceptance before Act II
 ## The two profiles
 
 * **Project Profile** — positions the codebase on the codebase
-  axes (Age, Size, Complexity, Language; see `dimensions/`). It
+  axes (Age, Size, Complexity, Language; see `install/dimensions/`). It
   has two branches:
   * *Legacy* — a full code-state assessment:
     `project-profile-legacy.md`.
@@ -59,6 +59,6 @@ staffability) and adds/removes any individual module on top
 canonical point is closest to the project, then tune the axes in the
 profile templates below to the project's real scores. The per-preset
 rosters, the six-axis points, and the config shape are in
-`../../bootstrap/BOOTSTRAP.md` (Act I-5 "Fast path — governance presets"
+`../BOOTSTRAP.md` (Act I-5 "Fast path — governance presets"
 and Appendix B); preview a resolved profile with
-`python bootstrap/scaffold.py --summary --config <profile>`.
+`python install/scaffold.py --summary --config <profile>`.

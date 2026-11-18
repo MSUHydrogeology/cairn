@@ -46,7 +46,7 @@ When merging a pull request that changes files agents load or files that guard
 those instructions, use this checkpoint before merging. Instruction files
 include `AGENTS.md`, `CLAUDE.md`, `VENDOR.md`, `RULES.md`, `templates/`,
 `.agents/skills/`, `dev/`, and `docs/`. Guarding files include
-`bootstrap/tests/`, `scripts/`, and the content scanner's allowlist, baseline,
+`tests/`, `dev/tools/`, and the content scanner's allowlist, baseline,
 and roots files. It is a merge-time review only; it does not run before
 pushes, during development, or on every commit.
 
@@ -55,7 +55,7 @@ For changed instruction files (`AGENTS.md`, `CLAUDE.md`, `VENDOR.md`,
 up-to-date checkout you trust. Fetch the pull request as data with
 `git fetch origin pull/<N>/head`, write each changed instruction file from
 `FETCH_HEAD:<path>` into a scratch folder with `git show`, then run your own
-`python -I scripts/content_scan.py <scratch-files>`. Do not check out the pull
+`python -I dev/tools/content_scan.py <scratch-files>`. Do not check out the pull
 request branch or run its scanner. Discuss every finding before merging. Any
 added `cairn-accept` marker is itself a hit to discuss, even if it clears a
 scanner finding.
@@ -79,5 +79,5 @@ the diff and makes the judgment.
 
 The [README](README.md) introduces Cairn, and [`docs/README.md`](docs/README.md)
 maps its user documentation. The `docs/methodology/` directory contains the
-published methodology; `templates/` and `bootstrap/` contain the materials and
+published methodology; `templates/` and `install/` contain the materials and
 tools that adopters use. Development records live under `dev/`.

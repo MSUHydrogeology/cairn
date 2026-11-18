@@ -8,7 +8,7 @@ from*. Provenance is the foundation the other security layers rest on —
 instructions; the profile is operationally-trusted input), the
 executable hardening in [`scaffold.py`](scaffold.py), and the
 content-integrity scanner run by
-[`check_cairn.py`](../scripts/check_cairn.py).
+[`check_cairn.py`](../tests/check_cairn.py).
 
 This is **Layer 1** of the four-layer agent-instruction-supply-chain
 model. The blast radius is the reason it matters: Cairn's templates
@@ -656,9 +656,9 @@ maintainer's:
   tag archived beside a claim of signing is not correctable in place.
 * **The security gate runs against the clean commit first; the tag is
   signed second, naming that same commit.** Run
-  `python install/security_check.py --record <external-path>` on native
+  `python release/security_check.py --record <external-path>` on native
   Mac and Windows, then have the Maintainer run
-  `python install/security_check.py --join <mac-record> <windows-record>`
+  `python release/security_check.py --join <mac-record> <windows-record>`
   from a clean checkout of the final candidate (see [`SECURITY.md`](../SECURITY.md)
   > *Release security checklist*). Each local result is `INCOMPLETE`; only
   the join prints `PASS`. The join refuses a dirty or moved worktree and

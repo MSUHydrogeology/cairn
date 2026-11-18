@@ -3,7 +3,7 @@
 Cairn's dependency and file-naming conventions. Routed from `RULES.md`. The text below moved from `AGENTS.md` on 2026-11-10 unchanged.
 
 Everything Cairn ships to adopters is standard-library-only. Read
-`bootstrap/DEPENDENCY_BUDGET.md` before adding an import. Place prescription in
+`install/DEPENDENCY_BUDGET.md` before adding an import. Place prescription in
 `AGENTS.md`, deliberation in `dev/`, and software description in `docs/`, per
 `docs/DOCUMENTATION_PLAN.md`.
 

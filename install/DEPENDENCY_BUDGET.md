@@ -20,7 +20,7 @@ declared exception — that the doctrine will codify around.
   installed for a non-Python adopter).
 * **Executable dependencies:** `bandit` (static analysis) and `pip-audit`
   (dependency CVE check) — invoked as subprocesses by the orchestrator
-  `run_security_audit.py` (installed in the adopter's `scripts/`).
+  `run_security_audit.py` (installed in the adopter's `dev/tools/`).
 * **Why the exception is justified:** a Python static-analysis gate and a
   dependency-CVE check cannot be reimplemented stdlib-only without rebuilding
   two mature tools. The value (a real Python self-audit gate) requires them.
@@ -127,14 +127,14 @@ gate. The control is **detective + human**, not preventive-automated:
 * **Why it is materially lighter than Exception 1:**
   * **No adopter impact.** Exception 1's tools (`bandit`, `pip-audit`) are
     opt-in but still recommended for Python adopters and installed into the
-    adopter's `scripts/`. `vermin` is never installed into an adopter repo and
+    adopter's `dev/tools/`. `vermin` is never installed into an adopter repo and
     never surfaces in adopter workflows.
   * **No runtime path.** Exception 1's tools run inside the scaffold's security
     orchestrator at audit time. `vermin` runs only in Cairn's own test suite.
   * **No network egress.** `vermin` is purely local static analysis; it sends
     nothing over the network.
-* **Dev dependency home:** `install/requirements-dev.txt`. Install with
-  `pip install -r install/requirements-dev.txt` to enable the floor check.
+* **Dev dependency home:** `tests/requirements-dev.txt`. Install with
+  `pip install -r tests/requirements-dev.txt` to enable the floor check.
   The test skips gracefully when `vermin` is absent (using `pytest.mark.skipif`),
   so the main test suite runs cleanly without it.
 * **Capability gate:** `vermin` is a dev tool; its absence does not degrade any

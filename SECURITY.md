@@ -3,8 +3,8 @@
 Cairn is a **methodology** — mostly prose (doctrine, templates, docs) plus
 a small set of stdlib-only Python tools. This file is the public,
 maintainer-facing security statement; the operational rules live in
-[`bootstrap/SAFETY.md`](bootstrap/SAFETY.md) and the release-provenance
-controls in [`bootstrap/PROVENANCE.md`](bootstrap/PROVENANCE.md).
+[`install/SAFETY.md`](install/SAFETY.md) and the release-provenance
+controls in [`install/PROVENANCE.md`](install/PROVENANCE.md).
 
 ## The threat model in one paragraph
 
@@ -17,13 +17,13 @@ provenance (which Cairn did I install?), source-integrity review *by file
 class*, generated-output scanning (the artifact agents actually read), and
 executable hardening of the shipped Python. The content scanner is a
 **witness, not a proof** — it forces human review, it does not certify
-safety. Full detail: `bootstrap/SAFETY.md` (Rules 7–8).
+safety. Full detail: `install/SAFETY.md` (Rules 7–8).
 
 ## Supported versions
 
 Security fixes target the **latest released minor** and the `main` branch.
 Adopters should **scaffold from a released tag, not an arbitrary branch**
-(`bootstrap/PROVENANCE.md`). For a stable official release, they can choose the
+(`install/PROVENANCE.md`). For a stable official release, they can choose the
 ordinary route, which trusts the distribution channel without checking a
 signature, or the optional stronger route, which verifies the signed tag
 against independently checked fingerprints. Both record the selected full
@@ -52,7 +52,7 @@ a downstream adopter's agents. Include a reproducer where possible.
   hijacked `PATH` cannot substitute a shebang interpreter in a shared CI
   environment. After pulling or upgrading, confirm the installed tree still
   matches its recorded install: **from a trusted Cairn checkout / release,
-  run `python <cairn>/bootstrap/verify_integrity.py --target <your-repo>`** —
+  run `python <cairn>/install/verify_integrity.py --target <your-repo>`** —
   a fail-closed SHA-256 check of every file in your tree against the hashes
   **your own `dev/.cairn/cairn-lock.yml` records**, flagging any file that has
   changed since that lockfile was written. It detects *unilateral* modification;
@@ -72,9 +72,9 @@ a downstream adopter's agents. Include a reproducer where possible.
 dated", describe how Cairn's own maintainers release Cairn and authorize changes
 to its own gate files (the re-anchor ceremony). They are not part of installing
 or upgrading Cairn. The verification steps for an adopter are in
-[`bootstrap/PROVENANCE.md`](bootstrap/PROVENANCE.md); the install and upgrade
-steps are in [`bootstrap/BOOTSTRAP.md`](bootstrap/BOOTSTRAP.md) and
-[`bootstrap/UPGRADE.md`](bootstrap/UPGRADE.md).*
+[`install/PROVENANCE.md`](install/PROVENANCE.md); the install and upgrade
+steps are in [`install/BOOTSTRAP.md`](install/BOOTSTRAP.md) and
+[`install/UPGRADE.md`](install/UPGRADE.md).*
 
 **The local runs stay incomplete until the Maintainer joins Mac and Windows.**
 
@@ -82,8 +82,8 @@ Run the committed check independently on native Mac and Windows, using a new
 absolute record path outside each checkout:
 
 ```bash
-python bootstrap/security_check.py --record /absolute/path/mac.json
-python bootstrap/security_check.py --record /absolute/path/windows.json
+python release/security_check.py --record /absolute/path/mac.json
+python release/security_check.py --record /absolute/path/windows.json
 ```
 
 Each successful local run prints `INCOMPLETE` and exits 5. The exit means the
@@ -92,7 +92,7 @@ were collected and fails the local run. At the final release candidate SHA,
 the Maintainer runs the same committed checker from its clean checkout:
 
 ```bash
-python bootstrap/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json
+python release/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json
 ```
 
 Only this join can print `PASS`. Attach both local records and the joined output
@@ -101,7 +101,7 @@ to the existing release notes. Keep all three at the named final commit.
 This is the **fail-closed** release gate. It is the whole **locally
 machine-checkable** bar — not a first item in a list a Maintainer then has to
 remember the rest of. (It is not the *whole* release bar: the contained floor
-check `bootstrap/container/floor-gate.sh`, the release-authenticity ceremony,
+check `install/container/floor-gate.sh`, the release-authenticity ceremony,
 and the by-hand review items are separate Maintainer-run steps that this
 command does **not** dispatch.) Four phases; phase 1 stops the command, and
 phases 2–4 are all attempted even after one fails, so a single run yields a
@@ -121,10 +121,10 @@ complete repair list:
    shipped Python surface — every file the scaffold ships **byte-for-byte** as
    Python — or carries an allowlist entry the scan no longer reports at
    MEDIUM+ (a suppression that suppresses nothing is deleted, not kept).
-3. **The engine suite in default order.** The shipped-only `bootstrap/tests` selection
-   runs in release mode: every test except the files in `RELEASE_EXCLUDED_TESTS` (`bootstrap/tests/security_manifest.py`), which the join prints in a `NOT CERTIFIED` block. A single fixed, reviewed policy table permits only the named opposite-platform setup skips. Missing, deselected or duplicate IDs,
+3. **The engine suite in default order.** The shipped-only `tests` selection
+   runs in release mode: every test except the files in `RELEASE_EXCLUDED_TESTS` (`tests/security_manifest.py`), which the join prints in a `NOT CERTIFIED` block. A single fixed, reviewed policy table permits only the named opposite-platform setup skips. Missing, deselected or duplicate IDs,
    collection skips, other skips, xfails, xpasses and failures refuse.
-4. **`python scripts/quality_gate.py`** — its separate seed-0 child, which runs the same selection,
+4. **`python tests/quality_gate.py`** — its separate seed-0 child, which runs the same selection,
    vendor-neutrality and redundancy. Both suite orders record exact collected
    IDs and setup/call/teardown outcomes outside the verified checkout.
    Certifying runs before a re-anchor run every test.
@@ -154,7 +154,7 @@ are not.** Three residuals are accepted deliberately, not overlooked:
   is cut. Its only trigger is a Maintainer typing it; Cairn has no CI, no
   mandatory hook, and no tag wrapper.
 * **No self-authentication.** The command does not verify its own bytes or its
-  own process. A modified `bootstrap/security_check.py` reports whatever it
+  own process. A modified `release/security_check.py` reports whatever it
   was modified to report.
 * **No cryptographic binding to the tag.** The printed `HEAD` is copied into
   the release notes by hand. Nothing signs the gate result, and nothing ties

@@ -5,7 +5,7 @@ Maintainer who is adopting Cairn for a repository.
 
 **What this document is**: the authoritative procedure for the
 **full bootstrap** — the most-assisted way to install Cairn, for any
-profile (see `../on-ramp/README.md`). It has three acts that must run
+profile (see `install/on-ramp/README.md`). It has three acts that must run
 in order. Act I produces a profile the
 Maintainer accepts before anything is installed. Act II installs
 and customizes the methodology. Act III is the operating posture
@@ -45,7 +45,7 @@ Before assessing the target project, read:
 
 * `../docs/methodology/README.md` — the four-layer map of what Cairn is
 * `../docs/methodology/lifecycle.md` — the proposal and plan lifecycles
-* `../dimensions/README.md` — the six adaptation axes and the
+* `install/dimensions/README.md` — the six adaptation axes and the
   three module layers
 
 This takes a few minutes and prevents mismatches between what the
@@ -56,9 +56,9 @@ doctrine says and what the assessment implies.
 Choose the applicable profile template:
 
 * **Legacy project** (existing codebase, existing contributors):
-  `../templates/phase-0/project-profile-legacy.md`
+  `phase-0/project-profile-legacy.md`
 * **Greenfield project** (new or near-new codebase):
-  `../templates/phase-0/project-profile-greenfield.md`
+  `phase-0/project-profile-greenfield.md`
 
 Fill the template. Do not skimp on the scientific-surface and
 documentation-trust sections — those drive the legacy-agent decision,
@@ -71,7 +71,7 @@ the profile is presented to the Maintainer before installation.
 
 ### I-3 Fill the team profile
 
-Fill `../templates/phase-0/team-profile.md`. Key questions:
+Fill `phase-0/team-profile.md`. Key questions:
 
 * How many humans contribute regularly?
 * How many agent types are in use (or planned)?
@@ -81,7 +81,7 @@ Fill `../templates/phase-0/team-profile.md`. Key questions:
 
 ### I-4 Score the six axes
 
-Using the filled profiles and the rubrics in `../dimensions/`,
+Using the filled profiles and the rubrics in `install/dimensions/`,
 assign a score to each of the six axes. Record a one-sentence
 *reproducible reason* for each placement — "the codebase is 15
 years old with no automated tests" is a reproducible reason;
@@ -107,7 +107,7 @@ From the six-axis profile, select the module set:
    deliberation; stigmergic coordination through a `dev/` tree;
    the baseline coordination tier; the session routines. These
    are non-negotiable — see
-   `../dimensions/README.md > The three module layers`.
+   `install/dimensions/README.md > The three module layers`.
 
 2. **Default-on modules** (installed unless a dimension removes
    them): reflections, claim-check, incident-trackers,
@@ -283,7 +283,7 @@ python install/scaffold.py \
 Or, if invoking from inside the target repository:
 
 ```
-python <path/to/cairn>/bootstrap/scaffold.py \
+python <path/to/cairn>/install/scaffold.py \
     --config <profile.yml> \
     --target .
 ```
@@ -365,7 +365,7 @@ project-local customizations the existing file carries. Pass
 `--force` to opt into overwriting:
 
 ```
-python <path/to/cairn>/bootstrap/scaffold.py \
+python <path/to/cairn>/install/scaffold.py \
     --config <profile.yml> \
     --target . \
     --force
@@ -379,7 +379,7 @@ discard.
 
 **Manual module copy.** Copying module files by hand does not update the
 installed inventory or lockfile. After copying, run
-`python <path/to/cairn>/bootstrap/scaffold.py upgrade --target . --adopt-module <module-name>`.
+`python <path/to/cairn>/install/scaffold.py upgrade --target . --adopt-module <module-name>`.
 On first adoption this appends one plain first-use task at the end of
 dev/PLANNING.md, preserving all existing bytes as a prefix, and updates the
 inventory at dev/modules/README.md and the lock at dev/.cairn/cairn-lock.yml.
@@ -582,7 +582,7 @@ edited, read the whole file in the target repository, confirm your edit is the
 only change, then record it, using the same verified checkout:
 
 ```
-python <path/to/verified-checkout>/bootstrap/scaffold.py upgrade --target <path/to/target/repo> --finalize <path>
+python <path/to/verified-checkout>/install/scaffold.py upgrade --target <path/to/target/repo> --finalize <path>
 ```
 
 Name a renamed wrapper by its original name (`--finalize VENDOR.md`) and commit
@@ -657,12 +657,12 @@ complete.
       shared `AGENTS.md` or `dev/` doctrine.
 
       **Mechanized**: from a Cairn checkout, run
-      `python scripts/quality_gate.py --sub neutrality` -- the
+      `python tests/quality_gate.py --sub neutrality` -- the
       consolidated lint covers the full denylist + the three sanctioned
       exceptions via `<!-- vendor-ok: <reason> -->` (line),
       `<!-- vendor-ok-begin: <reason> -->` / `<!-- vendor-ok-end -->`
       (block), and `<!-- case-study -->` (whole-file, under
-      `cairn/case-studies/` only).  The grep recipe above stays as the
+      `cairn/docs/case-studies/` only).  The grep recipe above stays as the
       conceptual reference for adopter-side ad-hoc checks; the
       `quality_gate.py` sub-gate is the durable pre-cut gate.
 

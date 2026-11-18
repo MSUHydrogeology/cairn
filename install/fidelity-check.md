@@ -44,8 +44,8 @@ an **adopter-facing surface** (a `templates/` file the bootstrap install set
 copies) references a **Cairn-internal-only path** (`docs/methodology/*`, or the
 retired `doctrine/*` spelling) that is neither
 transplanted into the install set nor marked a deliberate citation. When run:
-`python scripts/check_cairn.py` — at review time, and in the **maintainer-run**
-release checklist (`install/security_check.py` invokes it, when a maintainer
+`python tests/check_cairn.py` — at review time, and in the **maintainer-run**
+release checklist (`release/security_check.py` invokes it, when a maintainer
 runs that). Such a reference resolves in the Cairn source tree (so the generic
 `link_check` passes it) but **dangles once installed** in an adopter — the
 failure that produced fold-back #57 and the un-shipped 9-lens review roster.
@@ -398,7 +398,7 @@ two-check hard constraint holds.
 matching; a loose-substring heading-name proxy; graceful-fail on a
 missing source). Run it from the adopter tree against a Cairn checkout:
 
-    python <cairn>/bootstrap/check_module_body_coverage.py --target .
+    python <cairn>/install/check_module_body_coverage.py --target .
 
 It flags, per installed module with a same-stem `docs/methodology/<stem>.md`,
 the doctrine-body headings absent from the module file and the
@@ -435,7 +435,7 @@ Project-specific reference manifests live alongside their case
 studies, not in `install/`.  The current reference is:
 
 * `modflow_tools` — see
-  [`../case-studies/modflow_tools-fidelity-manifest.yml`](../case-studies/modflow_tools-fidelity-manifest.yml).
+  [`../docs/case-studies/modflow_tools-fidelity-manifest.yml`](../docs/case-studies/modflow_tools-fidelity-manifest.yml).
 <!-- vendor-ok-end -->
 
 Keeping `install/` project-neutral mirrors the R-G vendor-neutral
