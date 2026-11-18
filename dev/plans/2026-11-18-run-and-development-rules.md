@@ -68,3 +68,32 @@ Select tests with `python tests/tier_inventory.py for <changed paths>` and run o
 2. **Blocking:** C3 says to record #79's remainder but names no lasting board home. Its current home is the same implementation row (`dev/PLANNING.md:93`), which can disappear when that work completes. Direct the implementer to preserve the unselected split in a separate lasting board row and close only fully satisfied issues.
 
 **Coverage.** Read the committed plan and entire accepted proposal, current template, collaboration review and record rules, and relevant installed-test and board references. No implementation, installer, upgrade or test suite was run; Security was not assessed.
+
+## Plan review -- Codex Sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: 86ea4e165e958672919307448ad403753fe9a5ab
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Steelman.** Name the run-only job and put its limits in the agent's entry file so adopters keep the existing approvals and scope rules.
+
+**Foundations**
+
+1. **Should this happen as framed?** The append-only design delivers the accepted approach once C1–C2 name working directions for adopters (Decision, option (a)).
+2. **Best alternative.** Reuse the authoritative defect-fix rule already in `templates/core/dev/agent_collaboration.md:301` and count the files from the public install already required by C3.
+3. **What would show it wrong?** A generated install exceeds 1,500 words, or an Operator follows a conflicting run rule or acts when required guidance is absent (C1, C3).
+
+**Findings**
+
+1. Blocking (C2). Both issue-capture copies point to the defect-fix rule under `AGENTS.md`, where it no longer appears. The detailed User Agent role is in the published methodology. Route both roles to the existing installed rule. Keep user-seat debugging and tracker fallback discoverable through the installed roster and optional module.
+2. Blocking (C1). `templates/core/RULES.md` has no development pointer to retain. Reconcile that criterion with the starter, preserving discovery of development guidance and run rules that can ship without `dev/`.
+3. Blocking (C3). The named cap check would skip here: `tests/test_scaffold.py:636` looks one directory above the repository for templates. Require the cap count on generated files from the public install.
+
+**Rule loss and audience.** C1 retains all four limits, existing Maintainer authority, secrets protection, tier and data floors, headings and slots. The required installed routes need the repairs above. The plan treats prose as guidance.
+
+**Coverage.** Read committed plan, decision, rules, install mappings, upgrade handling and test source. Counted 1,392 shipped-template and 1,483 local words. Ran no tests, installs, upgrades or agent scenarios. Found no unavailable human gate.
