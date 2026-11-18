@@ -720,3 +720,89 @@ accept, and all their findings are fixed.
 
 Revisit on repeated manual catalog or guard work. Aggregate elapsed and tokens:
 unknown. No further suite or trust operation ran.
+
+## Post-archive security review (re-anchor blocker repairs) -- Opus (Security Review, High) -- 2026-11-18
+
+Reviewed commits: `042d1e43` (roster digest constant, runbook),
+`d994fdcd` (meter parametrize ids), `91b02e21` (reflection prune).
+
+**Obligation**: Internal Security Review, post-archive, one pass
+**Model basis**: claude-opus-5-5-high (started on gemini-4-argon-high; the
+Coordinator switched models at 0% quota, `dev/.cairn/model-selection-mapping.yml` high tier)
+**Verdict**: ACCEPT
+**Findings**: F1 nonblocking for these commits but open for the cut; F2 and F3 nonblocking.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Before `042d1e43`, the candidate
+   could not admit its own relocated roster. At `91b02e21`, `tests/test_gate_manifest.py`
+   gave 28 setup errors with "initial protected roster bytes do not match the
+   approved roster". The new constant admits only the relocated bytes. Membership
+   is unchanged, and that is independently enforced: `release/repin.py:1863-1876`
+   requires `sorted(map(relocate, old))` to equal the candidate roster, where the old lists are bound by
+   the signed anchor manifest -- `tests/_gate_manifest.py:80-81`, `:349`.
+2. **Best alternative.** Raising the 8 MiB package and manifest caps would also have
+   cleared the oversized manifest. Explicit ids keep the caps strict at no cost.
+   No alternative to a new digest exists: relocation changes the roster bytes
+   -- `release/repin.py:600`, `tests/_gate_preflight.py:2922`.
+3. **What would show it wrong?** The fix would be wrong if one roster path
+   failed to map through the layout catalog, if a non-membership key changed, if
+   the old or a tampered roster were admitted, or if either guard were edited.
+   Each was checked below; none occurred.
+
+**Verified evidence** (committed objects, Python 3.13.13 at
+`$HOME/conda_envs/lhm/bin/python3.13`):
+
+- The signed anchor `e5b7fd0a` (`refs/cairn/gate-anchor`) roster blob equals the
+  archived C1c file, SHA-256 `188fa76d...`. Its manifest `protected_roster`
+  lists equal that file's lists.
+- `release/repin.py` `_layout_path_map`, applied to `install/_scaffold/layout_catalog.py`
+  at `d994fdcd`, maps the anchor roster exactly to
+  `tests/fixtures/protected_test_roster.json` (`098734196db5...`): 90/90
+  protected Python paths, 7/7 fixtures, 57/57 preserved non-test frozen paths
+  (29 relocated, 28 unchanged `templates/`), all sorted with no duplicates. The other 25
+  keys are byte-equal in parsed form.
+- `_roster_from_bytes(require_initial_approval=True)` admits the new bytes and refuses
+  both the archived `188fa76d` bytes and a one-byte-appended copy.
+- `git diff --stat 72435a0a d994fdcd` shows four files changed. `tests/_gate_manifest.py`
+  changed one line, the constant. `release/repin.py`, `tests/_gate_preflight.py`
+  and `check_stop_records` (`release/repin.py:2559`) are untouched, and both
+  `8 * 1024 * 1024` caps remain.
+- `d994fdcd` adds only `ids=` lists, with 7 and 5 labels that match their inputs.
+  The 12 inputs and their assertions are unchanged; the 12 tests passed in 0.11 s and were collected
+  under the readable ids. No other file or `tests/security_manifest.py` entry
+  names either test. The file is not on the roster. Its native-only IDs in
+  `tests/security_manifest.py:229-238` belong to other tests.
+- The runbook hunk replaces runbook lines 203–206 with 203–208, and its digests
+  are accurate. No `RA-` text is touched. `link_check.py` exited 0. `claim_check.py`
+  flags only pre-existing lines 79 and 418.
+- `91b02e21` removes the only tracked dated reflection. `dev/reflections/README.md`
+  says reflections are ignored and only the README is tracked; Git history keeps the file.
+  It contains no credentials and no trust records.
+
+**F1 (open for the cut).** At `d994fdcd`, the protected
+`tests/test_gate_manifest.py` gives 21 failed and 13 passed in 13.64 s. The
+failures come from stale `bootstrap/` literals (42 occurrences), for example
+`assert "bootstrap/tests/test_ast_attest.py" in frozen` and `FROZEN-MISSING`.
+They were masked at `91b02e21` by the setup errors above, so "pre-existing"
+(#47) is unproven. They come from the layout relocation, not these commits. Repairing them edits a
+protected test and needs its own Security Review before the `bootstrap-suite`
+gate can be green.
+
+**F2.** The brief's "29 preserved" counted only the relocated paths; the list has 57.
+
+**F3.** Lines 79 and 418 of `release/REANCHOR_RUNBOOK.md` still cite the
+pre-layout bootstrap test folder.
+
+**Trust note.** The constant lives in the candidate, so it is self-declared.
+The authorizing checks remain two. The Maintainer confirms the out-of-checkout
+copy of the `098734196db5...` bytes at the ceremony. The layout verifier binds
+membership to the signed anchor. Neither has passed yet; both are forward checks.
+
+**Coverage.** Not rerun: `tests/test_repin.py` (129 passed, 237.56 s) and
+`tests/test_repin_ceremony.py` (139 passed); the Coordinator recorded both. Also
+not rerun: the dry runs, total-manifest size and node counts (1,031,189 bytes, 5,861
+nodes), signing, native certification and the full suite. A scratch
+worktree at `91b02e21` gave the baseline. It was removed afterward.
+
+**Elapsed**: about 7 minutes. **Tokens**: unknown.
