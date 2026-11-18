@@ -1,7 +1,7 @@
 # Plan: Ship measurement tools
 
 **Source proposal**: `dev/proposals/archive/2026-11-18-terra-ship-measurement-tools.md`
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: `dev/rules/conventions.md`, `dev/rules/working-agreements.md`, `dev/rules/protected-surfaces.md`
@@ -156,3 +156,20 @@ Accepted the cross-line opener finding. The parser now finds attempts across the
 3. **What would show it wrong?** An installed upgrade losing a local definition, or a malformed marker reporting zero checks, would falsify delivery. -- `tests/test_upgrade_module_additions.py::test_measurement_registry_survives_upgrade_and_support_is_checked`, `tests/test_verify_counts.py::test_installed_measurement_commands`
 
 The public tests cover the four operations, containment, Git range behavior, integrity and upgrade preservation; the recorded correction rejects a cross-line attempted marker through the installed command. Guides and inventory describe the delivered tools without changing governing doctrine. Coverage: read the committed implementation, correction and recorded results; did not repeat tests, run native Windows, assess the security boundary, or perform signing and joined integration. The earlier Security finding is addressed in the author response.
+
+## Completion -- Codex (Implementation) -- 2026-11-18
+
+The Security finding is closed by `04490e6f`, its passing affected installed
+test and the independent ordinary review `129111d7`. No finding remains open.
+Earlier passing public checks remain applicable; no clearing review or test
+replay is needed. Native Windows, joined integration, certification and trust
+operations are not claimed by this record. No implementation follow-up remains.
+
+**Benefit versus cost**: worth it -- adopters receive count verification and
+approximate token estimates with editable definitions. This adds four installed
+files and one deliberate data exclusion, no external dependency or always-loaded
+words. The shared measurement/report implementation range `19406866..4c296221`
+changed 30 source, test and guidance files (1,047 insertions, 158 deletions),
+excluding deliberation records, board, changelog and installed lock metadata;
+those are combined costs, not this feature alone. Runtime and aggregate agent
+cost are unknown. Revisit if actual usage does not justify maintaining the tools.
