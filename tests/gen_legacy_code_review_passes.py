@@ -132,8 +132,10 @@ _GIT_READ_MAX_BYTES = 256 * 1024
 
 def _load_verified_git_read():
     """Execute only the fixed, caller-pinned helper buffer from this delivery."""
-    path = os.path.abspath(os.path.join(Path(__file__).resolve().parents[1],
-                                        "tools", "git_read.py"))
+    root = Path(__file__).resolve().parent.parent
+    path = os.path.abspath(root / "dev" / "tools" / "git_read.py")
+    if not os.path.lexists(path):
+        path = os.path.abspath(root / "tools" / "git_read.py")
     chain = []
     current = os.path.splitdrive(path)[0] + os.sep
     for part in path[len(current):].split(os.sep):

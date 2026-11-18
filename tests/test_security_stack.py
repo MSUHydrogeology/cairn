@@ -68,6 +68,7 @@ from install._scaffold.config import (  # noqa: E402
     missing_required_tokens,
 )
 from install._scaffold.lockfile import _LOCKFILE_REL, _emit_lock_yaml  # noqa: E402
+from install._scaffold.layout_catalog import LAYOUT_INSTALLS  # noqa: E402
 
 from tests._repo_root import repository_root
 
@@ -2231,58 +2232,71 @@ _THRESHOLD_RE = re.compile(
 # inventory. Meter's two native-handle readers are intentionally not in this
 # path/fstat set.
 _FIRST_BINDING_MEMBERS = (
-    "bootstrap/_scaffold/lockfile.py",
-    "scripts/content_scan_runner.py",
-    "scripts/link_check.py",
-    "scripts/sync_doc_snippets.py",
-    "scripts/run_portable_security_sweeps.py",
-    "scripts/measurements.py",
-    "scripts/gen_legacy_code_review_passes.py",
-    "tools/gauge.py",
-    "tools/test_tiers.py",
+    "install/_scaffold/lockfile.py",
+    "dev/tools/content_scan_runner.py",
+    "dev/tools/link_check.py",
+    "dev/tools/sync_doc_snippets.py",
+    "dev/tools/run_portable_security_sweeps.py",
+    "tests/measurements.py",
+    "tests/gen_legacy_code_review_passes.py",
+    "tests/gauge.py",
+    "tests/test_tiers.py",
     "templates/modules/team-gated/content_scan_runner.py",
     "templates/modules/team-gated/link_check.py",
     "templates/modules/team-gated/sync_doc_snippets.py",
     "templates/modules/team-gated/run_portable_security_sweeps.py",
-    "tools/session.py",
+    "dev/tools/session.py",
     "templates/skills/_lib/session.py",
-    "tools/_intent/conflict.py",
+    "dev/tools/_intent/conflict.py",
     "templates/modules/team-gated/_intent/conflict.py",
-    "scripts/prose_diff.py",
-    "scripts/exact_replace.py",
+    "dev/tools/prose_diff.py",
+    "dev/tools/exact_replace.py",
     "templates/modules/team-gated/prose_diff.py",
     "templates/modules/team-gated/exact_replace.py",
 )
 _FIRST_BINDING_LAZY = frozenset({
-    "bootstrap/_scaffold/lockfile.py",
-    "tools/session.py",
+    "install/_scaffold/lockfile.py",
+    "dev/tools/session.py",
     "templates/skills/_lib/session.py",
-    "tools/_intent/conflict.py",
+    "dev/tools/_intent/conflict.py",
     "templates/modules/team-gated/_intent/conflict.py",
-    "scripts/prose_diff.py",
-    "scripts/exact_replace.py",
+    "dev/tools/prose_diff.py",
+    "dev/tools/exact_replace.py",
     "templates/modules/team-gated/prose_diff.py",
     "templates/modules/team-gated/exact_replace.py",
 })
 _FIRST_BINDING_FUNCTION = {
-    "bootstrap/_scaffold/lockfile.py": "_git_read_helper",
-    "tools/session.py": "_load_git_read_helper",
+    "install/_scaffold/lockfile.py": "_git_read_helper",
+    "dev/tools/session.py": "_load_git_read_helper",
     "templates/skills/_lib/session.py": "_load_git_read_helper",
-    "tools/_intent/conflict.py": "_git_read",
+    "dev/tools/_intent/conflict.py": "_git_read",
     "templates/modules/team-gated/_intent/conflict.py": "_git_read",
-    "scripts/prose_diff.py": "_load_git",
+    "dev/tools/prose_diff.py": "_load_git",
     "templates/modules/team-gated/prose_diff.py": "_load_git",
-    "scripts/exact_replace.py": "_git_binding",
+    "dev/tools/exact_replace.py": "_git_binding",
     "templates/modules/team-gated/exact_replace.py": "_git_binding",
 }
 
 
 def _first_binding_helper_rel(member: str) -> str:
-    if (member == "bootstrap/_scaffold/lockfile.py"
+    if (member == "install/_scaffold/lockfile.py"
             or member == "templates/skills/_lib/session.py"
             or member.startswith("templates/modules/team-gated/")):
         return "templates/skills/_lib/git_read.py"
-    return "tools/git_read.py"
+    return "dev/tools/git_read.py"
+
+
+_FIRST_BINDING_PRE_MOVE = {
+    new_dst: old_dst for _, _, old_dst, _, _, new_dst in LAYOUT_INSTALLS
+    if new_dst.startswith("dev/tools/")
+}
+
+
+def _first_binding_source(rel: str) -> Path:
+    path = CAIRN_ROOT / rel
+    if rel in _FIRST_BINDING_PRE_MOVE and not os.path.lexists(path):
+        return CAIRN_ROOT / _FIRST_BINDING_PRE_MOVE[rel]
+    return path
 
 
 def _copy_first_binding_fixture(base: Path, member: str, *, wrong_pin=False):
@@ -2290,27 +2304,27 @@ def _copy_first_binding_fixture(base: Path, member: str, *, wrong_pin=False):
     root = base / "source-fixture"
     caller = root / member
     caller.parent.mkdir(parents=True)
-    shutil.copyfile(CAIRN_ROOT / member, caller)
-    if member == "bootstrap/_scaffold/lockfile.py":
-        package = root / "bootstrap" / "_scaffold"
+    shutil.copyfile(_first_binding_source(member), caller)
+    if member == "install/_scaffold/lockfile.py":
+        package = root / "install" / "_scaffold"
         package.mkdir(parents=True, exist_ok=True)
         for sibling in ("config.py", "security.py"):
             shutil.copyfile(CAIRN_ROOT / "install" / "_scaffold" / sibling,
                             package / sibling)
     elif member in {
-        "tools/_intent/conflict.py",
+        "dev/tools/_intent/conflict.py",
         "templates/modules/team-gated/_intent/conflict.py",
     }:
         package = caller.parent
         for sibling in ("shared.py", "record_io.py", "identity.py"):
-            shutil.copyfile(CAIRN_ROOT / member.rsplit("/", 1)[0] / sibling,
+            shutil.copyfile(_first_binding_source(member.rsplit("/", 1)[0] + "/" + sibling),
                             package / sibling)
 
     helper_rel = _first_binding_helper_rel(member)
-    canonical_helper = CAIRN_ROOT / helper_rel
-    twin_helper = CAIRN_ROOT / (
+    canonical_helper = _first_binding_source(helper_rel)
+    twin_helper = _first_binding_source(
         "templates/skills/_lib/git_read.py"
-        if helper_rel == "tools/git_read.py" else "tools/git_read.py"
+        if helper_rel == "dev/tools/git_read.py" else "dev/tools/git_read.py"
     )
     helper_source = canonical_helper.read_bytes()
     assert helper_source == twin_helper.read_bytes(), "helper twins diverged"
@@ -2327,7 +2341,7 @@ def _copy_first_binding_fixture(base: Path, member: str, *, wrong_pin=False):
         lock_path = root / "dev" / ".cairn" / "cairn-lock.yml"
         lock_path.parent.mkdir(parents=True)
         lock_path.write_text(json.dumps({"files": [{
-            "dst": "tools/git_read.py", "verbatim": True,
+            "dst": helper_rel, "verbatim": True,
             "hash": "sha256:" + hashlib.sha256(helper_bytes).hexdigest(),
         }]}), encoding="utf-8")
     created_info = os.stat(helper_path)
@@ -2363,7 +2377,7 @@ def _copy_first_binding_fixture(base: Path, member: str, *, wrong_pin=False):
         lock_path = root / "dev" / ".cairn" / "cairn-lock.yml"
         lock = json.loads(lock_path.read_text(encoding="utf-8"))
         helper_rows = [row for row in lock["files"]
-                       if row.get("dst") == "tools/git_read.py"]
+                       if row.get("dst") == helper_rel]
         assert len(helper_rows) == 1
         helper_rows[0]["hash"] = "sha256:" + replacement
         lock_path.write_text(json.dumps(lock), encoding="utf-8")
@@ -2377,11 +2391,11 @@ def _load_first_binding_from_copy(root: Path, member: str):
     module_path = root / member
     module_name = package_name + "_module"
     package_dirs = None
-    if member == "bootstrap/_scaffold/lockfile.py":
-        package_dirs = [root / "bootstrap" / "_scaffold"]
+    if member == "install/_scaffold/lockfile.py":
+        package_dirs = [root / "install" / "_scaffold"]
         module_name = package_name + ".lockfile"
-    elif member == "tools/_intent/conflict.py":
-        package_dirs = [root / "tools" / "_intent"]
+    elif member == "dev/tools/_intent/conflict.py":
+        package_dirs = [root / "dev" / "tools" / "_intent"]
         module_name = package_name + ".conflict"
     elif member == "templates/modules/team-gated/_intent/conflict.py":
         package_dirs = [root / "templates" / "modules" / "team-gated" / "_intent"]
@@ -2468,16 +2482,16 @@ _TEMPLATE_FIXED_LAYOUT_MEMBERS = (
 _MEMBER_CLI_ARGS = {
     **{member: ["--help"] for member in _FIRST_BINDING_MEMBERS
        if member not in _FIRST_BINDING_LAZY},
-    "tools/session.py": ["session-start"],
+    "dev/tools/session.py": ["session-start"],
     "templates/skills/_lib/session.py": ["session-start"],
-    "scripts/prose_diff.py": [],
+    "dev/tools/prose_diff.py": [],
     "templates/modules/team-gated/prose_diff.py": [],
-    "scripts/exact_replace.py": [
+    "dev/tools/exact_replace.py": [
         "AGENTS.md", "--old-file", "old.txt", "--new-file", "new.txt"],
     "templates/modules/team-gated/exact_replace.py": [
         "AGENTS.md", "--old-file", "old.txt", "--new-file", "new.txt"],
 }
-_SESSION_ENTRIES = ("tools/session.py", "templates/skills/_lib/session.py")
+_SESSION_ENTRIES = ("dev/tools/session.py", "templates/skills/_lib/session.py")
 _MEMBER_CLI_SETUPS = (
     [(member, "wrong-pin") for member in _MEMBER_CLI_ARGS]
     + [(member, "old-layout") for member in _TEMPLATE_FIXED_LAYOUT_MEMBERS]
