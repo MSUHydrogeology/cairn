@@ -1,0 +1,17 @@
+# prose-roots v1
+# Cairn's functional-prose surfaces beyond content-scan roots.
+templates
+install/dimensions
+install
+release
+tests
+bootstrap
+README.md
+SECURITY.md
+install/on-ramp
+release/reanchor_ceremony.py
+release/repin.py
+tests/_gate_preflight.py
+tests/conftest.py
+dev/tools/board.py
+dev/tools/_intent/cli.py

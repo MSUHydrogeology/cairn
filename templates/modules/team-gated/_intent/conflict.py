@@ -102,7 +102,7 @@ INCIDENT_EVENT_CLASS_DEFAULT = "work-intent-claim-conflict"
 #: adopter type uses the installed script shape, matching the
 #: ``coordination-tiers`` doc and the session-start routine.  (Internal
 #: docstrings keep the bare ``intent <subcommand>`` man-page label.)
-INVOKE_HINT = "python tools/intent.py"
+INVOKE_HINT = "python dev/tools/intent.py"
 
 
 def _format_conflict_warning(

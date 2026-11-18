@@ -32,11 +32,11 @@ from .conflict import (
 
 
 def _intent_tool_path() -> Path:
-    """Filesystem path of the installed launcher/facade (``tools/intent.py``).
+    """Filesystem path of the installed launcher/facade (``dev/tools/intent.py``).
 
     The post-commit / pre-commit hooks must invoke the *facade*, not this engine
-    submodule, so an installed hook keeps calling ``python tools/intent.py``.
-    Resolved file-relative: this module installs at ``<repo>/tools/_intent/hooks.py``,
+    submodule, so an installed hook keeps calling ``python dev/tools/intent.py``.
+    Resolved file-relative: this module installs at ``<repo>/dev/tools/_intent/hooks.py``,
     so the facade is two parents up (``parent.parent / "intent.py"``).
     """
     return Path(__file__).resolve().parent.parent / "intent.py"
