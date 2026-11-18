@@ -198,3 +198,22 @@ Verification:
 
 **Elapsed**: unknown
 **Tokens**: unknown
+
+## Code review -- Hydrogen (Reviewer, Medium) -- 2026-11-18
+
+Reviewed commit: 7579ce40
+
+**Tier**: Internal (ordinary code review; `gemini-4-hydrogen-medium`)
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Steelman.** Binding both native release records to a single frozen history manifest and sibling pack (`--freeze-history`, `--record ... --history-roots`, `--join ... --history-roots`) ensures Mac and Windows scan the identical complete commit graph rather than drifting local refs, while keeping Gitleaks 8.30.1 findings private via `Match` discard and off-tree `--triage-record` output.
+
+1. **Alignment with C1–C3 and scope.** Yes. `dev/tools/run_portable_security_sweeps.py` and `templates/modules/team-gated/run_portable_security_sweeps.py` are byte-identical (`cmp -s`), as are `dev/modules/portable-security-sweeps.md` and `templates/modules/team-gated/portable-security-sweeps.md` (`cmp -s`). `dev/.cairn/cairn-lock.yml` updates only those two installed paths. `dev/tools/run_portable_security_sweeps.py` imports only Python stdlib modules (AST check); `release/security_check.py` uses stdlib plus repo-local `install` and `tests`. Closed-enum `_release_history_git` dispatch, Windows relay wiring (`_windows_git_relay`), and `--freeze-history` / `--record` / `--join` `--history-roots` checks match C1–C3.
+2. **Prose accuracy and secret-handling boundary.** Yes. `release/RELEASE_PROCESS.md` documents `--freeze-history`, `--history-roots` for `--record` and `--join`, fail-closed non-CLEAN sweep stops, and `--triage-record` revocation escalation. `portable-security-sweeps.md` documents `Secret == "REDACTED"` and `"REDACTED" in Match`, wholesale `Match` discard (verified in `read_report`), `finding_count`-only public summaries, and `20` DEGRADED for malformed or contradictory reports (including exit `0` with findings). Note: `_parse_cli_flags` in `release/security_check.py` keeps `--history-roots` optional for backward compatibility while `release/RELEASE_PROCESS.md` requires it for strict release runs.
+3. **Verification and honest reporting.** Yes. The implementation checkpoint accurately records Mac (`192 passed` `test_security_check.py`; `148 passed, 2 skipped` `test_portable_security_sweeps.py`; Gitleaks 8.30.1 `admit: true`) and Windows VM (`9 passed` `test_security_check.py`; `8 passed, 1 skipped` `test_portable_security_sweeps.py`) results without masking absent native `gitleaks.exe`/Bandit/Vermin, the ~102 pre-existing POSIX-shebang `fake_tool` failures, or the 4 Maintainer-run release waits.
+
+**Coverage.** Inspected `git show` for `36bad4f7`, `25fd162f`, `e1b01d0d`, and `7579ce40`, twin `cmp -s` parity, AST stdlib-only imports, `release/security_check.py`, `dev/tools/run_portable_security_sweeps.py`, doc/lockfile diffs, and test additions. Did not re-execute test suites or Security Review.
+
+**Elapsed**: unknown
+**Tokens**: unknown
