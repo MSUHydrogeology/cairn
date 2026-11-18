@@ -2240,7 +2240,7 @@ _FIRST_BINDING_MEMBERS = (
     "tests/measurements.py",
     "tests/gen_legacy_code_review_passes.py",
     "tests/gauge.py",
-    "tests/test_tiers.py",
+    "tests/tier_inventory.py",
     "templates/modules/team-gated/content_scan_runner.py",
     "templates/modules/team-gated/link_check.py",
     "templates/modules/team-gated/sync_doc_snippets.py",
@@ -2254,6 +2254,23 @@ _FIRST_BINDING_MEMBERS = (
     "templates/modules/team-gated/prose_diff.py",
     "templates/modules/team-gated/exact_replace.py",
 )
+# Keep the established parameter IDs when an executable moves. The values
+# passed into each test still name the executable at its current path.
+_FIRST_BINDING_IDS = {
+    "install/_scaffold/lockfile.py": "bootstrap/_scaffold/lockfile.py",
+    "dev/tools/content_scan_runner.py": "scripts/content_scan_runner.py",
+    "dev/tools/link_check.py": "scripts/link_check.py",
+    "dev/tools/sync_doc_snippets.py": "scripts/sync_doc_snippets.py",
+    "dev/tools/run_portable_security_sweeps.py": "scripts/run_portable_security_sweeps.py",
+    "tests/measurements.py": "scripts/measurements.py",
+    "tests/gen_legacy_code_review_passes.py": "scripts/gen_legacy_code_review_passes.py",
+    "tests/gauge.py": "tools/gauge.py",
+    "tests/tier_inventory.py": "tools/test_tiers.py",
+    "dev/tools/session.py": "tools/session.py",
+    "dev/tools/_intent/conflict.py": "tools/_intent/conflict.py",
+    "dev/tools/prose_diff.py": "scripts/prose_diff.py",
+    "dev/tools/exact_replace.py": "scripts/exact_replace.py",
+}
 _FIRST_BINDING_LAZY = frozenset({
     "install/_scaffold/lockfile.py",
     "dev/tools/session.py",
@@ -2502,7 +2519,8 @@ _MEMBER_CLI_SETUPS = (
 
 @pytest.mark.parametrize(
     "member, setup", _MEMBER_CLI_SETUPS,
-    ids=[f"{member}-{setup}" for member, setup in _MEMBER_CLI_SETUPS])
+    ids=[f"{_FIRST_BINDING_IDS.get(member, member)}-{setup}"
+         for member, setup in _MEMBER_CLI_SETUPS])
 def test_member_command_refuses_a_wrong_pin_or_helper_layout_before_the_helper_runs(
         member: str, setup: str, tmp_path: Path) -> None:
     """Each pinned member, run as its own command, refuses a helper that does
@@ -2565,7 +2583,7 @@ def test_member_command_refuses_a_wrong_pin_or_helper_layout_before_the_helper_r
 class TestNativeFirstImporterBirthChangeTime:
 
 
-    @pytest.mark.parametrize("member", _FIRST_BINDING_MEMBERS)
+    @pytest.mark.parametrize("member", _FIRST_BINDING_MEMBERS, ids=_FIRST_BINDING_IDS.get)
     def test_physical_source_module_refuses_its_mismatched_pin(
             self, member: str, tmp_path: Path) -> None:
         root, _caller, _helper, _bytes, _digest, marker, _rewrite = (
@@ -2582,7 +2600,7 @@ class TestNativeFirstImporterBirthChangeTime:
         assert not marker.exists(), "pin mismatch executed helper bytes"
 
     # Declared exception (internal hook): hook: _install_same_bytes_read_mutation patches the read path to swap same-size bytes mid-read; no public route makes a timed descriptor change.
-    @pytest.mark.parametrize("member", _FIRST_BINDING_MEMBERS)
+    @pytest.mark.parametrize("member", _FIRST_BINDING_MEMBERS, ids=_FIRST_BINDING_IDS.get)
     def test_physical_source_module_refuses_descriptor_change_during_read(
             self, member: str, tmp_path: Path,
             monkeypatch: pytest.MonkeyPatch) -> None:

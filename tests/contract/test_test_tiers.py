@@ -42,7 +42,7 @@ from tests.test_verify_counts import (
 from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
-_spec = importlib.util.spec_from_file_location("_test_tiers_tool", ROOT / "tests" / "test_tiers.py")
+_spec = importlib.util.spec_from_file_location("_test_tiers_tool", ROOT / "tests" / "tier_inventory.py")
 tiers_tool = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(tiers_tool)
 
@@ -605,16 +605,16 @@ def test_for_two_and_three_dot_ranges_preserve_empty_success(tmp_path):
 
 class TestTestTiersPhysicalBinding:
     def test_real_cli_executes_its_pinned_helper(self, tmp_path: Path) -> None:
-        _assert_bound_member_positive(tmp_path, "tests/test_tiers.py")
+        _assert_bound_member_positive(tmp_path, "tests/tier_inventory.py")
 
     def test_real_cli_resolves_linked_tools_parent_with_caller_and_helper(
             self, tmp_path: Path) -> None:
-        _assert_linked_caller_parent_positive(tmp_path, "tests/test_tiers.py")
+        _assert_linked_caller_parent_positive(tmp_path, "tests/tier_inventory.py")
 
     @pytest.mark.parametrize("mutation", _BINDING_MUTATIONS)
     def test_real_cli_refuses_each_binding_mutation(
             self, mutation: str, tmp_path: Path) -> None:
-        _assert_bound_member_mutation(tmp_path, "tests/test_tiers.py", mutation)
+        _assert_bound_member_mutation(tmp_path, "tests/tier_inventory.py", mutation)
 
 
 def _seed_tier_route_repo(root: Path) -> None:
@@ -690,7 +690,7 @@ else:
 
 def test_tiers_governing_diff_refuses_target_local_path_git_route(tmp_path):
     clean, _safe, _unsafe = _assert_public_route_triplet(
-        tmp_path / "tiers-agents-diff", "tests/test_tiers.py", "_resolve_reviewed_range",
+        tmp_path / "tiers-agents-diff", "tests/tier_inventory.py", "_resolve_reviewed_range",
         ("rev-parse", "--verify", "--end-of-options", "HEAD~1^{commit}"),
         _tier_route_driver("HEAD~1..HEAD"),
         _tier_route_driver("HEAD~1..HEAD", refusal=True),

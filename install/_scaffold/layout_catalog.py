@@ -146,6 +146,7 @@ SOURCE_FILE_MOVES = (
     ('scripts/reanchor_ceremony.py', 'release/reanchor_ceremony.py'),
     ('scripts/check_release_publication.py', 'release/check_release_publication.py'),
     ('scripts/check_release_test_members.py', 'release/check_release_test_members.py'),
+    ('tools/test_tiers.py', 'tests/tier_inventory.py'),
     ('templates/codebase-readiness-report.md', 'install/codebase-readiness-report.md'),
     ('docs/agent-team-onboarding.md', 'templates/onboarding/agent-team-onboarding.md'),
     ('docs/dev-tour.md', 'templates/onboarding/dev-tour.md'),

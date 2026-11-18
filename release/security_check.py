@@ -238,7 +238,7 @@ ALLOWLIST: dict[tuple[str, str], str] = {
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from the fixed source/tools layout after the literal "
         "`_GIT_READ_SHA256` pin matches; target and CWD data do not select code.",
-    ("tests/test_tiers.py", "B102"):
+    ("tests/tier_inventory.py", "B102"):
         "`_load_verified_git_read` executes only bounded, revalidated helper "
         "bytes from the fixed repository tool directory after the literal "
         "`_GIT_READ_SHA256` pin matches; selected paths cannot supply code.",
@@ -1338,7 +1338,6 @@ def scan_targets() -> list[str]:
         )
     targets.update(str(p.relative_to(CAIRN_ROOT)) for p in (CAIRN_ROOT / "tests").glob("*.py")
                    if not p.name.startswith(("test_", "_", "conftest")))
-    targets.add("tests/test_tiers.py")
     for _, _, old_dst, _, _, new_dst in LAYOUT_INSTALLS:
         if old_dst.startswith("scripts/") and old_dst.count("/") == 1 and old_dst.endswith(".py"):
             targets.update(path for path in (old_dst, new_dst) if (CAIRN_ROOT / path).is_file())

@@ -210,7 +210,7 @@ Proposed paths:
 ## Verification
 
 Use the canonical Python and the reviewed range for governing text. Use
-`python tests/test_tiers.py for <changed paths>` to identify checks for
+`python tests/tier_inventory.py for <changed paths>` to identify checks for
 changed behavior. Reserve wider checks for changed public promises and
 required certification.
 Run the claim, link, snippet and neutrality prose gates. Exercise the named

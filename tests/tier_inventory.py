@@ -12,20 +12,17 @@ recursive; the first tier whose pattern matches a file owns it. ``check`` fails
 when a test file matches no tier or a pattern matches no file, so a new test is
 placed automatically by its name or stopped until a pattern places it.
 
-  python tests/test_tiers.py check
-  python tests/test_tiers.py list [TIER]
-  python tests/test_tiers.py list --json
-  python tests/test_tiers.py files TIER    # paths for a scoped pytest run
-  python tests/test_tiers.py for [--range BASE..HEAD] PATH...
+  python tests/tier_inventory.py check
+  python tests/tier_inventory.py list [TIER]
+  python tests/tier_inventory.py list --json
+  python tests/tier_inventory.py files TIER    # paths for a scoped pytest run
+  python tests/tier_inventory.py for [--range BASE..HEAD] PATH...
 
 ``files`` only prints paths. A tier larger than the broad-run guard allows
 is still refused by that guard outside a certifying run; this tool does not
 work around it. Standard library only; it reads files and writes nothing.
 """
 from __future__ import annotations
-
-# This command lives beside the tests; its public functions are not test cases.
-__test__ = False
 
 import argparse
 import fnmatch
