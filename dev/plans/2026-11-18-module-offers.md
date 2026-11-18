@@ -86,3 +86,19 @@ Link, snippet and neutrality gates passed; claim and Cairn checks passed for
 the other three changed documents. `install/UPGRADE.md` retains five historical
 path flags, reproduced on the unchanged HEAD version; no new flag appeared.
 No full suite or wording tests were run. Elapsed: unknown; tokens: unknown.
+
+## Code review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: 1940686691b4bdcb0925d0021e4323ae85097f77
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: upgrade and task-time guidance require a named yes, explain known costs and defer when a suitable description is unavailable. -- `templates/core/dev/agent_collaboration.md`, `install/UPGRADE.md`
+2. **Best alternative.** Reusing the supplied source, selected inventory and existing adoption command avoids a new registry or persistent refusal mechanism. -- `templates/core/dev/agent_collaboration.md`, Scope
+3. **What would show it wrong?** An upgrade plan writing files, or a task-time offer adopting without a yes or inventing an unavailable description, would falsify the outcome. -- C2, Implementation evidence
+
+The onboarding route points to installed collaboration guidance; the separate rules-folder threshold, answer and approval duties remain. No governing duty was removed in the reviewed changes. Existing public promise tests and disposable scenarios are recorded in implementation evidence; no wording test was added. Coverage: read the committed changes, plan and evidence; did not repeat tests or scenarios, inspect every module description, or verify the five historical claim flags independently.
