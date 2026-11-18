@@ -38,6 +38,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
+- **Added: Release boundary guidance.** Projects can inspect tracked release references with an advisory report and use an ignored scratch folder for temporary work. Existing project tests may stay in place or live in the development tree. ([implementation](https://github.com/MSUHydrogeology/cairn/commit/d06c0fc4979f0d88217dc2d28f6c321cd00b75e4))
+
 - **Added: Complete Pulse at goodnight.** Session end now includes the complete existing Pulse with fresh current-project usage when available; incomplete or unavailable reports remain explicit. Setup is offered only for attended sessions with consent. ([archived rollout plan](dev/plans/archive/2026-11-17-full-pulse-rollout.md); [accepted proposal](dev/proposals/archive/2026-11-17-terra-meter-adopter-rollout.md))
 
 - **Added: Rule against committing secrets.** `AGENTS.md` now tells every agent never to commit a credential, key, token or private data, and to stop and tell the person if one is committed, because Git history keeps it. ([proposal](dev/proposals/archive/2026-11-16-claude-never-commit-secrets.md))
