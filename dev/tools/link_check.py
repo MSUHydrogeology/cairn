@@ -191,7 +191,7 @@ def _load_verified_git_read():
 try:
     _GIT_READ = _load_verified_git_read()
 except RuntimeError:
-    if __name__ == '__main__' and '--release-boundary' in sys.argv:
+    if __name__ == '__main__' and any(arg == '--release-boundary' or arg.startswith('--release-boundary=') for arg in sys.argv[1:]):
         print('release-boundary: INCOMPLETE: Git helper binding failed')
         raise SystemExit(2) from None
     raise
@@ -1247,7 +1247,7 @@ def _boundary_read(root: Path, rel: str) -> str:
             for handle in reversed(handles):
                 api.close(handle)
     else:
-        if os.open not in os.supports_dir_fd or not hasattr(os, 'O_NOFOLLOW') or not hasattr(os, 'O_DIRECTORY'):
+        if (os.open not in os.supports_dir_fd or os.stat not in os.supports_dir_fd or not hasattr(os, 'O_NOFOLLOW') or not hasattr(os, 'O_DIRECTORY')):
             raise ValueError("safe directory binding unavailable")
         flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
         handles = []
@@ -1257,10 +1257,13 @@ def _boundary_read(root: Path, rel: str) -> str:
                 handles.append(os.open(part, flags, dir_fd=handles[-1]))
             for part in parts[:-1]:
                 handles.append(os.open(part, flags, dir_fd=handles[-1]))
-            fd = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | getattr(os, 'O_NONBLOCK', 0), dir_fd=handles[-1])
+            before = os.stat(parts[-1], dir_fd=handles[-1], follow_symlinks=False)
+            if not stat.S_ISREG(before.st_mode):
+                raise ValueError("nonregular file")
+            fd = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | getattr(os, 'O_NONBLOCK', 0) | getattr(os, 'O_NOCTTY', 0), dir_fd=handles[-1])
             handles.append(fd)
             info = os.fstat(fd)
-            if not stat.S_ISREG(info.st_mode) or info.st_size > _BOUNDARY_MAX_READ:
+            if (not stat.S_ISREG(info.st_mode) or (info.st_dev, info.st_ino) != (before.st_dev, before.st_ino) or info.st_size > _BOUNDARY_MAX_READ):
                 raise ValueError("nonregular or oversized file")
             chunks = []
             remaining = _BOUNDARY_MAX_READ + 1

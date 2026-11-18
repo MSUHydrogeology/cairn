@@ -1030,6 +1030,11 @@ def test_installed_release_boundary_report(tmp_path: Path):
     (root / 'kept.md').unlink()
     (root / 'kept.md').write_bytes(b'\xff')
     assert run().returncode == 2
+    if hasattr(os, 'mkfifo'):
+        (root / 'kept.md').unlink()
+        os.mkfifo(root / 'kept.md')
+        assert run().returncode == 2
+        (root / 'kept.md').unlink()
     write('kept.md', 'safe again\n')
     write('other.md', 'unclassified')
     subprocess.run(['git', '-C', str(root), 'add', 'other.md'], check=True)
@@ -1060,6 +1065,10 @@ def test_installed_release_boundary_report(tmp_path: Path):
         subprocess.run(['git', '-C', str(root), 'add', '-f', r'dev/literal\name'], check=True)
         exact = run()
         assert 'missing folder README: dev/literal' not in exact.stdout
+    helper = root / 'dev/tools/git_read.py'
+    helper.write_bytes(helper.read_bytes() + b'\n# altered\n')
+    bound = subprocess.run([sys.executable, str(checker), '--root', str(root), '--release-boundary=scope.json'], cwd=tmp_path, text=True, capture_output=True)
+    assert bound.returncode == 2 and 'INCOMPLETE' in bound.stdout
 
 
 def test_project_tests_can_use_both_locations_and_release_without_dev(tmp_path: Path):
@@ -1107,8 +1116,8 @@ def test_release_boundary_native_windows_containment(tmp_path: Path):
     subprocess.run(['cmd', '/c', 'mklink', '/J', str(root / 'nested'), str(outside)], check=True, capture_output=True)
     result = run()
     assert result.returncode == 2 and 'dev reference: nested/kept.md' not in result.stdout
-    scope.write_text(json.dumps({'kept': ['AGENTS.md', 'nested/C:bad'], 'development': ['scope.json']}))
-    assert run().returncode == 2
+    invalid = subprocess.run([sys.executable, str(checker), '--root', str(root), '--release-boundary', 'nested/C:bad'], cwd=tmp_path, text=True, capture_output=True)
+    assert invalid.returncode == 2 and 'unsafe path component' in invalid.stdout
 
 
 @pytest.mark.skipif(os.name == 'nt', reason='POSIX rename and symlink race')
