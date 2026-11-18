@@ -2,7 +2,7 @@
 
 **Author**: gpt-6.1-terra (Implementation, Medium)
 **Source proposal**: dev/proposals/archive/2026-11-18-terra-release-roster-and-guards.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/development-environment.md
@@ -232,3 +232,31 @@ Elapsed: unknown. Tokens: unknown.
 **Findings.** None.
 
 **Coverage.** Inspected committed revisions `4f3887e6`, `a61cec86`, `cbdeca91`, `84e4d9c8`, `58aafbd4`, and `86fad9b0`; read full committed sources at `86fad9b0` for `dev/plans/2026-11-18-release-roster-and-guards.md`, `dev/proposals/archive/2026-11-18-terra-release-roster-and-guards.md`, `tests/security_manifest.py`, `release/security_check.py`, `tests/test_doc_drift_tools.py`, `dev/tools/link_check.py`, `dev/tools/sync_doc_snippets.py`, `tests/test_intents_tool.py`, `tests/test_security_marker.py`, `install/_scaffold/security.py`, `dev/rules/protected-surfaces.md`, and `install/SAFETY.md`; verified all 28 historical `KEPT-BY-RULE` rows from `546959c1~1:dev/measurement/promise-testing-worklist-2026-11-11.csv` against `86fad9b0`. Did not re-execute the test suite or touch uncommitted working-tree files.
+
+## Implementation verification
+
+**Mac canonical Python 3.13.13 (`/Users/kendal30/conda_envs/lhm/bin/python3.13`):**
+- `pytest -q tests/test_security_marker.py` (at `cbdeca91`): `29 passed in 28.64s`.
+- 15 modified/split roster nodes across 10 files (at `84e4d9c8`): `24 passed, 1 skipped in 16.41s` (skip is Windows-only `test_replacer_reads_rewritten_windows_fragment_after_creation`).
+- `tests/test_doc_drift_tools.py` public CLI witness (`test_real_discovery_cli_keeps_broken_file_with_decoy_and_catches_literal_mutant`, parametrized `[link-dev/tools/link_check.py]` and `[snippet-dev/tools/sync_doc_snippets.py]`): `2 passed, 79 deselected in 3.82s`.
+- Detached committed-HEAD fixture `tests/test_security_check.py::test_committed_fixture_connects_real_record_and_join_entrypoints` (at `84e4d9c8`): `1 passed, 3 warnings in 26.65s`.
+- Post-fix joined `tests/test_security_check.py tests/test_portable_security_sweeps.py` (at `7b502666`): `345 passed, 2 skipped, 3 warnings in 183.44s`; `tests/test_security_lint.py` (at `d7c94919`): `4 passed in 3.13s`.
+- Remaining mapped `tests/tier_inventory.py` Boundary B check (at `d7c94919`, `task-8346`): `295 passed, 92 failed, 28 errors in 73.50s` — `test_broad_run_guard.py`, `test_config_module.py`, `test_core_dev_folders.py`, `test_lockfile_provenance.py`, `test_python_floor.py`, `test_scaffold_substrate.py`, and `test_upgrade_lockfile_path_containment.py` passed; the `92 failed` + `28 errors` across `test_gate_manifest.py` (`28 errors, 2 failed`), `test_gate_reanchor.py` (`15 failed`), `test_oracle_activation.py` (`12 failed`), `test_ceremony_review_report.py` (`41 failed`), `test_replacement_tools.py` (`10 failed`), `integration/test_gauge.py` (`11 failed`), and `contract/test_test_tiers.py` (`1 failed, 39 passed`) are pre-existing pre-re-anchor baseline mismatches (`_APPROVED_INITIAL_ROSTER_SHA256`), pre-relocation `bootstrap/`/`tools/`/`scripts/` path references, or pre-existing `tier_inventory.py` linked-tools fixture drift (`git-read-binding-failed`), and pre-existing `tests/test_security_stack.py` (`18 failed, 203 passed` in `task-8084`) also reflects pre-relocation `scripts/`/`tools/` paths.
+
+**Native Windows (`cairn-windows`, Python 3.13.18):**
+- 15 modified/split nodes with `[fchmod]` (at `84e4d9c8`): `11 passed, 13 skipped in 15.33s` (all 13 skips are setup-phase `@pytest.mark.skipif` policy skips).
+- Pre-existing out-of-scope defect left unmasked/untouched: unparametrized `test_public_seed_gitignore_staging_failure_preserves_destination_and_cleans_owned_temp[write]` failed with `[WinError 32]` because `install/_scaffold/security.py:61-87` (`_stage_exclusive`) calls `tmp.unlink()` in `except BaseException:` before `finally: os.close(fd)`. Note also that Argon (`7bfb2c10`) observed the C2 prose table prefixes `TestGitReadPhysicalBindings::` whereas `tests/security_manifest.py` and `tests/test_doc_drift_tools.py` use module-level node IDs.
+
+**Benefit versus cost**: worth it -- reconciled the 63 nt / 362 posix native release roster, fixed three POSIX fchmod markers and split non-FIFO board checks, preserved the claims fence, and retired 2 redundant helper guards without losing public CLI decoy coverage; cost implementation across 11 files, Mac + cairn-windows verification, Hydrogen Ordinary review, and one authorized Argon Security review pass; remaining burden grouped v0.8 re-anchor, strict release record/join at cut, and the unmasked pre-existing Windows `[WinError 32]` staging defect in `install/_scaffold/security.py:61-87`.
+
+## Implementation closeout -- Coordinator (Antigravity) -- 2026-11-18
+
+C1 (reconciled `63 nt / 362 posix` roster, setup-phase `skipif` conversions, split board checks, `tests/measurements.py` routing), C2 (28 `KEPT-BY-RULE` dispositions verified: 26 retained, 2 `test_doc_drift_tools.py` helper retirements covered by retained public CLI witness; `tests/test_intents_tool.py` single lifted fence preserved), and C3 (Mac, Windows, detached committed-HEAD fixture, Ordinary `86fad9b0` ACCEPT, and Argon Security `7bfb2c10` ACCEPT covering both new changes and Decision `8ac332b4` scope) all held.
+
+- Remaining: Maintainer grouped v0.8 re-anchor of `tests/security_manifest.py` (`sha256:de890081...`) and release baseline (`test_gate_manifest.py` / `test_gate_reanchor.py`); strict Mac/Windows record/join with Windows `gitleaks`/`bandit`/`vermin` installed; pre-existing `[WinError 32]` staging defect in `install/_scaffold/security.py:61-87`. Home: `dev/PLANNING.md` ("Completed repairs awaiting the trust operation" and release preparation rows).
+- Not run: Whole-suite certification (`CAIRN_FULL_SUITE=1`) and pre-existing relocation/baseline test repairs (`tests/test_security_stack.py`, `test_oracle_activation.py`, `test_ceremony_review_report.py`, `test_replacement_tools.py`, `test_gauge.py`, `test_reference_scripts.py`, `test_git_read_routes.py`, `test_quality_gate_neutrality.py`). Home: separate release cut and relocation backlog in `dev/PLANNING.md`.
+
+Dispositions: `accept` (26 retained guards + 2 verified retirements under `8ac332b4`; single claims fence intact); `guard (tests/test_security_marker.py:29)` (fixed `CAIRN_ROOT` in `cbdeca91`). Pre-existing out-of-scope `[WinError 32]` in `install/_scaffold/security.py:61-87` left untouched/unmasked for Maintainer disposition in `dev/PLANNING.md`.
+
+**Elapsed**: unknown
+**Tokens**: unknown
