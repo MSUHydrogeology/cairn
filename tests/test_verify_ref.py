@@ -745,13 +745,18 @@ def test_row_dirty_build_surface_refused_naming_the_reason(lab: Lab, tmp_path: P
     clean = lab.verify("--unprovenanced", dr)
     assert clean.returncode == NOT_PROVENANCED, f"{clean.stdout}{clean.stderr}"
 
-    (dr / "bootstrap" / "scaffold.py").write_text("tampered\n")
+    (dr / "install" / "container" / "Dockerfile").write_text("tampered\n")
+    dirty_recipe = lab.verify("--unprovenanced", dr)
+    assert dirty_recipe.returncode == REFUSED and "uncommitted or untracked" in dirty_recipe.stderr
+    lab.git(dr, "checkout", "--", "install/container/Dockerfile")
+
+    (dr / "install" / "scaffold.py").write_text("tampered\n")
     tracked = lab.verify("--unprovenanced", dr)
     assert tracked.returncode == REFUSED, f"{tracked.stdout}{tracked.stderr}"
     assert "uncommitted or untracked" in tracked.stderr
 
-    lab.git(dr, "checkout", "--", "bootstrap/scaffold.py")
-    (dr / "bootstrap" / "_scaffold" / "injected.py").write_text("evil\n")
+    lab.git(dr, "checkout", "--", "install/scaffold.py")
+    (dr / "install" / "_scaffold" / "injected.py").write_text("evil\n")
     untracked = lab.verify("--unprovenanced", dr)
     assert untracked.returncode == REFUSED, f"{untracked.stdout}{untracked.stderr}"
     assert "uncommitted or untracked" in untracked.stderr
@@ -765,10 +770,12 @@ def _build_surface_repo(lab: Lab, path: Path) -> Path:
     lab.git(repo, "init", "-q", "-b", "master")
     lab.git(repo, "config", "user.email", GENUINE_PRINCIPAL)
     lab.git(repo, "config", "user.name", "lab")
-    (repo / "bootstrap" / "_scaffold").mkdir(parents=True, exist_ok=True)
+    (repo / "install" / "_scaffold").mkdir(parents=True, exist_ok=True)
     (repo / "templates").mkdir(parents=True, exist_ok=True)
-    (repo / "bootstrap" / "scaffold.py").write_text("x\n")
-    (repo / "bootstrap" / "_scaffold" / "__init__.py").write_text("y\n")
+    (repo / "install" / "container").mkdir(parents=True, exist_ok=True)
+    (repo / "install" / "container" / "Dockerfile").write_text("verified recipe\n")
+    (repo / "install" / "scaffold.py").write_text("x\n")
+    (repo / "install" / "_scaffold" / "__init__.py").write_text("y\n")
     (repo / "templates" / ".keep").write_text("")
     (repo / "CITATION.cff").write_text('version: "0.0.0"\n')
     lab.git(repo, "add", "-A")
@@ -1084,6 +1091,35 @@ def test_acceptance_pin_fails_against_a_stub_with_its_control_deleted(
     assert r.returncode != 0, \
         f"pin '{pin}' passed against a stub with its control deleted: {r.stdout}{r.stderr}"
     assert "PIN-FAIL" in r.stderr, r.stderr
+
+
+def test_acceptance_build_uses_archived_recipe_after_live_substitution(
+        lab: Lab, tmp_path: Path) -> None:
+    """The acceptance build consumes the selected commit's recipe, not a live replacement."""
+    repo = _build_surface_repo(lab, tmp_path / "source")
+    commit = lab.git(repo, "rev-parse", "HEAD").stdout.strip()
+    capture = tmp_path / "used-recipe"
+    oci = tmp_path / "fake-oci"
+    oci.write_text('#!/bin/sh\n[ "$1" = build ] && [ "$2" = -f ] || exit 1\ncp "$3" "$CAPTURE"\n')
+    oci.chmod(0o755)
+    harness = tmp_path / "archive-build.sh"
+    body = ACCEPTANCE.read_text()
+    harness.write_text(
+        'set -euo pipefail\n'
+        'note() { :; }\n'
+        'fail() { echo "$*" >&2; exit 1; }\n'
+        + _extract_marked(body, "SOURCE-CONTEXT")
+        + 'printf "substituted live recipe\\n" > "$REPO/install/container/Dockerfile"\n'
+        + _extract_marked(body, "SOURCE-BUILD")
+        + 'build A test-image\n'
+    )
+    env = dict(lab.env, REPO=str(repo), WORK=str(tmp_path / "work"),
+               COMMIT=commit, REF=commit, OCI=str(oci), CAPTURE=str(capture),
+               DOCKERFILE=str(repo / "install/container/Dockerfile"))
+    result = subprocess.run(["bash", str(harness)], capture_output=True, text=True, env=env)
+    assert result.returncode == 0, f"{result.stdout}{result.stderr}"
+    assert capture.read_text() == "verified recipe\n"
+    assert (repo / "install/container/Dockerfile").read_text() == "substituted live recipe\n"
 
 
 def test_provenance_path_is_exercised_without_acceptance_sh(lab: Lab):

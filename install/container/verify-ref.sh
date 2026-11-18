@@ -11,7 +11,7 @@
 #
 # THIS SCRIPT IS A CONVENIENCE, NOT THE TRUST ROOT (residual RA4). It lives in
 # the candidate checkout, so running it is ALREADY executing candidate bytes. The
-# primary documented path is the out-of-band bootstrap in bootstrap/PROVENANCE.md,
+# primary documented path is the out-of-band bootstrap in install/PROVENANCE.md,
 # which an adopter runs with system `git` from a workspace they created, against
 # a fingerprint they compared on at least two independent channels. Run this
 # script DOWNSTREAM of that bootstrap, never instead of it.
@@ -123,7 +123,7 @@ fi
 # recipe's COPY set (Dockerfile). A bare candidate has no working tree; there the
 # probe is empty and the check is a no-op.
 check_build_surface() {
-  local surface="bootstrap/scaffold.py bootstrap/_scaffold templates CITATION.cff" dirty
+  local surface="install/container/Dockerfile install/scaffold.py install/_scaffold templates CITATION.cff" dirty
   # shellcheck disable=SC2086  # word-splitting is intentional: multiple pathspecs
   dirty="$(git -C "$REPO" status --porcelain -- $surface 2>/dev/null || true)"
   if [ -n "$dirty" ]; then
@@ -182,7 +182,7 @@ command -v ssh-keygen >/dev/null 2>&1 || refuse "ssh-keygen is not on PATH; SSH 
 
 # --- the trusted roster: required, external, contained (B1/B2) --------------
 [ -n "$SIGNERS" ] || refuse \
-  "provenance mode needs a trusted roster: pass --signers <path> or set CAIRN_ALLOWED_SIGNERS. There is no default and no fallback — see bootstrap/PROVENANCE.md for how to build one out of band"
+  "provenance mode needs a trusted roster: pass --signers <path> or set CAIRN_ALLOWED_SIGNERS. There is no default and no fallback — see install/PROVENANCE.md for how to build one out of band"
 
 # Canonicalize an EXISTING path: follow a symlinked leaf, then resolve the
 # parent directory with `cd -P`. Portable across the BSD and GNU userlands (no
@@ -260,11 +260,11 @@ done < "$ROSTER"
 [ "$PRINCIPALS" -gt 0 ] || refuse "the trusted roster names no principals: $SIGNERS"
 
 # ADOPTER HYGIENE, not a Cairn-side control (residual RA1 (a)). This counts
-# principals in a file the ADOPTER typed, in a script bootstrap/PROVENANCE.md
+# principals in a file the ADOPTER typed, in a script install/PROVENANCE.md
 # demotes to a convenience, with no channel back to Cairn — a fork with two
 # maintainers trips it on day one, which is why it WARNS rather than refuses.
 # Cairn's own single-signer posture is pinned in Cairn's own suite instead
-# (bootstrap/tests/test_verify_ref.py::test_cairn_roster_names_one_principal).
+# (tests/test_verify_ref.py::test_cairn_roster_names_one_principal).
 if [ "$PRINCIPALS" -gt 1 ]; then
   echo "verify-ref: NOTE — the trusted roster names $PRINCIPALS principals; any one of them" >&2
   echo "            can sign a release you will accept. Confirm that is what you meant." >&2

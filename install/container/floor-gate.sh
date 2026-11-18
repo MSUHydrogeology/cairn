@@ -17,7 +17,7 @@
 #
 # Plus a raised-syntax PROBE: 3.12-only syntax must be detected as above-floor.
 #
-# Usage:  bootstrap/container/floor-gate.sh
+# Usage:  install/container/floor-gate.sh
 # Env:    CAIRN_OCI=podman|docker (default auto), CAIRN_FLOOR_WORK=<scratch>
 
 set -euo pipefail
@@ -43,9 +43,9 @@ note "OCI runtime: $OCI"
 
 COMMIT="$(git -C "$REPO" rev-parse HEAD)"
 rm -rf "$WORK"; mkdir -p "$WORK"
-SRC="$WORK/src"; mkdir -p "$SRC/bootstrap"
-cp "$REPO/bootstrap/scaffold.py" "$SRC/bootstrap/scaffold.py"
-cp -R "$REPO/bootstrap/_scaffold" "$SRC/bootstrap/_scaffold"
+SRC="$WORK/src"; mkdir -p "$SRC/install"
+cp "$REPO/install/scaffold.py" "$SRC/install/scaffold.py"
+cp -R "$REPO/install/_scaffold" "$SRC/install/_scaffold"
 cp -R "$REPO/templates" "$SRC/templates"
 cp "$REPO/CITATION.cff" "$SRC/CITATION.cff"
 
@@ -62,7 +62,7 @@ floor_run() { # run a command in the floor image (override entrypoint)
 note "leg 1: vermin floor detection over the engine"
 floor_run 'command -v vermin >/dev/null 2>&1' \
   || fail "vermin unresolvable in the gate image — release gate FAILS (never skip-as-pass)."
-VERMIN_OUT="$(floor_run 'vermin --backport dataclasses --backport typing /cairn/bootstrap/_scaffold 2>&1' || true)"
+VERMIN_OUT="$(floor_run 'vermin --backport dataclasses --backport typing /cairn/install/_scaffold 2>&1' || true)"
 DETECTED="$(printf '%s' "$VERMIN_OUT" | grep -oE 'Minimum required versions:[[:space:]]*[0-9]+\.[0-9]+' | grep -oE '[0-9]+\.[0-9]+' | tail -1)"
 [ -n "$DETECTED" ] || fail "vermin produced no 'Minimum required versions' line (output: $VERMIN_OUT)"
 # detected floor must be <= declared floor (3.11)
@@ -81,7 +81,7 @@ floor_run 'printf "type IntAlias = int\n" > /tmp/probe.py; python -c "import ast
 # --- leg 2: runtime conformance slice at the floor ----------------------------
 note "leg 2: runtime conformance slice at Python ${DECLARED_FLOOR}"
 # (a) CLI help
-floor_run 'python /cairn/bootstrap/scaffold.py --help >/dev/null 2>&1' \
+floor_run 'python /cairn/install/scaffold.py --help >/dev/null 2>&1' \
   || fail "CLI --help failed at the floor"
 ok "CLI --help runs at the floor"
 

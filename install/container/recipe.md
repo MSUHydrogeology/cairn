@@ -41,7 +41,7 @@ a convenient Python carrier.
 
 ### Phase 1 — acquire + verify (networked, read-only)
 
-1. Choose the release and route in `bootstrap/PROVENANCE.md` before running
+1. Choose the release and route in `install/PROVENANCE.md` before running
    candidate code. For an official stable release, both routes use the fixed
    `MSUHydrogeology/cairn` release page/API and Git fetch URL, a preselected
    tag/version/full commit, a fresh checkout of that commit, and the immediate
@@ -57,11 +57,11 @@ a convenient Python carrier.
 
    ```sh
    # Ordinary route: the selected full commit is an integrity pin only.
-   bootstrap/container/verify-ref.sh --unprovenanced \
+   install/container/verify-ref.sh --unprovenanced \
        /path/to/verified-checkout <full-commit-id>
 
    # Optional stronger route: after the out-of-band verification and checkout.
-   bootstrap/container/verify-ref.sh --signers ~/.config/cairn/release-signers \
+   install/container/verify-ref.sh --signers ~/.config/cairn/release-signers \
        /path/to/verified-checkout <tag>
    ```
 
@@ -83,7 +83,7 @@ a convenient Python carrier.
    (`org.cairn.commit`, `org.cairn.ref`):
 
    ```sh
-   podman build -f bootstrap/container/Dockerfile --target engine \
+   podman build -f /path/to/verified-checkout/install/container/Dockerfile --target engine \
      --build-arg CAIRN_COMMIT="$(git -C /path/to/verified-checkout rev-parse HEAD)" \
      --build-arg CAIRN_REF="<selected-tag>" \
      -t cairn-kernel:pinned /path/to/verified-checkout
@@ -163,11 +163,11 @@ recipe (do not paper over it with `sudo chown`).
 | macOS (Podman/Docker Desktop) | **Best-effort** — the engine runs in the runtime's Linux VM; ownership maps via rootless Podman. Exercised in development; not a gated platform. |
 | Windows (Docker Desktop / WSL2) | **Best-effort** — not yet exercised end-to-end |
 
-The **floor gate** (`bootstrap/container/floor-gate.sh`) and the **acceptance
-test** (`bootstrap/container/acceptance.sh`) are run by the maintainer from a
+The **floor gate** (`install/container/floor-gate.sh`) and the **acceptance
+test** (`install/container/acceptance.sh`) are run by the maintainer from a
 Cairn checkout, not in an adopter's CI — and not by anything automatic here: no
 test and no script in `scripts/` runs either gate. (The suite does *read*
-`acceptance.sh`: `bootstrap/tests/test_verify_ref.py` extracts its marked
+`acceptance.sh`: `tests/test_verify_ref.py` extracts its marked
 negative pins and replays them, so a pin weakened there is weakened in the suite
 too. That pins the assertions; it does not run the container gate.) The
 acceptance test records **SKIPPED** (never PASS) on a host with no OCI runtime —

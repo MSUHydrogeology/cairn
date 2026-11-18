@@ -4,7 +4,7 @@
 # install/upgrade boundary in a throwaway, contained container, with no
 # host-installed Python and no Python in the adopter's application build/test CI.
 #
-# This is the v1 reference image for `bootstrap/container/recipe.md`. It targets
+# This is the v1 reference image for `install/container/recipe.md`. It targets
 # the SETTLED install/upgrade CLI boundary (`scaffold.py`), not internal engine
 # topology, so it survives engine refactors unchanged.
 #
@@ -55,11 +55,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends git \
 
 # The install/upgrade engine + the template source it reads. Deliberately NOT the
 # whole repo: only scaffold.py (the launcher), _scaffold/ (the engine), and
-# templates/ (the install source). No bootstrap/tests/, no .git, no docs — the
+# templates/ (the install source). No tests/, no .git, no docs — the
 # image is the minimum that runs install + upgrade.
 WORKDIR /cairn
-COPY bootstrap/scaffold.py ./bootstrap/scaffold.py
-COPY bootstrap/_scaffold/ ./bootstrap/_scaffold/
+COPY install/scaffold.py ./install/scaffold.py
+COPY install/_scaffold/ ./install/_scaffold/
 COPY templates/ ./templates/
 # CITATION.cff is the engine's version source (lockfile.py:_cairn_version) — it
 # must be present so the lockfile records a real Cairn version, not "unknown".
@@ -68,7 +68,7 @@ COPY CITATION.cff ./CITATION.cff
 # The engine is invoked as an explicit argv; "upgrade" as the first arg routes to
 # the upgrade CLI, anything else is install. The run step supplies --target /work
 # and (for a read-only engine mount) --cairn-root /cairn.
-ENTRYPOINT ["python", "/cairn/bootstrap/scaffold.py"]
+ENTRYPOINT ["python", "/cairn/install/scaffold.py"]
 CMD ["--help"]
 
 # ---------------------------------------------------------------------------
@@ -89,11 +89,11 @@ WORKDIR /cairn
 RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir vermin==1.6.0
-COPY bootstrap/scaffold.py ./bootstrap/scaffold.py
-COPY bootstrap/_scaffold/ ./bootstrap/_scaffold/
+COPY install/scaffold.py ./install/scaffold.py
+COPY install/_scaffold/ ./install/_scaffold/
 COPY templates/ ./templates/
 # CITATION.cff is the engine's version source (lockfile.py:_cairn_version) — it
 # must be present so the lockfile records a real Cairn version, not "unknown".
 COPY CITATION.cff ./CITATION.cff
-ENTRYPOINT ["python", "/cairn/bootstrap/scaffold.py"]
+ENTRYPOINT ["python", "/cairn/install/scaffold.py"]
 CMD ["--help"]

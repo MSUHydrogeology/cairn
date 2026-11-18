@@ -24,7 +24,7 @@
 # See recipe.md for the platform matrix. On a host without an OCI runtime the script
 # exits SKIPPED (degraded-assurance: a missing gate is SKIPPED, never PASS).
 #
-# Usage:  bootstrap/container/acceptance.sh
+# Usage:  install/container/acceptance.sh
 # Env:    CAIRN_OCI=podman|docker (default: auto-detect), CAIRN_F4_WORK=<scratch dir>
 
 set -euo pipefail
@@ -33,7 +33,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$SCRIPT_DIR/../.." && pwd)"
 WORK="${CAIRN_F4_WORK:-$HOME/.cache/cairn_f4_accept}"
-DOCKERFILE="$SCRIPT_DIR/Dockerfile"
 
 note() { printf '\033[1m[F4]\033[0m %s\n' "$*"; }
 ok()   { printf '  \033[32mok\033[0m %s\n' "$*"; }
@@ -57,7 +56,7 @@ note "OCI runtime: $OCI ($($OCI --version 2>&1 | head -1))"
 # release tag, so every call below runs verify-ref.sh in `--unprovenanced` mode:
 # an INTEGRITY pin (exit 3), no signature checked, and the word "release" nowhere
 # in the output. The provenance path is therefore NEVER exercised here — it is
-# exercised by bootstrap/tests/test_verify_ref.py, which builds its own signed
+# exercised by tests/test_verify_ref.py, which builds its own signed
 # tag and roster (plan `release-authenticity`, Chunk D5 and its stated limit).
 #
 # --- BEGIN PIN-HELPERS ---
@@ -99,40 +98,51 @@ rm -rf "$WORK"; mkdir -p "$WORK"
 # emitted commit label can never mislabel uncommitted bytes. Probe a scratch repo.
 DR="$WORK/dirty-probe"; mkdir -p "$DR"
 ( cd "$DR" && git init -q && git config user.email a@b.c && git config user.name t \
-  && mkdir -p bootstrap/_scaffold templates && echo x > bootstrap/scaffold.py \
-  && echo 'version: "0.0.0"' > CITATION.cff && echo y > bootstrap/_scaffold/__init__.py \
+  && mkdir -p install/_scaffold install/container templates && echo x > install/scaffold.py \
+  && echo 'version: "0.0.0"' > CITATION.cff && echo y > install/_scaffold/__init__.py \
+  && echo recipe > install/container/Dockerfile \
   && git add -A && git commit -q -m base )
 # --- BEGIN PIN dirty-build-surface ---
 vr --unprovenanced "$DR"
 [ "$VR_RC" -eq 3 ] || fail "verify-ref did not accept a CLEAN build surface as an integrity pin (exit $VR_RC, expected 3)"
-echo "tampered" >> "$DR/bootstrap/scaffold.py"
+echo "tampered" >> "$DR/install/container/Dockerfile"
+vr --unprovenanced "$DR"
+[ "$VR_RC" -eq 1 ] || fail "verify-ref accepted a tracked-DIRTY Dockerfile (exit $VR_RC; must refuse with 1)"
+case "$VR_OUT" in
+  *"uncommitted or untracked"*) ;;
+  *) fail "verify-ref refused a tracked-DIRTY Dockerfile for the wrong reason: $VR_OUT" ;;
+esac
+git -C "$DR" checkout -- install/container/Dockerfile
+echo "tampered" >> "$DR/install/scaffold.py"
 vr --unprovenanced "$DR"
 [ "$VR_RC" -eq 1 ] || fail "verify-ref accepted a tracked-DIRTY build surface (exit $VR_RC; must refuse with 1)"
 case "$VR_OUT" in
   *"uncommitted or untracked"*) ;;
   *) fail "verify-ref refused a tracked-DIRTY build surface for the wrong reason: $VR_OUT" ;;
 esac
-git -C "$DR" checkout -- bootstrap/scaffold.py
-echo "evil" > "$DR/bootstrap/_scaffold/injected.py"   # untracked, inside the build surface
+git -C "$DR" checkout -- install/scaffold.py
+echo "evil" > "$DR/install/_scaffold/injected.py"   # untracked, inside the build surface
 vr --unprovenanced "$DR"
 [ "$VR_RC" -eq 1 ] || fail "verify-ref accepted an UNTRACKED build-surface file (exit $VR_RC; must refuse with 1)"
 case "$VR_OUT" in
   *"uncommitted or untracked"*) ;;
   *) fail "verify-ref refused an UNTRACKED build-surface file for the wrong reason: $VR_OUT" ;;
 esac
-rm -f "$DR/bootstrap/_scaffold/injected.py"
+rm -f "$DR/install/_scaffold/injected.py"
 ok "verify-ref refuses a dirty / untracked build surface, naming the reason (clean accepted as an integrity pin)"
 # --- END PIN dirty-build-surface ---
 
 # The build context is the COMMIT OBJECT (not the working tree): `git archive`
 # extracts exactly the recipe's COPY set at $COMMIT, so the image bytes provably
 # match the emitted org.cairn.commit label.
+# --- BEGIN SOURCE-CONTEXT ---
 for V in A B; do
   S="$WORK/src-$V"; mkdir -p "$S"
   git -C "$REPO" archive --format=tar "$COMMIT" \
-    bootstrap/scaffold.py bootstrap/_scaffold templates CITATION.cff \
+    install/container/Dockerfile install/scaffold.py install/_scaffold templates CITATION.cff \
     | tar -x -C "$S" || fail "git archive of the build surface failed for $V"
 done
+# --- END SOURCE-CONTEXT ---
 # Release B is a GENUINE newer release: bump its version (CITATION.cff is the
 # engine's version source) AND carry a uniquely-identifiable upstream-only line
 # added to a core template. A 3-way merge (base=A, upstream=B, local=installed)
@@ -146,12 +156,15 @@ mv "$WORK/src-B/CITATION.cff.new" "$WORK/src-B/CITATION.cff"
 ok "release B staged: version 0.2.1-f4 + controlled change in $CHANGED_TEMPLATE"
 
 # --- 3. build the engine image for each version (base pinned by digest in Dockerfile)
+# --- BEGIN SOURCE-BUILD ---
 build() { # $1=version $2=tag
+  local S="$WORK/src-$1"
   note "building image $2 (Cairn $COMMIT)"
-  $OCI build -f "$DOCKERFILE" --target engine \
+  $OCI build -f "$S/install/container/Dockerfile" --target engine \
     --build-arg CAIRN_COMMIT="$COMMIT" --build-arg CAIRN_REF="$REF" \
     -t "$2" "$WORK/src-$1" >/dev/null 2>&1 || fail "image build failed for $2"
 }
+# --- END SOURCE-BUILD ---
 build A cairn-kernel:A
 build B cairn-kernel:B
 # Identity emitted into the image (Phase 1 provenance).
