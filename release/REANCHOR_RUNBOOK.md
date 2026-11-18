@@ -55,7 +55,7 @@ driver does not push.
 For an ordinary ceremony:
 
 ```sh
-python scripts/repin.py ceremony --values <values-file> --ceremony-dir <ceremony-folder>
+python release/repin.py ceremony --values <values-file> --ceremony-dir <ceremony-folder>
 ```
 
 For a reviewed authority transition, first prepare its packet with
@@ -64,7 +64,7 @@ After the reader's record-only commit, run the same driver with the independent
 fingerprint of the prior signer:
 
 ```sh
-python scripts/repin.py ceremony --transition --expected-fingerprint <SHA256:...> \
+python release/repin.py ceremony --transition --expected-fingerprint <SHA256:...> \
   --values <values-file> --ceremony-dir <ceremony-folder>
 ```
 
@@ -73,6 +73,28 @@ the candidate roster for the new signature. It does not install a baseline or
 move any real ref during testing. Publishing both refs atomically is a separate
 Maintainer action after the ceremony. Nothing in this page calls
 `_gate_reanchor.py promote`.
+### First cut after the layout move
+
+Use the same transition when the signed predecessor still has
+`bootstrap/tests/` and the candidate has `tests/`. Prepare verifier evidence
+as described below. The independent reader checks the old signer, exact
+candidate tree, both rosters and member lists, the layout evidence digest, and
+the new `release/repin.py` and Python executable digests. Confirm the
+bootstrap and interpreter against those independently held values before
+invoking the bootstrap with `python -I`.
+
+Pass `--reviewed-layout-sha256` to `verify-candidate`. The optional
+`--layout-static-only` shows the prior scan digest and records the static
+report. Full collection still requires the key-away confirmation and records
+both sets of node IDs. The prior verifier's HOLDs remain visible.
+
+Supply the verifier evidence folder and reviewed digest to
+`transition-packet`, `prepare-reader`, and `ceremony --transition` using
+`--layout-evidence-dir` and `--reviewed-layout-sha256`. Have the reader commit
+their record alone, as usual. For the ceremony, also supply the independently
+reviewed `--verifier-report-sha256` of `verifier-report-binding.json` and
+`--verifier-dispositions` if the prior verifier reported HOLDs. The same
+package confirmation and signing steps apply.
 <!-- end of page -->
 
 <!-- `dev/.cairn/trusted-activation.yml` and `dev/.cairn/promotion-authorization.yml`
@@ -83,10 +105,10 @@ Maintainer action after the ceremony. Nothing in this page calls
 
 ## Prior verifier preparation
 
-The short Stage 1 procedure uses these maintained entry points. Run preparation from the committed candidate checkout, with a new evidence-folder path whose parent already exists. The script verifies its own bytes equal `scripts/repin.py` at C, authenticates P's signed commit against the independently supplied fingerprint, and reads P's manifest and tool dependencies as raw objects. The prior manifest's allowed-signers file is verification input, never the sole trust root. The reader independently checks the expected signer source, P's signature and reachability, all emitted hashes, and the C target before collection.
+The short Stage 1 procedure uses these maintained entry points. Run preparation from the committed candidate checkout, with a new evidence-folder path whose parent already exists. The script verifies its own bytes equal `release/repin.py` at C, authenticates P's signed commit against the independently supplied fingerprint, and reads P's manifest and tool dependencies as raw objects. The prior manifest's allowed-signers file is verification input, never the sole trust root. The reader independently checks the expected signer source, P's signature and reachability, all emitted hashes, and the C target before collection.
 
 ```sh
-python scripts/repin.py prepare-verifier \
+python release/repin.py prepare-verifier \
   --trusted-repo <trusted-checkout> \
   --evidence-dir <new-evidence-folder> \
   --expected-fingerprint <independently-trusted-SHA256-fingerprint>
@@ -97,7 +119,7 @@ P defaults to `refs/cairn/gate-anchor`; C defaults to committed `HEAD`. The comm
 The independent reader verifies the displayed P signer fingerprint against an independent trust source, confirms that fingerprint matches the verified signed commit, checks the P manifest and every extracted dependency against raw P objects, and checks the scratch target against exact C. Stop on any disagreement. Then run:
 
 ```sh
-python scripts/repin.py verify-candidate \
+python release/repin.py verify-candidate \
   --evidence-dir <prepared-evidence-folder> \
   --expected-fingerprint <same-independently-trusted-SHA256-fingerprint> \
   --operator-confirms-key-away
@@ -112,11 +134,11 @@ If the P verifier returns a HOLD, the first run writes a `verifier-dispositions-
 ## Preparing reusable inputs
 
 The builder can prepare the values file and a fresh package path with
-`python scripts/repin.py prepare-values --output <new-values-file> --signing-key <public-key> --home <home> --ceremony-dir <outside-checkout-directory>`. The command prints the values-file digest. The independent reader checks every path and digest; the launcher validates the file before use. After a tool upgrade a recorded executable path goes stale, and that is not a malfunction: prepare and check fresh values. No secret is written.
+`python release/repin.py prepare-values --output <new-values-file> --signing-key <public-key> --home <home> --ceremony-dir <outside-checkout-directory>`. The command prints the values-file digest. The independent reader checks every path and digest; the launcher validates the file before use. After a tool upgrade a recorded executable path goes stale, and that is not a malfunction: prepare and check fresh values. No secret is written.
 
-For an ordinary ceremony, `python scripts/repin.py packet --ceremony-dir <directory>` prepares the packet and launcher. `python scripts/repin.py prepare-reader --ceremony-dir <directory> --output <new-reader-inputs-file> --expected-fingerprint <independently-trusted-SHA256-fingerprint>` prepares the candidate and member hashes for the independent reader. These inputs are not a review or an authorization. The reader verifies the underlying objects and records their review at the read commit before the Maintainer acts.
+For an ordinary ceremony, `python release/repin.py packet --ceremony-dir <directory>` prepares the packet and launcher. `python release/repin.py prepare-reader --ceremony-dir <directory> --output <new-reader-inputs-file> --expected-fingerprint <independently-trusted-SHA256-fingerprint>` prepares the candidate and member hashes for the independent reader. These inputs are not a review or an authorization. The reader verifies the underlying objects and records their review at the read commit before the Maintainer acts.
 
-When an AST pin is owed, run `python scripts/repin.py package --ceremony-dir <directory>` at the read commit before the reader writes their record. For a reviewed missing symbol, add `--delete-symbol <exact-baseline-key>` for each missing key; omitted or extra keys refuse. Prepare reader inputs after the package so they include its digest. Once the independent reader has verified and committed the record alone on that read commit, `python scripts/repin.py apply-reviewed-pin --ceremony-dir <directory>` checks the binding, asks the Maintainer before writing, and stops with an exact-path commit instruction. It does not commit. Run `python scripts/repin.py commit-reviewed-pin --ceremony-dir <directory>` and approve the exact paths to make that commit. Then prepare fresh ceremony evidence for the new candidate.
+When an AST pin is owed, run `python release/repin.py package --ceremony-dir <directory>` at the read commit before the reader writes their record. For a reviewed missing symbol, add `--delete-symbol <exact-baseline-key>` for each missing key; omitted or extra keys refuse. Prepare reader inputs after the package so they include its digest. Once the independent reader has verified and committed the record alone on that read commit, `python release/repin.py apply-reviewed-pin --ceremony-dir <directory>` checks the binding, asks the Maintainer before writing, and stops with an exact-path commit instruction. It does not commit. Run `python release/repin.py commit-reviewed-pin --ceremony-dir <directory>` and approve the exact paths to make that commit. Then prepare fresh ceremony evidence for the new candidate.
 
 These commands prepare inputs; the `ceremony --transition` command above carries the reviewed changed-authority sequence through the same maintained checks and signature verification. It authenticates the prior anchor using its old roster and still requires the independent reader and Maintainer decisions.
 
@@ -133,7 +155,7 @@ Prepare evidence outside the checkout under the Python minor version recorded
 in the candidate manifest:
 
 ```sh
-python scripts/repin.py forward-prepare --candidate <candidate-commit> \
+python release/repin.py forward-prepare --candidate <candidate-commit> \
   --evidence-dir <new-external-evidence-folder>
 ```
 
@@ -143,11 +165,11 @@ or move refs. Have a fresh ordinary reviewer and a separate Security Reviewer
 read the candidate and packet, then bind each review to those exact bytes:
 
 ```sh
-python scripts/repin.py forward-review --evidence-dir <evidence-folder> \
+python release/repin.py forward-review --evidence-dir <evidence-folder> \
   --role ordinary --reviewer <name> --model <model> --elapsed <time> --tokens <count-or-unknown> \
   --verdict ACCEPT --findings <none-or-summary> --should-happen <answer> \
   --best-alternative <answer> --what-would-show-wrong <answer> --coverage <answer>
-python scripts/repin.py forward-review --evidence-dir <evidence-folder> \
+python release/repin.py forward-review --evidence-dir <evidence-folder> \
   --role security --reviewer <different-name> --model <model> --elapsed <time> --tokens <count-or-unknown> \
   --verdict ACCEPT --findings <none-or-summary> --should-happen <answer> \
   --best-alternative <answer> --what-would-show-wrong <answer> --coverage <answer>
@@ -159,7 +181,7 @@ the issue is addressed in a new committed candidate, prepare a fresh evidence
 folder and obtain both fresh reviews again.
 
 ```sh
-python scripts/repin.py forward-guide --evidence-dir <evidence-folder>
+python release/repin.py forward-guide --evidence-dir <evidence-folder>
 ```
 
 It rechecks the candidate and transaction, asks separately before applying and
@@ -191,7 +213,7 @@ independent reader prepares an unreviewed draft from the committed candidate
 and approved roster:
 
 ```sh
-python scripts/repin.py baseline-reader-inputs \
+python release/repin.py baseline-reader-inputs \
   --candidate <candidate-commit> \
   --approved-roster <external-approved-roster.json> \
   --output <new-reader-record.json>
@@ -211,7 +233,7 @@ With that reviewed record, prepare the package in a new folder outside the
 checkout:
 
 ```sh
-python scripts/repin.py baseline-prepare \
+python release/repin.py baseline-prepare \
   --candidate <same-candidate-commit> \
   --approved-roster <same-external-approved-roster.json> \
   --reader-record <reviewed-reader-record.json> \
@@ -233,7 +255,7 @@ authorized signer fingerprint and confirm the package digest measured over the
 file bytes, for example with `shasum -a 256`:
 
 ```sh
-python scripts/repin.py baseline-install \
+python release/repin.py baseline-install \
   --candidate <same-candidate-commit> \
   --package-dir <reviewed-baseline-package-folder> \
   --approved-roster <same-external-approved-roster.json> \
@@ -260,7 +282,7 @@ anchored E7 scan; it is not the forward-baseline installer and is never an
 automatic fallback. Prepare and review its packet and reader record, then run:
 
 ```sh
-python scripts/repin.py ceremony --first-run --reviewed-commit <reviewed-commit> --values <values-file> --ceremony-dir <ceremony-folder>
+python release/repin.py ceremony --first-run --reviewed-commit <reviewed-commit> --values <values-file> --ceremony-dir <ceremony-folder>
 ```
 
 The driver states the checks it cannot establish and asks for the Maintainer's
@@ -270,7 +292,7 @@ decision; it does not waive an unreviewed change.
 
 `repin packet` writes the packet and launcher. The packet uses schema
 `cairn-authorization-packet/v1`, a provenance field, the artifact
-`bootstrap/reanchor.sh`, its `artifact_sha256`, and one `member` digest per
+`release/reanchor.sh`, its `artifact_sha256`, and one `member` digest per
 closure file. The launcher contains the packet's SHA-256 in its one
 `@PACKET_SHA256@` slot. The packet carries no candidate id; the reader record
 binds the exact candidate.
@@ -297,7 +319,7 @@ states; the scanners are a fixed pattern list and age.
 
 ## The steps the tools cite
 
-`sh bootstrap/reanchor.sh steps` prints the closed, ordered registry of the
+`sh release/reanchor.sh steps` prints the closed, ordered registry of the
 ceremony's steps. **The IDs below are that registry's**, cited here so the two
 cannot drift apart: a step in the code and not in this document, or the
 reverse, fails a test.

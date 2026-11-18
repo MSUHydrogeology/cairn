@@ -1607,12 +1607,12 @@ def range_scan(anchor: str, head: str, *, repo: Path = _REPO,
     """The line scan alone, for the anchored `scan-digest` command."""
     anchor_tree = _resolve_tree(anchor, repo=repo)
     candidate_tree = _resolve_tree(head, repo=repo)
+    frozen = _frozen_policy(anchor, head, repo=repo, protected_roster=protected_roster)
+    # The active roster freezes this previously phase-mutable test.
+    phase = set(G.PHASE_SPLIT_TARGETS) - (frozen & {"tests/test_intents_tool.py"})
     changed, classes, decides = _changed_with_classes(
-        anchor_tree, candidate_tree,
-        _frozen_policy(anchor, head, repo=repo,
-                       protected_roster=protected_roster),
-        set(G.CASCADE_MUTABLE), set(G.PHASE_SPLIT_TARGETS), G._MANIFEST_REL,
-        repo=repo)
+        anchor_tree, candidate_tree, frozen, set(G.CASCADE_MUTABLE), phase,
+        G._MANIFEST_REL, repo=repo)
     return _scan_range(anchor_tree, candidate_tree, changed, classes, decides,
                        repo=repo)[0]
 
@@ -1620,12 +1620,14 @@ def range_scan(anchor: str, head: str, *, repo: Path = _REPO,
 def range_review_report(anchor: str, head: str, *, branch: str,
                         expected_old: str, repo: Path = _REPO,
                         prospective_manifest: bytes | None = None,
-                        protected_roster: dict | None = None) -> dict:
+                        protected_roster: dict | None = None,
+                        layout: dict | None = None) -> dict:
     """The one canonical report `apply` re-derives and the checkpoint binds."""
     frozen = _frozen_policy(anchor, head, repo=repo,
                             protected_roster=protected_roster)
     cascade = set(G.CASCADE_MUTABLE)
     phase = set(G.PHASE_SPLIT_TARGETS)
+    phase -= frozen & set((protected_roster or {}).get("protected_python_paths", []))
     manifest_rel = G._MANIFEST_REL
 
     anchor_tree = _resolve_tree(anchor, repo=repo)
@@ -1640,7 +1642,7 @@ def range_review_report(anchor: str, head: str, *, branch: str,
     # that exact old scan for E7 while the path list below reports the
     # prospective policy's classifications.
     scan_roster = protected_roster
-    if protected_roster is not None:
+    if protected_roster is not None and layout is None:
         old_blob = _blob_at(anchor, manifest_rel, repo=repo)
         try:
             old_manifest = json.loads(old_blob.decode("utf-8"))
@@ -1668,6 +1670,11 @@ def range_review_report(anchor: str, head: str, *, branch: str,
                                  - {G._PROTECTED_ROSTER_REL})
     scan, facts = _scan_range(anchor_tree, candidate_tree, scan_changed,
                               scan_classes, scan_decides, repo=repo)
+    if layout is not None:
+        scan = layout["scan"]
+        scanned = set(scan["scanned"])
+        for raw, fact in facts.items():
+            fact["scanned"] = _display_path(raw) in scanned
 
     entries: list[dict] = []
     for raw in changed:
@@ -1723,6 +1730,8 @@ def range_review_report(anchor: str, head: str, *, branch: str,
         # candidate checker is judged only by the digest the Maintainer compares
         "scan_checker": ("anchor" if _running_checker_is_anchors(anchor, repo=repo)
                          else "candidate"),
+        **({"layout_evidence_sha256": layout["layout_evidence_sha256"],
+            "layout_reviewed_candidate": layout["reviewed_candidate"]} if layout else {}),
         "signers": {
             "anchor": _signer_lines(anchor, repo=repo),
             "candidate": _signer_lines(head, repo=repo),
@@ -2613,7 +2622,8 @@ def rederive_and_bind(anchor: str, head: str, *, branch: str,
                       expected_old: str, confirmed_digest: str,
                       repo: Path = _REPO,
                       prospective_manifest: bytes | None = None,
-                      protected_roster: dict | None = None) -> dict:
+                      protected_roster: dict | None = None,
+                      layout: dict | None = None) -> dict:
     """Re-derive the report **in memory** and refuse any drift.
 
     R1-A: `apply` neither reads nor trusts a handoff file.  The report the
@@ -2628,7 +2638,7 @@ def rederive_and_bind(anchor: str, head: str, *, branch: str,
     fresh = range_review_report(anchor, head, branch=branch,
                                 expected_old=expected_old, repo=repo,
                                 prospective_manifest=prospective_manifest,
-                                protected_roster=protected_roster)
+                                protected_roster=protected_roster, layout=layout)
     actual = range_report_digest(fresh)
     if actual != confirmed_digest:
         raise RangeReportDrift(
@@ -3093,7 +3103,8 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
                   protected_roster: dict | None = None,
                   admitted_authority: dict | None = None,
                   review_provenance: str | None = None,
-                  review_digest: str | None = None) -> dict:
+                  review_digest: str | None = None,
+                  layout: dict | None = None) -> dict:
     """The derived description of what a blessing would do.
 
     Formerly emitted as a handoff *bundle* that ``apply`` read back and trusted.
@@ -3102,7 +3113,8 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
     memory by whichever command needs it, and `check` may write it out only as a
     **record for the operator to read** -- nothing consumes it as authority.
     """
-    old = json.loads(_blob_at(report.facts["anchor"], _MANIFEST_REL,
+    prior_manifest = "bootstrap/tests/fixtures/gate_manifest.json" if layout else _MANIFEST_REL
+    old = json.loads(_blob_at(report.facts["anchor"], prior_manifest,
                               repo=repo) or b"{}")
     new = manifest if manifest is not None else evidence["manifest"]
     bound_sha = (manifest_sha256 if manifest_sha256 is not None
@@ -3127,7 +3139,7 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
                       report.facts["anchor"], report.facts["head"],
                       branch=branch, expected_old=expected_old, repo=repo,
                       prospective_manifest=prospective_manifest,
-                      protected_roster=protected_roster)
+                      protected_roster=protected_roster, layout=layout)
                   if branch and expected_old else None)
     report_digest = range_report_digest(the_report) if the_report else None
     candidate_tree = (_resolve_tree(report.facts["head"], repo=repo)
@@ -3389,10 +3401,54 @@ def _sync_worktree(repo: Path, manifest_bytes: bytes, blob: str) -> None:
     _git_write("update-index", "--refresh", repo=repo)
 
 
+def _layout_stage(repo, path, digest, anchor, head, transition):
+    if path is None and digest is None:
+        return None, resolve_protected_roster(anchor, head, transition=transition, repo=repo)
+    if (not path or not digest or not transition
+            or not re.fullmatch(r"[0-9a-f]{64}", digest)):
+        raise PreflightError("layout context requires a reviewed transition and external digest.")
+    source = Path(path)
+    if not source.is_absolute() or any(part.is_symlink() for part in (source, *source.parents)):
+        raise PreflightError("the layout context must be an absolute plain file.")
+    if not source.is_file():
+        raise PreflightError("the layout context is absent.")
+    raw = source.read_bytes()
+    if _sha256_hex(raw) != digest:
+        raise PreflightError("the approved layout context changed.")
+    try:
+        layout = json.loads(raw, object_pairs_hook=_no_duplicate_keys)
+        expected_fields = {"candidate", "prior_anchor", "read_commit", "reviewed_candidate",
+                           "digest", "layout_evidence_sha256", "scan", "static_exit",
+                           "static_report_sha256", "roster_sha256"}
+        if not isinstance(layout, dict) or set(layout) != expected_fields:
+            raise ValueError("unexpected layout context fields")
+        if (layout["prior_anchor"] != anchor or layout["read_commit"] != head
+                or layout["candidate"] != head
+                or layout["reviewed_candidate"] != _resolve("HEAD^", repo=repo)
+                or scan_digest(layout["scan"]) != layout["digest"]):
+            raise ValueError("layout context does not bind the live prior and reader-record tip")
+        changed = _git("diff-tree", "-r", "-z", "--no-commit-id", "--name-only",
+                       "--no-renames", head, repo=repo, want_bytes=True)
+        if changed.returncode != 0 or changed.stdout != b"dev/ceremony-record.md\0":
+            raise ValueError("the layout tip must change only the independent reader record")
+        prior = _blob_at(anchor, "bootstrap/tests/fixtures/gate_manifest.json", repo=repo)
+        if prior is None or _blob_at(anchor, _MANIFEST_REL, repo=repo) is not None:
+            raise ValueError("the layout context requires the legacy prior manifest")
+        raw_roster = _blob_at(head, G._PROTECTED_ROSTER_REL, repo=repo)
+        if raw_roster is None or (_sha256_hex(raw_roster) != layout["roster_sha256"]
+                                  or layout["roster_sha256"] != transition["members"].get(G._PROTECTED_ROSTER_REL)):
+            raise ValueError("the relocated protected roster differs from the reviewed context")
+        return layout, G._roster_from_bytes(raw_roster)
+    except (KeyError, TypeError, ValueError, RuntimeError) as exc:
+        raise PreflightError(f"invalid reviewed layout context: {exc}") from None
+
+
 def stage1(*, repo: Path = _REPO, package_out: Path,
            signing_key: str | None = None,
            review_manifest: str | None = None,
            reviewed_candidate: str | None = None,
+           layout_context: str | None = None,
+           layout_context_sha256: str | None = None,
            out=sys.stderr) -> dict:
     """**Stage 1**: everything that executes candidate code, with the key away.
 
@@ -3429,8 +3485,8 @@ def stage1(*, repo: Path = _REPO, package_out: Path,
 
     anchor = _resolve(_ANCHOR_REF, repo=repo)
     head = _resolve("HEAD", repo=repo)
-    protected_roster = resolve_protected_roster(
-        anchor, head, transition=transition, repo=repo)
+    layout, protected_roster = _layout_stage(
+        repo, layout_context, layout_context_sha256, anchor, head, transition)
     evidence = gather_evidence("HEAD", repo=repo,
                                protected_roster=protected_roster, out=out)
     report = check(repo=repo, evidence=evidence,
@@ -3458,7 +3514,7 @@ def stage1(*, repo: Path = _REPO, package_out: Path,
     the_report = range_review_report(anchor, head, branch=branch,
                                      expected_old=branch_old, repo=repo,
                                      prospective_manifest=manifest_bytes,
-                                     protected_roster=protected_roster)
+                                     protected_roster=protected_roster, layout=layout)
 
     pkg = {
         "schema": PACKAGE_SCHEMA,
@@ -3506,6 +3562,8 @@ def apply_now(*, repo: Path = _REPO,
               signing_key: str | None = None,
               review_manifest: str | None = None,
               reviewed_candidate: str | None = None,
+              layout_context: str | None = None,
+              layout_context_sha256: str | None = None,
               out=sys.stderr) -> dict:
     """Validate the confirmed package, re-derive everything derivable, then bless.
 
@@ -3643,9 +3701,9 @@ def apply_now(*, repo: Path = _REPO,
         raise PackageError(
             "the package authorizes a reviewed-authority transition, but "
             "stage 2 was given no --transition-from-review")
-    protected_roster = resolve_protected_roster(
-        _resolve(_ANCHOR_REF, repo=repo), pkg["candidate_head"],
-        transition=early_transition, repo=repo)
+    layout, protected_roster = _layout_stage(
+        repo, layout_context, layout_context_sha256, _resolve(_ANCHOR_REF, repo=repo),
+        pkg["candidate_head"], early_transition)
 
     # Stage 2 rebuilds the manifest from its OWN static re-derivation plus
     # the two fields declared candidate-only, and never from the candidate's
@@ -3774,7 +3832,7 @@ def apply_now(*, repo: Path = _REPO,
                          manifest_sha256=committed_sha256,
                          branch=branch, expected_old=branch_old,
                          prospective_manifest=manifest_bytes,
-                         protected_roster=protected_roster,
+                         protected_roster=protected_roster, layout=layout,
                          # The DURABLE RECORD comes from the
                          # revalidated transition, never from the package.
                          #
@@ -3855,7 +3913,7 @@ def apply_now(*, repo: Path = _REPO,
                       branch=branch, expected_old=branch_old,
                       confirmed_digest=plan["range_report_digest"], repo=repo,
                       prospective_manifest=manifest_bytes,
-                      protected_roster=protected_roster)
+                      protected_roster=protected_roster, layout=layout)
 
     verify_message_binds_report(
         plan["message"], digest=plan["range_report_digest"],
@@ -4039,6 +4097,9 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--reviewed-candidate", default=None,
                    help="TRANSITION MODE: the commit OID the loader resolved "
                         "once and extracted by. Never re-resolved here.")
+    for parser in (s1, a):
+        parser.add_argument("--layout-context", default=None)
+        parser.add_argument("--layout-context-sha256", default=None)
     args = ap.parse_args(argv)
 
     try:
@@ -4087,7 +4148,9 @@ def main(argv: list[str] | None = None) -> int:
             result = stage1(repo=repo, package_out=Path(args.package_out),
                             signing_key=args.signing_key,
                             review_manifest=args.review_manifest,
-                            reviewed_candidate=args.reviewed_candidate)
+                            reviewed_candidate=args.reviewed_candidate,
+                            layout_context=args.layout_context,
+                            layout_context_sha256=args.layout_context_sha256)
         except PreflightError as exc:
             sys.stderr.write(f"[REFUSE ] {exc}\n")
             return 2
@@ -4102,7 +4165,9 @@ def main(argv: list[str] | None = None) -> int:
                 confirmed_package_sha256=args.confirmed_package_sha256,
                 signing_key=args.signing_key,
                 review_manifest=args.review_manifest,
-                reviewed_candidate=args.reviewed_candidate)
+                reviewed_candidate=args.reviewed_candidate,
+                layout_context=args.layout_context,
+                layout_context_sha256=args.layout_context_sha256)
         except PreflightError as exc:
             sys.stderr.write(f"[REFUSE ] {exc}\n")
             return 2

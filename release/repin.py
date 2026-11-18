@@ -30,10 +30,11 @@ fresh bytecode folder.  A same-user edit to this file is outside what it can det
 """
 import os
 import sys
-import tempfile
 
 if __name__ == "__main__":
     if not sys.flags.isolated:
+        if any(arg.startswith("--reviewed-layout-sha256") for arg in sys.argv[1:]):
+            raise SystemExit("Run the reviewed layout bootstrap with the bound Python and -I.")
         os.execv(sys.executable,
                  [sys.executable, "-I", os.path.abspath(__file__), *sys.argv[1:]])
     import tempfile
@@ -91,6 +92,10 @@ LEGACY_VERIFIER_SCANNER_PATHS = (
     "scripts/reanchor_ceremony.py",
 )
 LEGACY_VERIFIER_REL = "bootstrap/tests/_gate_manifest.py"
+LEGACY_LAUNCHER_REL = "bootstrap/reanchor-launcher.template.sh"
+LEGACY_ROSTER_REL = "bootstrap/tests/fixtures/protected_test_roster.json"
+LAYOUT_CATALOG_REL = "install/_scaffold/layout_catalog.py"
+LAYOUT_ROSTER_REL = "tests/fixtures/protected_test_roster.json"
 VERIFIER_PACKET = "verifier-evidence.json"
 OBSERVER_SOURCE = '''import importlib.util, json, os, sys
 from pathlib import Path
@@ -120,6 +125,87 @@ fd = os.open(capture, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
 with os.fdopen(fd, "wb") as stream:
     stream.write(envelope)
 raise SystemExit(exit_code)
+'''
+
+LAYOUT_COLLECT = '''def collect(repo):
+    fd, output = tempfile.mkstemp(suffix=".json")
+    os.close(fd)
+    try:
+        env = dict(os.environ, CAIRN_GATE_COLLECT_OUT=output)
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", "tests", "--collect-only", "-q",
+             "-p", "tests._gate_manifest", "-p", "no:cacheprovider"],
+            cwd=str(repo), env=env, capture_output=True, check=False)
+        data = json.loads(Path(output).read_text(encoding="utf-8"))
+        ids = sorted(data["collected"])
+        marked = sorted(data["marked"])
+    finally:
+        Path(output).unlink(missing_ok=True)
+
+    old_paths = {new: old for old, new in paths}
+    def prior_id(node):
+        path, sep, suffix = node.partition("::")
+        return old_paths.get(path, path) + sep + suffix
+
+    raw_calls.append((ids, marked))
+    translated = (sorted(map(prior_id, ids)),
+                  sorted(map(prior_id, marked)), result.returncode)
+    calls.append((repo, translated))
+    return translated
+'''
+
+
+def layout_observer_source():
+    start = OBSERVER_SOURCE.index("def collect(repo):")
+    stop = OBSERVER_SOURCE.index("module._collect = collect", start)
+    source = OBSERVER_SOURCE[:start] + LAYOUT_COLLECT + OBSERVER_SOURCE[stop:]
+    source = source.replace("import importlib.util, json, os, sys",
+                            "import importlib.util, json, os, subprocess, sys, tempfile")
+    source = source.replace("capture, nonce, prior, candidate, tool, *args",
+                            "capture, nonce, prior, candidate, tool, mapfile, *args")
+    source = source.replace("original_collect = module._collect",
+                            "paths = json.loads(Path(mapfile).read_bytes())\nraw_calls = []")
+    source = source.replace('"verifier_exit": exit_code,',
+                            '"verifier_exit": exit_code,\n'
+                            '    "raw_node_ids": raw_calls[0][0], '
+                            '"raw_skip_xfail_marked": raw_calls[0][1],')
+    return source
+
+
+LAYOUT_SCAN_SOURCE = '''import json, sys
+from pathlib import Path
+prior_tools, repo, prior, candidate, manifest, path_map = sys.argv[1:]
+sys.path.insert(0, str(Path(prior_tools) / "bootstrap" / "tests"))
+import _gate_preflight as P
+repo = Path(repo)
+data = json.loads(Path(manifest).read_bytes())
+paths = dict(json.loads(Path(path_map).read_bytes()))
+old_tree, new_tree = (P._resolve_tree(ref, repo=repo) for ref in (prior, candidate))
+changed = P._changed_paths(old_tree, new_tree, repo=repo)
+if len(changed) != len(set(changed)):
+    raise SystemExit("duplicate path in the prior scanner change set")
+frozen = set(data["frozen_files"])
+cascade = set(P.G.CASCADE_MUTABLE)
+phase = set(P.G.PHASE_SPLIT_TARGETS)
+# P explicitly freezes this protected phase-split test in its active roster.
+# Keep that signed byte check if its earlier phase note is also present.
+phase -= frozen & set(data["protected_roster"]["protected_python_paths"])
+old_decides = set(P.declared_authority_closure()) | set(P._DECIDES_BEYOND_CLOSURE)
+decides = old_decides | {paths.get(path, path) for path in old_decides}
+inverse = {new: old for old, new in paths.items() if old != new}
+classes = {}
+for raw in changed:
+    path = raw.decode("utf-8", "surrogateescape")
+    old = inverse.get(path, path)
+    P._verify_display(raw, P._display_path(raw))
+    classes[raw] = P._classify_path(old, frozen, cascade, phase, P.G._MANIFEST_REL)
+    if (P.R.A.is_sensitive(old)
+            or old.startswith(P._SCAN_NEW_FILE_ROOTS)
+            and not old.startswith(P._SCAN_NEW_FILE_EXCLUDED)
+            or path.startswith(("install/", "release/")) and old == path):
+        decides.add(path)
+scan, _ = P._scan_range(old_tree, new_tree, changed, classes, frozenset(decides), repo=repo)
+print(json.dumps({"digest": P.scan_digest(scan), "scan": scan}, sort_keys=True))
 '''
 
 
@@ -184,9 +270,9 @@ def git_text(repo, *args):
 # the reading order: resolve, read the anchor as data, extract, compare, import
 # ---------------------------------------------------------------------------
 
-def load_encoder(repo, anchor, tmp):
+def load_encoder(repo, anchor, tmp, *, session_rel="dev/tools/session.py"):
     """The one terminal encoder, from the anchor's tree: HEAD's copy never runs."""
-    spec = f"{anchor}:dev/tools/session.py"
+    spec = f"{anchor}:{session_rel}"
     oid = git(repo, "rev-parse", "--verify", spec, check=False)
     blob = git(repo, "cat-file", "blob", spec, check=False)
     if oid is None or blob is None:
@@ -870,9 +956,13 @@ def first_screen(ctx):
         f"{'match' if list(sys.version_info[:2]) == pin[:2] else 'DIFFERENT MINOR'})")
     say(f"process  isolated={bool(sys.flags.isolated)}  compiled files go to "
         f"{d(str(sys.pycache_prefix))}")
-    source = "the anchor" if ctx["prior_authority"] else "HEAD"
-    say(f"checked  {len(LISTED)} files at {source} equal the anchor's entries before any import; "
-        f"the display encoder is the anchor's blob {ctx['session_oid']}")
+    if ctx.get("layout_evidence"):
+        say(f"checked  the reviewed relocated import roster before loading; "
+            f"the display encoder is the anchor's blob {ctx['session_oid']}")
+    else:
+        source = "the anchor" if ctx["prior_authority"] else "HEAD"
+        say(f"checked  {len(LISTED)} files at {source} equal the anchor's entries before any import; "
+            f"the display encoder is the anchor's blob {ctx['session_oid']}")
     say(f"repin    {REPIN_REL}: {ctx['repin_state']}")
     changed = ctx["closure_changed"]
     say(f"closure  {len(changed)} of {len(ctx['closure'])} authority files differ from the anchor"
@@ -1676,6 +1766,126 @@ def verifier_paths(repo, prior):
     return matches[0]
 
 
+def _revision_tree(repo, commit):
+    rows = {}
+    for entry in git(repo, "ls-tree", "-r", "-z", "--full-tree", commit).split(b"\0"):
+        if not entry:
+            continue
+        meta, name = entry.split(b"\t", 1)
+        mode, kind, oid = meta.decode("ascii").split(" ")
+        rel = name.decode("utf-8", "strict")
+        if rel in rows:
+            raise Refuse("duplicate path in the raw layout tree.")
+        rows[rel] = (mode, kind, oid)
+    return rows
+
+
+def _layout_member(repo, tree, rel):
+    entry = tree.get(rel)
+    if entry is None or entry[0] not in {"100644", "100755"} or entry[1] != "blob":
+        raise Refuse(f"layout member {d(rel)} is missing or is not a regular Git blob.")
+    raw = git(repo, "cat-file", "blob", entry[2])
+    return {"mode": entry[0], "sha256": sha(raw)}, raw
+
+
+def _launcher_members(raw):
+    # This list is data in a verified Git blob. Never start a launcher to
+    # learn which files it claims to verify.
+    matches = re.findall(rb"(?m)^EXPECTED_PATHS='([^']+)'$", raw)
+    if len(matches) != 1:
+        raise Refuse("the launcher does not declare one fixed member list.")
+    members = matches[0].decode("utf-8", "strict").splitlines()
+    if not members or members != sorted(set(members)):
+        raise Refuse("the launcher member list is duplicate or unordered.")
+    return members
+
+
+def _layout_path_map(raw):
+    wanted = {"LAYOUT_INSTALLS", "SOURCE_FILE_MOVES", "SOURCE_PREFIX_MOVES"}
+    values = {}
+    for node in ast.parse(raw).body:
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1:
+            continue
+        target = node.targets[0]
+        if isinstance(target, ast.Name) and target.id in wanted:
+            if target.id in values:
+                raise Refuse("the layout catalog repeats a source mapping.")
+            values[target.id] = ast.literal_eval(node.value)
+    if set(values) != wanted:
+        raise Refuse("the layout catalog is missing a source mapping.")
+    fixed = dict(values["SOURCE_FILE_MOVES"])
+    for _, _, old, _, _, new in values["LAYOUT_INSTALLS"]:
+        if old != new:
+            fixed[old] = new
+
+    def relocated(path):
+        if path in fixed:
+            return fixed[path]
+        for old, new in values["SOURCE_PREFIX_MOVES"]:
+            if path.startswith(old):
+                return new + path[len(old):]
+        return path
+
+    return relocated
+
+
+def _layout_evidence(repo, prior, candidate, prior_manifest):
+    before, after = _revision_tree(repo, prior), _revision_tree(repo, candidate)
+    prior_launcher, old_template = _layout_member(repo, before, LEGACY_LAUNCHER_REL)
+    candidate_launcher, new_template = _layout_member(repo, after, TEMPLATE_REL)
+    catalog, catalog_raw = _layout_member(repo, after, LAYOUT_CATALOG_REL)
+    relocate = _layout_path_map(catalog_raw)
+    paths = {old: relocate(old) for old in before}
+    if len(set(paths.values())) != len(paths):
+        raise Refuse("the reviewed source map gives two prior paths the same destination.")
+    old_members, new_members = _launcher_members(old_template), _launcher_members(new_template)
+    if sorted(paths.get(path, path) for path in old_members) != new_members:
+        raise Refuse("the relocated launcher drops or adds an authority member.")
+    # The shell closure and the in-process import roster have distinct roles.
+    # Check their union, plus the candidate interpreter's engine inputs.
+    prior_files = {
+        path: _layout_member(repo, before, path)[0]
+        for path in sorted(set(old_members) | set(LEGACY_VERIFIER_SCANNER_PATHS)
+                           | {LEGACY_VERIFIER_MANIFEST_REL, "tools/session.py"})
+    }
+    old_engine = {paths[path] for path in before
+                  if re.fullmatch(r"bootstrap/_scaffold/[^/]+\.py", path)}
+    new_engine = {path for path in after
+                  if re.fullmatch(r"install/_scaffold/[^/]+\.py", path)}
+    if new_engine != old_engine | {
+            "install/_scaffold/layout_catalog.py", "install/_scaffold/layout_migration.py"}:
+        raise Refuse("the relocated scaffold engine member set differs from the reviewed layout.")
+    candidate_files = {
+        path: _layout_member(repo, after, path)[0]
+        for path in sorted(set(new_members) | set(LISTED) | new_engine | {
+            REPIN_REL, MANIFEST_REL, "tests/conftest.py", "dev/tools/session.py"})
+    }
+    old_roster, old_roster_raw = _layout_member(repo, before, LEGACY_ROSTER_REL)
+    new_roster, new_roster_raw = _layout_member(repo, after, LAYOUT_ROSTER_REL)
+    basis = prior_manifest.get("protected_roster")
+    if (not isinstance(basis, dict) or basis.get("path") != LEGACY_ROSTER_REL
+            or basis.get("sha256") != old_roster["sha256"]):
+        raise Refuse("the historical roster is not bound by the signed prior manifest.")
+    previous = _unique_json(old_roster_raw, "prior protected roster")
+    relocated = _unique_json(new_roster_raw, "candidate protected roster")
+    for name in ("protected_python_paths", "protected_fixture_paths",
+                 "preserved_non_test_frozen_paths"):
+        old_paths = previous.get(name)
+        if (not isinstance(old_paths, list) or old_paths != basis.get(name)
+                or [*sorted(map(relocate, old_paths))] != relocated.get(name)):
+            raise Refuse(f"the candidate changes protected membership in {name}.")
+    return {
+        "schema": "cairn-layout-verifier/v1",
+        "catalog": catalog, "path_pairs": [list(row) for row in sorted(paths.items())],
+        "prior_members": prior_files, "candidate_members": candidate_files,
+        "prior_launcher": prior_launcher, "candidate_launcher": candidate_launcher,
+        "candidate_module_names": ["tests", *LOAD],
+        "prior_roster": old_roster, "candidate_roster": new_roster,
+        "prior_missing_protected_tests": sorted(
+            old for old in basis["protected_python_paths"] if relocate(old) not in after),
+    }
+
+
 def _verifier_prepare(repo, prior, candidate, trusted_ref, expected_fingerprint,
                       evidence_dir):
     """Prepare raw prior tools and a clean candidate worktree for the human verifier.
@@ -1719,6 +1929,12 @@ def _verifier_prepare(repo, prior, candidate, trusted_ref, expected_fingerprint,
     frozen = manifest.get("frozen_files", {})
     if not frozen:
         raise Refuse("prior manifest has no frozen file map.")
+    layout = None
+    observer_source = OBSERVER_SOURCE
+    if manifest_rel == LEGACY_VERIFIER_MANIFEST_REL:
+        layout = _layout_evidence(repo, prior, candidate, manifest)
+        observer_source = layout_observer_source()
+        write_new(evidence / "layout-paths.json", dump(layout["path_pairs"]))
     prior_hashes = {}
     for rel in scanner_paths:
         raw = git(repo, "cat-file", "blob", f"{prior}:{rel}", check=False)
@@ -1734,8 +1950,8 @@ def _verifier_prepare(repo, prior, candidate, trusted_ref, expected_fingerprint,
     manifest_path.write_bytes(manifest_raw)
     prior_hashes[manifest_rel] = sha(manifest_raw)
     observer_path = evidence / "verifier-observer.py"
-    observer_path.write_text(OBSERVER_SOURCE, encoding="utf-8")
-    observer_digest = sha(OBSERVER_SOURCE.encode())
+    observer_path.write_text(observer_source, encoding="utf-8")
+    observer_digest = sha(observer_source.encode())
 
     target = evidence / "candidate"
     if target.exists() or target.is_symlink():
@@ -1758,6 +1974,8 @@ def _verifier_prepare(repo, prior, candidate, trusted_ref, expected_fingerprint,
         "python_sha256": sha(Path(os.path.realpath(sys.executable)).read_bytes()),
         "warning": "This preparer is not P-authenticated authority; the independent reader must verify P, signer provenance, and all hashes.",
     }
+    if layout is not None:
+        record["layout"] = layout
     path = evidence / VERIFIER_PACKET
     path.write_bytes(dump(record))
     say(f"prepared  {path}")
@@ -1766,6 +1984,8 @@ def _verifier_prepare(repo, prior, candidate, trusted_ref, expected_fingerprint,
     say(f"verifier  sha256 {record['verifier_sha256']}  manifest sha256 {record['manifest_sha256']}")
     say(f"observer  {observer_path}  sha256 {observer_digest}")
     say(f"preparer  release/repin.py at C sha256 {record['preparer_sha256']}")
+    if layout is not None:
+        say(f"layout evidence SHA-256 {sha(path.read_bytes())}")
     say("Reader must independently verify P's signed commit, signer provenance, dependency hashes, exact clean C bytes, and the Python path and digest.")
     say("The target contains candidate code. Run the verifier only with the signing key away.")
     return path
@@ -1889,11 +2109,15 @@ def _unique_json(raw, label):
     return json.loads(raw, object_pairs_hook=pairs)
 
 
-def _validate_collection_capture(raw, *, nonce, prior, candidate, target, verifier_exit):
+def _validate_collection_capture(raw, *, nonce, prior, candidate, target, verifier_exit,
+                                 layout=None):
     collection = _unique_json(raw, "collection")
     node_ids, marked = collection.get("node_ids"), collection.get("skip_xfail_marked")
-    if (set(collection) != {"nonce", "prior_anchor", "candidate", "target_repo", "call_count",
-                           "exit", "verifier_exit", "node_ids", "skip_xfail_marked"}
+    fields = {"nonce", "prior_anchor", "candidate", "target_repo", "call_count",
+              "exit", "verifier_exit", "node_ids", "skip_xfail_marked"}
+    if layout is not None:
+        fields |= {"raw_node_ids", "raw_skip_xfail_marked"}
+    if (set(collection) != fields
             or collection.get("nonce") != nonce or collection.get("prior_anchor") != prior
             or collection.get("candidate") != candidate or collection.get("target_repo") != str(target)
             or type(collection.get("call_count")) is not int or collection.get("call_count") != 1
@@ -1907,15 +2131,88 @@ def _validate_collection_capture(raw, *, nonce, prior, candidate, target, verifi
             or any(not isinstance(n, str) for n in marked)
             or marked != sorted(set(marked)) or not set(marked).issubset(node_ids)):
         raise Refuse("P collection capture is stale, malformed, duplicate, incomplete, or not from one verifier call.")
+    if layout is not None:
+        new_paths = {new: old for old, new in layout["path_pairs"]}
+        for raw_field, prior_ids in (("raw_node_ids", node_ids),
+                                     ("raw_skip_xfail_marked", marked)):
+            observed = collection[raw_field]
+            if (not isinstance(observed, list)
+                    or any(not isinstance(node, str) or "::" not in node for node in observed)
+                    or observed != sorted(set(observed))):
+                raise Refuse("the relocated collection contains invalid or ambiguous node IDs.")
+            translated = []
+            for node in observed:
+                path, suffix = node.split("::", 1)
+                translated.append(new_paths.get(path, path) + "::" + suffix)
+            if sorted(translated) != prior_ids:
+                raise Refuse("the prior and relocated collection IDs disagree with the reviewed map.")
     return collection
 
 
-def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, confirm_key_away=False):
+def _verify_layout_static(evidence, repo, prior, candidate, target, verifier_rel,
+                          scanner_paths, python, reviewed_digest, *, scan_output=None):
+    """Run only verified P code on the exact raw range before collection."""
+    env = {"HOME": "/nonexistent", "PATH": "/usr/bin:/bin", "LC_ALL": "C"}
+    isolated = [python, "-I", "-E", "-s", "-S", "-B"]
+    manifest = evidence / "prior" / "gate_manifest.json"
+    with tempfile.TemporaryDirectory(prefix="cairn-layout-prior-") as temporary:
+        clean = Path(temporary)
+        for rel in scanner_paths:
+            path = clean / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            write_new(path, git(repo, "cat-file", "blob", f"{prior}:{rel}"))
+        scan = subprocess.run(
+            [*isolated, "-c", LAYOUT_SCAN_SOURCE, str(clean), str(repo), prior,
+             candidate, str(manifest), str(evidence / "layout-paths.json")],
+            cwd="/", env=env, capture_output=True, check=False)
+        if scan.returncode:
+            raise Refuse("the authenticated prior layout scanner failed: "
+                         + scan.stderr.decode("utf-8", "replace").strip())
+        scan_data = _unique_json(scan.stdout, "prior layout scan")
+        if (set(scan_data) != {"digest", "scan"}
+                or not re.fullmatch(r"[0-9a-f]{64}", scan_data["digest"])):
+            raise Refuse("the authenticated prior scanner returned a malformed digest.")
+        static = subprocess.run(
+            [*isolated, str(clean / verifier_rel), "verify", "--manifest", str(manifest),
+             "--target-repo", str(target), "--anchor-ref", prior, "--require-anchor",
+             "--trusted-repo", str(repo), "--trusted-ref", prior, "--no-collect"],
+            cwd="/", env=env, capture_output=True, check=False)
+    raw = static.stdout + static.stderr
+    marker = b"[gate-manifest] OK" if static.returncode == 0 else b"[gate-manifest] HOLD"
+    if static.returncode not in (0, 1) or marker not in raw:
+        raise Refuse("the authenticated prior static verifier did not produce a complete report.")
+    if scan_output is None:
+        replace_layout_output(evidence / "layout-static-report.txt", raw)
+        scan_output = evidence / "layout-scan.json"
+    replace_layout_output(scan_output, dump({
+        **scan_data, "prior_anchor": prior, "candidate": candidate,
+        "layout_evidence_sha256": reviewed_digest, "static_exit": static.returncode,
+        "static_report_sha256": sha(raw),
+    }))
+    say(f"authenticated prior scanner digest {scan_data['digest']}")
+    say(f"prior static verification {'HOLD' if static.returncode else 'OK'}")
+    return scan_data["digest"]
+
+
+def replace_layout_output(path, raw):
+    path = _plain_absolute_path(path)
+    fd, temporary = tempfile.mkstemp(prefix=".layout-proof-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(raw)
+        os.replace(temporary, path)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+
+
+def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *,
+                  confirm_key_away=False, reviewed_layout=None, layout_static=False):
     evidence = _plain_absolute_path(evidence_dir)
     packet_path = evidence / VERIFIER_PACKET
     if packet_path.is_symlink() or not packet_path.is_file():
         raise Refuse("prior verifier evidence packet is missing or a symlink.")
-    packet = _unique_json(packet_path.read_bytes(), "verifier evidence")
+    packet_raw = read_safe(packet_path)
+    packet = _unique_json(packet_raw, "verifier evidence")
     if packet.get("schema") != "cairn-prior-verifier-evidence/v1":
         raise Refuse("prior verifier evidence packet has an unknown schema.")
     repo, prior, candidate = Path(packet["trusted_repo"]), packet["prior_anchor"], packet["candidate"]
@@ -1936,9 +2233,13 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
     if not good or signer != packet["signer_fingerprint"]:
         raise Refuse(f"P signature/fingerprint no longer verifies ({state}, {signer!r}).")
     manifest_rel, verifier_rel, scanner_paths = verifier_paths(repo, prior)
+    layout = packet.get("layout")
     if manifest_rel == LEGACY_VERIFIER_MANIFEST_REL:
-        raise Refuse("full collection across the legacy layout requires the reviewed "
-                     "repository-layout transition.")
+        if (not isinstance(layout, dict) or not reviewed_layout
+                or sha(packet_raw) != reviewed_layout):
+            raise Refuse("the legacy layout requires the independently reviewed evidence digest.")
+    elif layout is not None or reviewed_layout or layout_static:
+        raise Refuse("layout verification requires a legacy prior verifier.")
     manifest_raw = git(repo, "cat-file", "blob", f"{prior}:{manifest_rel}")
     frozen = json.loads(manifest_raw).get("frozen_files", {})
     dependencies = packet["prior_dependencies"]
@@ -1962,13 +2263,16 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
     observer = _plain_absolute_path(packet["observer"])
     if observer != evidence / "verifier-observer.py":
         raise Refuse("observer is not the prepared evidence directory's observer.")
-    if (packet.get("observer_sha256") != sha(OBSERVER_SOURCE.encode())
+    observer_source = layout_observer_source() if layout is not None else OBSERVER_SOURCE
+    if (packet.get("observer_sha256") != sha(observer_source.encode())
             or observer.is_symlink() or not observer.is_file()
             or sha(observer.read_bytes()) != packet["observer_sha256"]):
         raise Refuse("the collection observer differs from the reviewed preparation code.")
     target = _plain_absolute_path(packet["target"])
     if target != evidence / "candidate":
         raise Refuse("candidate target is not the prepared evidence directory's candidate.")
+    if packet.get("target_tree_sha256") != _candidate_tree_digest(repo, candidate):
+        raise Refuse("the reviewed candidate tree digest does not match the Git objects.")
     _assert_candidate_bytes(repo, candidate, target)
     manifest_obj = json.loads((evidence / "prior" / "gate_manifest.json").read_bytes())
     pinned_version = manifest_obj.get("interpreter", {}).get("version_info", [])
@@ -1979,6 +2283,16 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
     if (not isinstance(python, str) or python != current_python
             or packet.get("python_sha256") != sha(Path(current_python).read_bytes())):
         raise Refuse("the reviewed Python executable differs from this running interpreter.")
+    if layout is not None:
+        if layout != _layout_evidence(repo, prior, candidate, manifest_obj):
+            raise Refuse("the reviewed layout differs from the raw prior or candidate identity.")
+        mapfile = _plain_absolute_path(evidence / "layout-paths.json")
+        if read_safe(mapfile) != dump(layout["path_pairs"]):
+            raise Refuse("the relocated collection map differs from the independently reviewed map.")
+        layout_scan = _verify_layout_static(evidence, repo, prior, candidate, target, verifier_rel,
+                                            scanner_paths, current_python, reviewed_layout)
+        if layout_static:
+            return 0
     if not confirm_key_away:
         raise Refuse("explicitly confirm the signing key is away before full collection.")
     say("Purpose: run P's full verifier against the exact candidate and bind its report and collection "
@@ -2001,7 +2315,8 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
                      "--anchor-ref", prior, "--require-anchor", "--trusted-repo", str(repo),
                      "--trusted-ref", prior]
     argv = [python, "-I", "-E", "-s", "-B", str(observer), str(capture), nonce, prior,
-            candidate, str(verifier), *verifier_args]
+            candidate, str(verifier), *([str(mapfile)] if layout is not None else []),
+            *verifier_args]
     say("Running authenticated P verifier with full collection.")
     say("verifier argv " + json.dumps(argv))
     result = subprocess.run(argv, cwd="/", env=env, capture_output=True, text=True, check=False)
@@ -2012,7 +2327,7 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
     capture_raw = capture.read_bytes()
     collection = _validate_collection_capture(capture_raw, nonce=nonce, prior=prior,
                                               candidate=candidate, target=target,
-                                              verifier_exit=result.returncode)
+                                              verifier_exit=result.returncode, layout=layout)
     if result.returncode != collection["verifier_exit"]:
         raise Refuse("the prior verifier process and captured collection have inconsistent exit results.")
     if ((result.returncode == 1 and b"[gate-manifest] HOLD" not in report)
@@ -2041,7 +2356,8 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
     notes = [ln.strip() for ln in report.decode("utf-8", "replace").splitlines()
              if ln.strip().startswith("[gate-manifest] note:")]
     bound_argv = [python, "-I", "-E", "-s", "-B", str(observer), "<fresh-capture>",
-                  "<fresh-nonce>", prior, candidate, str(verifier), *verifier_args]
+                  "<fresh-nonce>", prior, candidate, str(verifier),
+                  *([str(mapfile)] if layout is not None else []), *verifier_args]
     binding = {"schema": "cairn-verifier-report-binding/v1", "prior_anchor": prior,
                "candidate": candidate, "verifier_sha256": packet["verifier_sha256"],
                "manifest_sha256": packet["manifest_sha256"], "report_sha256": report_sha,
@@ -2055,6 +2371,14 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
                "collection_marked_count": len(collection["skip_xfail_marked"]),
                "argv": bound_argv, "environment": env,
                "exit": result.returncode, "holds": holds, "notes": notes}
+    if layout is not None:
+        binding["layout_evidence_sha256"] = reviewed_layout
+        binding["prior_layout_scan_sha256"] = layout_scan
+        binding["raw_collection_sha256"] = sha(dump({
+            "node_ids": collection["raw_node_ids"],
+            "skip_xfail_marked": collection["raw_skip_xfail_marked"],
+        }))
+        binding["missing_protected_paths"] = layout["prior_missing_protected_tests"]
     binding_path = evidence / "verifier-report-binding.json"
     binding_path.write_bytes(dump(binding))
     say(f"report    {evidence / 'verifier-report.txt'} sha256 {report_sha}")
@@ -2095,16 +2419,123 @@ def _write_disposition_template(path, binding):
 def _check_dispositions(path, binding):
     if path.is_symlink() or not path.is_file():
         raise Refuse("disposition record is missing or a symlink.")
-    obj = _unique_json(path.read_bytes(), "disposition")
+    obj = _unique_json(read_safe(path), "disposition")
     for key in ("schema", "prior_anchor", "candidate", "preparer_sha256", "python_sha256", "verifier_sha256", "manifest_sha256", "observer_sha256", "report_sha256", "collection_baseline_sha256", "collection_result_sha256", "collection_node_count", "collection_marked_count", "argv", "environment", "exit", "holds", "notes"):
         if obj.get(key) != binding.get(key):
             raise Refuse(f"disposition evidence is stale or differs at {key}; fresh review is required.")
+    for key in ("layout_evidence_sha256", "prior_layout_scan_sha256",
+                "raw_collection_sha256", "missing_protected_paths"):
+        if obj.get(key) != binding.get(key):
+            raise Refuse(f"layout disposition evidence differs at {key}.")
     items = obj.get("items")
     if not isinstance(items, list) or [i.get("item") for i in items] != binding["holds"]:
         raise Refuse("dispositions do not cover the exact currently displayed HOLD set.")
     if any(i.get("disposition") not in ("proceed", "stop", "defer")
            or not isinstance(i.get("reason"), str) or not i["reason"].strip() for i in items):
         raise Refuse("every HOLD needs a proceed, stop, or defer disposition and a specific human reason.")
+    return items
+
+
+def boot_layout(args, tmp):
+    """Admit an exact moved checkout before importing any of its modules."""
+    global D
+    evidence = _plain_absolute_path(args.layout_evidence_dir)
+    reviewed = args.reviewed_layout_sha256
+    if not reviewed or not re.fullmatch(r"[0-9a-f]{64}", reviewed):
+        raise Refuse("supply the independently reviewed layout evidence digest.")
+    _verifier_run(evidence, args.expected_fingerprint,
+                  reviewed_layout=reviewed, layout_static=True)
+    packet_raw = read_safe(evidence / VERIFIER_PACKET)
+    if sha(packet_raw) != reviewed:
+        raise Refuse("the independently reviewed layout evidence changed.")
+    packet = _unique_json(packet_raw, "layout evidence")
+    layout = packet["layout"]
+    repo = Path(packet["trusted_repo"])
+    prior, candidate = packet["prior_anchor"], packet["candidate"]
+    head = git_text(repo, "rev-parse", "--verify", "HEAD^{commit}")
+    if (git_text(repo, "rev-parse", "--verify", ANCHOR_REF + "^{commit}") != prior
+            or git(repo, "merge-base", "--is-ancestor", prior, candidate, check=False) is None):
+        raise Refuse("the reviewed candidate does not follow the live authenticated prior anchor.")
+    if args.verb != "ceremony" and head != candidate:
+        raise Refuse("prepare the layout packet and reader inputs at the exact reviewed candidate.")
+    _assert_candidate_bytes(repo, head, repo)
+    ext = tmp / "ext"
+    ents = extract(repo, head, ext)
+    members = _launcher_members((ext / TEMPLATE_REL).read_bytes())
+    if any(sha((ext / rel).read_bytes()) != item["sha256"]
+           for rel, item in layout["candidate_members"].items()):
+        raise Refuse("a live authority member differs from independently reviewed candidate bytes.")
+    changed = [path for path in members if layout["prior_members"].get(path)
+               != layout["candidate_members"][path]]
+    ctx = {"repo": repo, "tmp": tmp, "ext": ext, "head": head, "anchor": prior,
+           "ents": ents, "closure": members, "closure_changed": changed,
+           "prior_authority": True, "repin_state": "reviewed layout",
+           "layout_evidence": reviewed, "layout_python": packet["python"],
+           "layout_python_sha256": packet["python_sha256"],
+           "engine": sorted(rel for rel in layout["candidate_members"]
+                            if rel.startswith("install/_scaffold/"))}
+    if args.verb == "ceremony":
+        values = read_safe(_plain_absolute_path(args.values)).decode("utf-8")
+        interpreters = [line.removeprefix("python ") for line in values.splitlines()
+                        if line.startswith("python ")]
+        if (len(interpreters) != 1
+                or os.path.realpath(interpreters[0]) != packet["python"]
+                or sha(read_safe(Path(interpreters[0]))) != packet["python_sha256"]):
+            raise Refuse("the ceremony interpreter differs from the reviewed layout interpreter.")
+        cdir = _plain_absolute_path(args.ceremony_dir)
+        auth, launcher = read_safe(cdir / PACKET_NAME), read_safe(cdir / LAUNCHER_NAME)
+        if launcher != (ext / TEMPLATE_REL).read_bytes().replace(SLOT.encode(), sha(auth).encode()):
+            raise Refuse("the layout launcher differs from the independently checked template.")
+        check_record(ctx, sha(auth), sha(launcher))
+        if git_text(repo, "rev-parse", "HEAD^") != candidate:
+            raise Refuse("the reader's record is not the only commit after the reviewed candidate.")
+        binding_raw = read_safe(evidence / "verifier-report-binding.json")
+        if sha(binding_raw) != args.verifier_report_sha256:
+            raise Refuse("the key-away collection binding differs from the reviewed digest.")
+        binding = _unique_json(binding_raw, "layout collection binding")
+        if (binding.get("prior_anchor") != prior or binding.get("candidate") != candidate
+                or binding.get("layout_evidence_sha256") != reviewed
+                or binding.get("prior_layout_scan_sha256") != _unique_json(
+                    read_safe(evidence / "layout-scan.json"), "layout scan")["digest"]
+                or binding.get("report_sha256") != sha(read_safe(evidence / "verifier-report.txt"))):
+            raise Refuse("the key-away collection report is absent or stale for this layout.")
+        if binding.get("exit") != 0:
+            if args.verifier_dispositions is None:
+                raise Refuse("the prior verifier HOLDs require the existing Maintainer dispositions.")
+            disposition_path = _plain_absolute_path(args.verifier_dispositions)
+            items = _check_dispositions(disposition_path, binding)
+            if any(item["disposition"] != "proceed" for item in items):
+                raise Refuse("a prior verifier disposition stops or defers this cut.")
+            say("The prior verifier remains HOLD. The existing proceeding dispositions apply to this report.")
+        scan_out = tmp / "layout-stage-scan.json"
+        ctx["layout_scan"] = _verify_layout_static(
+            evidence, repo, prior, head, repo, LEGACY_VERIFIER_REL,
+            LEGACY_VERIFIER_SCANNER_PATHS, packet["python"], reviewed,
+            scan_output=scan_out)
+        stage_data = _unique_json(read_safe(scan_out), "layout scan for the reader-record tip")
+        stage_data["reviewed_candidate"] = candidate
+        stage_data["roster_sha256"] = layout["candidate_roster"]["sha256"]
+        stage_data["read_commit"] = head
+        write_new(tmp / "layout-stage-context.json", dump(stage_data))
+        ctx["layout_context"] = tmp / "layout-stage-context.json"
+    D, session_oid, session_path = load_encoder(repo, prior, tmp, session_rel="tools/session.py")
+    before = set(sys.modules)
+    made = load_listed(ext, session_path)
+    frozen = {rel: item["sha256"] for rel, item in layout["candidate_members"].items()}
+    check_loaded(before, made, ext, frozen)
+    ctx.update(gm=sys.modules["tests._gate_manifest"],
+               gp=sys.modules["tests._gate_preflight"],
+               rc=sys.modules["release.reanchor_ceremony"],
+               session_oid=session_oid,
+               man=_unique_json(read_safe(evidence / "prior" / "gate_manifest.json"), "prior manifest"),
+               frozen=frozen)
+    if sorted(ctx["gp"].declared_authority_closure()) != members:
+        raise Refuse("the relocated checker and independently verified launcher closure disagree.")
+    authority = tmp / "authority"
+    authority.mkdir()
+    (authority / ROSTER_REL).parent.mkdir(parents=True)
+    write_new(authority / ROSTER_REL, git(repo, "cat-file", "blob", f"{prior}:{ROSTER_REL}"))
+    return ctx
 
 
 def anchor_state(ctx, roster):
@@ -2132,18 +2563,41 @@ def check_stop_records(ctx, cdir, first_run):
     repo, anchor, head = ctx["repo"], ctx["anchor"], ctx["head"]
     recs = [json.loads(read_safe(f, own=True)) for f in sorted(Path(cdir).glob(STOP_PREFIX + "*.json"))]
     span = f"{anchor}..{head}"
+    legacy_moves = {
+        "bootstrap/tests/fixtures/scaffold_ast_baseline.json": BASELINE_REL,
+        "bootstrap/tests/fixtures/scaffold_ast_known_new.json": KNOWN_NEW_REL,
+    } if ctx.get("layout_evidence") else {}
+    watched = tuple(OUTPUTS) + tuple(legacy_moves)
     # Path-limited listings print rewritten parents, so ask for each commit's real ones.
-    listed = set(git_text(repo, "rev-list", "--full-history", span, "--", *OUTPUTS).split())
+    listed = set(git_text(repo, "rev-list", "--full-history", span, "--", *watched).split())
     listed |= set(git_text(repo, "rev-list", "--merges", span).split())
     for name in sorted(listed):
         commit, *parents = git_text(repo, "rev-list", "--parents", "-n", "1", name).split()
-        if not any(blob_at(repo, commit, o) != blob_at(repo, p, o) for p in parents for o in OUTPUTS):
+        if legacy_moves:
+            output_rows = git(repo, "ls-tree", "-z", commit, "--", *watched)
+            changed_output = any(output_rows != git(repo, "ls-tree", "-z", parent, "--", *watched)
+                                 for parent in parents)
+        else:
+            changed_output = any(blob_at(repo, commit, output) != blob_at(repo, parent, output)
+                                 for parent in parents for output in watched)
+        if not changed_output:
             continue
         changed = {}
         if len(parents) == 1:
             parts = git(repo, "diff-tree", "-r", "-z", "--no-renames", "--no-commit-id", "--raw", commit).split(b"\0")
             changed = {parts[i + 1].decode("utf-8", "surrogateescape"): parts[i].split()[3].decode()
                        for i in range(0, len(parts) - 1, 2)}
+            outputs = set(changed) & set(watched)
+            if legacy_moves and outputs and outputs <= (set(legacy_moves) | set(legacy_moves.values())):
+                before, after = (_revision_tree(repo, rev) for rev in (parents[0], commit))
+                moved = {path for old, new in legacy_moves.items()
+                         if old in before and new not in before and old not in after
+                         and before[old][0] in {"100644", "100755"}
+                         and before[old] == after.get(new)
+                         for path in (old, new)}
+                if outputs == moved:
+                    say(f"  commit {commit[:12]} moves pinned fixtures with the same modes and blobs")
+                    continue
         if len(parents) == 1 and any(r["head"] == parents[0] and r["paths"] == changed for r in recs):
             say(f"  commit {commit[:12]} matches a stop record: it changes exactly the paths and bytes written")
             continue
@@ -2188,6 +2642,12 @@ def check_first_run(ctx, reviewed):
 
 def anchored_template(ctx):
     """The launcher template as the anchor holds it, and the closure its fixed list names."""
+    if ctx.get("layout_evidence"):
+        raw = (ctx["ext"] / TEMPLATE_REL).read_bytes()
+        members = _launcher_members(raw)
+        if raw.count(SLOT.encode()) != 1 or members != ctx["closure"]:
+            raise Refuse("the independently checked relocated template differs from the launch roster.")
+        return raw, members
     raw = git(ctx["repo"], "cat-file", "blob", f"{ctx['anchor']}:{TEMPLATE_REL}", check=False)
     if raw is None or raw.count(SLOT.encode()) != 1:
         raise Refuse(f"the anchor has no {TEMPLATE_REL} with exactly one {SLOT} slot.")
@@ -2287,6 +2747,8 @@ def prepare_reader_inputs(ctx, cdir, output):
     lines = ["# Reader inputs -- verify independently before writing a record",
              f"read-commit {ctx['head']}", f"prior-anchor {ctx['anchor']}",
              f"packet-sha256 {sha(packet_raw)}", f"launcher-sha256 {sha(launcher_raw)}"]
+    if ctx.get("layout_evidence"):
+        lines.append(f"layout-evidence-sha256 {ctx['layout_evidence']}")
     lines.extend(f"member {sha((ctx['ext'] / m).read_bytes())} {m}" for m in members)
     transaction = cdir / TXN_NAME
     if transaction.exists() or transaction.is_symlink():
@@ -2307,7 +2769,7 @@ def record_values(text):
     member.  A line repeated is a record that disagrees with itself."""
     one, members = {}, {}
     for line in text.splitlines():
-        m = re.fullmatch(r"(read-commit) ([0-9a-f]{40,64})|(packet-sha256|launcher-sha256) ([0-9a-f]{64})", line)
+        m = re.fullmatch(r"(read-commit) ([0-9a-f]{40,64})|(packet-sha256|launcher-sha256|layout-evidence-sha256) ([0-9a-f]{64})", line)
         if m:
             key, val = (m[1], m[2]) if m[1] else (m[3], m[4])
             if key in one:
@@ -2349,6 +2811,8 @@ def check_record(ctx, packet_digest, launcher_digest, *, baseline_record=None):
         raise Refuse(f"{RECORD_REL} is not committed at HEAD. The reader commits it on the commit "
                      f"they read, before the ceremony. Nothing was run.")
     one, members = record_values((ext / RECORD_REL).read_text("utf-8", "replace"))
+    if one.get("layout-evidence-sha256") != ctx.get("layout_evidence"):
+        raise Refuse("the reader record's layout evidence digest does not match.")
     for key in ("read-commit", "packet-sha256", "launcher-sha256"):
         if key not in one:
             raise Refuse(f"{RECORD_REL} has no {key} line.")
@@ -2410,6 +2874,10 @@ def run_ceremony(ctx, args, launchctl, rec):
     if None in field.values() or Path(field["checkout"]).resolve() != repo:
         raise Refuse("the values file must name checkout, signing_key, package, home and python, and its "
                      "checkout must be this repository.")
+    if ctx.get("layout_evidence") and (
+            os.path.realpath(field["python"]) != ctx["layout_python"]
+            or sha(read_safe(Path(field["python"]))) != ctx["layout_python_sha256"]):
+        raise Refuse("the ceremony interpreter differs from the independently reviewed layout interpreter.")
     pub = field["signing_key"]
     private = pub[:-4] if pub.endswith(".pub") else pub
     term = os.environ.get("TERM", "xterm")
@@ -2435,6 +2903,13 @@ def run_ceremony(ctx, args, launchctl, rec):
     # before each run catches a change to those two files only; the interpreter's library folder
     # and the other tools stay as writable as before, so this is not containment.
     watched = {"the values file": values, "the python the values file names": Path(field["python"])}
+    layout_env = {}
+    if ctx.get("layout_context"):
+        watched["the reviewed layout context"] = ctx["layout_context"]
+        layout_env = {
+            "CAIRN_LAYOUT_CONTEXT": str(ctx["layout_context"]),
+            "CAIRN_LAYOUT_CONTEXT_SHA256": sha(read_safe(ctx["layout_context"])),
+        }
     seen = {name: sha(read_safe(path)) for name, path in watched.items()}
     rec.append("values file digest " + seen["the values file"] + ", python digest "
                + seen["the python the values file names"])
@@ -2522,7 +2997,7 @@ def run_ceremony(ctx, args, launchctl, rec):
         raise Refuse("--transition requires changed authority files; use the ordinary ceremony.")
     if args.first_run:
         check_first_run(ctx, args.reviewed_commit)
-    elif args.reviewed_commit or ctx["repin_state"] != "anchored":
+    elif args.reviewed_commit or (ctx["repin_state"] != "anchored" and not ctx.get("layout_evidence")):
         raise Refuse(f"{REPIN_REL} is {ctx['repin_state']}; its bytes are not the anchor's. Only the "
                      f"first run may continue, with --first-run --reviewed-commit <id>.")
     check_stop_records(ctx, cdir, args.first_run)
@@ -2534,8 +3009,8 @@ def run_ceremony(ctx, args, launchctl, rec):
                      "No files were written.")
     # Read the prior scanner before stage 1 can run candidate code. Keep the
     # result in this process until the report is available for comparison.
-    prior_scan = None
-    if not args.first_run:
+    prior_scan = ctx.get("layout_scan")
+    if not args.first_run and prior_scan is None:
         scan = reading("scan-digest")
         scan_lines = scan.stdout.splitlines()
         if scan.returncode or not scan_lines or not re.fullmatch(r"[0-9a-f]{64}", scan_lines[-1]):
@@ -2544,7 +3019,7 @@ def run_ceremony(ctx, args, launchctl, rec):
     # 6. stage 1: candidate code runs, in a new session with no terminal and a short environment
     if Path(field["package"]).exists():
         raise Refuse(f"{d(field['package'])} already exists; stage 1 must not overwrite it. Move it aside.")
-    env = {"PATH": CHILD_PATH, "HOME": field["home"], "LC_ALL": "C"}
+    env = {"PATH": CHILD_PATH, "HOME": field["home"], "LC_ALL": "C", **layout_env}
     launcher_unchanged()
     r = child(rec, [SH, str(launcher), str(packet), str(values), ctx["head"]], env=env,
               start_new_session=True)
@@ -2591,7 +3066,7 @@ def run_ceremony(ctx, args, launchctl, rec):
     note = "This key must never be loaded into an agent: the signer asks for its passphrase itself."
     say(f"\nYou will be asked for the key's passphrase once, now. If you are asked at any other point, "
         f"type nothing and stop.\n{note}\nasked once, now")
-    env = {"HOME": field["home"], "PATH": CHILD_PATH, "TERM": term, "LANG": "C"}
+    env = {"HOME": field["home"], "PATH": CHILD_PATH, "TERM": term, "LANG": "C", **layout_env}
     argv = [SH, str(launcher), str(packet), str(values), ctx["head"], "--stage2", own]
     launcher_unchanged()
     rec.append(f"ran {' '.join(argv)}")
@@ -2711,6 +3186,15 @@ def main(argv=None, *, launchctl=launchctl_socket):
                     help="independently trusted prior signer; required with --transition")
     ce.add_argument("--reviewed-commit", metavar="ID", help="with --first-run: the last commit the "
                     "code reviewer read that edited this tool or its tests")
+    for parser in (tp, ri, ce):
+        parser.add_argument("--layout-evidence-dir", metavar="DIR",
+                            help="prepared authenticated-prior layout evidence")
+        parser.add_argument("--reviewed-layout-sha256", metavar="SHA256",
+                            help="independently reviewed layout evidence digest")
+    ce.add_argument("--verifier-report-sha256", metavar="SHA256",
+                    help="independently reviewed binding for the key-away collection")
+    ce.add_argument("--verifier-dispositions", metavar="FILE",
+                    help="existing Maintainer dispositions of exact prior verifier HOLDs")
     pv = sub.add_parser("prepare-verifier", help="prepare signed prior-P verifier and exact candidate evidence")
     pv.add_argument("--trusted-repo", required=True, metavar="REPO")
     pv.add_argument("--prior-anchor", default=ANCHOR_REF, metavar="SHA|REF",
@@ -2726,6 +3210,10 @@ def main(argv=None, *, launchctl=launchctl_socket):
     vr.add_argument("--dispositions", metavar="FILE", help="human dispositions bound to the exact prior report")
     vr.add_argument("--operator-confirms-key-away", action="store_true",
                     help="operator states that the signing key is away; a second terminal YES is required")
+    vr.add_argument("--reviewed-layout-sha256", metavar="SHA256",
+                    help="independently reviewed old-to-new layout evidence digest")
+    vr.add_argument("--layout-static-only", action="store_true",
+                    help="prepare the authenticated layout scan and static report without collection")
     bp = sub.add_parser("baseline-prepare", help="prepare a no-signed-predecessor baseline package")
     bp.add_argument("--candidate", default="HEAD", metavar="SHA|REF")
     bp.add_argument("--approved-roster", required=True, metavar="FILE")
@@ -2836,15 +3324,20 @@ def main(argv=None, *, launchctl=launchctl_socket):
                                   args.trusted_ref, args.expected_fingerprint, args.evidence_dir)
                 return 0
             return _verifier_run(args.evidence_dir, args.expected_fingerprint, args.dispositions,
-                                 confirm_key_away=args.operator_confirms_key_away)
+                                 confirm_key_away=args.operator_confirms_key_away,
+                                 reviewed_layout=args.reviewed_layout_sha256,
+                                 layout_static=args.layout_static_only)
         except (Refuse, OSError, ValueError, KeyError) as exc:
             print(f"\nrepin stopped; no authority changed.\n  {exc}", file=sys.stderr)
             return 2
-    tmp = Path(tempfile.mkdtemp(prefix="repin-"))
+    tmp = Path(tempfile.mkdtemp(prefix="repin-")).resolve()
     rec, done = [], None
     try:
         repo = Path(__file__).resolve().parent.parent
-        if args.verb in ("transition-packet", "prepare-reader"):
+        layout = getattr(args, "layout_evidence_dir", None)
+        if bool(layout) != bool(getattr(args, "reviewed_layout_sha256", None)):
+            raise Refuse("layout transition requires both evidence directory and reviewed digest.")
+        if not layout and args.verb in ("transition-packet", "prepare-reader"):
             prior = git_text(repo, "rev-parse", "--verify", ANCHOR_REF + "^{commit}")
             roster = tmp / "prior-roster"
             roster.write_bytes(git(repo, "cat-file", "blob", f"{prior}:{ROSTER_REL}"))
@@ -2861,8 +3354,13 @@ def main(argv=None, *, launchctl=launchctl_socket):
             raise Refuse("--transition cannot be combined with --first-run.")
         if args.verb == "ceremony" and args.expected_fingerprint and not args.transition:
             raise Refuse("--expected-fingerprint is only used with --transition.")
-        ctx = boot(repo, tmp, prior_authority=args.verb in ("transition-packet", "prepare-reader")
-                   or transition_ceremony)
+        if layout and args.verb == "ceremony" and not transition_ceremony:
+            raise Refuse("the reviewed layout uses the existing transition ceremony.")
+        if layout:
+            ctx = boot_layout(args, tmp)
+        else:
+            ctx = boot(repo, tmp, prior_authority=args.verb in ("transition-packet", "prepare-reader")
+                       or transition_ceremony)
         first_screen(ctx)
         if args.verb == "status":
             show_ast(ctx, ast_view(ctx))

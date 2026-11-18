@@ -401,6 +401,11 @@ ROSTER
         set -- "$@" --transition-from-review "$TRANSITION_MANIFEST" \
                     --reviewed-candidate "$TRANSITION_CANDIDATE"
     fi
+    if [ -n "${CAIRN_LAYOUT_CONTEXT-}${CAIRN_LAYOUT_CONTEXT_SHA256-}" ]; then
+        [ -n "$TRANSITION_MANIFEST" ] || refuse "layout context requires a reviewed transition"
+        set -- "$@" --layout-context "${CAIRN_LAYOUT_CONTEXT-}" \
+                    --layout-context-sha256 "${CAIRN_LAYOUT_CONTEXT_SHA256-}"
+    fi
 
     printf '%s\n' "== stage 1: probing the key channel, then running the checks =="
     printf '%s\n' "   (this stage holds no key and must not be able to sign)"
@@ -542,6 +547,11 @@ cmd_stage2() {
     if [ -n "$TRANSITION_MANIFEST" ]; then
         set -- "$@" --transition-from-review "$TRANSITION_MANIFEST" \
                     --reviewed-candidate "$TRANSITION_CANDIDATE"
+    fi
+    if [ -n "${CAIRN_LAYOUT_CONTEXT-}${CAIRN_LAYOUT_CONTEXT_SHA256-}" ]; then
+        [ -n "$TRANSITION_MANIFEST" ] || refuse "layout context requires a reviewed transition"
+        set -- "$@" --layout-context "${CAIRN_LAYOUT_CONTEXT-}" \
+                    --layout-context-sha256 "${CAIRN_LAYOUT_CONTEXT_SHA256-}"
     fi
 
     printf '%s\n' "== stage 2: confirm, sign, and move both refs in ONE transaction =="
