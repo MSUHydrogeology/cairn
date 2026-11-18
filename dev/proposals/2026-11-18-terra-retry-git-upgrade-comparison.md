@@ -100,3 +100,20 @@ Reviewed commit: f9a6211c17157e2621c2b20aad2cf0af64f3fbc5
 **Blocking — demonstrate a usable strict launch.** Exit 134 and driver −6 do not identify the denied operation. The archived profile file is absent at its recorded path. Before Decision, specify a reproducible deny-default profile with named read-only dependencies, exact executable paths, no network and writes confined to the island and `/dev/null`. Show the canonical interpreter's constant `-I -B -c` print starting under that profile. If outer launch permissions are suspected, compare using the same inner profile bytes. Startup alone clears no C0 pre-write check (archived plan line 124; Proposal S3–S4).
 
 **Coverage.** Read committed records and checked scratch profile presence. No startup probe, sandbox control, Git write or comparison ran. The historical abort remains unexplained.
+
+## Review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: f9a6211c17157e2621c2b20aad2cf0af64f3fbc5
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: a confined comparison of matched synthetic projects can expose preservation and effort differences without authorizing an engine replacement. -- Proposal, archived upgrade-growth plan C0–C1
+2. **Best alternative.** Leave the trial incomplete; it costs no further setup but leaves six comparison cells and hostile-case classifications unknown. -- Context, Alternatives considered
+3. **What would show it wrong?** A failed confinement control, unreconstructed baseline or unobserved comparison cell makes the trial incomplete; a lost marker or outside write is a finding. -- Proposal, Evidence / verification plan
+
+The proposal retains the old controls, three variants and full hostile-case classification without claiming equivalence. Its High-tier confinement design is a genuine prerequisite, and a new deny-default profile can address it without recovering old scratch bytes. The larger opening carries the trial boundary and recorded failure, not a permanent harness or Maintainer operation. No doctrine or installed contract change is proposed. Coverage: compared the committed proposal with the archived C0–C1 and review rules; did not run a profile, reconstruct a baseline, execute Git or installer writes, or assess the security boundary. The separate Security Review has a blocking finding.
