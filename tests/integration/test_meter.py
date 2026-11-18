@@ -643,7 +643,7 @@ class SyntheticWindowsExportAPI(SyntheticWindowsLedgerAPI):
 WINDOWS_ONLY = pytest.mark.skipif(os.name != "nt", reason="requires native Windows token, NTFS handles and ACLs")
 
 NATIVE_CSC = Path(r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe")
-NATIVE_GIT_FIXTURE = ROOT / "bootstrap" / "tests" / "fixtures" / "native_git_fixture.cs"
+NATIVE_GIT_FIXTURE = ROOT / "tests" / "fixtures" / "native_git_fixture.cs"
 NATIVE_METER_ROOT_MARKERS = (
     "__candidate_name__", "__fault_marker__", "__meter_worker_child_pid__",
 )

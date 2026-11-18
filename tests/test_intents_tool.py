@@ -182,7 +182,7 @@ def _git_repo(tmp_path: Path, *, branch: str = "master",
 @pytest.mark.parametrize(
     "entry_source",
     [
-        CAIRN_ROOT / "tools" / "_intent" / "conflict.py",
+        CAIRN_ROOT / "dev" / "tools" / "_intent" / "conflict.py",
         TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "conflict.py",
     ],
     ids=["tools-intent-conflict", "shipped-intent-conflict"],
@@ -1613,7 +1613,7 @@ class TestIntentParentHelp:
         self, tmp_path,
     ) -> None:
         """Source and installed twins keep a working public help command."""
-        source_tool = CAIRN_ROOT / "tools" / "intent.py"
+        source_tool = CAIRN_ROOT / "dev" / "tools" / "intent.py"
         installed_tool = _git_repo(tmp_path)
         for tool, cwd in ((source_tool, CAIRN_ROOT), (installed_tool, tmp_path)):
             res = subprocess.run(
@@ -2676,11 +2676,11 @@ _POSTCOMMIT_ROUTE_ARGS = {
 @pytest.mark.parametrize(
     ("entry_source", "route", "function"),
     [
-        (CAIRN_ROOT / "tools" / "_intent" / "conflict.py", "head",
+        (CAIRN_ROOT / "dev" / "tools" / "_intent" / "conflict.py", "head",
          "_head_commit_via_git"),
         (TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "conflict.py",
          "head", "_head_commit_via_git"),
-        (CAIRN_ROOT / "tools" / "_intent" / "conflict.py", "paths",
+        (CAIRN_ROOT / "dev" / "tools" / "_intent" / "conflict.py", "paths",
          "_committed_paths_via_git"),
         (TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "conflict.py",
          "paths", "_committed_paths_via_git"),

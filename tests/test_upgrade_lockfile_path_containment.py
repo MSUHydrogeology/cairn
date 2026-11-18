@@ -74,10 +74,10 @@ sys.path.insert(0, str(CAIRN_ROOT))
 from install.scaffold import ScaffoldSecurityError  # noqa: E402  (the facade loads the engine)
 from install._scaffold import upgrade as UP  # noqa: E402
 
-SCAFFOLD = CAIRN_ROOT / "bootstrap" / "scaffold.py"
+SCAFFOLD = CAIRN_ROOT / "install" / "scaffold.py"
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
-UPGRADE_SOURCE = CAIRN_ROOT / "bootstrap" / "_scaffold" / "upgrade.py"
-MUTATION_INVENTORY = CAIRN_ROOT / "bootstrap" / "_scaffold" / "SECURITY_MUTATIONS.md"
+UPGRADE_SOURCE = CAIRN_ROOT / "install" / "_scaffold" / "upgrade.py"
+MUTATION_INVENTORY = CAIRN_ROOT / "install" / "_scaffold" / "SECURITY_MUTATIONS.md"
 LOCK_REL = "dev/.cairn/cairn-lock.yml"
 STAGE_REL = "dev/.cairn-upgrade"
 BENIGN_NOTES = "notes the repository author committed\n"

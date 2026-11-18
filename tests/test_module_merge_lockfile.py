@@ -73,7 +73,7 @@ from install._scaffold.lockfile import read_lockfile  # noqa: E402
 from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
-_PKG = CAIRN_ROOT / "bootstrap" / "_scaffold"
+_PKG = CAIRN_ROOT / "install" / "_scaffold"
 
 #: The one shipped module carrying `cairn:merge-target` directives, and the
 #: tracked file + slot it merges into.

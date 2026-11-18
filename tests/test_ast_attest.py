@@ -27,9 +27,9 @@ from bootstrap.tests import _ast_attest as A
 from tests._repo_root import repository_root
 
 _REPO = repository_root(Path(__file__))
-_SCAFFOLD = _REPO / "bootstrap" / "_scaffold" / "__init__.py"
-_BASELINE = _REPO / "bootstrap" / "tests" / "fixtures" / "scaffold_ast_baseline.json"
-_KNOWN_NEW = _REPO / "bootstrap" / "tests" / "fixtures" / "scaffold_ast_known_new.json"
+_SCAFFOLD = _REPO / "install" / "_scaffold" / "__init__.py"
+_BASELINE = _REPO / "tests" / "fixtures" / "scaffold_ast_baseline.json"
+_KNOWN_NEW = _REPO / "tests" / "fixtures" / "scaffold_ast_known_new.json"
 
 
 def _known_new() -> dict:

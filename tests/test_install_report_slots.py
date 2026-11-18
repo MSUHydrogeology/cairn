@@ -44,8 +44,8 @@ sys.path.insert(0, str(CAIRN_ROOT))
 
 from install._scaffold.install import print_report  # noqa: E402
 
-SCAFFOLD = CAIRN_ROOT / "bootstrap" / "scaffold.py"
-PROFILES = CAIRN_ROOT / "bootstrap" / "profiles"
+SCAFFOLD = CAIRN_ROOT / "install" / "scaffold.py"
+PROFILES = CAIRN_ROOT / "install" / "profiles"
 CORE = CAIRN_ROOT / "templates" / "core"
 MODULES_DIR = CAIRN_ROOT / "templates" / "modules"
 

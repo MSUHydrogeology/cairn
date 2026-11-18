@@ -35,7 +35,7 @@ import pytest
 from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
-QG_SRC = CAIRN_ROOT / "scripts" / "quality_gate.py"
+QG_SRC = CAIRN_ROOT / "tests" / "quality_gate.py"
 
 pytestmark = pytest.mark.skipif(
     not QG_SRC.exists(), reason="quality_gate.py not available",
@@ -77,7 +77,7 @@ def _shipped_type_files() -> dict:
     type (a shell-script hook, say) must fail here, not pass the gate unread.
     An empty source file has nothing to scan, so it adds no type."""
     manifest = subprocess.run(
-        [sys.executable, str(CAIRN_ROOT / "bootstrap" / "scaffold.py"),
+        [sys.executable, str(CAIRN_ROOT / "install" / "scaffold.py"),
          "--manifest"], capture_output=True, text=True, check=True,
         cwd=CAIRN_ROOT).stdout
     sources = [line.split("\t")[1] for line in manifest.splitlines()

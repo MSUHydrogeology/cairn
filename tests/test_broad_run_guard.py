@@ -43,7 +43,7 @@ from pathlib import Path
 from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
-CONFTEST = CAIRN_ROOT / "bootstrap" / "tests" / "conftest.py"
+CONFTEST = CAIRN_ROOT / "tests" / "conftest.py"
 
 #: Kept in step with the conftest by ``test_the_threshold_constant_is_shared``
 #: below rather than by hope.

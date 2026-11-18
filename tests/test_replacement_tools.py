@@ -41,7 +41,7 @@ CAIRN_ROOT = repository_root(Path(__file__))
 
 
 def _load(name: str):
-    path = CAIRN_ROOT / "tools" / f"{name}.py"
+    path = CAIRN_ROOT / ("dev/tools" if name == "board" else "tests") / f"{name}.py"
     spec = importlib.util.spec_from_file_location(f"_cairn_{name}", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -54,7 +54,7 @@ audit = _load("audit_report")
 
 
 def _load_script(name: str):
-    path = CAIRN_ROOT / "scripts" / f"{name}.py"
+    path = CAIRN_ROOT / "tests" / f"{name}.py"
     spec = importlib.util.spec_from_file_location(f"_cairn_script_{name}", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -522,7 +522,7 @@ def test_public_audit_summary_uses_only_the_last_real_verification_record(
     for name, content in records.items():
         (archive / name).write_text(content, encoding="utf-8")
 
-    command = [sys.executable, str(CAIRN_ROOT / "tools" / "audit_report.py"),
+    command = [sys.executable, str(CAIRN_ROOT / "tests" / "audit_report.py"),
                "--root", str(tmp_path)]
     run = subprocess.run(command, cwd=tmp_path, capture_output=True,
                          text=True, check=True)

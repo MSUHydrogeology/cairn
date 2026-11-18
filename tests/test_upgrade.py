@@ -222,7 +222,7 @@ class TestProfileSizedAssembly:
         shutil.copytree(TEMPLATES_ROOT, croot / "templates")
         (croot / "bootstrap" / "_scaffold").mkdir(parents=True)
         for name in ("config.py", "install.py"):
-            shutil.copy2(CAIRN_ROOT / "bootstrap" / "_scaffold" / name,
+            shutil.copy2(CAIRN_ROOT / "install" / "_scaffold" / name,
                          croot / "bootstrap" / "_scaffold" / name)
         cff = CAIRN_ROOT / "CITATION.cff"
         if cff.exists():

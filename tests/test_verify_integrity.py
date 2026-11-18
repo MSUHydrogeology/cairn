@@ -274,7 +274,7 @@ from typing import Callable, NamedTuple  # noqa: E402
 
 from install._scaffold.lockfile import _emit_lock_yaml  # noqa: E402
 
-_VERIFY_PY = CAIRN_ROOT / "bootstrap" / "verify_integrity.py"
+_VERIFY_PY = CAIRN_ROOT / "install" / "verify_integrity.py"
 _CAP = 256 * 1024
 
 

@@ -186,7 +186,7 @@ def _run_bound_cli(caller: Path, cwd: Path, marker: Path, *, cached=False):
 
 
 def _marked_helper() -> bytes:
-    helper = (CAIRN_ROOT / "tools" / "git_read.py").read_bytes()
+    helper = (CAIRN_ROOT / "dev" / "tools" / "git_read.py").read_bytes()
     return helper + (
         b"\nimport os as _cairn_test_os\n"
         b"from pathlib import Path as _cairn_test_Path\n"

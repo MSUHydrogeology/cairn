@@ -368,7 +368,7 @@ def test_a_deleted_handoff_leaves_integrity_passing_and_an_emptied_one_lists_no_
     assert "NEXT_SESSION" not in emptied, emptied
 
 
-UPGRADE_GUIDE = ROOT / "bootstrap" / "UPGRADE.md"
+UPGRADE_GUIDE = ROOT / "install" / "UPGRADE.md"
 
 
 def _guide_section(heading_prefix: str) -> str:

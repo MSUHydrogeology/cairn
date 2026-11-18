@@ -1921,7 +1921,7 @@ def test_the_upgrade_guide_and_the_printed_line_name_the_same_flag(
                if line.strip().startswith("python bootstrap/scaffold.py upgrade")
                and "--remove-retired" in line]
     assert len(printed) == 1, out
-    guide = (ROOT / "bootstrap" / "UPGRADE.md").read_text(encoding="utf-8")
+    guide = (ROOT / "install" / "UPGRADE.md").read_text(encoding="utf-8")
     start = guide.index("## Files Cairn stopped shipping")
     end = guide.find("\n## ", start + 1)
     section = " ".join(guide[start:end].split())

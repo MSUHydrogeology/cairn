@@ -652,7 +652,7 @@ class TestUnknownKeysRefuseBeforeAnyWrite:
 
     def _run(self, args: list[str]) -> subprocess.CompletedProcess:
         return subprocess.run(
-            [sys.executable, str(CAIRN_ROOT / "bootstrap" / "scaffold.py"), *args],
+            [sys.executable, str(CAIRN_ROOT / "install" / "scaffold.py"), *args],
             capture_output=True, text=True, cwd=str(CAIRN_ROOT),
         )
 
@@ -737,7 +737,7 @@ class TestReservedSchemaKey:
 # Chunk D -- the drift gate: a marked corpus, both writers, and two canaries
 # ---------------------------------------------------------------------------
 
-_BOOTSTRAP_MD = CAIRN_ROOT / "bootstrap" / "BOOTSTRAP.md"
+_BOOTSTRAP_MD = CAIRN_ROOT / "install" / "BOOTSTRAP.md"
 _CORPUS_MARKER = "<!-- cairn-parity-corpus: {name} -->"
 #: The ``--help`` corpus entry anchors on an existing literal line inside
 #: ``cli.__doc__`` -- **no adopter-visible marker is added to ``--help``**.
@@ -973,7 +973,7 @@ class TestNoRuntimeYamlDependency:
         else:
             proc = subprocess.run(
                 [sys.executable,
-                 str(CAIRN_ROOT / "bootstrap" / "scaffold.py"), *argv],
+                 str(CAIRN_ROOT / "install" / "scaffold.py"), *argv],
                 capture_output=True, text=True, cwd=str(CAIRN_ROOT))
         assert proc.returncode == 0, proc.stderr
         return target

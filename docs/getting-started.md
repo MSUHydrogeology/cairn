@@ -1,6 +1,6 @@
 # Getting started — a change moving through Cairn
 
-The [on-ramp](../on-ramp/README.md) helps you choose how much of Cairn to
+The [on-ramp](../install/on-ramp/README.md) helps you choose how much of Cairn to
 adopt: read the guidance, or install it with a profile. This page follows
 **one change through the lifecycle** so you can see what each step produces.
 
@@ -95,7 +95,7 @@ Together, these files and the commit history show what changed and why.
 * **Just exploring?** Read [`docs/methodology/`](methodology/) as a handbook
   and let it inform how your team already works.
 * **Ready to adopt?** Install it with the scaffold and a profile — see the
-  [on-ramp](../on-ramp/README.md) for how to choose one, and
+  [on-ramp](../install/on-ramp/README.md) for how to choose one, and
   [`quickstart.md`](quickstart.md) to try the smallest install on a
   throwaway repository first.
 * **Need to learn the craft Cairn assumes** (testing, reproducibility,

@@ -1170,7 +1170,7 @@ class TestInstalledModuleDocuments:
         target = tmp_path / "proj"
         target.mkdir()
         installed = subprocess.run(
-            [sys.executable, str(CAIRN_ROOT / "bootstrap" / "scaffold.py"),
+            [sys.executable, str(CAIRN_ROOT / "install" / "scaffold.py"),
              "--config", str(config), "--target", str(target),
              "--cairn-root", str(CAIRN_ROOT), "--allow-dev"],
             capture_output=True, text=True,

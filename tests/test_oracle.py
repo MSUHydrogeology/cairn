@@ -298,7 +298,7 @@ def test_oracle_cli_gate_refuses_self_target(tmp_path):
     default-self self-measurement a trusted-checkout caller would otherwise get."""
     import subprocess
     proc = subprocess.run(
-        [sys.executable, str(O.CAIRN_ROOT / "bootstrap" / "tests" / "_oracle.py"),
+        [sys.executable, str(O.CAIRN_ROOT / "tests" / "_oracle.py"),
          "run", "--gate", "--repo", str(O.CAIRN_ROOT), "--target-root", str(O.CAIRN_ROOT),
          "--baseline-ref", "HEAD", "--trusted-ref", "HEAD", "--workdir", str(tmp_path / "wd")],
         capture_output=True, text=True)
@@ -311,7 +311,7 @@ def test_oracle_cli_gate_requires_target_root(tmp_path):
     default-self)."""
     import subprocess
     proc = subprocess.run(
-        [sys.executable, str(O.CAIRN_ROOT / "bootstrap" / "tests" / "_oracle.py"),
+        [sys.executable, str(O.CAIRN_ROOT / "tests" / "_oracle.py"),
          "run", "--gate", "--baseline-ref", "HEAD", "--trusted-ref", "HEAD"],
         capture_output=True, text=True)
     assert proc.returncode != 0
@@ -345,7 +345,7 @@ def test_oracle_cli_gate_teeth_subprocess(tmp_path):
     candidate = _git_init_target(target)
     report_path = tmp_path / "report.json"
     proc = subprocess.run(
-        [sys.executable, str(O.CAIRN_ROOT / "bootstrap" / "tests" / "_oracle.py"),
+        [sys.executable, str(O.CAIRN_ROOT / "tests" / "_oracle.py"),
          "run", "--gate", "--repo", str(O.CAIRN_ROOT), "--target-root", str(target),
          "--baseline-ref", "HEAD", "--trusted-ref", "HEAD",
          "--workdir", str(tmp_path / "wd"), "--report", str(report_path)],

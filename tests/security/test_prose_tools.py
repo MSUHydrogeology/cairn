@@ -718,7 +718,7 @@ def test_fresh_scaffold_install_runs_both_public_prose_clis_with_real_lock(
         encoding="utf-8",
     )
     installed = subprocess.run(
-        [sys.executable, str(ROOT / "bootstrap" / "scaffold.py"),
+        [sys.executable, str(ROOT / "install" / "scaffold.py"),
          "--config", str(profile), "--target", str(repo),
          "--cairn-root", str(ROOT), "--allow-dev"],
         cwd=repo, stdout=subprocess.PIPE, stderr=subprocess.PIPE,

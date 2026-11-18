@@ -51,8 +51,8 @@ import pytest
 from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
-VERIFY_COUNTS_SRC = CAIRN_ROOT / "scripts" / "verify_counts.py"
-MEASUREMENTS_SRC = CAIRN_ROOT / "scripts" / "measurements.py"
+VERIFY_COUNTS_SRC = CAIRN_ROOT / "tests" / "verify_counts.py"
+MEASUREMENTS_SRC = CAIRN_ROOT / "tests" / "measurements.py"
 
 pytestmark = pytest.mark.skipif(
     not (VERIFY_COUNTS_SRC.exists() and MEASUREMENTS_SRC.exists()),
@@ -560,7 +560,7 @@ def test_main_exit_status_separates_failure_from_visible_skip(
     scripts.mkdir()
     (tmp_path / "tools").mkdir()
     shutil.copy(VERIFY_COUNTS_SRC, scripts / "verify_counts.py")
-    shutil.copy(CAIRN_ROOT / "tools" / "git_read.py", tmp_path / "tools" / "git_read.py")
+    shutil.copy(CAIRN_ROOT / "dev" / "tools" / "git_read.py", tmp_path / "tools" / "git_read.py")
     root = f"Path({str(tmp_path)!r})"
     (scripts / "measurements.py").write_text(
         MEASUREMENTS_SRC.read_text(encoding="utf-8")

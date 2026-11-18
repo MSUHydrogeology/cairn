@@ -33,7 +33,7 @@ from install.scaffold import main as scaffold_main  # noqa: E402
 
 
 def _load_board():
-    path = CAIRN_ROOT / "tools" / "board.py"
+    path = CAIRN_ROOT / "dev" / "tools" / "board.py"
     spec = importlib.util.spec_from_file_location("_cairn_board_contract", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -663,7 +663,7 @@ class TestSymlinkedSourcesAreNotRead:
             proc = subprocess.run(
                 [
                     sys.executable,
-                    str(CAIRN_ROOT / "tools" / "board.py"),
+                    str(CAIRN_ROOT / "dev" / "tools" / "board.py"),
                     *flags,
                     "--root",
                     str(fifo_root),
@@ -733,7 +733,7 @@ class TestBoardLoadsOnlyItsOwnEncoder:
 import json
 
 BASELINE_PATH = (
-    CAIRN_ROOT / "bootstrap" / "tests" / "fixtures" / "board_json_v1_baseline.json"
+    CAIRN_ROOT / "tests" / "fixtures" / "board_json_v1_baseline.json"
 )
 
 
@@ -1173,7 +1173,7 @@ class TestRoadmapWaitsAndSkippedSymlinksInJson:
         `--json` with empty stdout and one `ascii()`-encoded stderr line without
         loading `tools/session.py`; `--json --maintainer` exits 2 with empty
         stdout; and `--help` cites `cairn/docs/build-a-board-view.md`."""
-        board_src = (CAIRN_ROOT / "tools" / "board.py").read_text(encoding="utf-8")
+        board_src = (CAIRN_ROOT / "dev" / "tools" / "board.py").read_text(encoding="utf-8")
         assert (
             "ascii() is used instead of the terminal encoder so that --json loads no other file"
             in board_src
@@ -1220,7 +1220,7 @@ class TestRoadmapWaitsAndSkippedSymlinksInJson:
             proc = subprocess.run(
                 [
                     sys.executable,
-                    str(CAIRN_ROOT / "tools" / "board.py"),
+                    str(CAIRN_ROOT / "dev" / "tools" / "board.py"),
                     "--json",
                     "--root",
                     str(fifo_root),
@@ -1454,7 +1454,7 @@ class TestGuideIsNotInstalled:
 
     def test_guide_is_absent_from_scaffold_manifest(self) -> None:
         proc = subprocess.run(
-            [sys.executable, str(CAIRN_ROOT / "bootstrap" / "scaffold.py"), "--manifest"],
+            [sys.executable, str(CAIRN_ROOT / "install" / "scaffold.py"), "--manifest"],
             capture_output=True,
             text=True,
             check=True,
@@ -1722,8 +1722,8 @@ class TestViewExample:
 
         repo = tmp_path / "repo"
         (repo / "tools").mkdir(parents=True)
-        shutil.copy2(CAIRN_ROOT / "tools" / "board.py", repo / "tools" / "board.py")
-        shutil.copy2(CAIRN_ROOT / "tools" / "session.py", repo / "tools" / "session.py")
+        shutil.copy2(CAIRN_ROOT / "dev" / "tools" / "board.py", repo / "tools" / "board.py")
+        shutil.copy2(CAIRN_ROOT / "dev" / "tools" / "session.py", repo / "tools" / "session.py")
         _git_run(repo, "init")
 
         esc = "\x1b"
@@ -1864,8 +1864,8 @@ class TestViewExample:
         # Failure preservation: git rev-parse fails (non-git directory) -> page untouched
         non_git = tmp_path / "non_git"
         (non_git / "tools").mkdir(parents=True)
-        shutil.copy2(CAIRN_ROOT / "tools" / "board.py", non_git / "tools" / "board.py")
-        shutil.copy2(CAIRN_ROOT / "tools" / "session.py", non_git / "tools" / "session.py")
+        shutil.copy2(CAIRN_ROOT / "dev" / "tools" / "board.py", non_git / "tools" / "board.py")
+        shutil.copy2(CAIRN_ROOT / "dev" / "tools" / "session.py", non_git / "tools" / "session.py")
         _write(non_git, "dev/plans/ok.md", "# OK\n\n**Status**: implementing\n")
         monkeypatch.chdir(non_git)
         with pytest.raises(subprocess.CalledProcessError):
@@ -1989,7 +1989,7 @@ class TestIntentJoinRecipe:
 
         # Verify canned shape against real tools/intent.py:
         scratch_log = tmp_path / "intents.jsonl"
-        intent_tool = str(CAIRN_ROOT / "tools" / "intent.py")
+        intent_tool = str(CAIRN_ROOT / "dev" / "tools" / "intent.py")
         subprocess.run(
             [
                 sys.executable,
@@ -2815,7 +2815,7 @@ def test_next_amendment_revise_then_direct_fresh_successor(
     staged = tmp_path / "tools" / "board.py"
     staged.parent.mkdir(parents=True)
     shutil.copyfile(CAIRN_ROOT / board_source, staged)
-    shutil.copyfile(CAIRN_ROOT / "tools" / "session.py",
+    shutil.copyfile(CAIRN_ROOT / "dev" / "tools" / "session.py",
                     tmp_path / "tools" / "session.py")
     source = "dev/proposals/archive/2026-01-01-source.md"
     _write(tmp_path, source, _next_accepted_source("standard"))
@@ -2877,7 +2877,7 @@ def test_next_amendment_malformed_or_incomplete_chain_stops(
     staged = tmp_path / "tools" / "board.py"
     staged.parent.mkdir(parents=True)
     shutil.copyfile(CAIRN_ROOT / board_source, staged)
-    shutil.copyfile(CAIRN_ROOT / "tools" / "session.py",
+    shutil.copyfile(CAIRN_ROOT / "dev" / "tools" / "session.py",
                     tmp_path / "tools" / "session.py")
     source = "dev/proposals/archive/2026-01-01-source.md"
     _write(tmp_path, source, _next_accepted_source("standard"))

@@ -70,7 +70,7 @@ from install._scaffold import merge as merge_module  # noqa: E402
 from install._scaffold.merge import merge_file  # noqa: E402
 from install._scaffold.upgrade import FilePlan, _print_upgrade_report  # noqa: E402
 
-SCAFFOLD = CAIRN_ROOT / "bootstrap" / "scaffold.py"
+SCAFFOLD = CAIRN_ROOT / "install" / "scaffold.py"
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 LOCK_REL = "dev/.cairn/cairn-lock.yml"
 README_DST = "dev/README.md"
@@ -130,7 +130,7 @@ def copy_renderer_compatibility(root: Path) -> None:
     destination = root / "bootstrap" / "_scaffold"
     destination.mkdir(parents=True, exist_ok=True)
     for name in ("config.py", "install.py"):
-        shutil.copy2(CAIRN_ROOT / "bootstrap" / "_scaffold" / name,
+        shutil.copy2(CAIRN_ROOT / "install" / "_scaffold" / name,
                      destination / name)
 
 

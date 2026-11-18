@@ -30,8 +30,8 @@ import pytest
 from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
-SCAFFOLD = CAIRN_ROOT / "bootstrap" / "scaffold.py"
-PROFILES = sorted((CAIRN_ROOT / "bootstrap" / "profiles").glob("*.yml"))
+SCAFFOLD = CAIRN_ROOT / "install" / "scaffold.py"
+PROFILES = sorted((CAIRN_ROOT / "install" / "profiles").glob("*.yml"))
 
 #: The two source copies of the review-loop document.
 SHIPPED_LOOP = "templates/core/dev/agent_collaboration.md"

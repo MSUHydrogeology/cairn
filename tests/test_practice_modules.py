@@ -124,7 +124,7 @@ class TestInstallPath:
         )
         result = subprocess.run(
             [
-                sys.executable, str(CAIRN_ROOT / "bootstrap" / "scaffold.py"),
+                sys.executable, str(CAIRN_ROOT / "install" / "scaffold.py"),
                 "--config", str(cfg), "--target", str(target),
                 "--cairn-root", str(CAIRN_ROOT), "--dry-run", "--allow-dev",
             ],

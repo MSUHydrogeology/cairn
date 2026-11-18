@@ -1240,7 +1240,7 @@ def _fixture_tree(tmp_path: Path, body: str) -> Path:
     """A throwaway tree carrying the real conftest plus one test module."""
     tests = tmp_path / "bootstrap" / "tests"
     tests.mkdir(parents=True)
-    shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "conftest.py",
+    shutil.copy(CAIRN_ROOT / "tests" / "conftest.py",
                 tests / "conftest.py")
     (tests / "test_fixture_outcome.py").write_text(body, encoding="utf-8")
     return tmp_path
@@ -1368,7 +1368,7 @@ def _native_child_pytest(root: Path, env: dict[str, str],
 
 def _release_collection_fixture(tmp_path: Path, manifest_line: str) -> Path:
     root = _fixture_tree(tmp_path / "candidate", _CLEAN)
-    shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "security_manifest.py",
+    shutil.copy(CAIRN_ROOT / "tests" / "security_manifest.py",
                 root / "bootstrap" / "tests" / "security_manifest.py")
     manifest = root / "bootstrap" / "tests" / "security_manifest.py"
     with manifest.open("a", encoding="utf-8") as stream:
@@ -1410,7 +1410,7 @@ def test_the_conftest_recognizes_the_same_token_pair() -> None:
     keeps the two sides equal."""
     import importlib.util
 
-    path = CAIRN_ROOT / "bootstrap" / "tests" / "conftest.py"
+    path = CAIRN_ROOT / "tests" / "conftest.py"
     spec = importlib.util.spec_from_file_location("_cairn_conftest_probe", path)
     assert spec is not None and spec.loader is not None
     probe = importlib.util.module_from_spec(spec)
@@ -1585,7 +1585,7 @@ def test_release_mode_passes_a_fully_clean_session(tmp_path) -> None:
 def test_native_context_writes_external_report_for_actual_order(
         tmp_path, seed, order, report_name, head) -> None:
     root = _fixture_tree(tmp_path / "candidate", _CLEAN)
-    shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "security_manifest.py",
+    shutil.copy(CAIRN_ROOT / "tests" / "security_manifest.py",
                 root / "bootstrap" / "tests" / "security_manifest.py")
     report_dir = tmp_path.parent / f"{tmp_path.name}-reports"
     report_dir.mkdir()
@@ -1617,7 +1617,7 @@ def test_native_context_writes_external_report_for_actual_order(
 def test_conftest_native_context_refuses_malformed_head(
         tmp_path, head: str) -> None:
     root = _fixture_tree(tmp_path / "candidate", _CLEAN)
-    shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "security_manifest.py",
+    shutil.copy(CAIRN_ROOT / "tests" / "security_manifest.py",
                 root / "bootstrap" / "tests" / "security_manifest.py")
     report_dir = tmp_path.parent / f"{tmp_path.name}-bad-head-reports"
     report_dir.mkdir()
@@ -1639,9 +1639,9 @@ def test_fixed_policy_skips_only_exact_opposite_platform_ids(tmp_path) -> None:
     root = tmp_path / "candidate"
     tests = root / "bootstrap" / "tests"
     tests.mkdir(parents=True)
-    shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "conftest.py",
+    shutil.copy(CAIRN_ROOT / "tests" / "conftest.py",
                 tests / "conftest.py")
-    shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "security_manifest.py",
+    shutil.copy(CAIRN_ROOT / "tests" / "security_manifest.py",
                 tests / "security_manifest.py")
     cases = ["shipped-admin", "shipped-binding-directory", "shipped-binding-leaf",
              "shipped-dot-git", "source-admin", "source-binding-directory",

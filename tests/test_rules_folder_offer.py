@@ -196,7 +196,7 @@ def test_hostile_record_never_stops_session_start(
 
 def _upgrade_plan(project: Path) -> tuple[int, str, str]:
     result = subprocess.run(
-        [sys.executable, str(ROOT / "bootstrap" / "scaffold.py"),
+        [sys.executable, str(ROOT / "install" / "scaffold.py"),
          "upgrade", "--plan", "--target", str(project),
          "--cairn-root", str(ROOT)],
         cwd=project,

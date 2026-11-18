@@ -28,7 +28,7 @@ reviewed decision-making *upstream* of the code:
   and the session routines
   ([`methodology/session-routines.md`](methodology/session-routines.md)).
 * **Adaptation.** Which of the above scales up or down with the
-  project's dimensions (see [`../dimensions/README.md`](../dimensions/README.md)).
+  project's dimensions (see [`../install/dimensions/README.md`](../install/dimensions/README.md)).
 
 ## What Cairn deliberately does *not* do
 
@@ -80,5 +80,5 @@ to the tools built for those jobs.
   change moving through the lifecycle.
 * [`further-reading.md`](further-reading.md) — the craft resources
   Cairn relies on but does not re-teach.
-* [`../on-ramp/README.md`](../on-ramp/README.md) — how to adopt:
+* [`../install/on-ramp/README.md`](../install/on-ramp/README.md) — how to adopt:
   read the doctrine, or install it with a profile.

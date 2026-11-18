@@ -139,7 +139,7 @@ def runner_copy(tmp_path: Path, admissions: dict | None = None) -> Path:
     helper_dir = tmp_path / "tools"
     helper_dir.mkdir(exist_ok=True)
     (helper_dir / "git_read.py").write_bytes(
-        (CAIRN_ROOT / "tools" / "git_read.py").read_bytes()
+        (CAIRN_ROOT / "dev" / "tools" / "git_read.py").read_bytes()
     )
     (dest_dir / POLICY_SRC.name).write_text(
         POLICY_SRC.read_text(encoding="utf-8"), encoding="utf-8"

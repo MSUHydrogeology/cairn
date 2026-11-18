@@ -19,7 +19,7 @@ the kind of decision it records, and where its overhead shows.
 
 * **The project's maintainer approves the content** before a case study is
   added or changed here, and the approval is recorded in a commit
-  (`bootstrap/SAFETY.md`, Rule 3). Both of these were approved by Anthony
+  (`install/SAFETY.md`, Rule 3). Both of these were approved by Anthony
   Kendall, who maintains both projects.
 * **Methodology only.** No scientific results, calibration data, source code
   or embargoed material. The projects' own repositories hold their working
@@ -33,7 +33,7 @@ the kind of decision it records, and where its overhead shows.
 [`modflow_tools-fidelity-manifest.yml`](modflow_tools-fidelity-manifest.yml)
 is a machine-readable snapshot of modflow_tools' setup in May 2026, kept as a
 worked example of the format described in
-[`../bootstrap/fidelity-check.md`](../bootstrap/fidelity-check.md). It lists
+[`../../install/fidelity-check.md`](../../install/fidelity-check.md). It lists
 modules and files that have since been removed, and does not describe the
 project today.
 

@@ -32,7 +32,7 @@ import pytest
 from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
-QG_SRC = CAIRN_ROOT / "scripts" / "quality_gate.py"
+QG_SRC = CAIRN_ROOT / "tests" / "quality_gate.py"
 
 pytestmark = pytest.mark.skipif(
     not QG_SRC.exists(), reason="quality_gate.py not available",

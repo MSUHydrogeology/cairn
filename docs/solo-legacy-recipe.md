@@ -10,7 +10,7 @@ the one module an existing codebase needs. This page avoids both.
 
 You install with the scaffold like any other adopter, with one extra
 step: **fill in
-[`templates/codebase-readiness-report.md`](../templates/codebase-readiness-report.md)
+[`install/codebase-readiness-report.md`](../install/codebase-readiness-report.md)
 first.** Its eleven sections surface hidden state, scientific
 assumptions and security boundaries in an existing tree. A new
 repository has none of these yet. A solo scientist with a legacy
@@ -42,9 +42,9 @@ modules_add:
   - testing-discipline
 ```
 
-Run `python bootstrap/scaffold.py --summary --config profile.yml` from
+Run `python install/scaffold.py --summary --config profile.yml` from
 a Cairn checkout — a release tag you have verified, per
-`bootstrap/PROVENANCE.md` — against a copy of this YAML. It should
+`install/PROVENANCE.md` — against a copy of this YAML. It should
 report an **8-module roster** — the six default-on modules
 (`reflections`, `claim-check`, `incident-trackers`,
 `documentation-plan`, `content-security`, `security-verification`)
@@ -52,13 +52,13 @@ plus `legacy-agent` and `testing-discipline` — with **zero staffability
 warnings**. Confirm your own run matches, then install:
 
 ```bash
-python bootstrap/scaffold.py --config profile.yml --target <your-repo>
+python install/scaffold.py --config profile.yml --target <your-repo>
 ```
 
 The scaffold does not overwrite a file your repository already has —
 your own `README.md` or `CHANGELOG.md` stays as it is — unless you pass
 `--force`; don't. Then do the four steps it prints for a real adoption
-(`bootstrap/BOOTSTRAP.md` Act II-3 to II-6).
+(`install/BOOTSTRAP.md` Act II-3 to II-6).
 
 **Two more modules, conditional on your own readiness-report
 findings — don't add them yet:**
@@ -87,13 +87,13 @@ recalculated; for age it is not. The result is the same 6 modules as a
 greenfield install, with no `legacy-agent` and no warning. The two
 `modules_add` lines are therefore not optional: they add the Legacy
 Agent role and the characterization-testing habit
-(`dimensions/age.md`) that an existing codebase needs. This is a known
+(`install/dimensions/age.md`) that an existing codebase needs. This is a known
 gap in the scaffold, tracked for a later fix. Until then, this
 workaround keeps the recipe correct.
 
 ## The week-one arc
 
-1. **Fill the readiness report** (`templates/codebase-readiness-report.md`)
+1. **Fill the readiness report** (`install/codebase-readiness-report.md`)
    before anything else. It's what the conditional modules above key off.
 2. **Your first change: something disposable.** A real trivial edit (a
    typo or one-line fix) needs no proposal. To learn the proposal →

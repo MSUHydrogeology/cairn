@@ -186,7 +186,7 @@ def test_release_required_files_are_pinned_and_tracked() -> None:
 
 def test_release_exclusions_select_each_file_from_its_subject() -> None:
     spec = importlib.util.spec_from_file_location(
-        "_test_tiers_for_release_manifest", CAIRN_ROOT / "tools" / "test_tiers.py")
+        "_test_tiers_for_release_manifest", CAIRN_ROOT / "tests" / "test_tiers.py")
     assert spec is not None and spec.loader is not None
     tiers = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(tiers)

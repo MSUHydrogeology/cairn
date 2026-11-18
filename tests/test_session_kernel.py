@@ -34,8 +34,8 @@ import pytest
 from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
-KERNEL = CAIRN_ROOT / "tools" / "session.py"
-_CONTENT_SCAN = CAIRN_ROOT / "scripts" / "content_scan.py"
+KERNEL = CAIRN_ROOT / "dev" / "tools" / "session.py"
+_CONTENT_SCAN = CAIRN_ROOT / "dev" / "tools" / "content_scan.py"
 TWIN = CAIRN_ROOT / "templates" / "skills" / "_lib" / "session.py"
 
 

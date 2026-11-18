@@ -42,8 +42,8 @@ import pytest
 from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
-LAUNCHER = CAIRN_ROOT / "bootstrap" / "scaffold.py"
-ENGINE_INIT = CAIRN_ROOT / "bootstrap" / "_scaffold" / "__init__.py"
+LAUNCHER = CAIRN_ROOT / "install" / "scaffold.py"
+ENGINE_INIT = CAIRN_ROOT / "install" / "_scaffold" / "__init__.py"
 
 _TEMPLATES = CAIRN_ROOT / "templates"
 pytestmark = pytest.mark.skipif(

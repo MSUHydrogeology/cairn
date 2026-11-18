@@ -50,10 +50,10 @@ import pytest
 from tests._repo_root import repository_root
 
 REPO_ROOT = repository_root(Path(__file__))
-SCRIPT = REPO_ROOT / "bootstrap" / "container" / "verify-ref.sh"
-ACCEPTANCE = REPO_ROOT / "bootstrap" / "container" / "acceptance.sh"
-PROVENANCE_MD = REPO_ROOT / "bootstrap" / "PROVENANCE.md"
-CONTAINER_DIR = REPO_ROOT / "bootstrap" / "container"
+SCRIPT = REPO_ROOT / "install" / "container" / "verify-ref.sh"
+ACCEPTANCE = REPO_ROOT / "install" / "container" / "acceptance.sh"
+PROVENANCE_MD = REPO_ROOT / "install" / "PROVENANCE.md"
+CONTAINER_DIR = REPO_ROOT / "install" / "container"
 CAIRN_GATE_ROSTER = REPO_ROOT / "dev" / ".cairn" / "allowed_signers"
 
 # The script's documented exit contract.  Named, because a bare ``1`` in an

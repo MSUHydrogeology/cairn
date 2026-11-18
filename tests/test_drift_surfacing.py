@@ -68,7 +68,7 @@ def _cairn_without_git(tmp_path: Path) -> Path:
     shutil.copytree(CAIRN_ROOT / "templates", root / "templates")
     (root / "bootstrap" / "_scaffold").mkdir(parents=True)
     for name in ("config.py", "install.py"):
-        shutil.copy2(CAIRN_ROOT / "bootstrap" / "_scaffold" / name,
+        shutil.copy2(CAIRN_ROOT / "install" / "_scaffold" / name,
                      root / "bootstrap" / "_scaffold" / name)
     if (CAIRN_ROOT / "CITATION.cff").exists():
         shutil.copy2(CAIRN_ROOT / "CITATION.cff", root / "CITATION.cff")

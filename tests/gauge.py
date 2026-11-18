@@ -62,7 +62,9 @@ _GIT_READ_MAX_BYTES = 256 * 1024
 
 def _load_verified_git_read():
     """Execute only the bounded, pinned helper buffer from the fixed tools root."""
-    path = os.path.abspath(os.path.join(_TOOL_DIR, "git_read.py"))
+    path = os.path.abspath(os.path.join(ROOT, "dev", "tools", "git_read.py"))
+    if not os.path.exists(path):
+        path = os.path.abspath(os.path.join(ROOT, "tools", "git_read.py"))
     chain = []
     current = os.path.splitdrive(path)[0] + os.sep
     for part in path[len(current):].split(os.sep):
@@ -166,6 +168,20 @@ class _GitHistoryUnavailable(RuntimeError):
 #: a default -- an unmatched path is reported as unclassified.
 _RULES: Tuple[Tuple[str, str], ...] = (
     ("dev/",                              "dev"),
+    ("tests/test_security",               "security-machinery"),
+    ("tests/test_gate",                   "security-machinery"),
+    ("tests/test_reanchor",               "security-machinery"),
+    ("tests/test_ast_attest",             "security-machinery"),
+    ("install/security_check.py",         "security-machinery"),
+    ("install/SAFETY.md",                 "security-machinery"),
+    ("tests/quality_gate.py",             "security-machinery"),
+    ("install/_scaffold/",               "product"),
+    ("install/scaffold.py",              "product"),
+    ("install/dimensions/",              "product"),
+    ("install/on-ramp/",                 "product"),
+    ("install/",                         "other-machinery"),
+    ("tests/",                           "other-machinery"),
+    ("release/",                         "other-machinery"),
     ("bootstrap/tests/test_security",     "security-machinery"),
     ("bootstrap/tests/test_gate",         "security-machinery"),
     ("bootstrap/tests/test_reanchor",     "security-machinery"),

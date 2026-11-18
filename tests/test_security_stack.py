@@ -2295,7 +2295,7 @@ def _copy_first_binding_fixture(base: Path, member: str, *, wrong_pin=False):
         package = root / "bootstrap" / "_scaffold"
         package.mkdir(parents=True, exist_ok=True)
         for sibling in ("config.py", "security.py"):
-            shutil.copyfile(CAIRN_ROOT / "bootstrap" / "_scaffold" / sibling,
+            shutil.copyfile(CAIRN_ROOT / "install" / "_scaffold" / sibling,
                             package / sibling)
     elif member in {
         "tools/_intent/conflict.py",

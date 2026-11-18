@@ -57,7 +57,7 @@ from install.scaffold import ScaffoldSecurityError, main  # noqa: E402  (the fac
 from install._scaffold import install as INS  # noqa: E402
 
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
-SCAFFOLD = CAIRN_ROOT / "bootstrap" / "scaffold.py"
+SCAFFOLD = CAIRN_ROOT / "install" / "scaffold.py"
 
 #: The fixed name the probe used before it was random.  A folder here used to
 #: make the installer believe links were unavailable.

@@ -51,7 +51,7 @@ import pytest
 from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
-ENGINE_DIR = CAIRN_ROOT / "bootstrap" / "_scaffold"
+ENGINE_DIR = CAIRN_ROOT / "install" / "_scaffold"
 
 # The declared supported minimum floor — >=3.11: the earliest non-EOL Python
 # with meaningful runway (3.8 EOL 2024-10, 3.9 EOL 2025-10, 3.10 EOL ~2026-10).

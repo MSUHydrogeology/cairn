@@ -1088,7 +1088,7 @@ def test_no_message_site_puts_raw_control_bytes_from_project_data_on_the_termina
 # --- the second reflection pruner ---------------------------------------------------
 
 PRUNE_TOOL = CAIRN_ROOT / "templates" / "modules" / "default-on" / "prune_reflections.py"
-PRUNE_TOOL_INSTALLED = CAIRN_ROOT / "tools" / "prune_reflections.py"
+PRUNE_TOOL_INSTALLED = CAIRN_ROOT / "dev" / "tools" / "prune_reflections.py"
 
 
 def _load_prune_tool(path: Path = PRUNE_TOOL):

@@ -61,7 +61,7 @@ pytestmark = pytest.mark.skipif(
 # ---------------------------------------------------------------------------
 
 _SHIPPED_PRESETS = sorted(
-    p.stem for p in (CAIRN_ROOT / "bootstrap" / "profiles").glob("*.yml")
+    p.stem for p in (CAIRN_ROOT / "install" / "profiles").glob("*.yml")
 )
 
 #: Modules only a preset's gate table can bring in (never default-on).
