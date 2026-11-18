@@ -26,7 +26,7 @@ from pathlib import Path
 import pytest
 
 TESTS_DIR = Path(__file__).resolve().parent
-CAIRN_ROOT = TESTS_DIR.parents[1]
+CAIRN_ROOT = TESTS_DIR.parent
 
 
 def _manifest():
