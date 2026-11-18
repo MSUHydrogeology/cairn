@@ -267,6 +267,10 @@ Merged into the coordination section:
 > existence of a rolling-window trigger is the structural
 > rule.
 
+For a separate preview or compaction of completed intent records, see
+`python dev/tools/prune_intents.py --help`; `--dry-run` makes no changes.
+Follow the handoff sequencing below before compaction.
+
 ### Extension — Goodnight intent-hygiene
 
 Two complementary failures motivate the hygiene step. The

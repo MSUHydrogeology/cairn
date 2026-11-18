@@ -19,6 +19,9 @@ memory. The checker does the mechanically-checkable subset: it scans
 a Markdown proposal / plan / doc and hard-flags broken repository
 paths and out-of-bounds line citations.
 
+For coordination files, `python dev/tools/verify_stems.py` checks that cited
+proposal and plan stems resolve to work items; use `--help` for scan options.
+
 ## What the checker covers — and the costlier kind it cannot
 
 Most check-before-you-assert claims are about *what a thing **is***

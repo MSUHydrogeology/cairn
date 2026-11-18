@@ -109,3 +109,24 @@ None.
 This accepts the v0.8 installed-discovery proposal as revised (`light` tier, no plan). New recurring human operations: zero.
 
 **Elapsed:** under 1 minute. **Tokens:** unknown.
+
+## Implementation -- Terra (Implementation) -- 2026-11-18
+
+The published manifest enumerated 101 destinations: 44 guides or templates,
+26 commands, 16 implementation helpers, 13 configuration or placeholder files,
+and two skills. The mapping includes 22 selectable modules. A disposable
+all-module GitHub installation contained all 101 destinations; a separate
+collaborative preset with GitLab exercised its forge files and two onboarding
+guides. The mapping also selects a human `CONTRIBUTING.md` template. Module
+rows and tasks route to selected guidance; folder and normal skill or human
+contexts cover the remaining materials. These are a snapshot, not a permanent
+inventory or a claim that every selection was installed separately.
+
+Added purpose and discovery pointers for stem verification, reflection and
+intent pruning, and both forge label helpers in their selected-module guides.
+In a fresh all-module install, traced selected module rows and tasks to those
+guides and their tools, and the upstream folder guide to its draft template;
+the five tool help commands ran. Claim, link, snippet, neutrality and Cairn
+prose checks passed on the applicable changes under Python 3.13.13. No wording
+tests or full suite were run. No installed item was removed. Elapsed: unknown;
+tokens: unknown.

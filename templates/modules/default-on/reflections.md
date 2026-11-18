@@ -15,6 +15,9 @@ new session pick up where another agent left off — the durable
 record carries decisions; the reflections carry the *experience*
 of getting there.
 
+To preview or prune older reflection dates separately from the session routine,
+use `python dev/tools/prune_reflections.py --help`; `--dry-run` previews deletions.
+
 ## Template content
 
 Merged into `dev/agent_collaboration.md` (or its equivalent

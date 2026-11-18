@@ -30,6 +30,10 @@ made). Without a `forge:`, copy the tree for your forge in by hand.
 Either way, extend `labels.yml` with project-specific routing (e.g. a
 `domain::<area>` set). See `cairn/docs/templates.md` > "issue-capture — forge-specific reference starters".
 
+For the matching forge, `dev/tools/bootstrap_github_labels.py` or
+`dev/tools/bootstrap_gitlab_labels.py` applies the label manifest. Use
+`--help` for options, including a dry run, before accessing the tracker.
+
 ## Template content
 
 ### Issue structures (tracker-agnostic)
