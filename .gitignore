@@ -21,3 +21,4 @@ dev/measurement/collision_log.md
 dev/measurement/snapshots/
 dev/measurement/suite-cost.md
 dev/measurement/suite-runs.jsonl
+dev/.cairn-upgrade/

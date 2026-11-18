@@ -220,7 +220,7 @@ silent gap until the table and its independent sentinels are reviewed together.
 ## Single-sourced with Cairn's own self-check
 
 Cairn runs this **exact** scanner on its own tree:
-`cairn/scripts/check_cairn.py` composes
+`cairn/tests/check_cairn.py` composes
 `content_scan.py` from this same module file, so the methodology's own
 content gate and the tool it hands an adopter are one source — no drift
 between what Cairn preaches and what it ships.
@@ -228,6 +228,6 @@ between what Cairn preaches and what it ships.
 ## Learn it deeply
 
 See the four-layer agent-instruction supply-chain model in
-`cairn/bootstrap/SAFETY.md` (Rules 7–8) and the
+`cairn/install/SAFETY.md` (Rules 7–8) and the
 public `cairn/SECURITY.md` for the threat model this
 scanner is one layer of.

@@ -98,7 +98,7 @@ than bundling a second copy: the full authoring-time check runs
 `claim_check.py` (claims) + `link_check.py` (links) +
 `sync_doc_snippets.py --check` (snippet drift). One source per check, no
 duplication. Cairn itself runs this composition —
-`cairn/scripts/check_cairn.py` imports the
+`cairn/tests/check_cairn.py` imports the
 *shipped* `link_check.py` and `claim_check.py`, so the methodology's own
 gate and the tools it hands an adopter are the same code.
 

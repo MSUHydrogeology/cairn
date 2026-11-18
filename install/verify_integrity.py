@@ -15,7 +15,7 @@ records no files, or any hash mismatch / missing file is a non-zero exit.
 
 Run against an installed target before trusting its scripts:
 
-    python bootstrap/verify_integrity.py --target <repo>
+    python install/verify_integrity.py --target <repo>
 
 Standard-library only. Reuses the lockfile reader from ``scaffold.py`` so
 the schema is single-sourced (this command never writes the lockfile;
@@ -49,8 +49,8 @@ from install._scaffold.install import trusted_upstream  # noqa: E402  (fork-advi
 
 
 #: The slot markers and the customized marker an adopter adds inside a slot
-#: they filled (``bootstrap/BOOTSTRAP.md``), matched the way the merge engine
-#: reads them (``bootstrap/_scaffold/slotmerge.py``).  Inlined, so this trust
+#: they filled (``install/BOOTSTRAP.md``), matched the way the merge engine
+#: reads them (``install/_scaffold/slotmerge.py``).  Inlined, so this trust
 #: check imports nothing from the engine beyond the lockfile reader.  The slot
 #: name is bounded so a crafted file cannot make a match backtrack far.
 _MARKER_RE = re.compile(
@@ -97,12 +97,12 @@ _NOT_CHECKED = (
     "unreadable",
 )
 
-#: The section of ``bootstrap/UPGRADE.md`` the note points to.  A test pins
+#: The section of ``install/UPGRADE.md`` the note points to.  A test pins
 #: that a heading of exactly this name exists there.
 _RECORDING_SECTION = "Recording an edit you made"
 
 #: The customized marker and the token pattern, as the merge engine reads
-#: them (``bootstrap/_scaffold/slotmerge.py``).  Inlined, so this trust check
+#: them (``install/_scaffold/slotmerge.py``).  Inlined, so this trust check
 #: imports nothing more from the engine; a test pins both to the engine's.
 _CUSTOMIZED_RE = re.compile(r"<!--\s*cairn:customized\s*-->", re.IGNORECASE)
 _TOKEN_RE = re.compile(r"\{\{(\w+)\}\}")
@@ -331,7 +331,7 @@ def _slot_note(target: Path, accepted: list, living: list, tokens: object,
         _say("This check keeps only a hash of each file, not its text, so it "
              "cannot show you what changed. Before you record an edit, read "
              "the whole file and confirm your edit is the only change.")
-        _say(f"See bootstrap/UPGRADE.md > {_RECORDING_SECTION}.")
+        _say(f"See install/UPGRADE.md > {_RECORDING_SECTION}.")
 
 
 def _stop_writing_to_stderr() -> None:
@@ -511,7 +511,7 @@ def verify(target: Path) -> int:
                   "your repository (history misses uncommitted edits) and "
                   "confirm that your fill is there and nothing outside its "
                   "slots changed (--finalize records the whole file). Then "
-                  "record it: python bootstrap/scaffold.py "
+                  "record it: python install/scaffold.py "
                   "upgrade --target <repo> --finalize "
                   + " ".join(_plain(path) for path in customized),
                   file=sys.stderr)

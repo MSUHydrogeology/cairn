@@ -87,7 +87,7 @@ the `documentation-tier-home` slot anchors in
 The three blocks below are **paste-into-slot content** the adopter (or
 an agent on first read of this module) merges into the named target
 slot. Cairn's module-merge helper (per
-`cairn/bootstrap/BOOTSTRAP.md` > "Module-merge mechanics") will
+`cairn/install/BOOTSTRAP.md` > "Module-merge mechanics") will
 eventually drive this mechanically via `cairn:merge-target`
 directives; mechanical merge is **deferred for this module** pending
 resolution of the helper's interaction with the install-lockfile
@@ -146,7 +146,7 @@ After install, the adopter customizes `docs/DOCUMENTATION_PLAN.md`:
   consistently.
 
 The `<!-- cairn:customized -->` marker (per
-`cairn/bootstrap/BOOTSTRAP.md` > "Module-merge mechanics") signals
+`cairn/install/BOOTSTRAP.md` > "Module-merge mechanics") signals
 adopter customization to the fidelity check + the merge helper.
 Adopters who customize the cross-reference paragraphs above (e.g.,
 to point at a different placement-doc filename) should add the
