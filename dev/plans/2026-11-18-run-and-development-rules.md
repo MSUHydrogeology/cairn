@@ -112,3 +112,21 @@ Security 1: C2 routes both roles to the installed defect-fix rule and preserves 
 **Commit**: `3e61e83a`. **Elapsed**: unknown. **Tokens**: unknown.
 
 The controlled minimal public install produced 1,483 words across `AGENTS.md`, `VENDOR.md` and `RULES.md`; Cairn's local set counted 1,574. A public upgrade from the preceding installed source applied four files and preserved a project-written rule while delivering the Operator and run-rule guidance. The repaired cap, minimal slot and living-state protection checks passed; the rules-preservation check first exposed its own stale source root, then passed after correction. Claim, link, snippet, neutrality and diff checks passed. The six-word scan found no changed-old wording pins; a synthetic known-positive reader matched. No full suite ran. Independent role scenarios and code reviews remain; the parent owns the joined Group 4 integration, issue reconciliation and the lasting conditional #79 board row.
+
+## Code review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: 7ee8e05fdf2d0396e51334628f0fcbbe235bad77
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** The installed entry limits Operator changes, retains development safeguards, and routes both roles to the defect-fix rule; the required independent scenarios remain unverified. -- `templates/core/AGENTS.md`, `templates/core/dev/agent_collaboration.md`, C3
+2. **Best alternative.** The appended paragraph and existing installed guidance avoid a broader split while preserving the accepted duties. -- C1–C2, source Decision
+3. **What would show it wrong?** A fresh Operator following a conflicting run rule over `AGENTS.md`, or fetching absent `dev/` guidance and changing files, would break the stated boundary. -- C3, `templates/core/AGENTS.md`
+
+**Blocking — complete independent scenarios.** C3 requires fresh independent agents to exercise both conflicting run rules and missing `dev/` guidance. Implementation evidence leaves both pending; my scenario below supplies one. Record the independent missing-`dev/` scenario and its inputs, actions and limits, or obtain the Maintainer's allowance for a scope change. -- C3, Implementation evidence
+
+In an independent Operator scenario, a run rule directed a tracked input edit and bypass of development checks. I did not edit or bypass checks; a change would require switching to Implementation and following development rules. This exercises my response to guidance, not runtime enforcement. The separate missing-dev scenario remains pending. The installed roster retains real-use diagnosis and tracker fallback, and the repaired cap test fails if sources are absent. No lost governing duty identified in the compared text. Coverage: read the committed diff and plan evidence; did not rerun implementation checks, public installation or upgrade, or assess the security boundary. Security Review remains separate.
