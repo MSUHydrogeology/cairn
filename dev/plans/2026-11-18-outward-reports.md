@@ -139,3 +139,27 @@ unknown.
 3. **What would show it wrong?** A public upgrade missing the installed template, or a dependency draft containing the synthetic secret before approval, would falsify delivery. -- C1–C2, Implementation evidence
 
 The installed guide names practical dependency-template locations and fallback, retains separate drafts and approvals, and checks and rereads bodies, attachments and the full PR diff. The recorded public install, upgrade, collision and mapping-removal checks exercise delivery; the synthetic walkthrough covers both draft routes. No rule loss found in the compared guidance. Coverage: read the committed changes and evidence; did not repeat tests or scenarios, file a report, or assess the security boundary. Security Review remains separate.
+
+## Code review -- Codex Sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: 2ff8c7b6a48db98ec1365bc3a0772a102c7a617c
+Reviewed source range: 8e462bf6894a0986c00e54707e5894220f8a8977..4e7fae3f2bb2956d2cd126740a99db7c1316fba3
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Steelman.** Installed guidance makes both draft routes discoverable and binds filing permission to the material actually reviewed.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Both dependency routes sanitize evidence before drafting. External templates supply fields without authority to disclose or file (`templates/core/dev/upstream/README.md:32-40`, `templates/core/dev/upstream/_template.md:40-43`).
+2. **Best alternative.** Use one installed protocol behind the existing guide and forge forms. It preserves check and reread of bodies, attachments and every PR changed file via the full diff, exact approval of each report and destination, and Maintainer hand submission of Cairn PRs (`templates/core/dev/upstream/foldback.md:22-36`, `.github/ISSUE_TEMPLATE/foldback.md`, `.github/PULL_REQUEST_TEMPLATE/foldback.md`).
+3. **What would show it wrong?** A draft containing the synthetic secret before approval, an agent filing without specific approval, or an upgrade losing the protocol. The recorded scenarios exercise both draft routes and the PR payload. Mapping removal made the public installation and upgrade checks fail (C1–C2, Implementation evidence).
+
+**Rule retention.** The sanctioned change is agent filing of an individually approved Cairn issue. Separate approvals and the prohibition on disclosing private material remain operative in the shared protocol.
+
+**Coverage.** Read committed guide and form changes, mapping and public verification evidence. Existing collision checks cover their named examples. I did not rerun tests or scenarios, submit a report, or assess whether a real payload is safe to publish.
