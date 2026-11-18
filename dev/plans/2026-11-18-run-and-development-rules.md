@@ -106,3 +106,9 @@ Reviewed commit: 86ea4e165e958672919307448ad403753fe9a5ab
 Ordinary 1: Verification now directs the old-text six-word reader scan, deletion of wording pins, and focused public-output and protection checks. Ordinary 2: C3 gives #79's wider split a separate conditional board home and closes only complete issues.
 
 Security 1: C2 routes both roles to the installed defect-fix rule and preserves diagnostic and tracker-fallback duties in installed guidance. Security 2: C1 no longer invents a starter pointer; existing guidance routes development. Security 3: C3 repairs the incorrect test root and silent skip, and counts generated public-install output. A controlled minimal install measured 1,392 words; a concrete 78-word paragraph leaves 30 for the starter addition. The cap remains a measured condition, not a claim about arbitrary adopter text. These resolve the reviewed scope without a new boundary. No implementation or suite was run.
+
+## Implementation evidence -- Terra -- 2026-11-18
+
+**Commit**: `3e61e83a`. **Elapsed**: unknown. **Tokens**: unknown.
+
+The controlled minimal public install produced 1,483 words across `AGENTS.md`, `VENDOR.md` and `RULES.md`; Cairn's local set counted 1,574. A public upgrade from the preceding installed source applied four files and preserved a project-written rule while delivering the Operator and run-rule guidance. The repaired cap, minimal slot and living-state protection checks passed; the rules-preservation check first exposed its own stale source root, then passed after correction. Claim, link, snippet, neutrality and diff checks passed. The six-word scan found no changed-old wording pins; a synthetic known-positive reader matched. No full suite ran. Independent role scenarios and code reviews remain; the parent owns the joined Group 4 integration, issue reconciliation and the lasting conditional #79 board row.
