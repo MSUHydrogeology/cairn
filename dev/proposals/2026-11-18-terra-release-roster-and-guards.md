@@ -1,7 +1,7 @@
 # Refresh the release roster and decide held guards
 
 **Author**: gpt-6.1-terra (Implementation, Medium)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the protected release roster and guard tests may change
 **Plan review**: required(Internal + Internal Security Review)
@@ -142,3 +142,15 @@ If choosing B, the Maintainer may explicitly authorize one further focused
 Security Review of the capped code for the exact question and scope in the
 Proposal. The proposal and its reviews grant no such authorization. The choice
 and any authorization remain the Maintainer's. Elapsed: unknown; tokens: unknown.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-18
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Accept both as revised, choosing Option B and authorizing the one scoped Security Review pass on #1, implemented in the plan."
+
+This accepts the proposal as revised (`heavy` tier), choosing **Option B** (retire eligible held guards in the same baseline update where a public test preserves protection) and **explicitly authorizing one further focused Security Review pass** on the exact question and scope in the Proposal (*"would removing the identified held guards leave a public path to unsafe writes, bypassed containment or a false release-gate pass without a retained check?"*, scoped to the proposed guard removals, their retained public witnesses, and affected roster/reference changes), to be implemented in the plan. New recurring human operations: zero (aside from the one-time release baseline re-anchor).
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
