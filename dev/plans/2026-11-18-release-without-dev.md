@@ -64,3 +64,20 @@ Expected work: several focused sessions; installer migration and platform covera
 ## Verification
 
 Before implementation select changed-file checks with `python tests/tier_inventory.py for <paths>` and run only applicable public-promise tests, plus claim, link, snippet and neutrality gates for prose. Use `/Users/kendal30/conda_envs/lhm/bin/python3.13`. Map report cases to `tests/test_doc_drift_tools.py` through the installed link-checker entry, installation and upgrade to their existing public entry tests, and both test locations to the public test-selection entry. Include a known-positive forbidden reference despite an ordinary allowance, and a clean classified control. Preserve applicable protected-surface checks, independent ordinary and Security code reviews and negative install/upgrade controls. Independent scientific check: N/A, as accepted. Record benefit versus cost and separate human operations' unpassed evidence before archive.
+
+## Plan review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: 9080b56be3924e018358bddb032da00af4fc6d10
+**Obligation**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the plan retains the advisory report, project-owned content, entry-file exception, optional test locations and scratch guidance without adding a release gate. -- Scope, C1–C4, accepted Proposal
+2. **Best alternative.** Extend the installed link checker and existing installer rather than add a packager or second report runner; the separate release module retains its later work. -- Scope, Reuse, Source proposal
+3. **What would show it wrong?** An installed report missing a known forbidden reference despite an allowance, or reporting unreadable or unclassified input as clean, would falsify the boundary. -- C1, Verification
+
+The specified scope, inventory and result rules make the report actionable for implementation; raw-cache descendants remain inventoried and may produce honest advisory findings. The longer opening earns its detail by defining that boundary and failure behavior. The Operator stop and existing entry duties remain; folder listings record permission rather than grant it. Public checks and negative controls target outcomes rather than prose pins; parent integration and human release operations are separate. Coverage: compared the committed plan with its accepted proposal and review rules; did not run a report, installer, upgrade or tests, or assess the security boundary. Security Review remains separate.
