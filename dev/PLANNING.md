@@ -16,7 +16,7 @@ together with any proposal awaiting your Decision.
 
 ### Folder-purpose correction
 
-**Waiting on Maintainer**: authorize one focused additional plan Security Review of the overlooked release-checker placement and container launch paths. The [layout plan amendment](plans/2026-11-17-repository-layout.md) is committed; ordinary review is underway. The two-pass limit requires explicit authorization. This is not a request to rerun test suites.
+The Maintainer authorized the focused additional plan Security Review on 2026-11-18 (`80303622`). The [layout plan amendment](plans/2026-11-17-repository-layout.md) has ordinary acceptance (`96326258`); Sol is reviewing only the changed release-checker placement and container launch protections, without rerunning suites. Resume the affected repairs after disposition.
 
 Both morning proposals are accepted, with Decisions committed: [release secrets scanning](proposals/2026-11-17-codex-release-secrets-scan.md) (`ff29e0b1`) and [release without the development folder](proposals/2026-11-17-codex-release-without-dev.md) (`c1ed4bd2`). Their heavy-tier plans follow the layout; neither capability nor the real release scans are claimed complete.
 
