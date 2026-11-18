@@ -1,7 +1,7 @@
 # Plan: Offer unselected modules
 
 **Source proposal**: dev/proposals/archive/2026-11-18-terra-module-offers.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md
@@ -102,3 +102,17 @@ No full suite or wording tests were run. Elapsed: unknown; tokens: unknown.
 3. **What would show it wrong?** An upgrade plan writing files, or a task-time offer adopting without a yes or inventing an unavailable description, would falsify the outcome. -- C2, Implementation evidence
 
 The onboarding route points to installed collaboration guidance; the separate rules-folder threshold, answer and approval duties remain. No governing duty was removed in the reviewed changes. Existing public promise tests and disposable scenarios are recorded in implementation evidence; no wording test was added. Coverage: read the committed changes, plan and evidence; did not repeat tests or scenarios, inspect every module description, or verify the five historical claim flags independently.
+
+## Completion -- Codex (Implementation) -- 2026-11-18
+
+The independent code review accepted the unchanged implementation without
+findings. Its focused public checks and synthetic walkthroughs satisfy the plan;
+joined integration remains with the arc owner. No new recurring mechanism,
+approval step or follow-up was introduced.
+
+**Benefit versus cost**: worth it -- useful module offers reuse existing source
+descriptions and adoption commands; cost four guidance files, 65 insertions and
+one deletion, plus two focused tests in 2.01 seconds under Python 3.13.13.
+Always-loaded words and installed file count did not change. Aggregate agent
+time and tokens are unknown. Revisit if offers become repetitive or sources no
+longer provide useful descriptions.
