@@ -62,3 +62,25 @@ N/A: no scientific assumption or result touched.
 ## Assurance path
 
 Usual and Security proposal review, a heavy plan with internal and Security review, then implementation and independent code and Security review. No external report is filed for verification. Elapsed: unknown; tokens: unknown.
+
+## Review -- Terra (ordinary Reviewer) -- 2026-11-18
+
+Reviewed commit: `73c2a6c5723c6d6b1b50767ec97b54417b67e04e`
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: a local draft and per-report approval make both channels usable without automatic publication; the installed mapping makes heavy assurance appropriate. Evidence: `dev/PLANNING.md` Group 4, outward-report row; `dev/rules/protected-surfaces.md`.
+2. **Best alternative.** A pointer to existing forge forms costs less but leaves adopters without the form; reuse the dependency template and fixed forge paths as proposed. Evidence: `dev/upstream/README.md`; `.github/ISSUE_TEMPLATE/foldback.md`.
+3. **What would show it wrong?** A disposable fresh install or upgrade missing the draft, or a synthetic report reaching filing without its own approval, would falsify the route. Evidence: proposal, Evidence / verification plan.
+
+**Steelman and audience.** The summary gives a person the choice without translation; the collaboration guide is the right agent-facing route. Costs of the new installed file, mapping and maintenance are identified but unmeasured.
+
+**Blocking — preserve the full export boundary.** The proposal replaces the forms' protocol with a new source but names only unpublished data and credentials. Both existing forms also prohibit proprietary project or customer detail; the PR form applies the check to every changed file as well as its body. Preserve those duties and the final reread in the shared protocol and relevant forge fields, with a synthetic PR example covering its diff. The direction permits an agent to file after specific approval, so explain that intentional change from the forms' current human-submission rule. Evidence: `.github/ISSUE_TEMPLATE/foldback.md`, Export-safety affirmation; `.github/PULL_REQUEST_TEMPLATE/foldback.md`, Export-safety affirmation; `dev/PLANNING.md` Group 4, outward-report row.
+
+**Coverage.** Read the proposal, board row, existing draft and both forms; did not execute installation, file a report, or independently assess the security boundary. Security Review remains separate.
