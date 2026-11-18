@@ -96,3 +96,19 @@ Python 3.13: the two required onboarding files yielded 48 passes and three failu
 **Benefit versus cost**: unknown -- new adopters can find guidance for two audiences; cost 115 installed module words, three small seed tasks and six parameterized install cases; remaining upkeep and agent impact unknown. Revisit if task completion or stale guidance shows continuing burden exceeds benefit.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Code review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: f6f9e379131478106d0b5da09cd90b8dcfdff07f
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the human guide explains practice, routed conventions remain operative, and three tailored tasks work with or without the installed module. -- `docs/style_guide.md`, `dev/rules/conventions.md`, `templates/onboarding/`
+2. **Best alternative.** Reuse the existing rules route, documentation module and seed renderer without a generator or synchronization pin. -- `RULES.md`, `templates/modules/default-on/documentation-plan.md`, Scope
+3. **What would show it wrong?** An opt-out task requiring the missing module or a reinstall replacing a project board would falsify delivery. -- `tests/test_onboarding_slot_substitution.py::TestInstallPath::test_style_task_delivered_with_or_without_module`, `tests/test_onboarding_seed_roster.py`, Implementation evidence
+
+The guide confines drift to optional preferences and preserves binding security, dependency and licensing duties. The survey recorded differing header practices rather than imposing a uniform rule; the README edits retain indexing and exclusions. Public delivery and board-preservation checks and three negative controls are recorded; no wording or sync pin was added. Coverage: read the committed guide, conventions, seeds, test changes and evidence; did not repeat tests or scenarios, independently survey every file, or assess the security boundary. Security Review remains separate.
