@@ -44,3 +44,20 @@ Update `examples/minimal/`, `examples/scientific-minimal/`, a short index in `ex
 ## Verification
 
 Before implementation select tests with `python tests/tier_inventory.py for <changed paths>` and run those applicable, plus claim, link, snippet and neutrality gates under `/Users/kendal30/conda_envs/lhm/bin/python3.13`. Inspect readers and byte pins; no permanent wording pins. Execute every documented command through its public entry, checking output and exit status; compare the independent hand calculation in units with the residual, and use the inverted-sign fault and unbalanced input as negative controls. Verify the prior revision is compatible before asserting the upgrade worked; absent or failed evidence keeps the work open. Temporary probes leave before archive. Tree certification and release operations retain existing triggers.
+
+## Plan review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: 651ec346e21d6f1bb7f1e7bc204d82fc6846dca3
+**Obligation**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: four reproducible workflows retain the independent scientific check, managed-file upgrade and bounded handoff without treating sample records as real assurance. -- C1–C3, accepted Proposal
+2. **Best alternative.** Extend the two existing runnable projects and public upgrade path rather than maintain a tutorial framework or another application. -- Scope, Reuse
+3. **What would show it wrong?** A sign inversion surviving the independent expected-value check, or a managed customization lost after staged review and apply, would falsify the result. -- C1–C2, Verification
+
+The named local revision is an input; compatibility is an implementation check, not a human gate. Public checks cover scientific output and actual upgrade behavior without wording pins; parent-owned joined integration remains under the project verification rule. Coverage: compared the committed plan with the accepted proposal and review rules; did not run examples, inspect fixture compatibility or test an upgrade. No governing doctrine changes are planned.
