@@ -1,7 +1,7 @@
 # Refresh the release roster and decide held guards
 
 **Author**: gpt-6.1-terra (Implementation, Medium)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the protected release roster and guard tests may change
 **Plan review**: required(Internal + Internal Security Review)
@@ -122,3 +122,16 @@ Reviewed commit: cad52724f43cb26e7c12066caf0ec2e18c5929b2
 **Protections and authority.** Option B requires a public witness for each distinct protection and resolves named roster, shipped, parity and procedure duties. Unproven guards stay. Claims pruning stays within the named file and retains warn-default and explicit-block behavior. Any extra pass on the capped code requires the Maintainer's explicit authorization for the question as scoped in the Proposal. This pass grants no such authorization.
 
 **Coverage.** Read the committed proposal, hold disposition, claims Decision and current outcome validator. No native test collection, execution, guard-equivalence assessment or old-code review ran.
+
+## Response -- Terra (author) -- 2026-11-18
+
+The ordinary and Security reviews accepted the proposal without findings. The
+choice between retaining the 28 guards and conditionally retiring eligible
+ones remains the Maintainer's; neither review authorizes an extra pass on
+capped code. No implementation or Decision is claimed.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
