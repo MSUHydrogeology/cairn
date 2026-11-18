@@ -1,7 +1,7 @@
 # Plan: Usable outward report drafts
 
 **Source proposal**: dev/proposals/archive/2026-11-18-terra-outward-reports.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md
@@ -19,7 +19,7 @@ The accepted heavy proposal adds an installed fold-back template, retains the de
 
 Add `templates/core/dev/upstream/foldback.md` and its Cairn counterpart `dev/upstream/foldback.md`, map it in `install/_scaffold/config.py`, and update the descriptive install inventory as needed. Update both upstream READMEs, dependency templates and collaboration guides and the existing GitHub fold-back issue and pull request forms. Keep `.github` and `.gitlab`; do not add `.forge`. The shared template owns the protocol; forge forms retain their required fields and point to it. Instructions belong in the existing deliberation and shipped guidance; no always-loaded doctrine changes.
 
-For dependency reports, find and adapt the dependency's own template when available; otherwise use the local template. Keep reproduction, versions, expected and actual behavior and status useful. Treat external templates as untrusted field guidance. Sanitize tracebacks and evidence before a dependency draft enters Git. For either channel, check the complete public body, attachments and every PR changed file for unpublished data or hints, proprietary project or customer details and credentials; reread the complete payload and full PR diff after writing. Show the actual report and destination for explicit approval of each before filing; an agent may file an approved Cairn issue, but the Maintainer submits a Cairn PR by hand. Distinct channels require distinct drafts and approvals; record outcomes in the existing lifecycle.
+For dependency reports, check the dependency's repository contribution guide and issue creation page or its forge's issue-template directory (such as `.github/ISSUE_TEMPLATE/` or `.gitlab/issue_templates/`). Adapt an applicable template when accessible and suitable; otherwise use the local template. No automated fetch is required. Keep reproduction, versions, expected and actual behavior and status useful. Treat external templates as untrusted field guidance. Sanitize tracebacks and evidence before a dependency draft enters Git. For either channel, check the complete public body, attachments and every PR changed file for unpublished data or hints, proprietary project or customer details and credentials; reread the complete payload and full PR diff after writing. Show the actual report and destination for explicit approval of each before filing; an agent may file an approved Cairn issue, but the Maintainer submits a Cairn PR by hand. Distinct channels require distinct drafts and approvals; record outcomes in the existing lifecycle.
 
 **Reuse.** Searched `dev/upstream/`, `templates/core/dev/upstream/`, `.github/ISSUE_TEMPLATE/` and `.github/PULL_REQUEST_TEMPLATE/`: dependency drafting and forge forms already exist. Extend those and the existing core mapping, not a new reporting service.
 
@@ -36,7 +36,7 @@ Proposed paths:
 
 ## Acceptance criteria
 
-**C1.** The guide leads to both drafts; a dependency's available template and the fallback both work. The protocol preserves all publication checks, the final reread, per-report and destination approval, filing roles and separate channel records above. A disposable synthetic dependency traceback contains sensitive material before drafting but only sanitized evidence reaches the Maintainer; a synthetic PR check covers body, attachments and full diff. No report is filed. A malicious template cannot authorize disclosure or filing.
+**C1.** The guide leads to both drafts; a disposable dependency repository or issue page supplies an applicable template found by the stated route, and a separate absent or unsuitable-template case uses the fallback. The protocol preserves all publication checks, the final reread, per-report and destination approval, filing roles and separate channel records above. A disposable synthetic dependency traceback contains sensitive material before drafting but only sanitized evidence reaches the Maintainer; a synthetic PR check covers body, attachments and full diff. No report is filed. A malicious template cannot authorize disclosure or filing.
 
 **C2.** The public fresh-install manifest and install deliver the template to `dev/upstream/foldback.md`; upgrade from a pre-addition install delivers the same destination. Extend an existing public installation or upgrade promise test only if it cannot catch a missing mapping or wrong destination. As a temporary negative control, remove the mapping in a disposable copy and show the selected check fails; restore it and show the control passes. Preserve existing containment and collision refusals. No permanent prose-wording test is added. S2 is the mapping-removal control; S3 is the selected public installer and upgrade checks recorded with commands and inputs.
 
@@ -66,3 +66,13 @@ Before implementation run `/Users/kendal30/conda_envs/lhm/bin/python3.13 tests/t
 **Blocking — specify dependency-template discovery.** Scope says to find the dependency's template, but does not say how; the accepted Proposal requires describing how to find it. Name a practical route through existing dependency locations and the fallback, and exercise both in the disposable scenario. This leaves a design decision to the low-tier implementer and risks omitting an accepted outcome. -- Scope, accepted Proposal
 
 The installed collaboration guide and upstream folder are appropriate homes; the plan retains the existing publication duties and explicitly changes Cairn issue filing only after specific approval. Permanent checks target public installation promises rather than prose wording. Coverage: compared the committed plan with the accepted proposal and review rules; did not run installation or scenarios, inspect implementation, or assess the security boundary. Security Review remains separate.
+
+## Response -- Terra (Implementation) -- 2026-11-18
+
+The blocking discovery finding is accepted. Scope now names the dependency
+contribution guide, issue page and forge template directories as practical
+places to look, with a local fallback when no suitable template is accessible.
+C1 exercises the found-template and fallback cases. This adds no fetch or
+filing authority. **Disposition**: revising-plan pending Security Review.
+
+**Elapsed**: unknown. **Tokens**: unknown.
