@@ -108,3 +108,27 @@ The implementation and public checks are in `32037a03`; the direct-link, unreada
 
 **Elapsed**: unknown
 **Tokens**: unknown
+
+## Code review -- Codex Sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: a6fa653aaec59628a0dd45f7eb031a9732d057e0
+Reviewed measurement source range: fc880f8ea6bd336c85aa96d68f7711bcee2f86ab..089c678f6bb711780fe55aaf6813d54f7e85227a
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Steelman.** A fixed JSON registry lets adopters customize counts while shipped Python remains integrity-checked.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes once attempted markers cannot vanish across a line break. The checker validates the contained registry before reading annotations and dispatches four fixed operations (`templates/modules/default-on/measurements.py:249-304`, `templates/modules/default-on/verify_counts.py:173-189`).
+2. **Best alternative.** Preserve the existing module and integrity paths, the caller-pinned bounded helper, and the exact-root check with a revision-only Git invocation (`install/_scaffold/lockfile.py:215`, `templates/modules/default-on/measurements.py:27-125`, `templates/modules/default-on/measurements.py:224-246`).
+3. **What would show it wrong?** A local edit lost on upgrade, a changed helper accepted, or a malformed attempt reported as zero checks (`tests/test_upgrade_module_additions.py`, `tests/test_verify_counts.py`, C1–C3).
+
+**Blocking — recognize a marker opener across whitespace.** Scope covers every HTML comment beginning with optional whitespace and `verify:`. The scanner splits the document first, so an opener `<!--` followed by a newline and `verify: key -->` never reaches the malformed-marker branch. It can exit 0 with zero checks. Recognize attempted openers across whitespace and reject cross-line attempts under the same-line rule. Add this case to the existing installed malformed-marker checks (`templates/modules/default-on/verify_counts.py:60-75`, `tests/test_verify_counts.py`).
+
+**Coverage.** Read committed code, module ownership and existing install, integrity, upgrade and refusal evidence. Guide additions retain the existing duties. No checks were rerun. Native Windows, signing and joined integration were outside this pass.
