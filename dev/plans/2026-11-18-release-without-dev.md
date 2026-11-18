@@ -1,7 +1,7 @@
 # Plan: Release without the development tree
 
 **Source proposal**: `dev/proposals/archive/2026-11-17-codex-release-without-dev.md`
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: `dev/rules/conventions.md`, `dev/rules/working-agreements.md`, `dev/rules/protected-surfaces.md`
@@ -27,7 +27,7 @@ Extend the installed link checker with `python dev/tools/link_check.py --release
 
 Use the pinned Git reader and exact Git top-level check to inventory all tracked working-tree paths, without ordinary Markdown filters or a walk fallback. Unmatched selectors, unclassified paths outside `dev/`, overlapping classes, unavailable inventory or unsafe inputs are incomplete. Read working-tree bytes only for kept files, scope and `dev/README.md`, refusing linked/reparse components, nonregular, missing, unreadable, out-of-tree, non-UTF-8 or NUL-containing files; no external probes or target reads. Reuse raw Markdown link/reference patterns independent of allowances; resolve local Markdown targets relative to their source (`/` means root), decode URL escapes once and strip query/fragment. Also identify literal root-relative `dev/` tokens, including backticks and Windows separators. Report lexical references whether targets exist; identify root `AGENTS.md` pointers as exempt. Document these literal limits and that untracked files and indirect dependencies are outside coverage.
 
-Derive every `dev/` folder ancestor from tracked names. Find missing indexed regular READMEs, top-level folders absent from first-column backticked `name/` rows under `## The tree`, and indexed scratch names other than its README and ignore file, even when missing on disk. Generated cache descendants remain in this inventory; document them at the owning `.cairn` README without writing into the raw-template cache. Print deterministic findings, incomplete reasons and `WITH FINDINGS`, `INCOMPLETE` or `CLEAN`; findings alone exit 0, incomplete exits 2 even with findings. The mode is advisory, not a gate.
+Derive every `dev/` folder ancestor from tracked names. Preserve index modes and stages from the pinned Git inventory; `_tracked_index_paths` discards them. A folder README qualifies only with a regular stage-zero index entry. Use the `dev/README.md` table only when it qualifies and its contained working-tree read succeeds; otherwise report incomplete alongside known missing-guide findings. Find missing indexed regular READMEs, top-level folders absent from first-column backticked `name/` rows under `## The tree`, and indexed scratch names other than its README and ignore file, even when missing on disk. Generated cache descendants remain in this inventory; document them at the owning `.cairn` README without writing into the raw-template cache. Print deterministic findings, incomplete reasons and `WITH FINDINGS`, `INCOMPLETE` or `CLEAN`; findings alone exit 0, incomplete exits 2 even with findings. The mode is advisory, not a gate.
 
 **Reuse.** `templates/modules/team-gated/link_check.py` already installs as `dev/tools/link_check.py` and supplies local parsing and the pinned Git reader; `install/_scaffold/config.py` owns installed destinations. Searches of those paths and `templates/core/dev/` found existing installation and folder guidance, not a release-boundary report. Extend those homes rather than add a second packager or report runner. No published methodology change.
 
@@ -49,7 +49,7 @@ Expected work: several focused sessions; installer migration and platform covera
 
 ## Acceptance criteria
 
-**C1.** Through the installed report, a kept file's reference to an existing `dev/` target is a finding despite an allowance; a classified development guide and retained `AGENTS.md` pointer are distinguished. Missing or unlisted folders and forced-tracked scratch are findings; a fully classified clean fixture is clean. Unclassified, out-of-tree, unreadable, skipped or unavailable inventory is incomplete. Findings alone exit 0; incomplete exits 2. No project content executes, external links are probed or files change.
+**C1.** Through the installed report, a kept file's reference to an existing `dev/` target is a finding despite an allowance; a classified development guide and retained `AGENTS.md` pointer are distinguished. Missing or unlisted folders and forced-tracked scratch are findings; an untracked root list or a nonregular indexed root guide replaced by a regular working-tree table cannot satisfy membership and reports incomplete; a fully classified clean fixture is clean. Unclassified, out-of-tree, unreadable, skipped or unavailable inventory is incomplete. Findings alone exit 0; incomplete exits 2. No project content executes, external links are probed or files change.
 
 **C2.** Fresh install and upgrade preserve project-owned content and collision protections; each mapped or explicitly created development folder has a purpose-specific README, generated cache descendants are described at their owner, top-level folders are listed, and the two tracked scratch files survive while other scratch content is ignored. Folder guidance records, but never grants, permission. Git ignore is not described as confidentiality.
 
@@ -114,3 +114,11 @@ stop, optional root rules, scratch privacy and cache-byte preservation.
 **Coverage.** Compared the accepted proposal and committed plan with the
 scanner, installation destinations and directory creation. Runtime probes,
 native-platform checks and installer runs were outside this pass.
+
+## Response -- Terra (Implementation) -- 2026-11-18
+
+**Disposition**: ready-to-implement
+**Elapsed**: unknown
+**Tokens**: unknown
+
+Accepted the index-evidence finding. Scope now retains index mode and stage, requires a regular stage-zero README and a contained readable root table, and reports incomplete when that table is unavailable. C1 adds installed-command controls for untracked and nonregular indexed root guides. This restores the accepted tracked-folder report without changing its boundary.
