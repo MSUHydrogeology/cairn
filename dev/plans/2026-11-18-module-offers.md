@@ -43,3 +43,20 @@ At a task-time need, consult installed inventory and onboarding plus an accessib
 ## Verification
 
 Before implementation run `/Users/kendal30/conda_envs/lhm/bin/python3.13 tests/tier_inventory.py for <all changed paths>` and inspect applicable tests and byte pins. For the changed public promises run the canonical interpreter with `-m pytest tests/test_upgrade.py::TestUpgradeModes::test_plan_writes_nothing tests/test_upgrade.py::TestAdoptModule::test_adopt_installs_missing_and_records`; extend an existing promise only if it cannot distinguish the C2 fault. Run the disposable scenarios in C2 using public `install/scaffold.py upgrade --plan` and `--adopt-module`, recording inputs and observed tree changes. Run claim check on changed documents and standing claim, link, snippet, neutrality and prose-integrity gates; test negative searches against known positives. Record results, limits, elapsed and tokens. Independent code review follows. The arc owner runs the joined integration once at the arc end; it is not a prerequisite to this plan's completion.
+
+## Plan review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: ef1851d6707aeef4845f228673c57a408f51d968
+**Obligation**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: upgrade and task-time offers retain explicit choice, truthful deferral, and the existing rules-folder behavior. -- Scope, C1–C2, accepted Proposal
+2. **Best alternative.** Existing source descriptions, the public plan and adoption command avoid a new trigger engine or refusal store while covering later needs. -- Scope, Reuse
+3. **What would show it wrong?** A disposable plan that writes, adoption without a yes, or a task-time offer invented when descriptions are unavailable would falsify the result. -- C2, Verification
+
+The plan names accessible verified source guidance and an honest fallback when it is unavailable. Its scenarios cover both; permanent tests are limited to public promises, not wording. Installed collaboration and onboarding guidance are appropriate homes, and the existing rules-folder duties are retained. Coverage: compared the committed plan with the accepted proposal and review rules; did not run installer or scenarios, inspect implementation, or inspect every module description.
