@@ -152,3 +152,26 @@ Reviewed range: d06c0fc4^..dd74d132
 **Rule retention.** The added release guidance preserves entry-file duties and the Operator stop; no removed test callers were found in the reviewed test diff.
 
 **Coverage.** Read the accepted scope, implementation, mapped controls, installer mappings and changed entry guidance; repeated the reuse search and checked its positive matches. The URL probe was a library-level check, not a replay of the installed command. Did not replay suites, inspect every installed folder, run native Windows, or perform Security Review. C4's installed-project integration and lock inspection remain pending; the implementation record does not claim they passed. No fenced chunk or deviation request appears in this range.
+
+## Code review -- Codex Sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: dd74d132744066d4cd3c841b51c7edaf2293002e
+Reviewed range: d06c0fc4^..dd74d132
+
+**Obligation**: Internal Security Review
+**Verdict**: REVISE
+**Bounding**: WIDER RUN REQUIRED. Extend the installed report checks with the focused cases below.
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, once the read stays inside the checkout and available findings survive incomplete index evidence. See C1 and `_boundary_read` / `_boundary_index` in the installed link checker.
+2. **Best alternative.** Keep the pinned Git reader and walk from a bound root handle. Adapt the no-follow `dir_fd` traversal in `install/_scaffold/security.py`. On Windows use no-reparse opens relative to parent handles; return incomplete where binding fails.
+3. **What would show it wrong?** A redirected read, a literal backslash name classified as a different Git path, or a conflicted root guide suppressing another missing guide. The installed-command fixture reproduced the last case. `PureWindowsPath` confirmed nested drive rebasing.
+
+**Blocking findings**
+
+- Ancestor `lstat` checks leave path lookup unbound. Nested Windows drive components can also rebase the joined path. Bind traversal and validate each component before opening. Check ancestor replacement and drive-qualified components, with native Windows evidence for its read path.
+- Preserve exact NUL-delimited Git names and all index stages. Replacing backslashes changes POSIX identity. A two-stage `dev/README.md` conflict returned only `INCOMPLETE`, dropping the fixture’s known missing folder guide. Require both results plus exit 2, and check exact name classification.
+
+**Rule retention and coverage.** Entry duties, scratch privacy and existing destination guards remain. No tests were removed. Read the installed checker, mappings, scope and committed controls. No suite replay, native Windows, concurrent mutation run or release integration. The reviewed plan history contains no reached fence or deviation request.
