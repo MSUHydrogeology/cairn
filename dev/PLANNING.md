@@ -36,6 +36,16 @@ Their records live in the named plan or commit.
 
 **Waiting on Maintainer**: perform the grouped re-anchor at the v0.8 cut for the reviewed frozen-file and engine changes. The [adopter-defects plan](plans/archive/2026-11-16-adopter-defects-0-7-0.md), [Meter runtime plan](plans/archive/2026-11-16-meter-reads-only-new-bytes.md), [full Pulse plan](plans/archive/2026-11-17-full-pulse-rollout.md) and [release-test plan](plans/archive/2026-11-16-release-tests-shipped-only.md) are archived; the expected legacy and new AST mismatches remain unpassed. The six frozen-file edits in the release-test plan join this group and remain unpassed until re-anchor. The first full strict release records and join, including native Windows evidence, also remain unpassed; their operator steps are in `release/RELEASE_PROCESS.md` and belong to the cut. Prepare one final candidate after the Maintainer runs the re-anchor. The [layout plan](plans/archive/2026-11-17-repository-layout.md) joins this same cut wait for its source moves, expected AST changes and preserved verifier HOLDs; its implementation closes before that operation. The prior protected roster also still names three tests removed before this layout work (`test_loader_identity.py`, `test_lockfile_module.py`, `test_slotmerge_leaf.py`); their verifier HOLDs remain explicit for this cut, not a newly passed layout check. This wait does not reopen completed implementation.
 
+### Paused for agent handoff — 2026-11-18
+
+The Maintainer requested graceful shutdown to conserve tokens. No new development or tests are running in this team; active plan statuses describe unfinished work, not live workers.
+
+- **Release scanning:** Windows private-file and relay checkpoint `25fd162f` passed focused native checks. Sterile-parent checkout support is committed as `e1b01d0d`; public release dispatch is unchanged. Frozen-history capture/import, full-mode integration, native verification and independent code reviews remain.
+- **Native roster and held guards:** committed checkpoints are `4f3887e6` and provisional removals `a61cec86`. Eleven test/roster files have intentionally preserved uncommitted edits. The next repair is the POSIX-only `fchmod` parameter condition, then focused native checks using the current manifest. The two removals remain provisional; other guard dispositions, claims-test assessment and ordinary plus the one authorized Security code pass remain unfinished. Windows tools are missing; no strict record passes.
+- **Linux comparison:** ordinary plan review `c76e7604` and Security plan review `6a3707df` are committed. Three confinement findings need the prepared High-tier design corrections folded into the plan before implementation. No privileged guest setup or comparison ran.
+
+The ignored next-session note names the exact working-tree files and restart steps. Re-read the plans and their committed Decisions before acting; the note is context, not authority. This handoff changes no scope or review obligation.
+
 ## Where Cairn stands
 
 [Cairn 0.7.0 is released](https://github.com/MSUHydrogeology/cairn/releases/tag/v0.7.0)
