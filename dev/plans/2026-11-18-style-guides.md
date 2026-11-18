@@ -49,3 +49,20 @@ Proposed paths:
 Before implementation select named tests with `python tests/tier_inventory.py for <changed paths>`; for governing text include the reviewed range. Run selected tests and claim, link, snippet and neutrality prose gates using `/Users/kendal30/conda_envs/lhm/bin/python3.13`. Inspect readers and byte pins; remove wording pins under project rules. Use agent scenarios to assess prose and retained duties without freezing wording.
 
 For the security preflight's S2/S3, demonstrate separately that removing a seed, breaking the installed reference, and enabling board reseeding each fails its targeted public-install check; run the unmutated selected install checks as positive control. Preserve existing filtering, safe writes, dry-run and board protections. Inputs are reviewed prose and project-controlled selections; a project writer can still introduce hostile prose. Review does not claim semantic synchronization or attacker detection. No scientific check applies. Tree certification and release operations retain their existing triggers.
+
+## Plan review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: d706018df981761de24b595ceb7ae970f2c18b88
+**Obligation**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the plan retains the two guide audiences, binding authority, all three onboarding seeds and the opt-out route without a synchronization pin. -- Scope, C1–C2, accepted Proposal
+2. **Best alternative.** Existing conventions, module guidance and seed machinery deliver the same result without a generator or new installer. -- Scope, Reuse
+3. **What would show it wrong?** A fresh preset missing its task, an inaccessible installed reference, or a reinstall overwriting a project board would falsify delivery. -- C2, Verification
+
+The operative duties remain in routed conventions; the installed module and board references serve adopters. No planned rule loss found. Checks address public delivery and preservation rather than prose wording; parent-owned joined integration remains under the project verification rule. Coverage: compared committed plan with accepted proposal and review rules; did not run installation, mutations or scenarios, or assess the security boundary. Security Review remains separate.
