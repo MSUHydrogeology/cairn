@@ -1,7 +1,7 @@
 # Plan: Runnable worked examples
 
 **Source proposal**: dev/proposals/archive/2026-11-09-codex-worked-examples.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/working-agreements.md
