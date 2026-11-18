@@ -211,3 +211,46 @@ Elapsed: unknown; tokens: unknown.
 3. **What would show it wrong?** A fresh adopter following a fold-back seed who cannot find the installed protocol, or a simulated report that proceeds without approval of its actual contents and destination, would falsify the route or boundary (C1–C2; `templates/onboarding/solo-greenfield.md`, fold-back seed).
 
 **Coverage.** Compared the committed repair with the accepted proposal, plan and changed onboarding and session routes; assessed the audience and retained duties. The author records matching protocol copies and prose checks in Post-archive repair. I did not rerun tests or scenarios, search a real tracker, file a report, or assess a real payload. Security Review is separate.
+
+## Code review -- Codex Sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: 0b4a11bea93a8fbe3c3cf840bc3f7c5947b1711c
+
+**Obligation**: Internal Security Review
+**Pass**: second, limited to the post-archive repair
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Steelman.** One installed protocol carries the export duties and specific
+filing authority to the session and onboarding routes.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, with the Maintainer's coordinate
+   check restored. The protocol requires generalized public duplicate search
+   terms, excludes private details, records unknown if search is unavailable,
+   and retains approval of each actual report and destination and hand submission
+   of Cairn PRs (`templates/core/dev/upstream/foldback.md:24-41`).
+2. **Best alternative.** Keep the installed protocol as the source. Its new
+   routes preserve optional capture, empty-capture success, team coordination,
+   and the high-rigor scanner and checklist (`docs/methodology/session-routines.md:373-383`,
+   `templates/onboarding/collaborative-team.md:95-100`,
+   `templates/onboarding/high-rigor-legacy.md:108-116`).
+3. **What would show it wrong?** An agent who gets approval for a synthetic
+   Cairn issue while the Maintainer overlooks a private coordinate would show
+   the missing duty (`0b4a11be^:docs/methodology/session-routines.md`,
+   `0b4a11be:templates/core/dev/upstream/foldback.md:24-41`).
+
+**Blocking — retain the Maintainer's coordinate check.** The prior session
+guide required the Maintainer to confirm that the issue has no private
+coordinate leaks. The replacement assigns the payload check to the preparer
+and requires approval of the actual report and destination. Restore the
+Maintainer's explicit confirmation before approving a Cairn issue in both
+copies of the shared protocol.
+
+**Coverage.** This second pass read only the post-archive repair against the
+accepted record and its prior wording. Search for stale filing instructions
+found its known positives in the parent. Tests, scenarios, real searches,
+filing and assessment of a real payload were outside the pass.
