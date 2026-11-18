@@ -112,3 +112,33 @@ Python 3.13: the two required onboarding files yielded 48 passes and three failu
 3. **What would show it wrong?** An opt-out task requiring the missing module or a reinstall replacing a project board would falsify delivery. -- `tests/test_onboarding_slot_substitution.py::TestInstallPath::test_style_task_delivered_with_or_without_module`, `tests/test_onboarding_seed_roster.py`, Implementation evidence
 
 The guide confines drift to optional preferences and preserves binding security, dependency and licensing duties. The survey recorded differing header practices rather than imposing a uniform rule; the README edits retain indexing and exclusions. Public delivery and board-preservation checks and three negative controls are recorded; no wording or sync pin was added. Coverage: read the committed guide, conventions, seeds, test changes and evidence; did not repeat tests or scenarios, independently survey every file, or assess the security boundary. Security Review remains separate.
+
+## Code review -- Codex Sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: f6f9e379131478106d0b5da09cd90b8dcfdff07f
+
+**Reviewed source commit**: ed58c8b8bfc77e7a67632837ed9966b4633185a1
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Bounding**: ACCEPTED
+**Elapsed**: unknown. **Tokens**: unknown.
+
+New adopters get a task for both guide audiences while project rules continue
+to govern coding decisions and existing boards retain their content.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Drift applies to optional preferences. The guide, routed conventions and installed advice preserve binding security, dependency and license duties and give disagreements a correction route. — `RULES.md`, `dev/rules/conventions.md`, `docs/style_guide.md`, `templates/modules/default-on/documentation-plan.md`.
+2. **Best alternative.** Use the preset-selected, fresh-board-only writer for unchecked tasks. All three tasks give self-contained instructions and refer to the installed module only if present. The module routes placement through the installed documentation plan. — `templates/onboarding/`, `install/_scaffold/install.py` (onboarding write C), `install/_scaffold/config.py` (documentation-plan mapping).
+3. **What would show it wrong?** A missing fresh task, unusable opt-out or overwritten board would break delivery. Recorded public checks cover all presets, opt-out and reinstall. Removing the seed, breaking the installed reference and forcing reseeding each failed its targeted check. — Implementation evidence at e16d78b8d170ae29b2bd5033f6b9ea244ad31608, `tests/test_onboarding_slot_substitution.py`, `tests/test_onboarding_seed_roster.py`.
+
+**Rule retention.** Both rules READMEs retain indexing and existing
+exclusions. The installed task supplies guidance within adopter-selected
+onboarding; the `AGENTS.md` fallback preserves a governing home when the
+optional router is absent.
+
+**Coverage.** Reviewed the committed diff, preset rendering and mapping,
+public checks and recorded evidence. The three stale-path cases passed on
+targeted retry. No runs were replayed; live agent interpretation and hostile
+project-authored prose were outside this pass.
