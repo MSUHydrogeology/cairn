@@ -1,7 +1,7 @@
 # Ship the existing measurement tools to adopters
 
 **Author**: Terra (Implementation)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -70,3 +70,23 @@ A normal install cannot execute the tools, project entries disappear on upgrade,
 ## Assurance path
 
 **Assurance path**: high-assurance. The installer contract and adopter-executed Python change; the engine change also requires Security Review. A plan is needed to specify the exact existing ownership and helper handling before implementation.
+
+## Review -- Terra (Reviewer) -- 2026-11-18
+
+Reviewed commit: 1122369eabd6a40e9831ac16fec2753270657672
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: delivering both existing tools with their support and guides gives adopters usable measurements while preserving their own registry on upgrade. -- `dev/PLANNING.md`, Proposal, Evidence / verification plan
+2. **Best alternative.** Leaving the tools internal avoids install and upgrade maintenance, but forces adopters to assemble the checker and its dependencies themselves. -- `tests/verify_counts.py`, `tests/measurements.py`
+3. **What would show it wrong.** A real fresh install that cannot run the commands, or an upgrade that loses a registered adopter measurement, would falsify delivery. -- Proposal, Evidence / verification plan
+
+The proposal accounts for the paired checker and support, including the eagerly verified Git helper; its plan must resolve their installed paths and ownership. The current support derives its root from its present location, so copying it into `dev/tools/` unchanged would not suffice. The proposed fresh-install and upgrade checks exercise that risk. The high-assurance path and separate Security Review are appropriate for adopter-executed code and the changed install contract. -- `tests/measurements.py`, `install/_scaffold/config.py`
+
+The guide paragraphs route use to the installed modules and preserve the key-only annotation duty; no existing rule is proposed for removal. Coverage: read the board, installer mappings, tools and proposed checks; did not execute the tools or upgrades, determine the final registry design, or assess the security boundary. No test suite was run.
