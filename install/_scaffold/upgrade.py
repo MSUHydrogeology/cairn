@@ -423,8 +423,8 @@ def _render_review_inventory(
             "the lockfile module roster is invalid or names an unknown module")
     if to_ref is None:
         renderer_root = Path(__file__).resolve().parents[2]
-        for rel in ("bootstrap/_scaffold/config.py",
-                    "bootstrap/_scaffold/install.py"):
+        for rel in ("install/_scaffold/config.py",
+                    "install/_scaffold/install.py"):
             selected_path = cairn_root / rel
             running_path = renderer_root / rel
             if (not selected_path.is_file() or not running_path.is_file()
@@ -438,8 +438,8 @@ def _render_review_inventory(
         if resolved_ref is None:
             raise ModuleDiscoveryConflict(
                 "the requested --to revision could not be read as a local commit")
-        for rel in ("bootstrap/_scaffold/config.py",
-                    "bootstrap/_scaffold/install.py"):
+        for rel in ("install/_scaffold/config.py",
+                    "install/_scaffold/install.py"):
             try:
                 selected = _git_read_helper().run_git(
                     str(cairn_root), ("show", f"{resolved_ref}:{rel}"), timeout=30,
@@ -4950,7 +4950,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     if any(fp.kind in ("retired-untouched", "retired-gone") for fp in plans):
         print("\n  To remove the untouched copies above and clear the records of "
               "the ones already deleted, run:\n"
-              "    python bootstrap/scaffold.py upgrade --target <repo> "
+              "    python install/scaffold.py upgrade --target <repo> "
               "--remove-retired")
     n_adopt = _count_adoptable_collisions(plans)
     if n_adopt:
