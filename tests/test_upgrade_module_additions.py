@@ -59,10 +59,10 @@ pytestmark = pytest.mark.skipif(
 # not the module that happens to exemplify it, so the fixture moved rather than
 # the file being deleted with its example.
 _MODULE = "coordination-tiers"
-_FACADE = "tools/intent.py"
+_FACADE = "dev/tools/intent.py"
 _PKG_NAMES = ("__init__", "shared", "record_io", "identity", "conflict",
               "hooks", "cli")
-_PKG_DSTS = [f"tools/_intent/{n}.py" for n in _PKG_NAMES]
+_PKG_DSTS = [f"dev/tools/_intent/{n}.py" for n in _PKG_NAMES]
 
 # Independently enumerated from the committed config mapping at c13e7bc2.
 _ADOPTION_MODULES = (
