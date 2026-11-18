@@ -2,6 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-09-claude-repository-layout.md
 **Status**: revising-plan
+**Waiting on Maintainer**: Authorize focused third plan Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-17
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/development-environment.md
@@ -368,7 +369,7 @@ C2 execution escalated to Sol after two Terra attempts ended at inspection witho
 ## Plan change -- Codex -- 2026-11-17
 
 **Prior reviewed commit**: 0622d1ec5ce28c450755c9992403578c8e54cc92
-**Replacement commit**: this commit
+**Replacement commit**: 2ba9f750c93bc67354691d9f3808e5d29ee29538
 **Affected cells and dependencies**: Scope, Sequence, Acceptance criteria, Verification, C1, C3, C4, C5
 **Change**: Complete the folder-purpose audit, relocate the two overlooked
 Cairn-only files and verify the affected paths.
