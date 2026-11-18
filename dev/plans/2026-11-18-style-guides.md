@@ -66,3 +66,26 @@ For the security preflight's S2/S3, demonstrate separately that removing a seed,
 3. **What would show it wrong?** A fresh preset missing its task, an inaccessible installed reference, or a reinstall overwriting a project board would falsify delivery. -- C2, Verification
 
 The operative duties remain in routed conventions; the installed module and board references serve adopters. No planned rule loss found. Checks address public delivery and preservation rather than prose wording; parent-owned joined integration remains under the project verification rule. Coverage: compared committed plan with accepted proposal and review rules; did not run installation, mutations or scenarios, or assess the security boundary. Security Review remains separate.
+
+## Plan review -- Codex Sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: d706018df981761de24b595ceb7ae970f2c18b88
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Steelman.** Onboarding can teach both guide formats while existing binding rules continue to govern development.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 confines drift to optional preferences. The routed conventions retain the dependency-budget check, standard-library limit and licensing duties, and governing rules retain priority (C1, `dev/rules/conventions.md`, accepted Proposal items 2–5).
+2. **Best alternative.** Use the installed documentation-plan guidance and existing Markdown seed renderer. C2 permits self-contained instructions with a reference used only if the module is installed (`install/_scaffold/install.py:1361-1393`, C2).
+3. **What would show it wrong?** An opt-out pointing to an unavailable guide, or a reinstall replacing adopter board text. The existing public entry points cover task delivery, installed references and preservation, with a separate negative control for each promise (C2, Verification).
+
+**Rule retention.** Both README edits retain root indexing. The plan keeps adopter authority in installed files, and the seeded task supplies guidance without granting implementation authority or exceptions (C1–C3, Proposal S1–S5).
+
+**Coverage.** Compared the accepted scope with the committed plan, current conventions, seed rendering and module mapping. Implementation text, install results, mutation runs and agent behavior were outside this pass.
