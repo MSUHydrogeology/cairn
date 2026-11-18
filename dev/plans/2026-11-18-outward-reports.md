@@ -47,3 +47,22 @@ Proposed paths:
 ## Verification
 
 Before implementation run `/Users/kendal30/conda_envs/lhm/bin/python3.13 tests/tier_inventory.py for <all changed paths>`; inspect named tests and byte pins, select only applicable public promises, and record exact nodes and inputs. Extend `tests/test_core_dev_folders.py::TestScaffoldCompleteness::test_upstream_dir_and_files_created` for fresh installation and add a public upgrade promise in `tests/test_upgrade_module_additions.py` using a pre-addition lock and absent destination. Run those exact nodes with `python -m pytest <nodes>` under the canonical interpreter. Run `python install/scaffold.py --manifest` with that interpreter and inspect the source and destination row; compare the same row to the installed and upgraded outputs. The temporary mapping-removal control reruns each targeted node and manifest assertion against the altered copy. Run the synthetic channel and PR scenarios in C1, and the positive and negative mapping checks in C2. Run claim check on changed documents and the standing claim, link, snippet, neutrality and prose-integrity gates; inspect negative searches against known positives. Record results, limits, elapsed and tokens. Independent code and Security reviews follow. The arc owner runs the joined integration once at the arc end; it is not a prerequisite to this plan's completion.
+
+## Plan review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: 486708df0730adc8738b7f8a26747b220570632a
+**Obligation**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: an installed protocol and separate approved drafts make both reporting routes usable while retaining publication checks; the discovery gap below prevents full delivery. -- Scope, C1, accepted Proposal
+2. **Best alternative.** Reuse the dependency template and forge-native forms, pointing them to one protocol rather than creating another service or forge directory. -- Scope, Reuse
+3. **What would show it wrong?** A disposable install missing the template, or a synthetic report reaching filing without approval of its actual contents and destination, would falsify delivery. -- C1–C2, Verification
+
+**Blocking — specify dependency-template discovery.** Scope says to find the dependency's template, but does not say how; the accepted Proposal requires describing how to find it. Name a practical route through existing dependency locations and the fallback, and exercise both in the disposable scenario. This leaves a design decision to the low-tier implementer and risks omitting an accepted outcome. -- Scope, accepted Proposal
+
+The installed collaboration guide and upstream folder are appropriate homes; the plan retains the existing publication duties and explicitly changes Cairn issue filing only after specific approval. Permanent checks target public installation promises rather than prose wording. Coverage: compared the committed plan with the accepted proposal and review rules; did not run installation or scenarios, inspect implementation, or assess the security boundary. Security Review remains separate.
