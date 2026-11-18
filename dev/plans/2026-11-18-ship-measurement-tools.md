@@ -1,7 +1,7 @@
 # Plan: Ship measurement tools
 
 **Source proposal**: `dev/proposals/archive/2026-11-18-terra-ship-measurement-tools.md`
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: `dev/rules/conventions.md`, `dev/rules/working-agreements.md`, `dev/rules/protected-surfaces.md`
@@ -99,3 +99,12 @@ Reviewed commit: 91a3f77bbdad3373bc64fb452f44dda42c8ab638
 **Tokens**: unknown
 
 Accepted the registry-load finding. Scope now requires containment before reading and failure for a missing, unreadable or malformed registry even without annotations; C1 and C3 make the refusal and valid in-project control observable. This restores the accepted proposal’s S4 boundary without changing it.
+
+## Implementation evidence -- Terra (Implementation) -- 2026-11-18
+
+The implementation and public checks are in `32037a03`; the direct-link, unreadable-registry and release-scan corrections are in the following commit. The four focused installed command, manifest, upgrade and integrity tests passed under Python 3.13.13. The two installed-command tests passed again after the added controls. Three release-scan checks passed, including the corrected current-path assertion. Claim checks, snippet sync and neutrality passed. Link checking reported unrelated stale historical paths; external links were not probed. No full suite, native Windows, signing or baseline operation ran. The parent owns joined Group 4 integration and separate human trust/release operations.
+
+**Benefit versus cost**: unknown -- adopter commands and maintained registry delivered; cost and remaining burden unknown; revisit after usage and joined integration.
+
+**Elapsed**: unknown
+**Tokens**: unknown
