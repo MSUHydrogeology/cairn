@@ -383,7 +383,8 @@ def _make_exe(path: Path, body: str = "#!/bin/sh\nexit 0\n") -> Path:
 # collection, verified empirically this session's plan-review.
 @pytest.mark.parametrize("bad", [
     {"interpreter": "relative/python"},          # not absolute
-    {"kind": "present-nonexec"},                  # present, not executable
+    pytest.param({"kind": "present-nonexec"}, marks=pytest.mark.skipif(
+        os.name != "posix", reason="present non-executable case is POSIX-only")),
     {"kind": "present-dir"},                      # present, a directory
     {"nope": "/usr/bin/python"},                  # wrong schema (no interpreter key)
     {"kind": "extra-key"},                        # a valid interpreter plus one more key
@@ -393,8 +394,6 @@ def test_tampered_local_env_refuses(repo, bad):
     sd = lifecycle._state_dir(repo)
     sd.mkdir(parents=True)
     if bad.get("kind") == "present-nonexec":
-        if os.name != "posix":
-            pytest.skip("present-non-executable case is POSIX-only pending S3")
         nonexec = repo / "nonexec"
         nonexec.write_text("not executable", encoding="utf-8")
         bad = {"interpreter": str(nonexec)}

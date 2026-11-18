@@ -375,11 +375,10 @@ def test_executable_digest_refuses_replacement_during_read(
 
 
 # Declared exception (internal hook): Hook: monkeypatched git_read.os.read causes directory churn mid-read. Monkeypatches git_read.os.read (an internal seam) to change the executable mid-r.
-@pytest.mark.parametrize("change", ["bytes", "timestamp", "mode"])
+@pytest.mark.parametrize("change", ["bytes", "timestamp", pytest.param(
+    "mode", marks=pytest.mark.skipif(os.name == "nt", reason="Windows lacks executable mode bits"))])
 def test_executable_change_still_refuses_with_directory_churn(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str) -> None:
-    if change == "mode" and os.name == "nt":
-        pytest.skip("Windows chmod does not expose executable mode bits")
     target = tmp_path / "repo"
     target.mkdir()
     exe = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n",

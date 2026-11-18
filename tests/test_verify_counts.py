@@ -97,8 +97,6 @@ def _run_public_git_route(
     driver: str, *, mutation: bool, hostile: bool = True, seed=None,
 ):
     """Run a physical caller copy with a target-local hostile Git route."""
-    if os.name == "nt":
-        pytest.skip("PATH wrapper route control is POSIX-only")
     real_git = shutil.which("git")
     assert real_git and Path(real_git).is_absolute()
     real_git = str(Path(real_git).resolve())
@@ -730,6 +728,7 @@ class TestMeasurePrimitives:
             m.measure(inv)
 
 
+@pytest.mark.skipif(os.name == "nt", reason="PATH wrapper route control is POSIX-only")
 def test_git_commits_in_range_refuses_target_local_path_git_route(tmp_path):
     caller = CAIRN_ROOT / "tests/measurements.py"
     success_driver = f'''\
@@ -771,7 +770,7 @@ else:
     raise AssertionError("hostile PATH was treated as a measurement")
 '''
     clean, _safe, _unsafe = _assert_public_route_triplet(
-        tmp_path / "routes", "scripts/measurements.py", "git_commits_in_range",
+        tmp_path / "routes", "tests/measurements.py", "git_commits_in_range",
         ("log", "--oneline", "HEAD~1..HEAD"), success_driver,
         refusal_driver)
     assert clean.stdout == "route-positive\n"

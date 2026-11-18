@@ -264,9 +264,8 @@ def test_a_link_swapped_in_after_the_check_is_not_followed(tmp_path, monkeypatch
     assert (root / ".gitignore").is_symlink()
 
 
+@pytest.mark.skipif(os.name == "nt", reason="permission bits are not meaningful here")
 def test_seeding_keeps_the_permission_bits_of_the_file_it_replaces(tmp_path):
-    if os.name == "nt":
-        pytest.skip("permission bits are not meaningful here")
     root = tmp_path.resolve()
     gitignore = root / ".gitignore"
     gitignore.write_text("*.log\n", encoding="utf-8")
@@ -738,9 +737,8 @@ def test_a_plain_file_where_the_harness_folder_should_be_means_the_harness_is_no
 # --- the write helpers, again -----------------------------------------------------
 
 
+@pytest.mark.skipif(os.name != "posix" or not hasattr(os, "fchmod"), reason="descriptor mode setting is POSIX-only")
 def test_the_temporary_file_mode_is_set_on_the_open_descriptor_not_by_name(tmp_path, monkeypatch):
-    if not hasattr(os, "fchmod"):
-        pytest.skip("this platform has no fchmod")
     root = tmp_path.resolve()
     target = root / "target"
     target.write_bytes(b"old\n")
@@ -772,9 +770,8 @@ def test_the_heartbeat_leaves_a_whole_current_payload_each_time(tmp_path):
     assert second["heartbeat_at"] >= first["heartbeat_at"]
 
 
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="no named pipes here")
 def test_a_named_pipe_where_gitignore_should_be_is_refused_not_waited_on(tmp_path):
-    if not hasattr(os, "mkfifo"):
-        pytest.skip("no named pipes here")
     root = tmp_path.resolve()
     os.mkfifo(root / ".gitignore")
     result = _call_with_timeout(lifecycle._seed_skill_gitignore, root, ".claude/skills/")
@@ -782,13 +779,12 @@ def test_a_named_pipe_where_gitignore_should_be_is_refused_not_waited_on(tmp_pat
 
 
 # Declared exception (internal hook): hook: a monkeypatched open swaps a named pipe in between check and read; no public route times the swap.
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="no named pipes here")
 def test_a_named_pipe_swapped_in_just_before_the_read_is_refused_not_waited_on(
     tmp_path, monkeypatch
 ):
     """The check has passed; the name becomes a pipe before the file is opened.
     Opening a pipe for reading waits for a writer, so the open must not wait."""
-    if not hasattr(os, "mkfifo"):
-        pytest.skip("no named pipes here")
     root = tmp_path.resolve()
     (root / ".gitignore").write_text("*.log\n", encoding="utf-8")
     real_open = lifecycle.os.open

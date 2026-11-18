@@ -531,9 +531,8 @@ def test_exact_replacer_uses_raw_report_for_unsupported_target(tmp_path: Path) -
     assert 'before="forbidden" ; after="allowed"' in result.stdout
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows creation and change times are required")
 def test_replacer_reads_rewritten_windows_fragment_after_creation(tmp_path: Path) -> None:
-    if os.name != "nt":
-        pytest.skip("Windows creation and change times are required for this control")
     repo, _base = _repo(tmp_path)
     target = repo / "AGENTS.md"
     target.write_bytes(b"bounded")

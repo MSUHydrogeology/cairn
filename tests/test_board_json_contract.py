@@ -625,9 +625,7 @@ class TestSymlinkedSourcesAreNotRead:
     def test_non_regular_entries_fail_loudly_without_hanging(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """A directory named `x.md`, `dev/plans` as a regular file, or a named pipe
-        `x.md` causes the board to print one encoded error line on stderr and exit 1
-        without a traceback or hang."""
+        """Non-regular plan entries fail without a traceback or hang."""
         # 1. Directory named x.md in dev/plans
         dir_md = tmp_path / "dir_md"
         (dir_md / "dev" / "plans" / "x.md").mkdir(parents=True)
@@ -653,9 +651,9 @@ class TestSymlinkedSourcesAreNotRead:
             assert len(err_lines) == 1
             assert "dev/plans" in err_lines[0]
 
-        # 3. Named pipe x.md in dev/plans (under a subprocess timeout)
-        if not hasattr(os, "mkfifo"):
-            pytest.skip("os.mkfifo is not available on this platform")
+    @pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="named pipes unavailable")
+    def test_named_pipe_entry_fails_loudly_without_hanging(self, tmp_path: Path) -> None:
+        # Named pipe x.md in dev/plans (under a subprocess timeout).
         fifo_root = tmp_path / "fifo_root"
         (fifo_root / "dev" / "plans").mkdir(parents=True)
         os.mkfifo(fifo_root / "dev" / "plans" / "x.md")

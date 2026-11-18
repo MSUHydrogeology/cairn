@@ -705,9 +705,8 @@ class TestGitignoreSeedWritesByReplacing:
         assert ignore.read_bytes() == b"\xff\xfe\nold\nnew\n"
         assert seed_gitignore(tmp_path, ("new",)) == []
 
+    @pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="named pipes unavailable")
     def test_pipe_refused_before_open(self, tmp_path: Path) -> None:
-        if not hasattr(os, "mkfifo"):
-            pytest.skip("named pipes unavailable")
         os.mkfifo(tmp_path / ".gitignore")
         with pytest.raises(ScaffoldSecurityError, match="plain file"):
             seed_gitignore(tmp_path, (), dry_run=True)
@@ -1374,12 +1373,11 @@ def test_a_malformed_or_linked_claims_ledger_stops_owner_selection(
 
 
 # Declared exception (internal hook): Named in security_manifest.py (must stay). Hook: patched os.open swaps the ledger leaf between check and open.
-@pytest.mark.parametrize("replacement", ["symlink", "fifo", "regular"])
+@pytest.mark.parametrize("replacement", ["symlink", pytest.param(
+    "fifo", marks=pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="named pipes unavailable")), "regular"])
 def test_strict_claim_reader_refuses_leaf_swap_before_open(
     tmp_path, monkeypatch, replacement
 ):
-    if replacement == "fifo" and not hasattr(os, "mkfifo"):
-        pytest.skip("named pipes unavailable")
     tool = _load_tool(TOOL_TEMPLATE, name="strict_claim_reader_swap")
     reader = tool._load_engine().read_log
     ledger = tmp_path / "intents.jsonl"

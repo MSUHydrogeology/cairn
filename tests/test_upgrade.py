@@ -2797,10 +2797,9 @@ class TestDirtyTreeGuard:
         # Stage not cleaned -- the upgrade did not proceed.
         assert (tmp_path / "dev" / ".cairn-upgrade").exists()
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows forbids colon and asterisks in filenames")
     def test_literal_pathspec_name_is_a_single_tracked_path(self, tmp_path: Path) -> None:
         """Caller paths that resemble Git pathspec syntax remain literal."""
-        if sys.platform == "win32":
-            pytest.skip("a file name with a colon and asterisks cannot exist on Windows")
         self._init_committed(tmp_path)
         special = ":(glob)**.md"
         (tmp_path / special).write_text("initial\n")

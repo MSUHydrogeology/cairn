@@ -308,7 +308,7 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'tests/security/test_code_map.py::test_race_substituting_a_file_for_a_link_is_refused'),
     ('posix', 'tests/security/test_code_map.py::test_real_cli_refuses_a_linked_root'),
     ('posix', 'tests/security/test_code_map.py::test_real_cli_refuses_fifo'),
-    ('posix', 'tests/test_board_json_contract.py::TestSymlinkedSourcesAreNotRead::test_non_regular_entries_fail_loudly_without_hanging'),
+    ('posix', 'tests/test_board_json_contract.py::TestSymlinkedSourcesAreNotRead::test_named_pipe_entry_fails_loudly_without_hanging'),
     ('posix', 'tests/test_intents_tool.py::TestGitignoreSeedWritesByReplacing::test_pipe_refused_before_open'),
     ('posix', 'tests/test_intents_tool.py::test_strict_claim_reader_refuses_leaf_swap_before_open[fifo]'),
     ('posix', 'tests/test_security_finding_confidentiality.py::test_d3_report_file_mode_is_private[clean]'),
@@ -648,9 +648,12 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'tests/test_upgrade_removes_retired_files.py::test_confirmation_only_stat_denial_does_not_claim_absence[folder handles]'),
     ('posix', 'tests/test_upgrade_removes_retired_files.py::test_opening_the_removal_target_directory_is_refused'),
     ('posix', 'tests/test_upgrade_removes_retired_files.py::test_post_unlink_stat_denial_does_not_claim_absence[folder handles]'),
+    ('posix', 'tests/security/test_git_read.py::test_executable_change_still_refuses_with_directory_churn[mode]'),
+    ('posix', 'tests/test_upgrade.py::TestDirtyTreeGuard::test_literal_pathspec_name_is_a_single_tracked_path'),
+    ('posix', 'tests/test_security_leaf.py::test_public_seed_gitignore_staging_failure_preserves_destination_and_cleans_owned_temp[fchmod]'),
 )
 
-NATIVE_ONLY_POLICY_ID = "sha256:8ddfdfa0bca851145883b292a43b9ba65f69d2d92c8754dac56a55c9db0ed50a"
+NATIVE_ONLY_POLICY_ID = "sha256:de890081f7b98a2db4a6e2bcfad77db161ac99ceaccef9a477e7ec66b33a4466"
 
 
 def validated_native_only_nodes() -> dict[str, frozenset[str]]:
@@ -683,6 +686,6 @@ def validated_native_only_nodes() -> dict[str, frozenset[str]]:
     identity = "sha256:" + hashlib.sha256(canonical).hexdigest()
     if identity != NATIVE_ONLY_POLICY_ID:
         raise ValueError("native-only policy identity mismatch")
-    if len(grouped["nt"]) != 63 or len(grouped["posix"]) != 359:
+    if len(grouped["nt"]) != 63 or len(grouped["posix"]) != 362:
         raise ValueError("native-only policy member count mismatch")
     return {host: frozenset(nodeids) for host, nodeids in grouped.items()}

@@ -131,10 +131,9 @@ class TestWriteByReplacing:
 
 
     # Declared exception (internal hook): monkeypatches os.fchmod and secrets.token_hex to swap the staged temp to a victim file; no public route swaps a temp mid-write.
+    @pytest.mark.skipif(os.name != "posix" or not hasattr(os, "fchmod"), reason="descriptor mode setting is POSIX-only")
     def test_swapped_temp_cannot_change_victim_mode(self, tmp_path, monkeypatch):
         from install._scaffold import security as S
-        if not hasattr(os, "fchmod"):
-            pytest.skip("descriptor mode setting unavailable")
         target = tmp_path / "target"
         target.mkdir()
         dst = target / "file"
@@ -256,7 +255,8 @@ def test_public_seed_gitignore_normalizes_read_errors(
     assert list(target.glob("*.tmp")) == []
 
 
-@pytest.mark.parametrize("failure", ["write", "fchmod"])
+@pytest.mark.parametrize("failure", ["write", pytest.param(
+    "fchmod", marks=pytest.mark.skipif(os.name != "posix" or not hasattr(os, "fchmod"), reason="descriptor mode setting is POSIX-only"))])
 def test_public_seed_gitignore_staging_failure_preserves_destination_and_cleans_owned_temp(
         tmp_path, monkeypatch, failure):
     from install import scaffold
@@ -292,8 +292,6 @@ def test_public_seed_gitignore_staging_failure_preserves_destination_and_cleans_
     elif real_fchmod is not None:
         monkeypatch.setattr(S.os, "fchmod", lambda *_: (_ for _ in ()).throw(
             OSError("injected staging mode failure")))
-    else:
-        pytest.skip("descriptor mode setting unavailable")
 
     with pytest.raises(OSError, match="injected staging"):
         scaffold.seed_gitignore(target, ("dev/intents.jsonl",))
