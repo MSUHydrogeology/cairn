@@ -443,3 +443,43 @@ original paths; this pass covers only the correction, without rerunning test
 suites. No further pass or trust operation is authorized.
 
 Elapsed and tokens: unknown.
+
+## Plan amendment review -- Sol -- 2026-11-18
+
+**Prior reviewed commit**: 0622d1ec5ce28c450755c9992403578c8e54cc92
+**Replacement commit**: 2ba9f750c93bc67354691d9f3808e5d29ee29538
+**Affected cells and dependencies**: Scope, Sequence, Acceptance criteria, Verification, C1, C3, C4, C5
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Model basis**: GPT-6.2 Sol, High
+**Findings**: one blocking
+**Verdict**: REVISE
+**Elapsed**: focused reading about three minutes, recording and checks unknown.
+**Tokens**: unknown.
+
+The checker move fits the verified layout. The contained build also needs
+to bind the recipe it executes to the selected commit.
+
+**Foundations**
+
+1. **Should this happen as framed?** Complete the checker move with exact overrides, mapped protected membership and the committed-child launch. The container's build recipe needs an explicit binding. -- Plan, Sequence and C3–C4, `release/repin.py:1803-1886`, `install/security_check.py:1814-1833`.
+2. **Best alternative.** Extend the existing committed extraction to include the Dockerfile and point the documented build at the selected checkout's verified recipe. -- `install/container/acceptance.sh:127-153`, `install/container/recipe.md:81-90`.
+3. **What would show it wrong?** The joined check should show that a substituted recipe cannot determine the pinned image and that the dirty relocated engine still refuses. -- Plan, Verification, `tests/test_verify_ref.py:741-757`.
+
+**Blocking, C3 and Verification.** The guard checks COPY sources only.
+Acceptance archives those sources and builds with a separate live `-f` file.
+The adopter command likewise takes a relative `-f` path. A passing source
+guard can miss the actual recipe. Bind the Dockerfile used by the pinned build
+to the same commit as its relocated COPY inputs. Keep tracked-dirty and
+untracked refusals and extend the focused check to the actual recipe. See
+`install/container/verify-ref.sh:117-135`,
+`install/container/acceptance.sh:33-36`, `install/container/acceptance.sh:127-153`.
+
+**Rule loss and audience.** The old signed verifier, its HOLDs and the
+Maintainer's separate cut remain required. The adopter needs the exact
+verified recipe path in the build command. -- Plan, Layout transition and C4.
+
+**Coverage.** Maintainer authorization at `80303622` limits this pass to
+the checker and executable build inputs. Earlier passes preceded both changes.
+Tracing the committed consumers exposed the recipe gap. No build, tests,
+ceremony, migration or review of rewritten guidance.
