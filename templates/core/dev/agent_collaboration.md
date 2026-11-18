@@ -321,6 +321,14 @@ missing design returns to the operative cells.
 
 A plan is finished when accepted agent-owned scope, required reviews and applicable checks (change verification included) are complete. A routine human-run trust or release operation is not a completion prerequisite or a final chunk: track it as a separate named board wait with its owner, evidence and a link to the implementation, and create no release plan; keep its result unpassed until its evidence exists. A reviewed baseline awaiting a named human operation stays unpassed. An unexpected permission question still needs the existing stop and decision. A defect, failed check, missing evidence, required review or unexplained integrity failure stays implementation work. Archive is not permission to activate or release; fixing an issue closes it at the fixing commit, not at release.
 
+Before adding a folder under `dev/`, obtain the Maintainer’s permission. Each
+folder has a README stating its purpose, suitable contents and what needs that
+permission; the top-level list records permitted folders, but does not grant
+permission. Committed briefs or reports must not evade length limits without
+permission. Use the ignored scratch folder for temporary drafts and move durable
+conclusions into their records. Git ignore is not secrecy; keep private evidence
+out of commits and releases.
+
 ## Working tree and commits
 
 Edit functional prose (tracked text under the base-revision union of

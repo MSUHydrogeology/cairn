@@ -103,3 +103,7 @@ why and leaves it as it is. To be asked again, delete your line; Git keeps it.
 ## Contents
 
 *(empty at adoption — add files as agent-discipline elaboration accumulates)*
+
+New folders under `dev/`, and committed briefs or reports used to evade length
+limits, require the Maintainer’s permission. This README records purpose; it
+does not grant permission.

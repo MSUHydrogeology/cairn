@@ -553,6 +553,17 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     ("core/dev/agent_collaboration.md",             "dev/agent_collaboration.md"),
     ("core/dev/proposals/_template.md",             "dev/proposals/_template.md"),
     ("core/dev/plans/_template.md",                 "dev/plans/_template.md"),
+    ("core/dev/proposals/README.md", "dev/proposals/README.md"),
+    ("core/dev/proposals/archive/README.md", "dev/proposals/archive/README.md"),
+    ("core/dev/plans/README.md", "dev/plans/README.md"),
+    ("core/dev/plans/archive/README.md", "dev/plans/archive/README.md"),
+    ("core/dev/strategy/archive/README.md", "dev/strategy/archive/README.md"),
+    ("core/dev/upstream/archive/README.md", "dev/upstream/archive/README.md"),
+    ("core/dev/.cairn/README.md", "dev/.cairn/README.md"),
+    ("core/dev/tools/README.md", "dev/tools/README.md"),
+    ("core/dev/modules/onboarding/README.md", "dev/modules/onboarding/README.md"),
+    ("core/dev/scratch/README.md", "dev/scratch/README.md"),
+    ("core/dev/scratch/.gitignore", "dev/scratch/.gitignore"),
     # Self-instrumentation home (measurement-folder standard): a core dir
     # carried by its README, which states the membership rule.  Same shape as
     # proposals/ + plans/ (a core dir installed via its content file).
@@ -1072,6 +1083,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     # the trackers.  The canonical 7-column semantic-field schema is
     # the contract the eventual Goal 7 cross-adopter harvest reads.
     "incident-trackers": [
+        InstallSpec("default-on/measurement-archive-README.md", "dev/measurement/archive/README.md"),
         InstallSpec("default-on/incident-trackers.md",
                     "dev/modules/incident-trackers.md"),
         InstallSpec("default-on/incident_log_template.md",
@@ -1134,6 +1146,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/dual-language-tests.md"),
     ],
     "coordination-tiers": [
+        InstallSpec("team-gated/intent-README.md", "dev/tools/_intent/README.md"),
         InstallSpec("team-gated/coordination-tiers.md",
                     "dev/modules/coordination-tiers.md"),
         # The work-intent tool ships verbatim alongside the
@@ -1352,6 +1365,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     # The policy stubs are substituted (adopter-filled configuration); the
     # facades and engine members are verbatim executables.
     "api-access-security": [
+        InstallSpec("team-gated/api-security-README.md", "dev/tools/_api_access_security/README.md"),
         InstallSpec("team-gated/api-access-security.md",
                     "dev/modules/api-access-security.md"),
         InstallSpec("team-gated/api_access_security.py",
@@ -1368,6 +1382,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/.cairn/api-access-policy.json"),
     ],
     "web-hosting-security": [
+        InstallSpec("team-gated/web-security-README.md", "dev/tools/_web_hosting_security/README.md"),
         InstallSpec("team-gated/web-hosting-security.md",
                     "dev/modules/web-hosting-security.md"),
         InstallSpec("team-gated/web_hosting_security.py",

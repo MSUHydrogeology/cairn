@@ -4,8 +4,7 @@
 [Cairn method background](../templates/core/dev/method-background.md)
 
 `dev/` is Cairn's **deliberation layer**: where the
-project's direction is argued, decided, and recorded. It is not a
-scratch directory — every file here is durable coordination state,
+project's direction is argued, decided, and recorded. Except for ignored scratch, it holds durable coordination state,
 and a cold-starting agent should be able to reconstruct *what the
 project is doing, and why* from this tree alone.
 
@@ -16,6 +15,11 @@ project is doing, and why* from this tree alone.
 | `README.md` (this file) | The entry point to `dev/`. |
 | `agent_collaboration.md` | The role roster, the review loop, and the coordination doctrine. |
 | `PLANNING.md` | The roadmap board — queued and active work (a current-state index; completed work migrates out to archived plans, not a "completed" section). |
+| `.cairn/` | Installer state and generated base cache. |
+| `tools/` | Installed development tools and support. |
+| `scratch/` | Ignored temporary notes; see its README. |
+| `measurement/` | Measurement records. |
+| `reflections/` | Session reflections when installed. |
 | `proposals/` | One file per substantive change; operative text revises in place and reviews/responses append. |
 | `proposals/_template.md` | The proposal structure and the full lifecycle doctrine. |
 | `proposals/archive/` | Closed proposals — read for rationale; do not edit. |

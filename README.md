@@ -1,5 +1,7 @@
 <!-- cairn-internal-ref-allow: docs/methodology/rationale.md docs/methodology/lifecycle.md docs/methodology/dual-review.md reason=methodology reference — a reference to Cairn's published methodology, not an installed local file -->
 
+Agents: read `AGENTS.md`, then use this guide for the project.
+
 # Cairn
 
 ![Cairn — stacked stones trail-marker logo with project tagline](docs/assets/cairn-banner.svg)
@@ -147,14 +149,10 @@ An install writes ordinary files into your repository:
 
 - **`AGENTS.md` and `VENDOR.md`** — the operational rules your agent reads
   (`VENDOR.md` is available as a thin wrapper for tools that need one).
-- **`dev/`** — templates for proposals and plans, roadmap boards, and one guide
-  per installed module, plus `dev/.cairn/` to store the lockfile and install
-  state.
-- **`dev/tools/`** — standard-library Python helpers for session
-  handoffs (`dev/tools/session.py`), reading the board (`dev/tools/board.py`),
-  coordinating file edits (`dev/tools/intent.py`), checking file and line citations
-  (`dev/tools/claim_check.py`), checking Markdown links (`dev/tools/link_check.py`),
-  and scanning agent-instruction files (`dev/tools/run_portable_security_sweeps.py`).
+- **Development records** — proposal and plan templates, the roadmap, module
+  guides, the lockfile and install state.
+- **Development tools** — standard-library helpers for handoffs, the board,
+  coordination, path and link checking, and security sweeps.
 
 Your project conventions and local instructions remain yours to change. Updates
 use a three-way merge so local customizations are retained, with conflicts
@@ -250,7 +248,6 @@ See [the documentation plan](docs/DOCUMENTATION_PLAN.md) for folder roles.
 | [docs/](docs/README.md) | Start here: a map of the guides. |
 | [examples/](examples/) | Small repositories showing the workflow. |
 | [docs/case-studies/](docs/case-studies/) | Accounts of using Cairn in research-software projects. |
-| [dev/](dev/) | Cairn's own proposals, plans, strategy, and development record. |
 
 ## License and citation
 

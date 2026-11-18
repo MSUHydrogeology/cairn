@@ -62,6 +62,7 @@ import hashlib
 import ipaddress
 import json
 import os
+import posixpath
 import re
 import socket
 import stat
@@ -949,11 +950,181 @@ def check_tree(root: Path, files: list[Path],
     return result
 
 
+def _boundary_read(root: Path, rel: str) -> str:
+    """Read a contained regular UTF-8 file without following links."""
+    parts = rel.split('/')
+    if not parts or any(p in ('', '.', '..') for p in parts):
+        raise ValueError("unsafe path")
+    current = root
+    for i, part in enumerate(parts):
+        current = current / part
+        info = current.lstat()
+        attrs = getattr(info, 'st_file_attributes', 0)
+        if stat.S_ISLNK(info.st_mode) or attrs & getattr(stat, 'FILE_ATTRIBUTE_REPARSE_POINT', 0):
+            raise ValueError("linked path")
+        if i < len(parts) - 1 and not stat.S_ISDIR(info.st_mode):
+            raise ValueError("non-directory component")
+    if not stat.S_ISREG(info.st_mode):
+        raise ValueError("not a regular file")
+    flags = os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0) | getattr(os, 'O_NONBLOCK', 0)
+    fd = os.open(current, flags)
+    try:
+        opened = os.fstat(fd)
+        if not stat.S_ISREG(opened.st_mode) or (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino):
+            raise ValueError("file changed while opening")
+        with os.fdopen(fd, 'rb') as handle:
+            fd = -1
+            data = handle.read()
+    finally:
+        if fd >= 0:
+            os.close(fd)
+    if b'\0' in data:
+        raise ValueError("non-text file")
+    return data.decode('utf-8', 'strict')
+
+
+def _boundary_index(root: Path) -> dict[str, tuple[bytes, bytes]]:
+    top = _GIT_READ.run_git(str(root), ('rev-parse', '--show-toplevel'))
+    if top.state != 'completed' or top.returncode != 0 or Path(os.fsdecode(top.stdout.strip())).resolve() != root:
+        raise ValueError("Git worktree root unavailable or different")
+    result = _GIT_READ.run_git(str(root), ('ls-files', '-z', '--cached', '--stage'))
+    if result.state != 'completed' or result.returncode != 0 or (result.stdout and not result.stdout.endswith(b'\0')):
+        raise ValueError("Git index unavailable or incomplete")
+    entries = {}
+    for row in result.stdout.split(b'\0')[:-1]:
+        meta, sep, name = row.partition(b'\t')
+        fields = meta.split()
+        if not sep or len(fields) != 3 or len(fields[0]) != 6 or fields[2] not in (b'0', b'1', b'2', b'3') or not name:
+            raise ValueError("malformed Git index")
+        path = os.fsdecode(name).replace('\\', '/')
+        if path in entries:
+            raise ValueError("unmerged index path")
+        entries[path] = (fields[0], fields[2])
+    return entries
+
+
+def _boundary_selector(value: object) -> str:
+    if not isinstance(value, str) or not value or '\\' in value or any(c in value for c in '*?['):
+        raise ValueError("invalid selector")
+    parts = value.rstrip('/').split('/')
+    if value.startswith('/') or any(p in ('', '.', '..') for p in parts) or ':' in parts[0]:
+        raise ValueError("unsafe selector")
+    return value
+
+
+def release_boundary(root: Path, scope_path: Path) -> int:
+    """Report literal release references and tracked folder hygiene, offline."""
+    from urllib.parse import unquote
+    findings, incomplete, exempt = [], [], 0
+    try:
+        rel = scope_path if not scope_path.is_absolute() else scope_path.relative_to(root)
+        scope = json.loads(_boundary_read(root, rel.as_posix()))
+        if not isinstance(scope, dict) or set(scope) != {'kept', 'development'}:
+            raise ValueError('scope must contain exactly kept and development')
+        selectors = {}
+        for key in ('kept', 'development'):
+            if not isinstance(scope[key], list):
+                raise ValueError('scope classes must be arrays')
+            selectors[key] = [_boundary_selector(x) for x in scope[key]]
+        index = _boundary_index(root)
+    except (OSError, ValueError, UnicodeError, json.JSONDecodeError) as exc:
+        print(f'release-boundary: INCOMPLETE: {exc}')
+        return 2
+    paths = sorted(index)
+    def matches(path, selector):
+        return path.startswith(selector) if selector.endswith('/') else path == selector
+    for group, choices in selectors.items():
+        for selector in choices:
+            if not any(matches(path, selector) for path in paths):
+                incomplete.append(f'unmatched {group} selector: {selector}')
+    kept = []
+    for path in paths:
+        if path.startswith('dev/'):
+            if any(matches(path, x) for x in selectors['kept']):
+                incomplete.append(f'overlapping classification: {path}')
+            continue
+        classes = [key for key in selectors if any(matches(path, x) for x in selectors[key])]
+        if len(classes) != 1:
+            incomplete.append(f'unclassified or overlapping: {path}')
+        elif classes[0] == 'kept':
+            kept.append(path)
+    if 'AGENTS.md' not in kept:
+        incomplete.append('AGENTS.md must be tracked and kept')
+    directories = set()
+    for path in paths:
+        if path.startswith('dev/'):
+            bits = path.split('/')[:-1]
+            directories.update('/'.join(bits[:i]) for i in range(1, len(bits) + 1))
+        if path.startswith('dev/scratch/') and path not in ('dev/scratch/README.md', 'dev/scratch/.gitignore'):
+            findings.append(f'tracked scratch: {path}')
+    def regular(path):
+        return index.get(path) in ((b'100644', b'0'), (b'100755', b'0'))
+    for directory in sorted(directories):
+        if not regular(directory + '/README.md'):
+            findings.append(f'missing folder README: {directory}')
+    table = None
+    if regular('dev/README.md'):
+        try:
+            text = _boundary_read(root, 'dev/README.md')
+            section = re.search(r'(?ms)^## The tree\s*\n(.*?)(?=^## |\Z)', text)
+            if section is None:
+                raise ValueError('missing tree section')
+            table = set(re.findall(r'(?m)^\|\s*`([^`/]+/)`\s*\|', section.group(1)))
+        except (OSError, ValueError, UnicodeError) as exc:
+            incomplete.append(f'dev/README.md: {exc}')
+    else:
+        incomplete.append('dev/README.md lacks a regular stage-zero index entry')
+    if table is not None:
+        for directory in sorted(d for d in directories if d.count('/') == 1):
+            if directory.split('/')[1] + '/' not in table:
+                findings.append(f'unlisted top folder: {directory}')
+    literal = re.compile(r'(?<![\w/])dev[\\/][\w.\-/\\]*')
+    for path in kept:
+        if not regular(path):
+            incomplete.append(f'nonregular kept index entry: {path}')
+            continue
+        try:
+            text = _boundary_read(root, path)
+        except (OSError, ValueError, UnicodeError) as exc:
+            incomplete.append(f'{path}: {exc}')
+            continue
+        for number, line in enumerate(text.splitlines(), 1):
+            targets = [m.group(1) for m in _LINK_RE.finditer(line)]
+            ref = _REFDEF_RE.match(line)
+            if ref:
+                targets.append(ref.group(1))
+            hit = bool(literal.search(line))
+            for target in targets:
+                parsed = urlsplit(target)
+                if parsed.scheme or parsed.netloc:
+                    continue
+                pathpart = unquote(parsed.path).replace('\\', '/')
+                if pathpart.startswith('/'):
+                    resolved = posixpath.normpath(pathpart.lstrip('/'))
+                else:
+                    resolved = posixpath.normpath(posixpath.join(posixpath.dirname(path), pathpart))
+                if resolved == 'dev' or resolved.startswith('dev/'):
+                    hit = True
+            if hit:
+                if path == 'AGENTS.md':
+                    exempt += 1
+                else:
+                    findings.append(f'dev reference: {path}:{number}')
+    for item in sorted(findings):
+        print(f'  FINDING {item}')
+    for item in sorted(incomplete):
+        print(f'  INCOMPLETE {item}')
+    status = 'INCOMPLETE' if incomplete else ('WITH FINDINGS' if findings else 'CLEAN')
+    print(f'release-boundary: {status}; {len(findings)} finding(s), {len(incomplete)} incomplete, {exempt} AGENTS.md pointer(s) exempt')
+    return 2 if incomplete else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog='link_check',
         description='Markdown link / anchor integrity check over a repo.',
     )
+    parser.add_argument('--release-boundary', type=Path, default=None, metavar='SCOPE')
     parser.add_argument('files', nargs='*', type=Path,
                         help='Specific Markdown files (default: whole tree).')
     parser.add_argument('--root', type=Path, default=None,
@@ -991,6 +1162,11 @@ def main(argv: list[str] | None = None) -> int:
     if not root.is_dir():
         print(f'link_check: root is not a directory: {root}', file=sys.stderr)
         return 2
+    if args.release_boundary is not None:
+        if args.files or args.check_external or args.allow_hosts or args.include_archives or args.include_modules or args.include_cairn:
+            print('link_check: release-boundary cannot combine with scanner options', file=sys.stderr)
+            return 2
+        return release_boundary(root, args.release_boundary)
     if args.files:
         files = [f.resolve() for f in args.files]
     else:

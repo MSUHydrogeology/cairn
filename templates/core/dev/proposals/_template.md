@@ -21,6 +21,9 @@ bullets, or replace with `N/A: no project-specific triggers`. An
 unfilled slot is a review finding.)
 <!-- cairn:end triage-extra-triggers -->
 
+Release-side content should cite deliberation by date and topic, not by a
+`dev/` path; development guides may cite development records.
+
 ## Lifecycle
 
 ```

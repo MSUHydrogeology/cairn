@@ -60,3 +60,11 @@ review is a dated, attributed section appended to the artifact, not a
 conversation that leaves no record. Engage as a **collaborative skeptic** — steelman a position
 before critiquing it, and treat disagreement as a way to improve the
 change.
+
+For a release that omits `dev/`, keep project source, tests, examples, user and
+theory documentation, changelog and package metadata. In kept content identify
+development decisions by date and topic instead of `dev/` paths; development
+guides may cite the records. Preserve `AGENTS.md` and its development-checkout
+pointers and duties. If opting into root `RULES.md`, ship its run rules whole
+without a `dev/` dependency and remove its development-only pointer for that
+release. Do not rewrite project citations automatically.

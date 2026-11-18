@@ -81,3 +81,7 @@ archived note for historical context; do **not** treat it as current direction
 unless a live proposal, plan, `dev/PLANNING.md` item, or doc cites it.
 
 See [`../README.md`](../README.md) for the full `dev/` subdirectory map.
+
+New folders under `dev/`, and committed briefs or reports used to evade length
+limits, require the Maintainer’s permission. This README records purpose; it
+does not grant permission.

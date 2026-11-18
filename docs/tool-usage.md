@@ -258,3 +258,7 @@ Cairn’s count-maintenance instructions live beside the tools in the [tests REA
   role".
 * The verify-before-asserting discipline these tools serve —
   `docs/methodology/rationale.md` and the `claim-check` module.
+
+The installed link checker also offers `--release-boundary` for an advisory
+tracked-file report; the doc-drift-prevention guide describes its reviewed scope,
+classification and incomplete results. It does not package or approve a release.

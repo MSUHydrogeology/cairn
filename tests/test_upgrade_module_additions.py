@@ -1383,3 +1383,23 @@ def test_measurement_registry_survives_upgrade_and_support_is_checked(tmp_path: 
     support = target / "dev/tools/measurements.py"
     support.write_text(support.read_text() + "\n# altered\n")
     assert verify(["--target", str(target)]) != 0
+
+
+def test_scratch_install_and_upgrade_preserve_project_content(tmp_path: Path):
+    import subprocess
+
+    target = tmp_path.resolve()
+    _install(target)
+    scratch = target / 'dev/scratch'
+    assert (scratch / 'README.md').is_file() and (scratch / '.gitignore').is_file()
+    user = target / 'project.txt'
+    user.write_text('keep me')
+    subprocess.run(['git', '-C', str(target), 'init', '-q'], check=True)
+    note = scratch / 'draft.txt'
+    note.write_text('temporary')
+    assert subprocess.run(['git', '-C', str(target), 'check-ignore', '-q', 'dev/scratch/draft.txt']).returncode == 0
+    base = ['upgrade', '--target', str(target), '--cairn-root', str(CAIRN_ROOT)]
+    assert s.main(base + ['--stage']) == 0
+    assert s.main(base + ['--apply']) == 0
+    assert user.read_text() == 'keep me' and note.read_text() == 'temporary'
+    assert (scratch / 'README.md').is_file() and (scratch / '.gitignore').is_file()

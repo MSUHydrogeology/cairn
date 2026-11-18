@@ -1,5 +1,7 @@
 # Getting started — a change moving through Cairn
 
+Agents: read `AGENTS.md`, then use this guide for the project.
+
 The [on-ramp](../install/on-ramp/README.md) helps you choose how much of Cairn to
 adopt: read the guidance, or install it with a profile. This page follows
 **one change through the lifecycle** so you can see what each step produces.
@@ -36,8 +38,8 @@ program. Because this adds a capability, it starts with a proposal.
 
 ### 1. Propose
 
-You write a proposal as a committed Markdown file under
-`dev/proposals/` — context, the change, and the alternatives you
+You write a proposal as a committed Markdown file in the development
+records — context, the change, and the alternatives you
 considered. The act of writing it is the point: it forces the
 reasoning into the open *before* code is written, where it can be
 reviewed cheaply.
@@ -60,8 +62,8 @@ another model or a person.
 
 The **Maintainer** appends the `## Decision` section: accept, reject,
 or supersede. Agents can propose and review, but only the Maintainer decides
-whether the change goes ahead. An accepted proposal stays in `dev/proposals/` until the work
-starts: it moves to `dev/proposals/archive/` in the commit that opens its plan,
+whether the change goes ahead. An accepted proposal stays active until the work
+starts: it moves to the proposal archive in the commit that opens its plan,
 or, for a small change, in the commit that implements it.
 
 So far, Cairn's own archive has no proposals with `rejected` status. That
@@ -69,7 +71,7 @@ describes this project's record, not a target for yours: many ideas end in
 conversation before anyone opens a proposal, and a proposal can be rejected.
 
 A small accepted proposal can be implemented and archived in one commit.
-A larger one opens a **plan** under `dev/plans/` first, which sequences
+A larger one opens a **plan** in the development records first, which sequences
 the implementation and gets its own review before the work archives.
 The `greet` change is small enough for the one-commit path.
 

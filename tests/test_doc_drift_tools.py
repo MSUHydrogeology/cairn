@@ -991,3 +991,69 @@ def test_the_external_probe_refuses_unsafe_hosts_schemes_and_redirects(
     err = capsys.readouterr().err
     assert (rc, "SSRF guard" in err, "non-http(s) scheme" in err,
             len(local_site.hits)) == expected
+
+
+def test_installed_release_boundary_report(tmp_path: Path):
+    import json
+
+    root = tmp_path / 'project'
+    root.mkdir()
+    assert _scaffold(root, ['doc-drift-prevention']) == 0
+    checker = root / 'dev/tools/link_check.py'
+    # A tiny indexed fixture distinguishes tracked content from untracked files.
+    subprocess.run(['git', 'init', '-q', str(root)], check=True)
+    def write(path, text):
+        target = root / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text)
+    write('AGENTS.md', 'Development: dev/tools/link_check.py\n')
+    write('dev/README.md', '## The tree\n\n| Path | Purpose |\n|---|---|\n| `tools/` | Tools |\n')
+    write('dev/tools/README.md', 'Tools.\n')
+    write('kept.md', 'A kept document.\n')
+    scope = root / 'scope.json'
+    scope.write_text(json.dumps({'kept': ['AGENTS.md', 'kept.md'], 'development': ['scope.json']}))
+    subprocess.run(['git', '-C', str(root), 'add', '-f', 'AGENTS.md', 'kept.md', 'scope.json', 'dev/README.md', 'dev/tools/README.md'], check=True)
+    def run():
+        return subprocess.run([sys.executable, str(checker), '--root', str(root), '--release-boundary', 'scope.json'], cwd=tmp_path, text=True, capture_output=True)
+    clean = run()
+    assert clean.returncode == 0 and 'CLEAN' in clean.stdout and '1 AGENTS.md pointer' in clean.stdout
+    write('kept.md', '<!-- link-check-allow: dev/tools/README.md -->\n[development](dev/tools/README.md)\n')
+    found = run()
+    assert found.returncode == 0 and 'WITH FINDINGS' in found.stdout and 'dev reference' in found.stdout
+    write('other.md', 'unclassified')
+    subprocess.run(['git', '-C', str(root), 'add', 'other.md'], check=True)
+    assert run().returncode == 2 and 'unclassified' in run().stdout
+    subprocess.run(['git', '-C', str(root), 'rm', '--cached', '-q', 'other.md'], check=True)
+    scope.write_text(json.dumps({'kept': ['AGENTS.md', '../outside'], 'development': ['scope.json']}))
+    assert run().returncode == 2
+    scope.write_text(json.dumps({'kept': ['AGENTS.md', 'kept.md'], 'development': ['scope.json']}))
+    write('dev/scratch/leak.txt', 'forced\n')
+    subprocess.run(['git', '-C', str(root), 'add', '-f', 'dev/scratch/leak.txt'], check=True)
+    scratch_report = run()
+    assert 'tracked scratch' in scratch_report.stdout
+    assert 'missing folder README: dev/scratch' in scratch_report.stdout
+    assert 'unlisted top folder: dev/scratch' in scratch_report.stdout
+    subprocess.run(['git', '-C', str(root), 'rm', '--cached', '-q', 'dev/README.md'], check=True)
+    missing = run()
+    assert missing.returncode == 2 and 'INCOMPLETE' in missing.stdout
+    subprocess.run(['git', '-C', str(root), 'add', 'dev/README.md'], check=True)
+    subprocess.run(['git', '-C', str(root), 'update-index', '--cacheinfo', '120000,' + subprocess.check_output(['git', '-C', str(root), 'hash-object', '-w', '--stdin'], input=b'outside').decode().strip() + ',dev/README.md'], check=True)
+    assert run().returncode == 2
+
+
+def test_project_tests_can_use_both_locations_and_release_without_dev(tmp_path: Path):
+    root = tmp_path / 'project'
+    (root / 'tests').mkdir(parents=True)
+    (root / 'dev/tests').mkdir(parents=True)
+    (root / 'dev/tools').mkdir(parents=True)
+    (root / 'dev/tools/value.py').write_text('VALUE = "dev"\n')
+    (root / 'tests/value.py').write_text('VALUE = "other"\n')
+    (root / 'tests/test_kept.py').write_text('from pathlib import Path\ndef test_fixture():\n    assert (Path(__file__).resolve().parents[1] / "data.txt").read_text() == "ok"\n')
+    (root / 'dev/tests/test_local.py').write_text('from dev.tools.value import VALUE\ndef test_qualified():\n    assert VALUE == "dev"\n')
+    (root / 'data.txt').write_text('ok')
+    env = {**os.environ, 'PYTHONPATH': str(root)}
+    def run(*paths):
+        return subprocess.run([sys.executable, '-m', 'pytest', '-q', *paths], cwd=root, env=env, capture_output=True, text=True)
+    assert run('tests', 'dev/tests').returncode == 0
+    shutil.rmtree(root / 'dev')
+    assert run('tests').returncode == 0

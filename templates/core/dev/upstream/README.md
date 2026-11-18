@@ -47,3 +47,7 @@ submits a Cairn pull request by hand. A finding spanning both channels gets
 separate drafts and approvals. Update the draft with the outcome.
 
 See [`../README.md`](../README.md) for the full `dev/` subdirectory map.
+
+New folders under `dev/`, and committed briefs or reports used to evade length
+limits, require the Maintainer’s permission. This README records purpose; it
+does not grant permission.

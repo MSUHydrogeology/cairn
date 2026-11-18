@@ -38,6 +38,9 @@ these opens a proposal regardless of size:
   `install/PROVENANCE.md`.
 <!-- cairn:end triage-extra-triggers -->
 
+Release-side content should cite deliberation by date and topic, not by a
+`dev/` path; development guides may cite development records.
+
 ## Lifecycle
 
 ```

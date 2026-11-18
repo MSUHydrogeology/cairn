@@ -12,6 +12,9 @@ the arc owner joins related work at the selected integration point. The plan
 says how the work happens and how you will know it worked; it does not
 re-argue the decision.
 
+Release-side content should cite deliberation by date and topic, not by a
+`dev/` path; development guides may cite development records.
+
 ## Lifecycle
 
 ```

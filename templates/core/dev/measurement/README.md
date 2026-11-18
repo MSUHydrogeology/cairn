@@ -91,3 +91,7 @@ The two-sided exclusion — *not an archive, not adopter state* — is what keep
 this folder from becoming a miscellaneous junk drawer. A file that is neither an
 aggregate metric nor a measurement-feeding operational ledger does not belong
 here.
+
+New folders under `dev/`, and committed briefs or reports used to evade length
+limits, require the Maintainer’s permission. This README records purpose; it
+does not grant permission.
