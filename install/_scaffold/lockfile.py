@@ -168,7 +168,7 @@ def _git_read_version(target: str, timeout: float = 10.0):
 
 #: An additive optional top-level lockfile field does NOT bump this --
 #: see "Adding a lockfile field without bumping the schema" in
-#: bootstrap/UPGRADE.md for the full rule and the reader-tolerance it relies on.
+#: install/UPGRADE.md for the full rule and the reader-tolerance it relies on.
 
 
 #: Lockfile records for these dsts carry ``living_state: true`` and are
@@ -324,7 +324,7 @@ def _cairn_provenance(cairn_root: Path) -> tuple[str, list[str]]:
 
     Both values are **declarations** derived from the source tree at
     install/upgrade time, not attestations of checkout origin or
-    installed-file licensing -- see ``bootstrap/UPGRADE.md``.
+    installed-file licensing -- see ``install/UPGRADE.md``.
     """
     cff = cairn_root / "CITATION.cff"
     if not cff.exists():
@@ -423,7 +423,7 @@ def _refuse_secret_tokens(
             "refusing to record secret-like token name(s) in the lockfile: "
             + ", ".join(offending)
             + " -- Cairn templates must not introduce secret-bearing "
-            "substitution tokens (bootstrap/SAFETY.md). If a token is "
+            "substitution tokens (install/SAFETY.md). If a token is "
             "genuinely public, add it to the writer's allow-list."
         )
 
@@ -440,7 +440,7 @@ def _emit_lock_yaml(data: dict[str, Any]) -> str:
         "dependency.\n"
         "# source_repository/source_licenses are declared, not attested -- "
         "see \"Adding a lockfile field without bumping the schema\" in "
-        "bootstrap/UPGRADE.md (a reference in the Cairn source repository, "
+        "install/UPGRADE.md (a reference in the Cairn source repository, "
         "not a file installed into this tree).\n"
     )
     return header + json.dumps(data, indent=2, sort_keys=True) + "\n"

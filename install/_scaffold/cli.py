@@ -507,7 +507,7 @@ def main(argv: list[str] | None = None) -> int:
             )
         print(
             "[dry-run] Skills:          "
-            "tools/session.py + .agents/skills/{session-start,session-end}/"
+            "dev/tools/session.py + .agents/skills/{session-start,session-end}/"
             "SKILL.md (+ per-worktree Git interpreter binding)"
         )
         for mod in modules:
@@ -553,8 +553,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(
         f"  Installed {_n_skills} lifecycle skill(s) -> .agents/skills/ "
-        f"(+ the tools/session.py CLI). Try "
-        f"`python tools/session.py session-start`."
+        f"(+ the dev/tools/session.py CLI). Try "
+        f"`python dev/tools/session.py session-start`."
     )
     try:
         env_result = write_local_env(target, force=args.force)

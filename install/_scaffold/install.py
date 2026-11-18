@@ -434,7 +434,7 @@ def install_skills(
 
     A sibling to :func:`install_core` (kept separate rather than folded into
     it): the skills install to distinct destinations (``.agents/skills/`` +
-    ``tools/session.py``) and carry per-file verbatim/substituted rules that
+    ``dev/tools/session.py``) and carry per-file verbatim/substituted rules that
     differ from core docs, so a dedicated installer keeps each surface's rules
     legible.  Because the routines are invariant kernel they are not a
     conditional module.  ``verbatim`` is read per spec from
@@ -725,7 +725,7 @@ def render_compatibility_matrix(templates_root: Path) -> str:
         "",
         "A **symlink**-tier target's read-path is fanned out from the canonical",
         "`.agents/skills/` source at install time. It is *also* re-ensured at",
-        "**session-start** by the session kernel (`tools/session.py",
+        "**session-start** by the session kernel (`dev/tools/session.py",
         "session-start`), so an adopter established by lockfile-copy -- or whose",
         "symlink-tier harness was not present at install -- self-heals on first",
         "run instead of silently having no skills in that harness. The self-heal",
@@ -850,7 +850,7 @@ def _emit_skill_copy_fallback(
         # fan-out when run again, but session-start (and a fresh install) does
         return ScaffoldSecurityError(
             f"{reason}: {shown(path)}\n  {remedy}, then run "
-            "`python tools/session.py session-start` (or install again) to copy "
+            "`python dev/tools/session.py session-start` (or install again) to copy "
             "the skills."
         )
 
@@ -1073,7 +1073,7 @@ def model_selection_notice_lines(target: Path) -> list[str]:
         "NOTE (model-selection) -- could not read dev/.cairn/model-selection-mapping.yml",
         "(it is a link, sits behind one, is not a plain file, or is not valid text).",
         "That file was not changed. Open it yourself, then run",
-        "`python scripts/check_model_selection.py`.",
+        "`python dev/tools/check_model_selection.py`.",
     ]
     try:
         mapping.lstat()
@@ -1094,7 +1094,7 @@ def model_selection_notice_lines(target: Path) -> list[str]:
     return [
         "NOTE (model-selection) -- the tier-to-model mapping is not filled in:",
         "  dev/.cairn/model-selection-mapping.yml still holds the FILL ME stub.",
-        "Until it is filled, `python scripts/check_model_selection.py` fails. Nothing runs",
+        "Until it is filled, `python dev/tools/check_model_selection.py` fails. Nothing runs",
         "that check automatically. Ask the Maintainer which model family fills each tier",
         "(high, medium, low); do not guess. Name the family, never a version: the latest",
         "release is meant. The stub holds one placeholder row: replace it with one row per",
@@ -1184,7 +1184,7 @@ def capture_model_selection_mapping(
         "module).",
         "# Captured interactively at install; edit freely. Re-verify with:",
         "# Name the model family, never a version: the latest release of that family is meant.",
-        "#   python scripts/check_model_selection.py",
+        "#   python dev/tools/check_model_selection.py",
         "# Adopter-local: do not commit vendor names to a shared Cairn repo.",
         "",
         "mapping:",
@@ -1228,11 +1228,11 @@ def capture_model_selection_mapping(
 #: match byte-for-byte for that capability's policy.
 _CAPABILITY_NOTICE_MODULES: dict[str, dict[str, str]] = {
     "api-access-security": {
-        "facade": "scripts/api_access_security.py",
+        "facade": "dev/tools/api_access_security.py",
         "target_label": "base url",
     },
     "web-hosting-security": {
-        "facade": "scripts/web_hosting_security.py",
+        "facade": "dev/tools/web_hosting_security.py",
         "target_label": "https origin",
     },
 }
