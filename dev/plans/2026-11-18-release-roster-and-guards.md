@@ -71,3 +71,35 @@ The Maintainer's re-anchor and actual certifying records are separate named boar
 - C3 puts joined integration after connected work inside this plan's final chunk. Plans finish independently before later integration. Make the arc owner's joined integration a separate arc obligation while retaining this plan's own checks and reviews (Sequence; `dev/agent_collaboration.md`, Verification).
 
 Coverage: read the committed plan, accepted proposal and Decision, current plan template and relevant collaboration rules. Did not collect or run tests, assess actual guard equivalence, inspect native results or perform Security Review. The separate Internal Security Review remains outstanding.
+
+## Plan review -- gpt-6.2-sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: dcaef30b77eb008f209129aa9389c6a525c53f8e
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Steelman.** Use actual native outcomes to fix the roster and retire a held
+guard only when its public protection and named duties are demonstrated.
+
+**Foundations**
+
+1. **Should this happen as framed?** The named skip repairs, conditional removals, and single-file claims fence deliver Option B, but C3 leaves part of required Security code coverage optional (Scope, C1–C3, Decision `8ac332b4`).
+2. **Best alternative.** Let one formal review record cover applicable new protected changes and identify the separately authorized capped-code question as one bounded pass (Sequence, `dev/agent_collaboration.md`, Plans and records).
+3. **What would show it wrong?** An affected required native node omitted from the outcome record or an ineligible setup or call-phase skip accepted by the release gate would falsify C1 (`release/security_check.py`, `_validate_outcome_rows`; proposal S2–S4).
+
+**Blocking.** Sequence says the authorized old-code pass “may” cover new
+roster changes, and C3 requires only the focused Security pass. Require the
+Security code review record to cover every applicable new protected change,
+including roster repairs outside the removal question. Identify the single
+authorized old-code pass on removals, retained public witnesses and affected
+roster or references. Preserve the existing requirement for fresh Maintainer
+authorization before any further pass on that capped scope (`dev/rules/protected-surfaces.md`, proposal Assurance path, Decision `8ac332b4`).
+
+**Coverage.** Read the committed plan and proposal, Decision, protected rules,
+plan template and release outcome validator. No native outcomes, executable
+checks or guard equivalence were assessed. The authorized code pass remains due
+at its designated step.
