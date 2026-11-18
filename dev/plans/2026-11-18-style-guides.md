@@ -21,9 +21,6 @@ Survey current `install/`, `dev/tools/` and applicable scripts read-only. Add `d
 
 **Reuse.** N/A: no code added; extend existing public-install promise tests and seed machinery.
 
-Proposed paths:
-- `docs/style_guide.md`
-
 ## Sequence
 
 | # | Chunk | Gate | Ships |
@@ -89,3 +86,13 @@ Reviewed commit: d706018df981761de24b595ceb7ae970f2c18b88
 **Rule retention.** Both README edits retain root indexing. The plan keeps adopter authority in installed files, and the seeded task supplies guidance without granting implementation authority or exceptions (C1–C3, Proposal S1–S5).
 
 **Coverage.** Compared the accepted scope with the committed plan, current conventions, seed rendering and module mapping. Implementation text, install results, mutation runs and agent behavior were outside this pass.
+
+## Implementation evidence -- Terra -- 2026-11-18
+
+C1–C2 ship at `ed58c8b8`. Surveyed `install/` and `dev/tools/` for imports, annotations, interfaces and notices: header use differs, so no uniform header rule was invented. The module section is 115 words; the Cairn always-loaded set is 1,578/2,000 words and the shipped set 1,483/1,500. Reading scenarios for a greenfield start, a legacy survey, a team agreement, a guide conflict and module opt-out found a route to both guides and retained binding authority; this is an author reading, not independent agent-behavior evidence.
+
+Python 3.13: the two required onboarding files yielded 48 passes and three failures in 53.21 s. All three failures used the pre-layout source path in an existing public delivery test; the corrected cases passed in 4.32 s. Six fresh preset/opt-out cases and two board-preservation checks passed in 11.20 s. In a disposable copy, removing a seed, breaking the installed reference and forcing board reseeding each made its targeted test fail. Claim, link, snippet, check_cairn and neutrality gates passed. No suite or independent code review was run; ordinary and Security code reviews remain.
+
+**Benefit versus cost**: unknown -- new adopters can find guidance for two audiences; cost 115 installed module words, three small seed tasks and six parameterized install cases; remaining upkeep and agent impact unknown. Revisit if task completion or stale guidance shows continuing burden exceeds benefit.
+
+**Elapsed**: unknown. **Tokens**: unknown.
