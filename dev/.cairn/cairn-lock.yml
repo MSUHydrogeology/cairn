@@ -194,7 +194,7 @@
     },
     {
       "dst": "dev/proposals/_template.md",
-      "hash": "sha256:4c5af073152175ffbc0ea839ff76d1b777304a5efa5df1e9a479ca6b9ab9f9f8",
+      "hash": "sha256:716c21f71069e43830209d4add271d4d2a953cedeff3201646cf17b0a46b49c4",
       "src": "core/dev/proposals/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -250,7 +250,7 @@
     },
     {
       "dst": "docs/DOCUMENTATION_PLAN.md",
-      "hash": "sha256:76a49cb251ab2c28ece8f6076a912bc150b95f0079e0c1e73ddc498b66be3d83",
+      "hash": "sha256:66e9d6f777e014bdcfe2887577dfcbc864301a94bd8450c58baa8bd8453b60ec",
       "src": "modules/default-on/documentation_plan_template.md",
       "unrecoverable_base": true,
       "verbatim": false
