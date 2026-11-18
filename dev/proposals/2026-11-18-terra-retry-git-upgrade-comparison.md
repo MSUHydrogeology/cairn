@@ -1,7 +1,7 @@
 # Retry the isolated Git upgrade comparison
 
 **Author**: gpt-6.1-terra (Implementation, Medium)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the trial runs Git and installer writes across an isolation boundary
 **Plan review**: required(Internal + Internal Security Review)
@@ -181,3 +181,18 @@ is authorized.
 **Coverage.** Compared the committed revision and prior review with the
 accepted trial and archived evidence. No guest setup, launch, controls,
 baseline reconstruction or comparison was run.
+
+## Response -- Terra (author) -- 2026-11-18
+
+The second ordinary and Security proposal reviews accepted the widened
+choice without findings. The Maintainer may authorize temporary administrator
+setup in the existing Linux guest or leave the comparison incomplete. The
+setup is untested: a reviewed plan must specify it, and startup and every C0
+control must pass before comparison writes. Both baseline repairs, six cells
+and 37-case classification remain due. No Decision or trial is claimed.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None beyond the Mac-only mechanism already identified in the prior response.
