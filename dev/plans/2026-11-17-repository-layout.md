@@ -635,3 +635,36 @@ The v0.8 re-anchor remains a separate board wait. Link this plan there at
 closeout (`dev/PLANNING.md`).
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Code Security Review -- Sol -- 2026-11-18 (pass 2)
+
+Reviewed commit: 2e35a655d5a7c94fda868dd4970e99a30401672b
+
+**Obligation**: Internal Security Review
+**Tier**: Internal, GPT-6.2 Sol High
+**Verdict**: ACCEPT
+**Findings**: none.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. One verified full commit supplies the archive and image label. Podman takes both inputs and recipe from the extracted tree. The existing pin guard is unchanged -- `install/container/recipe.md:89`, `install/container/verify-ref.sh:125`.
+2. **Best alternative.** Reusing the acceptance archive pattern meets the exact-source requirement without adding an installer command or a release step -- `install/container/acceptance.sh:138`.
+3. **What would show it wrong?** A local file reaching the builder or a builder starting after failed extraction would falsify the fix. The author's public check passed once in 0.69 seconds on Python 3.13.13, observing archived recipe and engine bytes and exclusion of the ignored file at the Podman command. The shell's success chain gates Podman on both archive and extraction -- `tests/test_verify_ref.py:1126`, `install/container/recipe.md:93`.
+
+**Rules and audience**: `dev/rules/protected-surfaces.md`,
+`dev/rules/working-agreements.md`. The adopter follows the existing pin
+checks. The safety guide now describes both guarded removal routes
+(`install/SAFETY.md:272`).
+
+**Tests and cost**: One public build-boundary check and no removed tests.
+It executes the guide's commands and measures the build inputs.
+
+**Bounding**: ACCEPTED for the new executable guide and safety correction.
+The first pass predated this program. This pass inspected failure handling
+and used the recorded focused run. No additional build, signing or native
+certification ran.
+
+**Waiting-line check**: The plan now links from the existing cut wait.
+No fence became due in this correction -- `dev/PLANNING.md`.
+
+**Elapsed**: unknown. **Tokens**: unknown.
