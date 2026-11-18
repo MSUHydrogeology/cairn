@@ -79,6 +79,9 @@ orchestration per the ``release-security-orchestration`` plan.
 """
 from __future__ import annotations
 
+import base64
+import hashlib
+import importlib.util
 import json
 import os
 import secrets
@@ -87,7 +90,7 @@ import stat
 import subprocess
 import sys
 import tempfile
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from collections.abc import Callable, Mapping
 from collections.abc import Iterator
 from pathlib import Path
@@ -476,11 +479,74 @@ def _validate_raw_suite_report(raw: object, *, nonce: str, head: str,
             "outcomes": [normalized[node] for node in sorted(normalized)]}
 
 
+def _is_sha256(value: object) -> bool:
+    return (type(value) is str and len(value) == 64
+            and all(c in "0123456789abcdef" for c in value))
+
+
+def _validate_history_sweep_record(raw: object, expected_head: str) -> dict:
+    sweep = _exact_keys(raw, {
+        "manifest_sha256", "pack_sha256", "candidate",
+        "projection_before", "projection_after", "sweep",
+    }, "history sweep record")
+    for key in ("manifest_sha256", "pack_sha256"):
+        if not _is_sha256(sweep[key]):
+            raise ValueError(f"history sweep {key} is malformed")
+    if not _is_full_sha(sweep["candidate"]) or sweep["candidate"] != expected_head:
+        raise ValueError("history sweep candidate SHA mismatch")
+    for label in ("projection_before", "projection_after"):
+        proj = _exact_keys(sweep[label], {
+            "head", "projected_count", "projected_sha256",
+            "object_count", "objects_sha256",
+        }, f"history sweep {label}")
+        if not _is_full_sha(proj["head"]) or proj["head"] != expected_head:
+            raise ValueError(f"{label} head mismatch")
+        if type(proj["projected_count"]) is not int or proj["projected_count"] < 0:
+            raise ValueError(f"{label} projected_count is malformed")
+        if type(proj["object_count"]) is not int or proj["object_count"] <= 0:
+            raise ValueError(f"{label} object_count is malformed")
+        if not _is_sha256(proj["projected_sha256"]):
+            raise ValueError(f"{label} projected_sha256 is malformed")
+        if not _is_sha256(proj["objects_sha256"]):
+            raise ValueError(f"{label} objects_sha256 is malformed")
+    if sweep["projection_before"] != sweep["projection_after"]:
+        raise ValueError("frozen history projection drifted during scan")
+    sw = _exact_keys(sweep["sweep"], {
+        "result", "mode", "legs", "adapter_version", "adapter_digest",
+        "policy_sha256", "runner_sha256",
+    }, "history sweep summary")
+    if type(sw["result"]) is not int or sw["result"] != 0 or sw["mode"] != "full":
+        raise ValueError("history sweep did not pass in full mode")
+    if not _is_sha256(sw["adapter_digest"]):
+        raise ValueError("history sweep adapter_digest is malformed")
+    if not _is_sha256(sw["policy_sha256"]):
+        raise ValueError("history sweep policy_sha256 is malformed")
+    if not _is_sha256(sw["runner_sha256"]):
+        raise ValueError("history sweep runner_sha256 is malformed")
+    if type(sw["adapter_version"]) is not str or not sw["adapter_version"]:
+        raise ValueError("history sweep adapter_version is malformed")
+    legs = sw["legs"]
+    if type(legs) is not dict or set(legs) != {"current-tree", "history"}:
+        raise ValueError("history sweep must report both current-tree and history legs")
+    for leg_name, leg_row in legs.items():
+        row = _exact_keys(leg_row, {"status", "result", "finding_count"}, f"{leg_name} leg")
+        if row["status"] != "CLEAN" or type(row["result"]) is not int or row["result"] != 0:
+            raise ValueError(f"history sweep {leg_name} leg is not CLEAN")
+        if type(row["finding_count"]) is not int or row["finding_count"] != 0:
+            raise ValueError(f"history sweep {leg_name} leg reported findings")
+    return sweep
+
+
 def _validate_local_record(raw: object, expected_head: str) -> dict:
-    record = _exact_keys(raw, {
+    if not isinstance(raw, dict):
+        raise ValueError("local record must be a JSON object")
+    allowed = {
         "schema", "kind", "head", "platform", "os_name", "python",
         "policy_id", "nonce", "phases", "orders", "excluded",
-    }, "local record")
+    }
+    if "history_sweep" in raw:
+        allowed.add("history_sweep")
+    record = _exact_keys(raw, allowed, "local record")
     if (type(record["schema"]) is not int or record["schema"] != 1
             or record["kind"] != "cairn-native-local-v1"
             or not _is_full_sha(record["head"]) or record["head"] != expected_head
@@ -539,6 +605,8 @@ def _validate_local_record(raw: object, expected_head: str) -> dict:
     for label, ids in order_ids.items():
         if any(node.split("::", 1)[0] in _RELEASE_EXCLUDED for node in ids):
             raise ValueError(f"{label} order collected an excluded test file")
+    if "history_sweep" in record:
+        _validate_history_sweep_record(record["history_sweep"], expected_head)
     return record
 
 
@@ -1824,11 +1892,388 @@ def _bound_main(expected_head: str, summary_path: str) -> int:
     return rc
 
 
+def _load_portable_sweeps_runner(root: Path = CAIRN_ROOT):
+    import sys as _sys
+    runner_path = root / "dev" / "tools" / "run_portable_security_sweeps.py"
+    if not runner_path.is_file():
+        runner_path = Path(__file__).resolve().parent.parent / "dev" / "tools" / "run_portable_security_sweeps.py"
+    spec = importlib.util.spec_from_file_location("_cairn_portable_sweeps", runner_path)
+    if spec is None or spec.loader is None:
+        raise ValueError(f"cannot load portable sweeps runner at {runner_path}")
+    module = importlib.util.module_from_spec(spec)
+    _sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _derive_pack_path(manifest_path: Path) -> Path:
+    if manifest_path.suffix != ".json":
+        raise ValueError("frozen history manifest path must end with .json")
+    return manifest_path.with_suffix(".pack")
+
+
+def _write_exclusive_bytes(path: Path, data: bytes, root: Path) -> None:
+    resolved = path.resolve()
+    if (not path.is_absolute() or resolved.is_relative_to(root.resolve())
+            or path.exists() or path.is_symlink() or not path.parent.is_dir()):
+        raise ValueError("output path must be a new external absolute path")
+    flags = (os.O_CREAT | os.O_EXCL | os.O_WRONLY
+             | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0))
+    fd = os.open(path, flags, 0o600)
+    try:
+        view = memoryview(data)
+        while view:
+            written = os.write(fd, view)
+            if written <= 0:
+                raise OSError("incomplete write")
+            view = view[written:]
+    finally:
+        os.close(fd)
+
+
+def _resolve_release_git(runner, target: Path, git_override: object = None):
+    if git_override is not None:
+        return git_override
+    git_path = shutil.which("git")
+    if not git_path:
+        raise ValueError("git executable is absent")
+    return runner.resolve_executable("git", target, os.path.dirname(git_path))
+
+
+def _pin_source_paths(repo_root: Path) -> dict[str, str]:
+    if "GIT_ALTERNATE_OBJECT_DIRECTORIES" in os.environ:
+        raise ValueError("GIT_ALTERNATE_OBJECT_DIRECTORIES is forbidden")
+    top = _git_at(repo_root, "rev-parse", "--path-format=absolute", "--show-toplevel")
+    gdir = _git_at(repo_root, "rev-parse", "--path-format=absolute", "--git-dir")
+    cdir = _git_at(repo_root, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    shallow = _git_at(repo_root, "rev-parse", "--is-shallow-repository")
+    if any(p.returncode != 0 for p in (top, gdir, cdir, shallow)):
+        raise ValueError("could not resolve pinned repository paths")
+    if shallow.stdout.strip() != "false":
+        raise ValueError("shallow repository is refused")
+    common_dir = Path(cdir.stdout.strip())
+    if ((common_dir / "shallow").exists()
+            or (common_dir / "info" / "grafts").exists()
+            or (common_dir / "objects" / "info" / "alternates").exists()):
+        raise ValueError("shallow, grafted, or alternate object storage is refused")
+    return {
+        "top_level": top.stdout.strip(),
+        "git_dir": gdir.stdout.strip(),
+        "common_dir": str(common_dir),
+    }
+
+
+def _parse_worktree_porcelain_z(raw: bytes, common_dir: Path) -> list[dict[str, str]]:
+    if not raw:
+        raise ValueError("empty worktree inventory")
+    stanzas = raw.split(b"\0\0")
+    entries: list[dict[str, str]] = []
+    seen_main = False
+    for stanza in stanzas:
+        if not stanza:
+            continue
+        fields = stanza.split(b"\0")
+        wt_path = None
+        wt_head = None
+        is_bare = False
+        for field in fields:
+            if not field:
+                continue
+            if field.startswith(b"worktree "):
+                wt_path = field[len(b"worktree "):].decode("utf-8", "strict")
+            elif field.startswith(b"HEAD "):
+                wt_head = field[len(b"HEAD "):].decode("ascii", "strict")
+            elif field == b"bare":
+                is_bare = True
+            elif field == b"prunable" or field.startswith(b"prunable "):
+                raise ValueError("prunable worktree is refused")
+        if not wt_path or is_bare or not wt_head or not _is_full_sha(wt_head):
+            raise ValueError("malformed or bare worktree entry in source inventory")
+        wt_dir = Path(wt_path)
+        if not wt_dir.is_dir():
+            raise ValueError(f"inaccessible worktree directory: {wt_path}")
+        gdir_proc = _git_at(wt_dir, "rev-parse", "--path-format=absolute", "--git-dir")
+        cdir_proc = _git_at(wt_dir, "rev-parse", "--path-format=absolute", "--git-common-dir")
+        if gdir_proc.returncode != 0 or cdir_proc.returncode != 0:
+            raise ValueError(f"worktree git metadata check failed: {wt_path}")
+        wt_cdir = Path(cdir_proc.stdout.strip())
+        if wt_cdir.resolve() != common_dir.resolve():
+            raise ValueError(f"worktree common directory mismatch: {wt_path}")
+        wt_gdir = Path(gdir_proc.stdout.strip())
+        if wt_gdir.resolve() == common_dir.resolve():
+            if seen_main:
+                raise ValueError("duplicate main worktree in inventory")
+            seen_main = True
+            scope = "main"
+        else:
+            worktrees_parent = (common_dir / "worktrees").resolve()
+            if wt_gdir.resolve().parent != worktrees_parent:
+                raise ValueError(f"unexpected linked worktree admin dir: {wt_gdir}")
+            scope = f"worktrees/{wt_gdir.name}"
+        entries.append({"scope": scope, "path": wt_path, "head": wt_head})
+    if not seen_main:
+        raise ValueError("main worktree missing from inventory")
+    return sorted(entries, key=lambda item: item["scope"])
+
+
+def _parse_for_each_ref_z(raw: bytes, scope: str) -> list[dict[str, str]]:
+    if not raw:
+        return []
+    rows: list[dict[str, str]] = []
+    for raw_entry in raw.split(b"\0"):
+        entry = raw_entry.removeprefix(b"\n")
+        if not entry:
+            continue
+        first_sp = entry.find(b" ")
+        second_sp = entry.find(b" ", first_sp + 1) if first_sp > 0 else -1
+        if first_sp <= 0 or second_sp <= first_sp + 1:
+            raise ValueError("malformed for-each-ref entry")
+        oid = entry[:first_sp].decode("ascii", "strict")
+        objtype = entry[first_sp + 1:second_sp].decode("ascii", "strict")
+        ref_bytes = entry[second_sp + 1:]
+        if not _is_full_sha(oid) or objtype not in {"commit", "tag", "tree", "blob"}:
+            raise ValueError("invalid object id or type in ref inventory")
+        rows.append({
+            "scope": scope,
+            "ref_b64": base64.b64encode(ref_bytes).decode("ascii"),
+            "oid": oid,
+            "object_type": objtype,
+        })
+    return rows
+
+
+def _collect_source_inventory(runner, session, repo_root: Path, head: str) -> dict:
+    pinned = _pin_source_paths(repo_root)
+    common_dir = Path(pinned["common_dir"])
+    wt_res = runner._release_history_git(session, "WORKTREES")
+    worktrees = _parse_worktree_porcelain_z(wt_res.stdout, common_dir)
+    shared_res = runner._release_history_git(session, "FOR_EACH_REF_SHARED")
+    refs = _parse_for_each_ref_z(shared_res.stdout, "shared")
+    heads: list[dict] = []
+    for wt in worktrees:
+        wt_path = Path(wt["path"])
+        priv_res = runner._release_history_git(
+            session, "FOR_EACH_REF_PRIVATE", repo_path=wt_path,
+        )
+        refs.extend(_parse_for_each_ref_z(priv_res.stdout, wt["scope"]))
+        sym_res = runner._release_history_git(
+            session, "HEAD_SYMBOLIC", repo_path=wt_path,
+        )
+        if sym_res.returncode == 0:
+            symbolic = sym_res.stdout.decode("utf-8", "strict").rstrip("\r\n")
+            peel = _git_at(wt_path, "rev-parse", "--verify", "--quiet", "HEAD^{commit}")
+            unborn = peel.returncode != 0
+            resolved_oid = None if unborn else peel.stdout.strip()
+            if not unborn and resolved_oid != wt["head"]:
+                raise ValueError(f"HEAD mismatch in {wt['scope']}")
+            heads.append({
+                "scope": wt["scope"],
+                "symbolic": symbolic,
+                "oid": resolved_oid,
+                "unborn": unborn,
+            })
+        else:
+            peel = _git_at(wt_path, "rev-parse", "--verify", "--quiet", "HEAD^{commit}")
+            if peel.returncode != 0 or peel.stdout.strip() != wt["head"]:
+                raise ValueError(f"detached HEAD verification failed in {wt['scope']}")
+            heads.append({
+                "scope": wt["scope"],
+                "symbolic": None,
+                "oid": wt["head"],
+                "unborn": False,
+            })
+    refs_sorted = sorted(refs, key=lambda r: (r["scope"], r["ref_b64"], r["oid"]))
+    heads_sorted = sorted(heads, key=lambda h: h["scope"])
+    raw_roots = sorted(
+        {head}
+        | {row["oid"] for row in refs_sorted}
+        | {row["oid"] for row in heads_sorted if row["oid"] is not None}
+    )
+    peeled_roots: set[str] = set()
+    for oid in raw_roots:
+        peel = _git_at(repo_root, "rev-parse", "--verify", "--quiet", f"{oid}^{{commit}}")
+        if peel.returncode != 0 or not _is_full_sha(peel.stdout.strip()):
+            raise ValueError(f"root {oid} cannot peel to a commit")
+        peeled_roots.add(peel.stdout.strip())
+    return {
+        "candidate": head,
+        "object_format": _repository_object_format(repo_root),
+        "source": pinned,
+        "refs": refs_sorted,
+        "heads": heads_sorted,
+        "roots": sorted(peeled_roots),
+    }
+
+
+def _freeze_history(manifest_path: Path) -> int:
+    if sys.version_info[:2] != (3, 13):
+        print("security_check: --freeze-history requires Python 3.13.", file=sys.stderr)
+        return 1
+    try:
+        if not manifest_path.is_absolute():
+            raise ValueError("manifest path must be absolute")
+        if manifest_path.resolve().is_relative_to(CAIRN_ROOT.resolve()):
+            raise ValueError("manifest must be outside the checkout")
+        pack_path = _derive_pack_path(manifest_path)
+        for p in (manifest_path, pack_path):
+            if p.exists() or p.is_symlink():
+                raise ValueError(f"output path already exists: {p}")
+            if not p.parent.is_dir():
+                raise ValueError(f"output parent directory is absent: {p.parent}")
+    except (OSError, ValueError, TypeError) as exc:
+        print(f"security_check: --freeze-history refused ({exc}).", file=sys.stderr)
+        return 1
+    rc, head = repo_state_preflight()
+    if rc or head is None:
+        return rc or 1
+    try:
+        runner = _load_portable_sweeps_runner(CAIRN_ROOT)
+        git = _resolve_release_git(runner, CAIRN_ROOT)
+        ws_cm = runner._private_sweep_workspace(CAIRN_ROOT) if os.name == "nt" else tempfile.TemporaryDirectory(prefix="cairn-freeze-")
+        with ws_cm as ws_dir:
+            private = (runner._WindowsInvocation(CAIRN_ROOT, Path(ws_dir))
+                       if os.name == "nt" else None)
+            session = runner.ReleaseHistorySession(
+                git=git, target=CAIRN_ROOT, source_repo=CAIRN_ROOT, private=private,
+            )
+            inv_before = _collect_source_inventory(runner, session, CAIRN_ROOT, head)
+            rev_proc = _git_at(
+                CAIRN_ROOT, "rev-list", "--objects", "--no-object-names",
+                "--missing=print", *inv_before["roots"], "--",
+            )
+            if rev_proc.returncode != 0:
+                raise ValueError("rev-list object enumeration failed")
+            obj_lines = [line.strip() for line in rev_proc.stdout.splitlines() if line.strip()]
+            if not obj_lines or any(line.startswith("?") or not _is_full_sha(line) for line in obj_lines):
+                raise ValueError("missing or malformed object during rev-list")
+            sorted_objs = sorted(set(obj_lines))
+            objects_sha256 = hashlib.sha256("\n".join(sorted_objs).encode("ascii")).hexdigest()
+            pack_res = runner._release_history_git(
+                session, "PACK", stdin_data=("\n".join(sorted_objs) + "\n").encode("ascii"),
+            )
+            pack_bytes = pack_res.stdout
+            pack_sha256 = hashlib.sha256(pack_bytes).hexdigest()
+            inv_after = _collect_source_inventory(runner, session, CAIRN_ROOT, head)
+            if inv_before != inv_after:
+                raise ValueError("source repository inventory drifted during freeze")
+        _write_exclusive_bytes(pack_path, pack_bytes, CAIRN_ROOT)
+        manifest = {
+            "schema": 1,
+            "kind": "cairn-frozen-history-v1",
+            "candidate": head,
+            "object_format": inv_before["object_format"],
+            "source": inv_before["source"],
+            "pack": {"size": len(pack_bytes), "sha256": pack_sha256},
+            "objects": {"count": len(sorted_objs), "objects_sha256": objects_sha256},
+            "refs": inv_before["refs"],
+            "heads": inv_before["heads"],
+            "roots": inv_before["roots"],
+        }
+        _write_exclusive_json(manifest_path, manifest, CAIRN_ROOT)
+    except (OSError, UnicodeError, ValueError, TypeError, Exception) as exc:
+        print(f"security_check: --freeze-history failed ({exc}) -- FAIL CLOSED.", file=sys.stderr)
+        return 1
+    if repo_state_postflight(head) != 0:
+        return 1
+    print(f"security_check: frozen history written to {manifest_path} and {pack_path} at {head}.")
+    return 0
+
+
+def _validate_frozen_manifest(manifest_path: Path, expected_head: str) -> tuple[dict, bytes, str]:
+    if not manifest_path.is_absolute() or manifest_path.resolve().is_relative_to(CAIRN_ROOT.resolve()):
+        raise ValueError("manifest path must be an absolute path outside the checkout")
+    if not manifest_path.is_file() or manifest_path.is_symlink():
+        raise ValueError("frozen history manifest is missing or a symlink")
+    pack_path = _derive_pack_path(manifest_path)
+    if not pack_path.is_file() or pack_path.is_symlink():
+        raise ValueError("frozen history sibling pack is missing or a symlink")
+    raw_manifest = manifest_path.read_bytes()
+    manifest_sha256 = hashlib.sha256(raw_manifest).hexdigest()
+    doc = _load_strict_json(manifest_path)
+    manifest = _exact_keys(doc, {
+        "schema", "kind", "candidate", "object_format", "source",
+        "pack", "objects", "refs", "heads", "roots",
+    }, "frozen history manifest")
+    if (type(manifest["schema"]) is not int or manifest["schema"] != 1
+            or manifest["kind"] != "cairn-frozen-history-v1"
+            or manifest["candidate"] != expected_head
+            or manifest["object_format"] not in {"sha1", "sha256"}):
+        raise ValueError("frozen history manifest header mismatch")
+    pack_meta = _exact_keys(manifest["pack"], {"size", "sha256"}, "manifest pack")
+    pack_bytes = pack_path.read_bytes()
+    if (type(pack_meta["size"]) is not int or len(pack_bytes) != pack_meta["size"]
+            or not _is_sha256(pack_meta["sha256"])
+            or hashlib.sha256(pack_bytes).hexdigest() != pack_meta["sha256"]):
+        raise ValueError("frozen history pack size or SHA-256 mismatch")
+    obj_meta = _exact_keys(manifest["objects"], {"count", "objects_sha256"}, "manifest objects")
+    if type(obj_meta["count"]) is not int or obj_meta["count"] <= 0 or not _is_sha256(obj_meta["objects_sha256"]):
+        raise ValueError("frozen history object summary is malformed")
+    if type(manifest["roots"]) is not list or not manifest["roots"] or any(not _is_full_sha(r) for r in manifest["roots"]):
+        raise ValueError("frozen history roots are malformed")
+    return manifest, pack_bytes, manifest_sha256
+
+
+def _measure_store_projection(runner, session, store_repo: Path, expected_head: str) -> dict:
+    ref_res = runner._release_history_git(session, "FOR_EACH_REF_SHARED", repo_path=store_repo)
+    rows = _parse_for_each_ref_z(ref_res.stdout, "store")
+    for row in rows:
+        ref_name = base64.b64decode(row["ref_b64"]).decode("ascii", "strict")
+        if not ref_name.startswith("refs/cairn-frozen/"):
+            raise ValueError(f"unexpected ref in sterile store: {ref_name}")
+    head_proc = _git_at(store_repo, "rev-parse", "--verify", "HEAD")
+    if head_proc.returncode != 0 or head_proc.stdout.strip() != expected_head:
+        raise ValueError("sterile store HEAD mismatch")
+    rev_proc = _git_at(
+        store_repo, "rev-list", "--objects", "--no-object-names",
+        "--missing=print", "--all", "HEAD", "--",
+    )
+    if rev_proc.returncode != 0:
+        raise ValueError("sterile store object closure check failed")
+    objs = sorted({line.strip() for line in rev_proc.stdout.splitlines() if line.strip()})
+    if not objs or any(line.startswith("?") or not _is_full_sha(line) for line in objs):
+        raise ValueError("sterile store has missing objects")
+    proj_lines = "\n".join(f"{row['oid']}:{row['ref_b64']}" for row in sorted(rows, key=lambda r: r["ref_b64"]))
+    return {
+        "head": expected_head,
+        "projected_count": len(rows),
+        "projected_sha256": hashlib.sha256(proj_lines.encode("ascii")).hexdigest(),
+        "object_count": len(objs),
+        "objects_sha256": hashlib.sha256("\n".join(objs).encode("ascii")).hexdigest(),
+    }
+
+
+def _check_store_registrations(runner, session, store_repo: Path, *, expected_checkout: Path | None) -> None:
+    wt_res = runner._release_history_git(session, "WORKTREES", repo_path=store_repo)
+    stanzas = [s for s in wt_res.stdout.split(b"\0\0") if s]
+    expected_count = 1 if expected_checkout is None else 2
+    if len(stanzas) != expected_count:
+        raise ValueError(f"unexpected mirror worktree count: {len(stanzas)} != {expected_count}")
+    if expected_checkout is not None:
+        paths = []
+        for stanza in stanzas:
+            for field in stanza.split(b"\0"):
+                if field.startswith(b"worktree "):
+                    paths.append(Path(field[len(b"worktree "):].decode("utf-8", "strict")).resolve())
+        if expected_checkout.resolve() not in paths:
+            raise ValueError("detached checkout registration missing from sterile store")
+
+
 def _run_in_detached_checkout(head: str, context: dict[str, str],
                               summary_path: Path) -> int:
     """Execute this checker from an exact-byte detached checkout of *head*."""
+    rc, _ = _run_in_detached_frozen_checkout(head, context, summary_path)
+    return rc
+
+
+def _run_in_detached_frozen_checkout(
+    head: str, context: dict[str, str], summary_path: Path, *,
+    parent_repo: Path | None = None,
+    history_sweep_cb: Callable[[Path], dict] | None = None,
+) -> tuple[int, dict | None]:
+    """Execute this checker from an exact-byte detached checkout of *head*."""
+    history_sweep: dict | None = None
     try:
-        with _detached_checkout(head) as checkout:
+        with _detached_checkout(head, parent_repo=parent_repo) as checkout:
             checker = checkout / "release" / "security_check.py"
             env = dict(os.environ)
             env["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -1847,39 +2292,66 @@ def _run_in_detached_checkout(head: str, context: dict[str, str],
             except OSError as exc:
                 print("security_check: cannot launch the detached committed "
                       f"checker ({exc}) -- FAIL CLOSED.", file=sys.stderr)
-                return 1
+                return 1, None
             if proc.returncode != 0:
                 print("security_check: detached committed-checkout phases did "
                       f"not pass (rc={proc.returncode}).", file=sys.stderr)
-                return 1
-    except _RepoStateError as exc:
+                return 1, None
+            if history_sweep_cb is not None:
+                history_sweep = history_sweep_cb(checkout)
+    except (_RepoStateError, ValueError, Exception) as exc:
         print("security_check: detached committed checkout could not be "
               f"established or preserved ({exc}) -- FAIL CLOSED.",
               file=sys.stderr)
-        return 1
-    return 0
+        return 1, None
+    return 0, history_sweep
+
+
+def _parse_cli_flags(args: list[str]) -> tuple[str, list[Path], Path | None]:
+    if not args:
+        return "usage", [], None
+    if len(args) == 4 and args[0] == _BOUND_HEAD_ARG and args[2] == _BOUND_SUMMARY_ARG:
+        return "bound", [Path(args[1]), Path(args[3])], None
+    if len(args) == 2 and args[0] == "--freeze-history":
+        return "freeze", [Path(args[1])], None
+    history_roots: Path | None = None
+    filtered: list[str] = []
+    idx = 0
+    while idx < len(args):
+        if args[idx] == "--history-roots":
+            if idx + 1 >= len(args):
+                return "usage", [], None
+            history_roots = Path(args[idx + 1])
+            idx += 2
+        else:
+            filtered.append(args[idx])
+            idx += 1
+    if len(filtered) == 2 and filtered[0] == "--record":
+        return "record", [Path(filtered[1])], history_roots
+    if len(filtered) == 3 and filtered[0] == "--join":
+        return "join", [Path(filtered[1]), Path(filtered[2])], history_roots
+    return "usage", [], None
 
 
 def main(argv: list[str] | None = None) -> int:
     args = [] if argv is None else list(argv)
-    if args:
-        if (len(args) == 4 and args[0] == _BOUND_HEAD_ARG
-                and args[2] == _BOUND_SUMMARY_ARG):
-            return _bound_main(args[1], args[3])
-        if len(args) == 2 and args[0] == "--record":
-            return _run_local_record(Path(args[1]))
-        if len(args) == 3 and args[0] == "--join":
-            return _run_join([Path(args[1]), Path(args[2])])
-        print("Usage: security_check.py --record <external-path> | "
-              "--join <mac-record> <windows-record>", file=sys.stderr)
-        return 2
-
-    print("Usage: security_check.py --record <external-path> | "
-          "--join <mac-record> <windows-record>", file=sys.stderr)
+    mode, paths, history_roots = _parse_cli_flags(args)
+    if mode == "bound":
+        return _bound_main(str(paths[0]), str(paths[1]))
+    if mode == "freeze":
+        return _freeze_history(paths[0])
+    if mode == "record":
+        return _run_local_record(paths[0], history_roots=history_roots)
+    if mode == "join":
+        return _run_join(paths, history_roots=history_roots)
+    print("Usage: security_check.py --freeze-history <manifest.json> | "
+          "--record <external-path> [--history-roots <manifest.json>] | "
+          "--join <mac-record> <windows-record> [--history-roots <manifest.json>]",
+          file=sys.stderr)
     return 2
 
 
-def _run_local_record(record_path: Path) -> int:
+def _run_local_record(record_path: Path, *, history_roots: Path | None = None) -> int:
     if sys.version_info[:2] != (3, 13):
         print("security_check: local records require Python 3.13.",
               file=sys.stderr)
@@ -1923,18 +2395,126 @@ def _run_local_record(record_path: Path) -> int:
     }
     summary = scratch / "local-summary.json"
     try:
-        if _run_in_detached_checkout(head, context, summary) != 0:
-            return 1
-        if repo_state_postflight(head) != 0:
-            print("security_check: operator checkout changed during the local "
-                  "run -- FAIL CLOSED.", file=sys.stderr)
-            return 1
-        record = _validate_local_record(_load_strict_json(summary), head)
-        if (record["platform"] != sys.platform or record["os_name"] != os.name
-                or record["python"] != list(sys.version_info[:3])):
-            raise ValueError("local summary does not match this host and interpreter")
-        _write_exclusive_json(record_path, record, CAIRN_ROOT)
-    except (OSError, UnicodeError, ValueError, TypeError) as exc:
+        with ExitStack() as stack:
+            parent_repo: Path | None = None
+            history_sweep_cb: Callable[[Path], dict] | None = None
+            if history_roots is not None:
+                manifest, pack_bytes, manifest_sha256 = _validate_frozen_manifest(history_roots, head)
+                runner = _load_portable_sweeps_runner(CAIRN_ROOT)
+                git = _resolve_release_git(runner, CAIRN_ROOT)
+                if os.name == "nt":
+                    priv_root = Path(stack.enter_context(runner._private_sweep_workspace(CAIRN_ROOT)))
+                    private = runner._WindowsInvocation(CAIRN_ROOT, priv_root)
+                    store_root = priv_root / "frozen-store"
+                else:
+                    private = None
+                    store_root = scratch / "frozen-store"
+                src_session = runner.ReleaseHistorySession(
+                    git=git, target=CAIRN_ROOT, source_repo=CAIRN_ROOT, private=private,
+                )
+                live = _collect_source_inventory(runner, src_session, CAIRN_ROOT, head)
+                if (live["refs"] != manifest["refs"]
+                        or live["heads"] != manifest["heads"]
+                        or live["roots"] != manifest["roots"]):
+                    raise ValueError("live source repository inventory differs from frozen manifest")
+                store_repo = store_root / "mirror.git"
+                if os.name == "nt":
+                    with runner._win_private_create(store_root, target=CAIRN_ROOT, directory=True):
+                        pass
+                    with runner._win_private_create(store_repo, target=CAIRN_ROOT, directory=True):
+                        pass
+                else:
+                    store_root.mkdir(mode=0o700)
+                    store_repo.mkdir(mode=0o700)
+                store_session = runner.ReleaseHistorySession(
+                    git=git, target=CAIRN_ROOT, source_repo=CAIRN_ROOT,
+                    store_repo=store_repo, store_root=store_root, private=private,
+                )
+                runner._release_history_git(store_session, "INIT")
+                runner._release_history_git(store_session, "INDEX", stdin_data=pack_bytes)
+                proj_chunks = []
+                for idx, ref_row in enumerate(manifest["refs"]):
+                    proj_chunks.append(f"update refs/cairn-frozen/{idx:06d}\0{ref_row['oid']}\0".encode("ascii"))
+                if proj_chunks:
+                    runner._release_history_git(store_session, "PROJECT", stdin_data=b"".join(proj_chunks))
+                runner._release_history_git(store_session, "HEAD", expected_head=head)
+                _check_store_registrations(runner, store_session, store_repo, expected_checkout=None)
+                proj_before = _measure_store_projection(runner, store_session, store_repo, head)
+                parent_repo = store_repo
+
+                def _run_sweep_in_checkout(checkout: Path) -> dict:
+                    _check_store_registrations(runner, store_session, store_repo, expected_checkout=checkout)
+                    c_runner = _load_portable_sweeps_runner(checkout)
+                    policy_path = checkout / "dev" / "tools" / "portable_security_policy.json"
+                    runner_file = checkout / "dev" / "tools" / "run_portable_security_sweeps.py"
+                    sweep_args = c_runner.build_parser().parse_args([
+                        "--target", str(checkout),
+                        "--policy", str(policy_path),
+                        "--json",
+                    ])
+                    frozen_ctx = c_runner._WindowsFrozenHistory(
+                        store_repo, store_root, CAIRN_ROOT, tuple(manifest["roots"]),
+                    )
+                    sweep_rc, sweep_summary = c_runner.run_sweep(sweep_args, frozen_history=frozen_ctx)
+                    if sweep_rc != 0 or sweep_summary.get("mode") != "full":
+                        raise ValueError(
+                            f"portable security sweep did not pass CLEAN in full mode "
+                            f"(rc={sweep_rc}, mode={sweep_summary.get('mode')})"
+                        )
+                    proj_after = _measure_store_projection(runner, store_session, store_repo, head)
+                    if proj_before != proj_after:
+                        raise ValueError("frozen history projection drifted during sweep")
+                    legs_map = {
+                        item["leg"]: {
+                            "status": item["status"],
+                            "result": item["result"],
+                            "finding_count": item["finding_count"],
+                        }
+                        for item in sweep_summary["legs"]
+                    }
+                    facts = sweep_summary.get("adapter_facts", {})
+                    return {
+                        "manifest_sha256": manifest_sha256,
+                        "pack_sha256": manifest["pack"]["sha256"],
+                        "candidate": head,
+                        "projection_before": proj_before,
+                        "projection_after": proj_after,
+                        "sweep": {
+                            "result": sweep_summary["result"],
+                            "mode": sweep_summary["mode"],
+                            "legs": legs_map,
+                            "adapter_version": str(facts.get("adapter_version_output", "")),
+                            "adapter_digest": str(facts.get("adapter_sha256", "")),
+                            "policy_sha256": hashlib.sha256(policy_path.read_bytes()).hexdigest(),
+                            "runner_sha256": hashlib.sha256(runner_file.read_bytes()).hexdigest(),
+                        },
+                    }
+
+                history_sweep_cb = _run_sweep_in_checkout
+
+            if history_roots is None:
+                rc_detached = _run_in_detached_checkout(head, context, summary)
+                history_sweep = None
+            else:
+                rc_detached, history_sweep = _run_in_detached_frozen_checkout(
+                    head, context, summary, parent_repo=parent_repo,
+                    history_sweep_cb=history_sweep_cb,
+                )
+            if rc_detached != 0:
+                return 1
+            if repo_state_postflight(head) != 0:
+                print("security_check: operator checkout changed during the local "
+                      "run -- FAIL CLOSED.", file=sys.stderr)
+                return 1
+            raw_record = _load_strict_json(summary)
+            if history_sweep is not None and isinstance(raw_record, dict):
+                raw_record["history_sweep"] = history_sweep
+            record = _validate_local_record(raw_record, head)
+            if (record["platform"] != sys.platform or record["os_name"] != os.name
+                    or record["python"] != list(sys.version_info[:3])):
+                raise ValueError("local summary does not match this host and interpreter")
+            _write_exclusive_json(record_path, record, CAIRN_ROOT)
+    except (OSError, UnicodeError, ValueError, TypeError, Exception) as exc:
         print(f"security_check: local record was not created ({exc}) -- "
               "FAIL CLOSED.", file=sys.stderr)
         return 1
@@ -1945,7 +2525,7 @@ def _run_local_record(record_path: Path) -> int:
     return 5
 
 
-def _run_join(record_paths: list[Path]) -> int:
+def _run_join(record_paths: list[Path], *, history_roots: Path | None = None) -> int:
     if sys.version_info[:2] != (3, 13):
         print("security_check: join requires Python 3.13.", file=sys.stderr)
         return 1
@@ -1965,7 +2545,38 @@ def _run_join(record_paths: list[Path]) -> int:
             if not path.is_absolute() or path.resolve().is_relative_to(CAIRN_ROOT.resolve()):
                 raise ValueError("join records must be absolute paths outside the checkout")
         excluded = _join_local_records(record_paths, head)
-    except (_RepoStateError, OSError, UnicodeError, ValueError, TypeError) as exc:
+        manifest_sha256: str | None = None
+        if history_roots is not None:
+            manifest, _pack_bytes, manifest_sha256 = _validate_frozen_manifest(history_roots, head)
+            runner = _load_portable_sweeps_runner(CAIRN_ROOT)
+            git = _resolve_release_git(runner, CAIRN_ROOT)
+            ws_cm = runner._private_sweep_workspace(CAIRN_ROOT) if os.name == "nt" else tempfile.TemporaryDirectory(prefix="cairn-join-")
+            with ws_cm as ws_dir:
+                private = (runner._WindowsInvocation(CAIRN_ROOT, Path(ws_dir))
+                           if os.name == "nt" else None)
+                src_session = runner.ReleaseHistorySession(
+                    git=git, target=CAIRN_ROOT, source_repo=CAIRN_ROOT, private=private,
+                )
+                live = _collect_source_inventory(runner, src_session, CAIRN_ROOT, head)
+            if (live["refs"] != manifest["refs"]
+                    or live["heads"] != manifest["heads"]
+                    or live["roots"] != manifest["roots"]):
+                raise ValueError("live source repository inventory differs from frozen manifest")
+            loaded = [_validate_local_record(_load_strict_json(p), head) for p in record_paths]
+            for rec in loaded:
+                if "history_sweep" not in rec:
+                    raise ValueError(f"{rec['platform']} record omits frozen history_sweep evidence")
+                hs = rec["history_sweep"]
+                if (hs["manifest_sha256"] != manifest_sha256
+                        or hs["pack_sha256"] != manifest["pack"]["sha256"]
+                        or hs["candidate"] != head):
+                    raise ValueError(f"{rec['platform']} history_sweep does not match frozen manifest")
+            if (loaded[0]["history_sweep"]["sweep"]["policy_sha256"]
+                    != loaded[1]["history_sweep"]["sweep"]["policy_sha256"]
+                    or loaded[0]["history_sweep"]["sweep"]["runner_sha256"]
+                    != loaded[1]["history_sweep"]["sweep"]["runner_sha256"]):
+                raise ValueError("native records disagree on policy or runner identity")
+    except (_RepoStateError, OSError, UnicodeError, ValueError, TypeError, Exception) as exc:
         print(f"security_check: join refused ({exc}) -- FAIL CLOSED.",
               file=sys.stderr)
         return 1
@@ -1974,6 +2585,8 @@ def _run_join(record_paths: list[Path]) -> int:
     files = excluded["files"]
     if files:
         print(f"security_check: PASS (shipped-only) -- Mac and Windows evidence joined at {head}.")
+        if history_roots is not None and manifest_sha256 is not None:
+            print(f"  frozen-history manifest_sha256={manifest_sha256}")
         print("NOT CERTIFIED (shipped-only release selection): "
               f"{excluded['count']} tests in {len(files)} files were not run. "
               "They run when their own files change.")
@@ -1981,6 +2594,8 @@ def _run_join(record_paths: list[Path]) -> int:
             print(f"  {path}")
     else:
         print(f"security_check: PASS -- Mac and Windows evidence joined at {head}.")
+        if history_roots is not None and manifest_sha256 is not None:
+            print(f"  frozen-history manifest_sha256={manifest_sha256}")
     return 0
 
 

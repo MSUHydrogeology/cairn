@@ -1070,18 +1070,23 @@ _MUST_BE_REDACTED = ("Secret", "Match")
 _EXIT_NO_FINDINGS = 0
 _EXIT_FINDINGS = 42
 
-_REDACTION_OK = re.compile(r"\A(REDACTED|\*+)\Z", re.IGNORECASE)
+_REDACTION_MARKER = "REDACTED"
+_TRIAGE_FIELD_MAX = 512
 
 
-def _redaction_is_intact(value: Any) -> bool:
-    """``--redact=100`` is requested; a result carrying a live secret means the
-    redaction did not happen, and a report the runner cannot trust is DEGRADED
-    rather than passed through."""
-    if value is None or value == "":
-        return True
-    if not isinstance(value, str):
+def _redaction_is_intact(secret: Any, match: Any) -> bool:
+    """``--redact=100`` is requested; for Gitleaks 8.30.1 require
+    ``Secret == "REDACTED"`` and a string ``Match`` containing that exact
+    marker.  ``Match`` is treated as tainted and discarded wholesale."""
+    if not isinstance(secret, str) or secret != _REDACTION_MARKER:
         return False
-    return bool(_REDACTION_OK.match(value))
+    if not isinstance(match, str) or _REDACTION_MARKER not in match:
+        return False
+    return True
+
+
+def _sanitize_triage_str(value: str) -> str:
+    return json.dumps(value, ensure_ascii=True)[1:-1][:_TRIAGE_FIELD_MAX]
 
 
 def read_report(path: str) -> list[dict[str, Any]]:
@@ -1141,18 +1146,20 @@ def read_report(path: str) -> list[dict[str, Any]]:
             item.get("StartLine"), bool
         ):
             raise Degraded(f"adapter result {index} has no integer 'StartLine'")
-        for field in _MUST_BE_REDACTED:
-            if field in item and not _redaction_is_intact(item[field]):
-                raise Degraded(
-                    f"adapter result {index} carries an unredacted {field!r}; "
-                    f"the report is not trustworthy and no finding is relayed"
-                )
+        if "Commit" in item and item["Commit"] is not None and not isinstance(item["Commit"], str):
+            raise Degraded(f"adapter result {index} has a non-string 'Commit'")
+        if not _redaction_is_intact(item.get("Secret"), item.get("Match")):
+            raise Degraded(
+                f"adapter result {index} carries an unredacted secret or missing "
+                f"redaction marker; the report is not trustworthy and no finding "
+                f"is relayed"
+            )
         findings.append({
-            "rule": item["RuleID"],
-            "path": item["File"],
+            "rule": _sanitize_triage_str(item["RuleID"]),
+            "path": _sanitize_triage_str(item["File"]),
             "line": item["StartLine"],
-            "commit": item["Commit"] if isinstance(item.get("Commit"), str) else "",
-            "fingerprint": item["Fingerprint"],
+            "commit": _sanitize_triage_str(item["Commit"] or ""),
+            "fingerprint": _sanitize_triage_str(item["Fingerprint"]),
         })
     return findings
 
@@ -1253,6 +1260,12 @@ def classify_leg(
     except Degraded as exc:
         return LegOutcome(leg, _AGG_DEGRADED, "DEGRADED", str(exc))
     if findings:
+        if returncode != _EXIT_FINDINGS:
+            return LegOutcome(
+                leg, _AGG_DEGRADED, "DEGRADED",
+                f"the adapter exited {returncode} while reporting findings; "
+                f"the result is not trustworthy",
+            )
         return LegOutcome(
             leg, _AGG_FINDINGS, "FINDINGS",
             f"{len(findings)} validated finding(s)", tuple(findings),
@@ -1358,7 +1371,7 @@ def summarize(
                 "result": leg.result,
                 "status": leg.status,
                 "reason": leg.reason,
-                "findings": list(leg.findings),
+                "finding_count": len(leg.findings),
             }
             for leg in legs
         ],
@@ -1402,8 +1415,10 @@ def render_report(summary: dict[str, Any]) -> str:
             f"[portable] leg={_escape(leg['leg'])} status={status} "
             f"result={result} reason={_escape(leg['reason'])}"
         )
-        for finding in leg["findings"]:
-            lines.append(f"[portable]   finding {_escape(finding)}")
+        if leg["finding_count"]:
+            lines.append(
+                f"[portable]   finding_count={leg['finding_count']}"
+            )
     for residual in summary["residuals"]:
         lines.append(f"[portable] residual: {residual}")
     lines.append(f"[portable] aggregate={summary['result']}")
@@ -1429,7 +1444,7 @@ def child_document(summary: dict[str, Any]) -> dict[str, Any]:
                     "result": leg["result"],
                     "status": leg["status"],
                     "reason": leg["reason"],
-                    "finding_count": len(leg["findings"]),
+                    "finding_count": leg["finding_count"],
                 }
                 for leg in summary["legs"]
             ],
@@ -2122,7 +2137,8 @@ def _invocation_labels(path: str, invocation_id: str, *,
 
 def _write_git_shim(path: str, git: Resolved, target: Path,
                     invocation_log: str, invocation_id: str,
-                    remote_urls_present: bool, scenario: str) -> Resolved:
+                    remote_urls_present: bool, scenario: str,
+                    history: _WindowsFrozenHistory | None = None) -> Resolved:
     """Materialize the fixed-operation shim from the verified helper buffer."""
     python = resolve_executable(sys.executable, target, os.path.dirname(sys.executable))
     revalidate(python, target)
@@ -2161,6 +2177,8 @@ _RUN = @@RUN@@
 _SCENARIO = @@SCENARIO@@
 _GIT = @@GIT@@
 _REMOTE_URLS = @@REMOTE@@
+_FROZEN_REPO = @@FROZEN_REPO@@
+_FROZEN_ROOTS = @@FROZEN_ROOTS@@
 _MAX_BYTES = 1048576
 _MAX_RECORDS = 4096
 _MAX_RECORD = 4096
@@ -2193,12 +2211,20 @@ def _run():
     if argv == ["--version"]:
         operation = "version"
         git_args = None
-    elif (len(argv) == 10 and argv[0] == "-C" and argv[1] == _TARGET
+    elif (not _FROZEN_REPO and len(argv) == 10 and argv[0] == "-C" and argv[1] == _TARGET
           and argv[2:] == ["log", "-p", "-U0", "--all", "--full-history",
                            "--text", "--no-textconv", "--no-ext-diff"]):
         operation = "log"
         git_args = ("log", "-p", "-U0", "--all", "--full-history", "--text",
                     "--no-textconv", "--no-ext-diff")
+    elif (_FROZEN_REPO and len(argv) == 12 and argv[0] == "-C" and argv[1] == _TARGET
+          and argv[2:] == ["log", "-p", "-U0", "--full-history", "--root",
+                           "--diff-merges=first-parent", "--text",
+                           "--no-textconv", "--no-ext-diff"]):
+        operation = "log"
+        git_args = ("log", "-p", "-U0", "--full-history", "--root",
+                    "--diff-merges=first-parent", "--text",
+                    "--no-textconv", "--no-ext-diff", *_FROZEN_ROOTS, "--")
     elif argv == ["ls-remote", "--quiet", "--get-url"]:
         operation = "url"
         git_args = ("ls-remote", "--quiet", "--get-url")
@@ -2210,7 +2236,8 @@ def _run():
         _record(operation, "outcome", state="failed", code=2, reason="unsupported-operation")
         return 2
     try:
-        token = _git_read.select_git(_TARGET, path_value=os.path.dirname(_GIT[0]))
+        repo_for_op = _FROZEN_REPO if (operation == "log" and _FROZEN_REPO) else _TARGET
+        token = _git_read.select_git(repo_for_op, path_value=os.path.dirname(_GIT[0]))
         if not _same_git(token) or not _git_read._snapshot_still_matches(token):
             raise RuntimeError("git-identity-changed")
         if operation == "version":
@@ -2219,7 +2246,7 @@ def _run():
             limit = (_git_read.HISTORY_MAX_BYTES if operation == "log"
                      else _git_read.ROOTS_MAX_BYTES)
             result = _git_read.run_git(
-                _TARGET, git_args, executable=token, timeout=10, output_limit=limit)
+                repo_for_op, git_args, executable=token, timeout=10, output_limit=limit)
         if _cancelled:
             state, reason = "failed", "cancelled"
         elif result.state == "completed":
@@ -2248,7 +2275,9 @@ if __name__ == "__main__":
                    .replace("@@RUN@@", repr(invocation_id))
                    .replace("@@SCENARIO@@", repr(scenario))
                    .replace("@@GIT@@", repr(expected))
-                   .replace("@@REMOTE@@", repr(remote_urls_present)))
+                   .replace("@@REMOTE@@", repr(remote_urls_present))
+                   .replace("@@FROZEN_REPO@@", repr(str(history.repository) if history is not None else ""))
+                   .replace("@@FROZEN_ROOTS@@", repr(tuple(history.roots) if history is not None else ())))
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
     flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
     fd = os.open(path, flags, 0o700)
@@ -2267,7 +2296,8 @@ if __name__ == "__main__":
 def _materialize_sweep_git_shim(workdir: str, target: Path, git: Resolved,
                                 invocation_log: str, invocation_id: str,
                                 remote_urls_present: bool,
-                                scenario: str = "production") -> tuple[str, Resolved, Resolved]:
+                                scenario: str = "production",
+                                history: _WindowsFrozenHistory | None = None) -> tuple[str, Resolved, Resolved]:
     if os.name != "posix":
         raise Degraded("full Git mediation is unavailable on this platform")
     parent = os.path.realpath(workdir, strict=True)
@@ -2284,7 +2314,7 @@ def _materialize_sweep_git_shim(workdir: str, target: Path, git: Resolved,
     _GIT_READ._assert_off_target(directory, os.path.realpath(directory), exclusions)
     shim = os.path.join(directory, "git")
     python = _write_git_shim(shim, git, target, invocation_log, invocation_id,
-                             remote_urls_present, scenario)
+                             remote_urls_present, scenario, history=history)
     _GIT_READ._checked_bytes(shim, 1 << 20)
     lexical = os.path.abspath(shim)
     resolved = os.path.realpath(lexical, strict=True)
@@ -2710,6 +2740,318 @@ def _windows_git_relay(
                 yield _WindowsGitRelay(executable, python, worker, digest, private)
 
 
+_RELEASE_HISTORY_READ_OPS = frozenset({
+    "WORKTREES",
+    "HEAD_SYMBOLIC",
+    "FOR_EACH_REF_SHARED",
+    "FOR_EACH_REF_PRIVATE",
+    "PACK",
+})
+_RELEASE_HISTORY_WRITE_OPS = frozenset({
+    "INIT",
+    "INDEX",
+    "PROJECT",
+    "HEAD",
+})
+_RELEASE_HISTORY_OPS = _RELEASE_HISTORY_READ_OPS | _RELEASE_HISTORY_WRITE_OPS
+_RELEASE_PACK_MAX_BYTES = 256 * 1024 * 1024
+_RELEASE_READ_MAX_BYTES = 16 * 1024 * 1024
+_OID_RE = re.compile(r"\A(?:[0-9a-f]{40}|[0-9a-f]{64})\Z")
+_FROZEN_REF_RE = re.compile(r"\Arefs/cairn-frozen/[0-9]+\Z")
+_RELEASE_STERILE_GIT_FLAGS = (
+    "--no-pager",
+    "-c", "core.useReplaceRefs=false",
+    "-c", f"core.hooksPath={os.devnull}",
+    "-c", "core.fsmonitor=false",
+    "-c", "core.quotePath=false",
+    "-c", "diff.external=",
+    "-c", "core.pager=cat",
+    "-c", "protocol.file.allow=never",
+)
+
+
+class ReleaseHistorySession(NamedTuple):
+    """Controller-created context for runner-private frozen-history Git calls."""
+    git: Resolved
+    target: Path
+    source_repo: Path | None = None
+    store_repo: Path | None = None
+    store_root: Path | None = None
+    private: _WindowsInvocation | None = None
+
+
+class ReleaseHistoryResult(NamedTuple):
+    """Bounded result from ``_release_history_git``."""
+    returncode: int
+    stdout: bytes
+    stderr: bytes
+
+
+def _validate_sorted_oids(stdin_data: bytes) -> None:
+    if not stdin_data:
+        raise Degraded("PACK requires at least one validated OID")
+    try:
+        lines = stdin_data.decode("ascii").splitlines()
+    except UnicodeDecodeError:
+        raise Degraded("PACK OID input is not ASCII") from None
+    if not lines or any(not _OID_RE.match(line) for line in lines):
+        raise Degraded("PACK OID input contains an invalid object id")
+    if len({len(line) for line in lines}) != 1:
+        raise Degraded("PACK OID input mixes object formats")
+    if lines != sorted(set(lines)):
+        raise Degraded("PACK OID input must be strictly sorted and unique")
+
+
+def _validate_frozen_projection(stdin_data: bytes) -> None:
+    if not stdin_data:
+        return
+    parts = stdin_data.split(b"\0")
+    if parts[-1] != b"":
+        raise Degraded("PROJECT transaction must be NUL-terminated")
+    tokens = parts[:-1]
+    if len(tokens) % 2 != 0:
+        raise Degraded("PROJECT transaction has an odd token count")
+    for idx in range(0, len(tokens), 2):
+        cmd_raw, oid_raw = tokens[idx], tokens[idx + 1]
+        if not cmd_raw.startswith(b"update "):
+            raise Degraded("PROJECT transaction may only contain update commands")
+        ref_name = cmd_raw[len(b"update "):].decode("ascii", "strict")
+        if not _FROZEN_REF_RE.match(ref_name):
+            raise Degraded(f"PROJECT destination {ref_name!r} is outside refs/cairn-frozen/")
+        oid_str = oid_raw.decode("ascii", "strict")
+        if not _OID_RE.match(oid_str):
+            raise Degraded("PROJECT target is not a valid object id")
+
+
+def _release_history_git(
+    session: ReleaseHistorySession,
+    op: str,
+    *,
+    repo_path: Path | None = None,
+    stdin_data: bytes = b"",
+    expected_head: str | None = None,
+    timeout: float = 60.0,
+) -> ReleaseHistoryResult:
+    """Runner-private closed-operation Git dispatch for frozen history."""
+    if op not in _RELEASE_HISTORY_OPS:
+        raise Degraded(f"unsupported release history Git operation: {op!r}")
+    revalidate(session.git, session.target)
+    is_write = op in _RELEASE_HISTORY_WRITE_OPS
+    if is_write:
+        if session.store_repo is None:
+            raise Degraded(f"{op} requires an exclusive sterile store repository")
+        if repo_path is not None and repo_path != session.store_repo:
+            raise Degraded(f"{op} may only target the sterile store repository")
+        effective_repo = session.store_repo
+        if session.source_repo is not None:
+            exclusions = _GIT_READ.worktree_exclusions(str(session.source_repo))
+            _GIT_READ._assert_off_target(
+                str(effective_repo), os.path.realpath(str(effective_repo)), exclusions
+            )
+        _GIT_READ._lstat_chain(str(effective_repo), leaf_regular=False)
+        if op == "INIT" and any(effective_repo.iterdir()):
+            raise Degraded("INIT requires an initially empty sterile store directory")
+    else:
+        if op == "WORKTREES" and repo_path is not None and repo_path == session.store_repo:
+            effective_repo = session.store_repo
+        else:
+            effective_repo = repo_path if repo_path is not None else session.source_repo
+        if effective_repo is None:
+            raise Degraded(f"{op} requires a repository path")
+        _GIT_READ._lstat_chain(str(effective_repo), leaf_regular=False)
+
+    if op == "WORKTREES":
+        op_args: tuple[str, ...] = ("worktree", "list", "--porcelain", "-z")
+        output_cap = _RELEASE_READ_MAX_BYTES
+    elif op == "HEAD_SYMBOLIC":
+        op_args = ("symbolic-ref", "-q", "HEAD")
+        output_cap = 65536
+    elif op == "FOR_EACH_REF_SHARED":
+        op_args = (
+            "for-each-ref",
+            "--format=%(objectname) %(objecttype) %(refname)%00",
+            "--exclude=refs/bisect",
+            "--exclude=refs/worktree",
+            "--exclude=refs/rewritten",
+        )
+        output_cap = _RELEASE_READ_MAX_BYTES
+    elif op == "FOR_EACH_REF_PRIVATE":
+        op_args = (
+            "for-each-ref",
+            "--format=%(objectname) %(objecttype) %(refname)%00",
+            "refs/bisect",
+            "refs/worktree",
+            "refs/rewritten",
+        )
+        output_cap = _RELEASE_READ_MAX_BYTES
+    elif op == "PACK":
+        _validate_sorted_oids(stdin_data)
+        op_args = ("pack-objects", "--stdout", "--quiet")
+        output_cap = _RELEASE_PACK_MAX_BYTES
+    elif op == "INIT":
+        op_args = ("init", "--bare")
+        output_cap = 65536
+    elif op == "INDEX":
+        if not stdin_data or len(stdin_data) > _RELEASE_PACK_MAX_BYTES:
+            raise Degraded("INDEX pack input is empty or exceeds size cap")
+        op_args = ("index-pack", "--strict", "--stdin")
+        output_cap = 65536
+    elif op == "PROJECT":
+        _validate_frozen_projection(stdin_data)
+        op_args = ("update-ref", "--stdin", "-z")
+        output_cap = 65536
+    else:  # op == "HEAD"
+        if not expected_head or not _OID_RE.match(expected_head):
+            raise Degraded("HEAD update requires a validated full commit OID")
+        op_args = ("update-ref", "--no-deref", "HEAD", expected_head)
+        output_cap = 65536
+
+    argv = [
+        session.git.resolved,
+        *_RELEASE_STERILE_GIT_FLAGS,
+        "-C",
+        str(effective_repo),
+        *op_args,
+    ]
+    env = _GIT_READ._base_environment()
+    for key in list(env):
+        if key.startswith("GIT_"):
+            env.pop(key, None)
+    empty_cfg = os.devnull if os.name == "posix" else "NUL"
+    env.update({
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_CONFIG_GLOBAL": empty_cfg,
+        "GIT_TERMINAL_PROMPT": "0",
+        "GIT_ALLOW_PROTOCOL": "",
+        "LC_ALL": "C",
+    })
+    neutral_cwd = _GIT_READ._neutral_cwd(str(effective_repo))
+
+    if os.name == "posix":
+        proc = subprocess.run(
+            argv,
+            input=stdin_data if stdin_data else None,
+            capture_output=True,
+            cwd=neutral_cwd,
+            env=env,
+            timeout=timeout,
+            check=False,
+        )
+        rc, out, err = proc.returncode, proc.stdout, proc.stderr
+    elif os.name == "nt":
+        if session.private is None:
+            raise Degraded("Windows release history Git requires a private workspace")
+        python = resolve_executable(sys.executable, session.target, os.path.dirname(sys.executable))
+        revalidate(python, session.target)
+        dispatch_dir = session.private.root / ("hist-" + secrets.token_hex(8))
+        with _win_private_create(dispatch_dir, target=session.target, directory=True):
+            stdin_path = dispatch_dir / "stdin.bin"
+            _write_windows_private_bytes(stdin_path, stdin_data, session.private)
+            stdin_digest = hashlib.sha256(stdin_data).hexdigest()
+            worker_path = dispatch_dir / "hist_worker.py"
+            worker_src = (
+                "import hashlib, json, subprocess, sys\n"
+                f"with open({str(stdin_path)!r}, 'rb') as h:\n"
+                f"    data = h.read({len(stdin_data) + 1})\n"
+                f"if len(data) != {len(stdin_data)} or hashlib.sha256(data).hexdigest() != {stdin_digest!r}:\n"
+                "    raise SystemExit(3)\n"
+                f"proc = subprocess.run({argv!r}, input=data if data else None, "
+                f"capture_output=True, cwd={neutral_cwd!r}, env={env!r}, timeout={timeout!r}, check=False)\n"
+                f"if len(proc.stdout) > {output_cap} or len(proc.stderr) > {65536}:\n"
+                "    raise SystemExit(4)\n"
+                f"if {op!r} in ('HEAD_SYMBOLIC', 'FOR_EACH_REF_SHARED', 'FOR_EACH_REF_PRIVATE') and proc.stderr:\n"
+                "    raise SystemExit(129)\n"
+                "sys.stdout.buffer.write(proc.stdout)\n"
+                "raise SystemExit(proc.returncode)\n"
+            ).encode("utf-8")
+            worker_digest = hashlib.sha256(worker_src).hexdigest()
+            _write_windows_private_bytes(worker_path, worker_src, session.private)
+            bootstrap = (
+                "import hashlib\n"
+                f"with open({str(worker_path)!r}, 'rb') as h:\n"
+                f"    code = h.read({_WINDOWS_WORKER_MAX + 1})\n"
+                f"if len(code) > {_WINDOWS_WORKER_MAX} or hashlib.sha256(code).hexdigest() != {worker_digest!r}:\n"
+                "    raise SystemExit(3)\n"
+                "exec(compile(code, '<verified history worker>', 'exec', dont_inherit=True))\n"
+            )
+            job_res = _windows_job_process(
+                [python.resolved, "-I", "-S", "-B", "-c", bootstrap],
+                python, session.target, env, timeout + 5.0,
+                stdout_limit=output_cap, stderr_limit=65536,
+            )
+            if job_res.state != "completed" or job_res.returncode is None:
+                raise Degraded(f"{op} failed ({job_res.reason or job_res.state})")
+            rc, out, err = job_res.returncode, job_res.stdout, b""
+            if rc == 129:
+                raise Degraded(f"{op} emitted unexpected stderr")
+    else:
+        raise Degraded("unsupported platform for release history Git")
+
+    if len(out) > output_cap:
+        raise Degraded(f"{op} output exceeded {output_cap}-byte cap")
+    if op == "HEAD_SYMBOLIC":
+        if rc == 1 and not out and not err:
+            return ReleaseHistoryResult(rc, out, err)
+        if rc != 0 or err:
+            raise Degraded(f"HEAD_SYMBOLIC failed (rc={rc})")
+        return ReleaseHistoryResult(rc, out, err)
+    if op in ("FOR_EACH_REF_SHARED", "FOR_EACH_REF_PRIVATE") and err:
+        raise Degraded(f"{op} emitted unexpected stderr")
+    if rc != 0:
+        raise Degraded(f"{op} failed (rc={rc})")
+    return ReleaseHistoryResult(rc, out, err)
+
+
+def _write_private_triage_record(
+    triage_path: Path,
+    target: Path,
+    legs: list[LegOutcome],
+    private: _WindowsInvocation | None = None,
+) -> None:
+    """Write validated, sanitized, bounded findings to an explicit off-tree
+    owner-only private triage record."""
+    if not triage_path.is_absolute():
+        raise Degraded("triage record path must be absolute")
+    resolved = triage_path.resolve()
+    target_resolved = target.resolve()
+    if resolved == target_resolved or resolved.is_relative_to(target_resolved):
+        raise Degraded("triage record path must be outside the target repository")
+    if triage_path.exists() or triage_path.is_symlink():
+        raise Degraded("triage record path already exists")
+    if not triage_path.parent.is_dir():
+        raise Degraded("triage record parent directory is absent")
+    payload = {
+        "schema": _SCHEMA,
+        "kind": "portable-security-sweeps/private-triage-v1",
+        "target": str(target),
+        "legs": [
+            {
+                "leg": leg.leg,
+                "status": leg.status,
+                "findings": [dict(item) for item in leg.findings],
+            }
+            for leg in legs
+            if leg.findings
+        ],
+    }
+    raw = (json.dumps(payload, ensure_ascii=True, sort_keys=True, indent=2) + "\n").encode("utf-8")
+    if os.name == "nt":
+        with _win_private_ancestors(triage_path, target=target) as (api, value, parent):
+            with api.descriptor(False) as descriptor:
+                with api.open(triage_path.name, value, parent, directory=False,
+                              descriptor=descriptor) as handle:
+                    _win_private_verify(api, handle, value, directory=False, protected=True)
+                    api.append(handle, raw)
+        return
+    flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_NOFOLLOW", 0)
+    fd = os.open(triage_path, flags, 0o600)
+    try:
+        if os.write(fd, raw) != len(raw):
+            raise Degraded("triage record write was incomplete")
+    finally:
+        os.close(fd)
+
+
 def _supervised_process(argv: list[str], exe: Resolved, target: Path,
                         env: dict[str, str], cwd: str, timeout: float,
                         shim: Resolved | None = None,
@@ -2832,8 +3174,8 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
         return refuse(f"the candidate {resolved!r} is not a regular file")
     if not os.access(resolved, os.X_OK):
         return refuse(f"the candidate {resolved!r} carries no executable bit")
-    if os.name != "posix":
-        return refuse("the Windows full Git mediation and admission matrix are unsupported")
+    if os.name not in ("posix", "nt"):
+        return refuse("unsupported platform for admission matrix")
 
     # A preamble the statement must still outrank.  Without a line here, an
     # ``insert(0, ...)`` and an ``append(...)`` are indistinguishable on an
@@ -2860,7 +3202,11 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
     real_git = shutil.which("git")
     canary = _Canary()
     try:
-        with tempfile.TemporaryDirectory(prefix="cairn-admit-") as workdir:
+        ws_cm = (_private_sweep_workspace(target) if os.name == "nt"
+                 else tempfile.TemporaryDirectory(prefix="cairn-admit-"))
+        with ws_cm as workdir:
+            private = (_WindowsInvocation(target, Path(workdir))
+                       if os.name == "nt" else None)
             fixture = os.path.join(workdir, "fixture")
             os.makedirs(fixture)
             with open(os.path.join(fixture, "seed.txt"), "w",
@@ -2877,9 +3223,9 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
             git_log = os.path.join(
                 os.path.realpath(workdir, strict=True), "git-invocations.jsonl")
             invocation_id = secrets.token_urlsafe(18)
-            _create_invocation_log(git_log)
+            _create_invocation_log(git_log, private=private)
             global _ACTIVE_INVOCATION
-            _ACTIVE_INVOCATION = (git_log, invocation_id, None)
+            _ACTIVE_INVOCATION = (git_log, invocation_id, private)
             # The fixture is built with the REAL git, before the shim exists, so
             # the invocation oracle records only what the screen and the
             # candidate do -- never the harness's own setup.
@@ -2986,14 +3332,32 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                     scenario_env = dict(env)
                     shim_executable = None
                     shim_interpreter = None
+                    relay_cm = nullcontext()
                     if git_identity is not None:
-                        shim_dir, shim_executable, shim_interpreter = (
-                            _materialize_sweep_git_shim(
-                                scenario_parent, Path(tree), git_identity,
-                                git_log, invocation_id, False,
-                                scenario=f"{leg}:{scenario}",
-                            ))
-                        scenario_env["PATH"] = shim_dir
+                        if os.name == "nt":
+                            assert private is not None
+                            head_probe = _GIT_READ.run_git(
+                                tree, ("rev-parse", "HEAD"),
+                                executable=select_git_reader_token(git_identity, Path(tree)),
+                                timeout=10, output_limit=256,
+                            )
+                            tree_head = head_probe.stdout.decode("ascii", "strict").strip()
+                            win_hist = _WindowsFrozenHistory(
+                                Path(tree), Path(workdir), Path(tree), (tree_head,),
+                            )
+                            relay_cm = _windows_git_relay(
+                                _WindowsInvocation(Path(tree), Path(workdir)),
+                                git_identity, git_log, invocation_id, False,
+                                win_hist, scenario=f"{leg}:{scenario}",
+                            )
+                        else:
+                            shim_dir, shim_executable, shim_interpreter = (
+                                _materialize_sweep_git_shim(
+                                    scenario_parent, Path(tree), git_identity,
+                                    git_log, invocation_id, False,
+                                    scenario=f"{leg}:{scenario}",
+                                ))
+                            scenario_env["PATH"] = shim_dir
                     # Each row is measured against a report it wrote itself; a
                     # row that reads the previous row's file measures nothing.
                     try:
@@ -3001,10 +3365,14 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                     except FileNotFoundError:
                         pass
                     try:
-                        proc = _supervised_process(
-                            argv, exe, Path(tree), scenario_env, workdir,
-                            _SCAN_TIMEOUT, shim_executable, shim_interpreter,
-                        )
+                        with relay_cm as windows_relay:
+                            if windows_relay is not None:
+                                scenario_env["PATH"] = str(windows_relay.dir)
+                            proc = _supervised_process(
+                                argv, exe, Path(tree), scenario_env, workdir,
+                                _SCAN_TIMEOUT, shim_executable, shim_interpreter,
+                                windows_relay=windows_relay,
+                            )
                     except (OSError, subprocess.SubprocessError, Degraded) as exc:
                         return refuse(
                             f"the {leg!r} leg could not run the {scenario!r} "
@@ -3014,6 +3382,7 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                         git_log, invocation_id, False,
                         leg == "history" and scenario != "invalid_argv",
                         f"{leg}:{scenario}",
+                        private=private,
                     )
                     if problem:
                         return refuse(problem)
@@ -3098,10 +3467,10 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
             record["hostile_config"] = hostile
 
             problem = _invocation_log_problem(
-                git_log, invocation_id, False, require_log=False)
+                git_log, invocation_id, False, require_log=False, private=private)
             if problem:
                 return refuse(problem)
-            record["git_invocations"] = _invocation_labels(git_log, invocation_id)
+            record["git_invocations"] = _invocation_labels(git_log, invocation_id, private=private)
             record["network_observation"] = {
                 "method": (
                     "loopback canary advertised as http_proxy/https_proxy/"
@@ -3174,6 +3543,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--declared-source", default=None,
         help="where the candidate binary came from, recorded verbatim",
     )
+    parser.add_argument(
+        "--triage-record", default=None, metavar="PATH",
+        help="optional off-tree absolute path for owner-only private finding triage",
+    )
     return parser
 
 
@@ -3225,6 +3598,7 @@ def materialize_workspace(workdir: str, fingerprints: list[str]) -> Workspace:
 
 def _leg_argv(
     exe: Resolved, leg: str, target: Path, work: Workspace,
+    *, frozen: bool = False,
 ) -> tuple[list[str], str]:
     """The **runner-owned** argv for one leg, and that leg's report path.
 
@@ -3233,7 +3607,7 @@ def _leg_argv(
     report = os.path.join(work.report_dir, f"{leg}.json")
     argv = [exe.resolved, "dir" if leg == "current-tree" else "git", str(target)]
     if leg == "history":
-        argv += ["--log-opts", " ".join(_WINDOWS_LOG_OPTS) if os.name == "nt" else _LOG_OPTS]
+        argv += ["--log-opts", " ".join(_WINDOWS_LOG_OPTS) if (frozen or os.name == "nt") else _LOG_OPTS]
     else:
         # The current-tree leg does not follow symlinks, and adds no
         # .gitignore filter: a .gitignore'd ordinary file is still scanned.
@@ -3260,7 +3634,11 @@ def _leg_argv(
     return argv, report
 
 
-def _run_sweep_inner(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
+def _run_sweep_inner(
+    args: argparse.Namespace,
+    *,
+    frozen_history: _WindowsFrozenHistory | None = None,
+) -> tuple[int, dict[str, Any]]:
     """The ordinary sweep, in the order the contract requires.
 
     Policy refusal precedes every side effect.  Executable resolution and
@@ -3328,7 +3706,7 @@ def _run_sweep_inner(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
         invocation_log = invocation_id = None
         global _ACTIVE_INVOCATION
         _ACTIVE_INVOCATION = None
-        private = _WindowsInvocation(target, Path(workdir)) if sys.platform == "win32" else None
+        private = _WindowsInvocation(target, Path(workdir)) if os.name == "nt" else None
         if os.name == "posix" or private is not None:
             invocation_log = os.path.join(
                 os.path.realpath(workdir, strict=True), "git-invocations.jsonl")
@@ -3410,128 +3788,133 @@ def _run_sweep_inner(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             return choice.result, summarize(
                 target, policy_path, legs, None, choice.reason, facts,
             )
-        if os.name == "nt" and choice.mode == "full":
-            legs = [LegOutcome(
-                "adapter", _AGG_DEGRADED, "DEGRADED",
-                "full Git mediation is unavailable on Windows",
-            )]
-            return _AGG_DEGRADED, summarize(
-                target, policy_path, legs, None,
-                "Windows full mode is refused before scan legs", facts,
-            )
-
         # 5. The legs.  Reduced mode cannot reach Git, so it asks only the
         #    current-tree question and reports the history question INCOMPLETE.
         shim_dir = None
         shim_executable = None
         shim_interpreter = None
+        relay_cm = nullcontext()
         if choice.mode == "full" and git is not None:
             if not invocation_log or not invocation_id:
                 raise Degraded(
                     "full Git mediation requires a private invocation record")
-            shim_dir, shim_executable, shim_interpreter = _materialize_sweep_git_shim(
-                workdir, target, git, invocation_log, invocation_id,
-                remote_urls_present,
-            )
-        environment = child_env(choice.mode, git, empty_dir, work.empty_config,
-                                shim_dir)
-        facts["child_path"] = environment["PATH"]
-        facts["empty_path_dir"] = empty_dir
-        current_argv, current_report = _leg_argv(
-            adapter, "current-tree", target, work
-        )
-        facts["current_tree_report"] = current_report
-        legs_to_run = [("current-tree", current_argv, current_report)]
-        pending: list[LegOutcome] = []
-        discovery = _history_discovery(target)
-        facts["history_discovery"] = discovery
-        if not discovery["git_dir_present"]:
-            pending.append(LegOutcome(
-                "history", _AGG_INCOMPLETE, "INCOMPLETE",
-                "the target is a non-Git export, so the history question could "
-                f"not be asked; discovery {_escape(discovery)}",
-            ))
-        elif git is None:
-            # Can't ask Git's object model without Git.  A filesystem
-            # heuristic's guess is not a substitute, so absence of the
-            # trust root -- not absence of refs -- is what forces INCOMPLETE
-            # here.
-            pending.append(LegOutcome(
-                "history", _AGG_INCOMPLETE, "INCOMPLETE",
-                git_reason or "git is absent; the history question was not asked",
-            ))
-        else:
-            # The authoritative "does a commit exist" answer, from
-            # Git's own object model rather than ref-file presence -- run
-            # through the helper's fixed closed environment used by the config
-            # screen, regardless of mode, because this
-            # is a discovery question, not a scan leg.
-            try:
-                has_commit: bool | None = probe_reachable_commit(
-                    git, git_token, target
+            if os.name == "nt":
+                if private is None:
+                    raise Degraded(
+                        "Windows full Git mediation requires a private workspace")
+                relay_cm = _windows_git_relay(
+                    private, git, invocation_log, invocation_id,
+                    remote_urls_present, frozen_history, scenario="production",
                 )
-            except Degraded as exc:
+            else:
+                shim_dir, shim_executable, shim_interpreter = _materialize_sweep_git_shim(
+                    workdir, target, git, invocation_log, invocation_id,
+                    remote_urls_present, history=frozen_history,
+                )
+        with relay_cm as windows_relay:
+            if windows_relay is not None:
+                shim_dir = str(windows_relay.dir)
+            environment = child_env(choice.mode, git, empty_dir, work.empty_config,
+                                    shim_dir)
+            facts["child_path"] = environment["PATH"]
+            facts["empty_path_dir"] = empty_dir
+            current_argv, current_report = _leg_argv(
+                adapter, "current-tree", target, work
+            )
+            facts["current_tree_report"] = current_report
+            legs_to_run = [("current-tree", current_argv, current_report)]
+            pending: list[LegOutcome] = []
+            discovery = _history_discovery(target)
+            facts["history_discovery"] = discovery
+            if not discovery["git_dir_present"]:
                 pending.append(LegOutcome(
-                    "history", _AGG_DEGRADED, "DEGRADED", str(exc)
+                    "history", _AGG_INCOMPLETE, "INCOMPLETE",
+                    "the target is a non-Git export, so the history question could "
+                    f"not be asked; discovery {_escape(discovery)}",
                 ))
-                has_commit = None
-            if has_commit is False:
-                # A conditional leg with no applicable input.  NOT APPLICABLE
-                # is distinct from INCOMPLETE and contributes nothing to the
-                # aggregate.
+            elif git is None:
                 pending.append(LegOutcome(
-                    "history", None, _NOT_APPLICABLE,
-                    "the repository carries no commit, so the history "
-                    f"question has no applicable input; discovery "
-                    f"{_escape(discovery)}",
+                    "history", _AGG_INCOMPLETE, "INCOMPLETE",
+                    git_reason or "git is absent; the history question was not asked",
                 ))
-            elif has_commit is True:
-                if choice.mode != "full":
-                    pending.append(LegOutcome(
-                        "history", _AGG_INCOMPLETE, "INCOMPLETE",
-                        "reduced provenance: Git is unreachable from the "
-                        "child environment, so the history question was not "
-                        "asked",
-                    ))
-                elif discovery["shallow"]:
-                    pending.append(LegOutcome(
-                        "history", _AGG_INCOMPLETE, "INCOMPLETE",
-                        "the repository is a shallow clone; the observed "
-                        "boundary is reported and full-history coverage is "
-                        f"NOT claimed; discovery {_escape(discovery)}",
-                    ))
-                else:
-                    history_argv, history_report = _leg_argv(
-                        adapter, "history", target, work
+            else:
+                try:
+                    has_commit: bool | None = probe_reachable_commit(
+                        git, git_token, target
                     )
-                    facts["history_report"] = history_report
-                    legs_to_run.append(("history", history_argv, history_report))
-            # has_commit is None: the Degraded branch above already appended
-            # the "history" outcome.
-        outcomes = _adapter_seam({
-            "adapter": adapter, "target": target, "env": environment,
-            "cwd": workdir, "legs": legs_to_run, "mode": choice.mode,
-            "git_shim": shim_executable,
-            "git_interpreter": shim_interpreter,
-            "invocation_log": invocation_log,
-            "invocation_id": invocation_id,
-            "windows_private": private,
-            "remote_urls_present": remote_urls_present,
-            "require_log": any(row[0] == "history" for row in legs_to_run),
-            "required_scenario": "production",
-        })
-        summary = summarize(
-            target, policy_path, outcomes + pending, choice.mode,
-            choice.reason, facts,
-        )
+                except Degraded as exc:
+                    pending.append(LegOutcome(
+                        "history", _AGG_DEGRADED, "DEGRADED", str(exc)
+                    ))
+                    has_commit = None
+                if has_commit is False:
+                    pending.append(LegOutcome(
+                        "history", None, _NOT_APPLICABLE,
+                        "the repository carries no commit, so the history "
+                        f"question has no applicable input; discovery "
+                        f"{_escape(discovery)}",
+                    ))
+                elif has_commit is True:
+                    if choice.mode != "full":
+                        pending.append(LegOutcome(
+                            "history", _AGG_INCOMPLETE, "INCOMPLETE",
+                            "reduced provenance: Git is unreachable from the "
+                            "child environment, so the history question was not "
+                            "asked",
+                        ))
+                    elif discovery["shallow"]:
+                        pending.append(LegOutcome(
+                            "history", _AGG_INCOMPLETE, "INCOMPLETE",
+                            "the repository is a shallow clone; the observed "
+                            "boundary is reported and full-history coverage is "
+                            f"NOT claimed; discovery {_escape(discovery)}",
+                        ))
+                    elif os.name == "nt" and frozen_history is None:
+                        pending.append(LegOutcome(
+                            "history", _AGG_DEGRADED, "DEGRADED",
+                            "frozen history has not been bound to the Windows relay",
+                        ))
+                    else:
+                        history_argv, history_report = _leg_argv(
+                            adapter, "history", target, work,
+                            frozen=(frozen_history is not None),
+                        )
+                        facts["history_report"] = history_report
+                        legs_to_run.append(("history", history_argv, history_report))
+            outcomes = _adapter_seam({
+                "adapter": adapter, "target": target, "env": environment,
+                "cwd": workdir, "legs": legs_to_run, "mode": choice.mode,
+                "git_shim": shim_executable,
+                "git_interpreter": shim_interpreter,
+                "invocation_log": invocation_log,
+                "invocation_id": invocation_id,
+                "windows_private": private,
+                "windows_relay": windows_relay,
+                "remote_urls_present": remote_urls_present,
+                "require_log": any(row[0] == "history" for row in legs_to_run),
+                "required_scenario": "production",
+            })
+            triage_record = getattr(args, "triage_record", None)
+            if triage_record:
+                _write_private_triage_record(
+                    Path(triage_record), target, outcomes + pending, private=private,
+                )
+            summary = summarize(
+                target, policy_path, outcomes + pending, choice.mode,
+                choice.reason, facts,
+            )
     return summary["result"], summary
 
 
-def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
+def run_sweep(
+    args: argparse.Namespace,
+    *,
+    frozen_history: _WindowsFrozenHistory | None = None,
+) -> tuple[int, dict[str, Any]]:
     """Run one sweep and release its private invocation-record binding."""
     global _ACTIVE_INVOCATION
     try:
-        return _run_sweep_inner(args)
+        return _run_sweep_inner(args, frozen_history=frozen_history)
     except (Degraded, _GIT_READ.GitReadError, OSError):
         if sys.platform != "win32":
             raise

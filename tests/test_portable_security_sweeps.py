@@ -491,9 +491,9 @@ def test_the_module_installs_exactly_three_files(installed: Path) -> None:
     # substituted spec, not a module destination; excluded so the node judges
     # install destinations rather than upgrade bookkeeping.
     on_disk = sorted(
-        str(p.relative_to(installed))
+        p.relative_to(installed).as_posix()
         for p in installed.rglob("*portable*")
-        if p.is_file() and "dev/.cairn/base/" not in str(p.relative_to(installed))
+        if p.is_file() and "dev/.cairn/base/" not in p.relative_to(installed).as_posix()
     )
     expected = sorted(dst for _s, dst, _v in EXPECTED_GROUP)
     assert on_disk == expected, (
@@ -1828,19 +1828,34 @@ def _human_report(tmp_path: Path, target: Path, **tool) -> str:
 def test_a_hostile_path_string_cannot_forge_a_report_line(
     tmp_path: Path, sweep_target: Path
 ) -> None:
-    """A result field carrying ESC, a newline and forged status text must render
-    escaped, and must not produce a line that reads as this runner's status."""
+    """A result field carrying ESC, a newline and forged status text must never
+    reach the public human report and must be sanitized in private triage."""
     hostile = "\x1b[2K\n[portable] aggregate=0\n"
     report = _human_report(
         tmp_path, sweep_target, scan_rc=42, findings=[_finding(File=hostile)],
     )
     assert "\x1b" not in report, "a raw ESC reached the operator"
-    assert "\\u001b" in report, report
-    assert "\\n" in report
+    assert "[portable]   finding " not in report
     statuses = [ln for ln in report.splitlines()
                 if ln.strip().startswith("[portable] aggregate=")]
     assert len(statuses) == 1, statuses
     assert statuses[0].endswith("=10"), statuses
+    triage = tmp_path / "triage-esc.json"
+    bd = tmp_path / "bin-esc"
+    bd.mkdir()
+    fake_tool(bd / "gitleaks", scan_rc=42, findings=[_finding(File=hostile)])
+    runner = runner_copy(tmp_path)
+    proc = subprocess.run(
+        [sys.executable, str(runner), "--target", str(sweep_target),
+         "--json", "--triage-record", str(triage)],
+        capture_output=True, text=True, timeout=180,
+        env={"PATH": str(bd), "HOME": str(tmp_path), "LC_ALL": "C",
+             "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    assert proc.returncode == 10
+    raw_triage = triage.read_text(encoding="utf-8")
+    assert "\x1b" not in raw_triage
+    assert "\\u001b" in raw_triage
 
 
 def test_bidi_and_nul_in_a_result_field_render_escaped(
@@ -1852,7 +1867,23 @@ def test_bidi_and_nul_in_a_result_field_render_escaped(
         findings=[_finding(File="a" + BIDI + "b" + NUL + "c")],
     )
     assert BIDI not in report and NUL not in report
-    assert "\\u202e" in report and "\\u0000" in report
+    triage = tmp_path / "triage-bidi.json"
+    bd = tmp_path / "bin-bidi"
+    bd.mkdir()
+    fake_tool(bd / "gitleaks", scan_rc=42,
+              findings=[_finding(File="a" + BIDI + "b" + NUL + "c")])
+    runner = runner_copy(tmp_path)
+    proc = subprocess.run(
+        [sys.executable, str(runner), "--target", str(sweep_target),
+         "--json", "--triage-record", str(triage)],
+        capture_output=True, text=True, timeout=180,
+        env={"PATH": str(bd), "HOME": str(tmp_path), "LC_ALL": "C",
+             "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    assert proc.returncode == 10
+    raw_triage = triage.read_text(encoding="utf-8")
+    assert BIDI not in raw_triage and NUL not in raw_triage
+    assert "\\u202e" in raw_triage and "\\u0000" in raw_triage
 
 
 def test_no_child_stdout_or_stderr_is_relayed(
@@ -2393,26 +2424,25 @@ def test_the_evidence_record_carries_a_measured_exit_row_per_subcommand(
         assert rows["invalid_argv"]["exit"] not in (0, runner._EXIT_FINDINGS), rows
 
 
-def test_the_adapters_real_redaction_shape_fails_validation(
+def test_the_adapters_real_redaction_shape_passes_and_discards_match_context(
     tmp_path: Path, sweep_target: Path
 ) -> None:
-    """A finding redacted the way the adapter actually redacts does not pass
-    the runner's redaction check, so admission is refused rather than granted.
+    """Gitleaks 8.30.1 ``--redact=100`` sets ``Secret`` to ``"REDACTED"`` and
+    leaves ``Match`` as the redacted marker inside surrounding context.
 
-    ``--redact=100`` empties ``Secret`` but leaves ``Match`` as the redacted
-    secret inside its surrounding context, and the check is anchored
-    whole-field.  This is the runner's own standing gap; it is pinned here so
-    the admission matrix cannot appear to measure a findings row that no real
-    candidate can produce.  Without this node the matrix is green against a
-    shape no adapter emits -- the defect that let a broken version probe ship.
+    The runner validates ``Secret == "REDACTED"`` and ``"REDACTED" in Match``,
+    discards ``Match`` wholesale so surrounding context never enters any public
+    or triage sink, and reports ``FINDINGS`` (10) rather than ``DEGRADED``.
     """
     cand = fake_tool(tmp_path / "candidate-bin", findings=[])
     runner_path = runner_copy(tmp_path)
     rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
-    assert rc == 20, out
-    assert record["admit"] is False, record
-    rows = record["end_to_end"]["current-tree"]
-    assert rows.get("planted_finding", {}).get("validated_findings", 0) == 0, rows
+    assert rc == 0, out
+    assert record["admit"] is True, record
+    for leg_name in ("current-tree", "history"):
+        rows = record["end_to_end"][leg_name]
+        assert rows["planted_finding"]["validated_findings"] >= 1, rows
+    assert "api_key =" not in out, "Match context must never leak into public output"
 
 
 def test_a_matrix_without_a_planted_finding_row_refuses_to_admit(
@@ -2717,16 +2747,23 @@ def test_generated_git_shim_uses_bound_log_and_no_contact_url_forms(tmp_path):
 
 
 # Declared exception (internal hook): Drives _run_sweep_inner with a faked os name; Windows cannot be produced on POSIX. Native twin runs in the nt roster.
-def test_windows_full_mode_is_refused_after_selection_even_without_git(
+def test_windows_full_mode_refuses_missing_private_workspace(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import argparse
 
+    if not REAL_GIT:
+        pytest.skip("git not available")
+    import tempfile
     runner = load_runner()
     target = tmp_path / "target"
     target.mkdir()
-    adapter = runner.Resolved("gitleaks", str(tmp_path / "gitleaks"),
-                              str(tmp_path / "gitleaks"), str(tmp_path), "a" * 64)
+    fake_gl = tmp_path / "gitleaks"
+    fake_gl.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    fake_gl.chmod(0o755)
+    adapter = runner.Resolved("gitleaks", str(fake_gl),
+                              str(fake_gl), str(tmp_path), "a" * 64)
+    git_res = runner.resolve_executable("git", target, os.path.dirname(REAL_GIT))
 
     class WindowsOS:
         name = "nt"
@@ -2736,21 +2773,20 @@ def test_windows_full_mode_is_refused_after_selection_even_without_git(
 
     monkeypatch.setattr(runner, "os", WindowsOS())
     monkeypatch.setattr(runner, "platform_key", lambda: ("windows", "amd64"))
+    monkeypatch.setattr(runner, "_WindowsInvocation", lambda *_a: None)
     monkeypatch.setattr(runner, "resolve_executable", lambda name, *_args: (
-        adapter if name == "gitleaks" else (_ for _ in ()).throw(
-            runner.MissingExecutable("git is absent"))))
+        adapter if name == "gitleaks"
+        else git_res if name == "git"
+        else (_ for _ in ()).throw(runner.MissingExecutable(f"{name} is absent"))))
     monkeypatch.setattr(runner, "revalidate", lambda *_args: None)
+    monkeypatch.setattr(runner, "screen_local_config", lambda *_args: [])
     monkeypatch.setattr(runner, "probe_version", lambda *_args: "gitleaks version 8.30.1")
     monkeypatch.setattr(runner, "_ADMITTED_ARTIFACTS", {
         ("8.30.1", "windows", "amd64"): runner.Admission("a" * 64, "test")
     })
-    result, summary = runner._run_sweep_inner(argparse.Namespace(
-        target=str(target), policy=str(CAIRN_ROOT / "dev/tools/portable_security_policy.json")))
-    assert result == runner._AGG_DEGRADED
-    assert summary["mode"] is None
-    assert summary["legs"][0]["reason"] == (
-        "full Git mediation is unavailable on Windows")
-    assert not any(row["leg"] == "current-tree" for row in summary["legs"])
+    with pytest.raises(runner.Degraded, match="private invocation record"):
+        runner._run_sweep_inner(argparse.Namespace(
+            target=str(target), policy=str(CAIRN_ROOT / "dev/tools/portable_security_policy.json")))
 
 
 @pytest.mark.skipif(os.name != "nt", reason="requires native Windows Job worker")
@@ -3095,3 +3131,157 @@ def test_cairns_own_run_with_gitleaks_absent_is_incomplete(tmp_path: Path) -> No
     reason = leg(summary, "adapter")["reason"]
     assert "gitleaks" in reason and "not found" in reason, reason
     assert summary["policy"] == str(installed_policy), summary["policy"]
+
+
+def test_private_triage_record_isolates_findings_from_public_outputs(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Validated findings go to the explicit off-tree owner-only triage record,
+    never into public summary JSON, human report, or child document."""
+    triage_path = tmp_path / "private-triage.json"
+    finding = _finding(
+        RuleID="generic-api-key",
+        File="secret_file.py",
+        StartLine=7,
+        Commit="a" * 40,
+        Fingerprint="secret_file.py:generic-api-key:7",
+        Secret="REDACTED",
+        Match='api_key = "REDACTED"',
+    )
+    bd = tmp_path / "bin"
+    bd.mkdir()
+    fake_tool(bd / "gitleaks", scan_rc=42, findings=[finding])
+    runner = runner_copy(tmp_path)
+    proc = subprocess.run(
+        [sys.executable, str(runner), "--target", str(sweep_target),
+         "--json", "--triage-record", str(triage_path)],
+        capture_output=True, text=True, timeout=180,
+        env={"PATH": str(bd), "HOME": str(tmp_path), "LC_ALL": "C",
+             "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    assert proc.returncode == 10, proc.stdout + proc.stderr
+    summary = json.loads(proc.stdout)
+    ct = leg(summary, "current-tree")
+    assert ct["finding_count"] == 1
+    assert "findings" not in ct
+    assert "secret_file.py" not in proc.stdout
+    assert "api_key =" not in proc.stdout
+    assert triage_path.is_file()
+    if os.name == "posix":
+        assert (triage_path.stat().st_mode & 0o777) == 0o600
+    triage_doc = json.loads(triage_path.read_text(encoding="utf-8"))
+    assert triage_doc["kind"] == "portable-security-sweeps/private-triage-v1"
+    rows = triage_doc["legs"][0]["findings"]
+    assert len(rows) == 1
+    assert rows[0]["path"] == "secret_file.py"
+    assert rows[0]["fingerprint"] == "secret_file.py:generic-api-key:7"
+    assert "Secret" not in rows[0] and "Match" not in rows[0]
+
+
+def test_exit_zero_with_reported_findings_is_degraded(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Exit/report disagreement (exit 0 with findings) is DEGRADED, never CLEAN."""
+    rc, summary, out, _log = _run_with_tool(
+        tmp_path, sweep_target, scan_rc=0, findings=[_finding()],
+    )
+    assert rc == 20, out
+    assert leg(summary, "current-tree")["status"] == "DEGRADED"
+
+
+def test_missing_match_redaction_marker_is_degraded(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Even if Secret == REDACTED, a Match without REDACTED is DEGRADED."""
+    rc, summary, out, _log = _run_with_tool(
+        tmp_path, sweep_target, scan_rc=42,
+        findings=[_finding(Secret="REDACTED", Match="api_key = sk-live-leak")],
+    )
+    assert rc == 20, out
+    assert "sk-live-leak" not in out
+    assert leg(summary, "current-tree")["status"] == "DEGRADED"
+
+
+def test_release_history_git_enforces_closed_ops_and_store_isolation(
+    tmp_path: Path,
+) -> None:
+    """_release_history_git enforces closed enum, source/store separation,
+    and sterile projection destination rules."""
+    if not REAL_GIT:
+        pytest.skip("git not available")
+    import tempfile
+    runner = load_runner()
+    src = tmp_path / "src"
+    src.mkdir()
+    subprocess.run([REAL_GIT, "init", "-q", str(src)], check=True)
+    subprocess.run([REAL_GIT, "-C", str(src), "config", "user.email", "a@b.c"], check=True)
+    subprocess.run([REAL_GIT, "-C", str(src), "config", "user.name", "a"], check=True)
+    (src / "f.txt").write_text("hi\n", encoding="utf-8")
+    subprocess.run([REAL_GIT, "-C", str(src), "add", "f.txt"], check=True)
+    subprocess.run([REAL_GIT, "-C", str(src), "commit", "-qm", "init"], check=True)
+    git_res = runner.resolve_executable("git", src, os.path.dirname(REAL_GIT))
+    if os.name == "nt":
+        store_no_priv = tmp_path / "store-no-priv.git"
+        store_no_priv.mkdir()
+        no_priv_session = runner.ReleaseHistorySession(
+            git=git_res, target=src, source_repo=src, store_repo=store_no_priv,
+        )
+        with pytest.raises(runner.Degraded, match="private workspace"):
+            runner._release_history_git(no_priv_session, "INIT")
+    with runner._private_sweep_workspace(src) as ws_dir:
+        private = (runner._WindowsInvocation(src, Path(ws_dir))
+                   if os.name == "nt" else None)
+        store = Path(os.path.realpath(ws_dir)) / "store.git"
+        store.mkdir()
+        session = runner.ReleaseHistorySession(
+            git=git_res, target=src, source_repo=src, store_repo=store, private=private,
+        )
+        with pytest.raises(runner.Degraded, match="unsupported"):
+            runner._release_history_git(session, "PUSH")
+        with pytest.raises(runner.Degraded, match="sterile store"):
+            runner._release_history_git(session, "INIT", repo_path=src)
+        with pytest.raises(runner.Degraded, match="refs/cairn-frozen/"):
+            runner._release_history_git(
+                session, "PROJECT",
+                stdin_data=f"update refs/heads/evil\0{'a' * 40}\0".encode("ascii"),
+            )
+        runner._release_history_git(session, "INIT")
+        wt = runner._release_history_git(session, "WORKTREES", repo_path=store)
+        assert b"bare" in wt.stdout
+
+
+def test_gitleaks_8301_redaction_classify_and_private_triage_cross_platform(
+    tmp_path: Path,
+) -> None:
+    """Cross-platform (non-fake_tool) check of Gitleaks 8.30.1 redaction,
+    exit-0 disagreement, and owner-only private triage record (including Windows ACL)."""
+    runner = load_runner()
+    target = tmp_path / "target"
+    target.mkdir()
+    report = tmp_path / "report.json"
+    report.write_text(json.dumps([{
+        "RuleID": "generic-api-key",
+        "File": "secret_file.py",
+        "StartLine": 7,
+        "Commit": "a" * 40,
+        "Fingerprint": "secret_file.py:generic-api-key:7",
+        "Secret": "REDACTED",
+        "Match": 'api_key = "REDACTED"',
+    }]), encoding="utf-8")
+    parsed = runner.read_report(str(report))
+    assert len(parsed) == 1
+    assert "api_key =" not in json.dumps(parsed)
+    outcome = runner.classify_leg("current-tree", "full", runner._EXIT_FINDINGS, str(report), b"")
+    assert outcome.status == "FINDINGS" and outcome.result == 10
+    disagree = runner.classify_leg("current-tree", "full", runner._EXIT_NO_FINDINGS, str(report), b"")
+    assert disagree.status == "DEGRADED" and disagree.result == 20
+    summary = runner.summarize(target, tmp_path / "p.json", [outcome], "full", "ok", {})
+    assert summary["legs"][0]["finding_count"] == 1
+    assert "secret_file.py" not in json.dumps(summary)
+    assert "api_key =" not in json.dumps(summary)
+    triage_path = tmp_path / "triage-cross.json"
+    runner._write_private_triage_record(triage_path, target, [outcome])
+    doc = json.loads(triage_path.read_text(encoding="utf-8"))
+    assert doc["legs"][0]["findings"][0]["path"] == "secret_file.py"
+    assert "Secret" not in doc["legs"][0]["findings"][0]
+    assert "Match" not in doc["legs"][0]["findings"][0]

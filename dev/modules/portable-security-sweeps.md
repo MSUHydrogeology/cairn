@@ -111,15 +111,16 @@ Precedence is **`20 > 10 > 5 > 0`**: a finding is never hidden by an incomplete
 sibling leg. **NOT APPLICABLE** is distinct from INCOMPLETE and contributes
 nothing to the aggregate — it never weakens another leg.
 
-> **Known gap — a real finding reports `20`, not `10`.** A finding must pass the
-> runner's redaction check to be *validated*, and that check requires the
-> redacted field to be redacted in whole. Against gitleaks 8.30.1, `--redact=100`
-> empties `Secret` but leaves `Match` as the redacted secret inside its
-> surrounding context, so the check refuses and the leg aggregates to `20`
-> DEGRADED. **You still see the finding** — nothing is suppressed, and `20` is
-> the fail-closed direction — but do not read `10` as the code a live secret
-> produces on this adapter. Measured 2026-09-01; pinned by
-> `test_the_adapters_real_redaction_shape_fails_validation`.
+> **Redaction and private triage.** Against Gitleaks 8.30.1, `--redact=100`
+> sets `Secret` to `"REDACTED"` and leaves `Match` as the redacted marker
+> inside its surrounding context. The runner requires `Secret == "REDACTED"`
+> and a string `Match` containing `"REDACTED"`, discards `Match` wholesale
+> without relaying surrounding text, and reports `10` FINDINGS when a finding
+> validates. Public summaries and child documents emit statuses, counts,
+> trusted binding IDs and reviewed reason codes only; validated bounded
+> `rule`/`path`/`line`/`commit`/`fingerprint` details are written only to an
+> explicit off-tree owner-only `--triage-record`. Malformed, unredacted or
+> contradictory output (including exit `0` with findings) stays `20` DEGRADED.
 
 ## The suppression boundary
 
@@ -189,6 +190,7 @@ candidate repository controls.
 python dev/tools/run_portable_security_sweeps.py --target . --policy dev/tools/portable_security_policy.json
 python dev/tools/run_portable_security_sweeps.py --json          # the deterministic summary
 python dev/tools/run_portable_security_sweeps.py --security-verification   # the bounded child document
+python dev/tools/run_portable_security_sweeps.py --triage-record /abs/private/triage.json
 ```
 
 Admitting a candidate version — an operator act, never part of a sweep and

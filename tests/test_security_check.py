@@ -2127,3 +2127,99 @@ def test_candidate_config_filters_ignored_files_and_environment_cannot_steer_the
         saw["head"] != head or "conftest.py" in saw["files"]
         or saw["tracked"] != "x = 1\n"))
     assert (saw is not None, steered) == (checker_runs, False)
+
+
+def test_freeze_history_writes_sibling_pack_and_manifest_on_linked_worktree(
+        tmp_path, monkeypatch, capsys) -> None:
+    """--freeze-history works from a complete linked worktree, creates the
+    deterministic sibling .pack before the manifest, and refuses overwrite."""
+    _pretend_python_313(monkeypatch)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _setup_git("init", "-q", cwd=repo)
+    _setup_git("config", "user.email", "t@t.invalid", cwd=repo)
+    _setup_git("config", "user.name", "Tester", cwd=repo)
+    (repo / "a.txt").write_text("clean\n", encoding="utf-8")
+    _setup_git("add", "a.txt", cwd=repo)
+    _setup_git("commit", "-qm", "init", cwd=repo)
+    wt = tmp_path / "linked-wt"
+    _setup_git("worktree", "add", "-b", "wt-branch", str(wt), cwd=repo)
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", wt)
+    monkeypatch.chdir(wt)
+    manifest_path = tmp_path / "out" / "cut-history.json"
+    manifest_path.parent.mkdir()
+    rc = security_check.main(["--freeze-history", str(manifest_path)])
+    assert rc == 0, capsys.readouterr().err
+    pack_path = tmp_path / "out" / "cut-history.pack"
+    assert pack_path.is_file() and manifest_path.is_file()
+    doc = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert doc["kind"] == "cairn-frozen-history-v1"
+    assert doc["pack"]["size"] == pack_path.stat().st_size
+    assert {h["scope"] for h in doc["heads"]} == {"main", f"worktrees/{wt.name}"}
+    # Second freeze to same path refuses
+    assert security_check.main(["--freeze-history", str(manifest_path)]) == 1
+
+
+def test_freeze_history_refuses_shallow_repo(
+        tmp_path, monkeypatch, capsys) -> None:
+    _pretend_python_313(monkeypatch)
+    upstream = tmp_path / "upstream"
+    upstream.mkdir()
+    _setup_git("init", "-q", cwd=upstream)
+    _setup_git("config", "user.email", "t@t.invalid", cwd=upstream)
+    _setup_git("config", "user.name", "Tester", cwd=upstream)
+    (upstream / "a.txt").write_text("1\n", encoding="utf-8")
+    _setup_git("add", "a.txt", cwd=upstream)
+    _setup_git("commit", "-qm", "c1", cwd=upstream)
+    (upstream / "a.txt").write_text("2\n", encoding="utf-8")
+    _setup_git("add", "a.txt", cwd=upstream)
+    _setup_git("commit", "-qm", "c2", cwd=upstream)
+    shallow = tmp_path / "shallow"
+    subprocess.run(
+        ["git", "clone", "--depth=1", f"file://{upstream}", str(shallow)],
+        check=True, capture_output=True,
+    )
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", shallow)
+    monkeypatch.chdir(shallow)
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    assert security_check.main(
+        ["--freeze-history", str(out_dir / "cut-history.json")]
+    ) == 1
+    assert "shallow" in capsys.readouterr().err.lower()
+
+
+def test_history_roots_refuses_tampered_pack_and_live_drift(
+        tmp_path, monkeypatch, capsys) -> None:
+    _pretend_python_313(monkeypatch)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _setup_git("init", "-q", cwd=repo)
+    _setup_git("config", "user.email", "t@t.invalid", cwd=repo)
+    _setup_git("config", "user.name", "Tester", cwd=repo)
+    (repo / "a.txt").write_text("clean\n", encoding="utf-8")
+    _setup_git("add", "a.txt", cwd=repo)
+    _setup_git("commit", "-qm", "init", cwd=repo)
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", repo)
+    monkeypatch.chdir(repo)
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    manifest_path = out_dir / "cut-history.json"
+    assert security_check.main(["--freeze-history", str(manifest_path)]) == 0
+    pack_path = out_dir / "cut-history.pack"
+    saved_pack = pack_path.read_bytes()
+    # Tamper pack bytes -> --record must refuse
+    pack_path.write_bytes(saved_pack + b"\x00")
+    rec_path = tmp_path / "mac.json"
+    assert security_check.main(
+        ["--record", str(rec_path), "--history-roots", str(manifest_path)]
+    ) == 1
+    assert "mismatch" in capsys.readouterr().err.lower()
+    assert not rec_path.exists()
+    # Restore pack, add a new branch (live drift) -> --record must refuse
+    pack_path.write_bytes(saved_pack)
+    _setup_git("branch", "extra-drifted-ref", cwd=repo)
+    assert security_check.main(
+        ["--record", str(rec_path), "--history-roots", str(manifest_path)]
+    ) == 1
+    assert "differs" in capsys.readouterr().err.lower()

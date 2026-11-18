@@ -160,7 +160,7 @@
       "base_cache": "dev/.cairn/base/dev/modules/portable-security-sweeps.md",
       "base_hash": "sha256:cba01db05f42625e3d1b2b65a494b7d878b0903ffcc2292befcbaf5fec30fb64",
       "dst": "dev/modules/portable-security-sweeps.md",
-      "hash": "sha256:d9a3a6ccd892e9ad15ab7fd504910405ef76eb8d8876f638f9984676b5d9eb0b",
+      "hash": "sha256:43190e254b1520a0c4ea1e55da6d28384d5f9ef62abbbd3117eda2bf4f6e50b8",
       "src": "modules/team-gated/portable-security-sweeps.md",
       "verbatim": false
     },
@@ -368,7 +368,7 @@
     {
       "base_hash": "sha256:e3ae4cc8caa3f2d4fd24b2da7dbaa91b92d5dad24a5163481153a411057c24ab",
       "dst": "dev/tools/run_portable_security_sweeps.py",
-      "hash": "sha256:e3ae4cc8caa3f2d4fd24b2da7dbaa91b92d5dad24a5163481153a411057c24ab",
+      "hash": "sha256:c2e870f0b6bbffc05be0d09e59d5f61c0b17931e5721513c8153e3778ae5f0bc",
       "layout_ancestry": "unknown",
       "layout_base_commit": "b0aafcf8d37d0482ec9600e10b104af4bbedeeb6",
       "layout_fork": true,

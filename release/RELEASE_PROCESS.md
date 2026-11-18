@@ -200,28 +200,36 @@ result does not replace any of them.
 
 ## Strict release-security evidence
 
-At the final release candidate, run the strict check on native Mac and Windows
+At the final release candidate, first freeze the complete source history on the
+clean Mac authority (creating the deterministic sibling `.pack` before
+publishing the manifest), then run the strict check on native Mac and Windows
 under Python 3.13. Give each run a new absolute record path outside its
 checkout:
 
 ```bash
-python release/security_check.py --record /absolute/path/mac.json
-python release/security_check.py --record /absolute/path/windows.json
+python release/security_check.py --freeze-history /absolute/private/cut-history.json
+python release/security_check.py --record /absolute/path/mac.json --history-roots /absolute/private/cut-history.json
+python release/security_check.py --record /absolute/path/windows.json --history-roots /absolute/private/cut-history.json
 ```
 
 Each local run preserves both orders of the shipped-only selection
 (every test except the files in `RELEASE_EXCLUDED_TESTS`): the direct default order and
-the quality gate's seed-0 order, along with neutrality, redundancy, Bandit and
-the Cairn document check. It writes exact collected IDs and phase outcomes to
+the quality gate's seed-0 order, along with neutrality, redundancy, Bandit,
+the Cairn document check, and (when `--history-roots` is supplied) the
+two-leg full-mode portable secrets sweep over the verified sterile frozen
+history store and detached candidate checkout. It writes exact collected IDs and phase outcomes to
 temporary files outside the byte-verified checkout, validates them, and emits
 a local record. A successful local run says `INCOMPLETE` and exits 5. A child
-pytest exit 5 means it collected no tests and is a failure.
+pytest exit 5 means it collected no tests and is a failure; any non-CLEAN
+secrets sweep (findings, incomplete/absent binary, or degraded) fails closed.
+If findings occur, triage them privately via `dev/tools/run_portable_security_sweeps.py --triage-record <abs-path>`;
+a committed credential requires stopping and telling the Maintainer to revoke it.
 
-The Maintainer joins the two records from a clean checkout at the same final
+The Maintainer joins the two records from a clean Mac checkout at the same final
 commit:
 
 ```bash
-python release/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json
+python release/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json --history-roots /absolute/private/cut-history.json
 ```
 
 Only the join can print `PASS`. It checks the fixed source-reviewed native-ID

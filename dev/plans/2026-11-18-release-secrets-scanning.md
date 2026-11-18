@@ -1,7 +1,7 @@
 # Plan: Release secrets scanning on both platforms
 
 **Source proposal**: `dev/proposals/archive/2026-11-17-codex-release-secrets-scan.md`
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: `dev/rules/conventions.md`, `dev/rules/working-agreements.md`, `dev/rules/protected-surfaces.md`, `dev/rules/development-environment.md`
@@ -179,6 +179,22 @@ logging passed. The full ACL probe was not repeated after the focused repairs.
 On Mac Python 3.13.13 the runner and generated worker parsed, the runner copies
 matched, the shipped neutrality check passed, and the focused full-mode refusal
 test passed. No scanner, admission run or Git history scan ran.
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+## Implementation checkpoint -- C1–C3 Mac and Windows implementation -- 2026-11-18
+
+Completed C1–C3 code, tests, twin synchronization, lockfile finalization, and documentation in `dev/tools/run_portable_security_sweeps.py`, `templates/modules/team-gated/run_portable_security_sweeps.py` (byte-identical via `cmp -s`), `dev/modules/portable-security-sweeps.md`, `templates/modules/team-gated/portable-security-sweeps.md` (byte-identical via `cmp -s`), `release/security_check.py`, `release/RELEASE_PROCESS.md`, `tests/test_portable_security_sweeps.py`, `tests/test_security_check.py`, and `dev/.cairn/cairn-lock.yml` (`install/scaffold.py upgrade --target . --cairn-root . --finalize dev/tools/run_portable_security_sweeps.py dev/modules/portable-security-sweeps.md`).
+
+- Added runner-private `_release_history_git(session, op)` (`WORKTREES`, `HEAD_SYMBOLIC`, `FOR_EACH_REF_SHARED`, `FOR_EACH_REF_PRIVATE`, `PACK`, `INIT`, `INDEX`, `PROJECT`, `HEAD`) with closed-enum dispatch, source/store separation, Windows Job/private-ACL worker execution (enforcing worker-side stderr checks without reading `ReadResult.stderr`), and sterile projection validation.
+- Wired Windows full-mode relay dispatch (`_windows_git_relay`) into `_run_sweep_inner` (`os.name == "nt"` consistent check) and `cmd_verify_version_support`, plus frozen-history shim/relay support.
+- Updated Gitleaks 8.30.1 redaction validation (`Secret == "REDACTED"` and `"REDACTED" in Match`), discarded `Match` wholesale, enforced exit/report agreement (`exit 0` with findings stays `20` DEGRADED), isolated public/child summaries (`finding_count` only), and added `--triage-record` off-tree owner-only private triage output (including Windows protected-ACL handle writes).
+- Added `--freeze-history` (`O_BINARY` full loop write), `--record ... --history-roots` (Windows private workspace via `ExitStack` + live source drift check on both POSIX and Windows), and `--join ... --history-roots` in `release/security_check.py`, plus cross-platform Windows tests.
+
+Verification:
+- **macOS Python 3.13.13** (`/Users/kendal30/conda_envs/lhm/bin/python3.13`): `tests/test_security_check.py` -> `192 passed, 3 warnings in 56.63s`; `tests/test_portable_security_sweeps.py` -> `148 passed, 2 skipped in 124.95s` (skips are the two Windows-native Job tests); real `/opt/homebrew/bin/gitleaks` (`8.30.1`, `sha256:f414bc2fb952be6c9072b75cb411e3368614ef4b16d48dbd9ad238034afd2302`) `--verify-version-support --confirm-executing-an-unadmitted-binary` -> `"admit": true` across both `current-tree` and `history` legs (`canary_connections: 0`); `claim_check.py` passed on all 4 edited Markdown files (`0` flags); `link_check.py` OK (`3` files); `sync_doc_snippets.py --check` OK (`703` docs); `tests/check_cairn.py` had `0` issues in edited files.
+- **Windows VM (`cairn-windows`, Python 3.13.18)** (`C:/ProgramData/miniconda3/envs/lhm/python.exe` on a disposable archive): `tests/test_security_check.py -k "freeze_history or history_roots or windows"` -> `9 passed, 183 deselected in 13.49s`; `tests/test_portable_security_sweeps.py` cross-platform/native/history/triage subset -> `8 passed, 1 skipped, 141 deselected in 3.47s` (skip: `native Windows gitleaks executable is unavailable`, as `gitleaks.exe`, Bandit, and Vermin are absent on `cairn-windows`; ~102 pre-existing `fake_tool` POSIX-shebang tests fail `'gitleaks' was not found` on Windows outside this plan's scope). Strict real-repo `--freeze-history`, Mac/Windows `--record`, and `--join` admission remain Maintainer-run waits.
 
 **Elapsed**: unknown
 **Tokens**: unknown
