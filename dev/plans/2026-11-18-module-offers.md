@@ -66,3 +66,23 @@ The plan names accessible verified source guidance and an honest fallback when i
 The Internal review accepted the plan without findings. **Disposition**: ready-to-implement.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation evidence -- Terra (Implementation) -- 2026-11-18
+
+Added upgrade and task-time offer guidance to the collaboration guides,
+upgrade guide and installed onboarding tour. Under Python 3.13.13 the two
+planned public upgrade tests passed (2 in 2.01 seconds). A disposable install
+with `claim-check` selected showed a read-only plan listing
+`architecture-review`; no left the tree unchanged, and explicit adoption
+changed the roster from `claim-check` to those two modules only. Its source
+described architecture review; a separate absent source was treated as a
+deferred offer, with no adoption command. The dual-review source describes its
+staffing cost; where no cost was found it was reported unknown. A collaborative
+preset install contained both the tour and collaboration route. Reviewed the
+existing rules-folder threshold and answer/approval instructions; they were
+unchanged. These are synthetic walkthroughs, not observations of an adopter.
+
+Link, snippet and neutrality gates passed; claim and Cairn checks passed for
+the other three changed documents. `install/UPGRADE.md` retains five historical
+path flags, reproduced on the unchanged HEAD version; no new flag appeared.
+No full suite or wording tests were run. Elapsed: unknown; tokens: unknown.

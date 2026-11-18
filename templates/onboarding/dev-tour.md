@@ -69,6 +69,11 @@ that matters moves into a proposal, a strategy note or the roadmap.
 | `upstream/` | Drafts of bug reports for outside tools your project depends on. |
 | `rules/` | Detail for your project's own agent rules, routed from `RULES.md`. |
 
+The module inventory describes the modules selected for this project. When a
+later task exposes a need, follow `dev/agent_collaboration.md` > "Offering optional
+modules" to check an accessible verified Cairn source and ask before adopting
+an unselected module. If no usable description is available, defer the offer.
+
 ### `dev/.cairn/` -- install state, not for editing by hand
 
 This folder holds what the installer needs to update your copy of

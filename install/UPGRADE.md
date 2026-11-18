@@ -229,7 +229,7 @@ prerelease upgrade support remains available without this route's assurance.
 
 * **`--plan`** is **strictly read-only**: it classifies every tracked file
   (clean / conflict / slot-removed / review-only / verbatim-* /
-  up-to-date), lists new modules available since install (opt-in only) and
+  up-to-date), lists available unselected modules (opt-in only) and
   modules removed upstream, and prints any flags. It writes **nothing**.
   When a file's new template adds a slot that neither your file nor the saved
   old template has, `--plan` and `--stage` (not `--apply`) print a
@@ -240,6 +240,17 @@ prerelease upgrade support remains available without this route's assurance.
   `slot-removed` instead). Every note the report prints shows non-ASCII and
   control characters as escapes, and a `[new slot]` line names at most ten
   slots, then counts the rest.
+Before adopting optional modules, use the plan's complete unselected list,
+the installed module inventory and descriptions in the exact Cairn source supplied
+for this upgrade (start with `install/BOOTSTRAP.md` and the relevant
+`templates/modules/` guidance). Explain each module's purpose and concrete
+known costs, marking unknown costs unknown, and ask the Maintainer which, if
+any, to adopt. On a yes for a named module use `upgrade --adopt-module <name>`;
+a no leaves it unselected. Existing safety, collision and provenance checks
+still apply. The plan writes nothing, activates no functionality and grants no
+credential access. Applying an upgrade separately adds new unconditional core
+and skills files; additions to selected modules follow their existing selection.
+
 * **`--stage`** writes the merged/updated results into the **ephemeral**
   `dev/.cairn-upgrade/` staging directory (auto-seeded into your
   `.gitignore`) along with stage metadata. Originals are untouched.

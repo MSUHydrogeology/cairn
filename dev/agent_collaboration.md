@@ -214,6 +214,30 @@ Sources: ISO 24495-1:2023; the US Federal Plain Language Guidelines;
 ASD-STE100 (instruction rules); the studies cited in Cairn's published rationale,
 anchor 16.
 
+## Offering optional modules
+
+When an upgrade plan lists unselected modules, read the list, this project's
+installed module inventory and module descriptions in the exact Cairn source used
+for that upgrade. Explain each available module's purpose and concrete known
+costs; say when a cost is unknown. Ask the Maintainer which, if any, to adopt.
+Explain separately that apply adds new unconditional core and skills files and
+that additions to already selected modules follow their selection.
+
+Between upgrades, when a task reveals a concrete need, consult the installed
+inventory and onboarding guidance. The inventory describes selected modules
+only: check an accessible, verified Cairn source or reference, such as its
+`install/BOOTSTRAP.md` and relevant `templates/modules/` guidance, for a
+suitable unselected module. If a usable description is unavailable, say so and
+defer the offer until one is available; do not invent a purpose or cost. Ask
+before adoption, even if the task suggests a need. Do not repeat an offer
+refused in the same conversation.
+
+A yes for a named module permits the existing `upgrade --adopt-module <name>`
+for that module, subject to its safety, collision and provenance checks. A no
+leaves it unselected. Neither an offer nor an upgrade grants credential access
+or resets prior consent. The separate rules-folder offer retains its existing
+threshold, answer record and approval for changes to project rules.
+
 ## Surfacing judgment calls to the Maintainer
 
 **The Maintainer decides — and the list is finite.** Acceptance,
