@@ -153,3 +153,32 @@ and independent reviews remain open. No scanner or Git history ran.
 
 **Elapsed**: unknown
 **Tokens**: unknown
+
+## Implementation checkpoint -- Windows relay and records -- 2026-11-18
+
+The Windows runner now creates and holds a protected workspace and invocation
+record. The native relay accepts fixed Git operations and starts an isolated
+worker under the existing Job. Worker and executable bytes are verified,
+and a successful history record follows output transfer. A missing frozen
+history context refuses the log operation. The existing Windows full-mode and
+admission refusals remain until the release controller and native checks land.
+
+On Windows Python 3.13.18, the first native privacy probe against
+`36bad4f7` stopped opening the volume root with NTSTATUS `0xc000000d`.
+Opening the root through the Win32 directory API let the probe create and
+read private files. Duplicate creation, rename of a held ancestor, unsafe
+inheritance, foreign access entries, junctions and hardlinks were refused.
+The checkout write control exposed a missing explicit target exclusion for
+directories without Git metadata. Adding the lexical and resolved checkout
+to the existing exclusions made that focused native control pass in 0.37
+seconds. The first relay probe compiled but lost stdout despite exit 0.
+After explicitly passing only the three standard handles to the Python
+worker, native compilation, Git version output and unsupported-operation
+logging passed. The full ACL probe was not repeated after the focused repairs.
+
+On Mac Python 3.13.13 the runner and generated worker parsed, the runner copies
+matched, the shipped neutrality check passed, and the focused full-mode refusal
+test passed. No scanner, admission run or Git history scan ran.
+
+**Elapsed**: unknown
+**Tokens**: unknown

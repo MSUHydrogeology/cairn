@@ -59,7 +59,7 @@ import sys
 import tempfile
 import stat
 import types
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack, contextmanager, nullcontext
 from pathlib import Path
 from typing import Any, Iterator, NamedTuple
 
@@ -1277,13 +1277,34 @@ def _adapter_seam(context: dict[str, Any]) -> list[LegOutcome]:
     target: Path = context["target"]
     env: dict[str, str] = context["env"]
     mode: str = context["mode"]
+    private = context.get("windows_private")
+    relay = context.get("windows_relay")
+    if relay is not None:
+        if private is not None and private != relay.private:
+            raise Degraded("the Windows relay and reports have different private workspaces")
+        private = relay.private
     legs: list[LegOutcome] = []
     for leg, argv, report in context["legs"]:
         try:
-            proc = _supervised_process(
-                argv, exe, target, env, context["cwd"], _SCAN_TIMEOUT,
-                context.get("git_shim"), context.get("git_interpreter"),
-            )
+            hold_report_dir = nullcontext()
+            if private is not None:
+                hold_report_dir = _win_private_open(
+                    Path(report).parent, target=target, directory=True,
+                    protected_root=private.root)
+            with hold_report_dir:
+                if relay is not None:
+                    proc = _supervised_process(
+                        argv, exe, target, env, context["cwd"], _SCAN_TIMEOUT, windows_relay=relay)
+                else:
+                    proc = _supervised_process(
+                        argv, exe, target, env, context["cwd"], _SCAN_TIMEOUT,
+                        context.get("git_shim"), context.get("git_interpreter"))
+                hold_report = nullcontext()
+                if private is not None and proc.returncode in (_EXIT_NO_FINDINGS, _EXIT_FINDINGS):
+                    hold_report = _win_private_open(
+                        report, target=target, directory=False, protected_root=private.root)
+                with hold_report:
+                    outcome = classify_leg(leg, mode, proc.returncode, report, proc.stderr or b"")
         except Degraded as exc:
             legs.append(LegOutcome(
                 leg, _AGG_DEGRADED, "DEGRADED", str(exc),
@@ -1293,8 +1314,7 @@ def _adapter_seam(context: dict[str, Any]) -> list[LegOutcome]:
             legs.append(LegOutcome(leg, _AGG_DEGRADED, "DEGRADED",
                                    f"adapter invocation failed: {exc}"))
             continue
-        legs.append(classify_leg(leg, mode, proc.returncode, report,
-                                 proc.stderr or b""))
+        legs.append(outcome)
     record = context.get("invocation_log")
     invocation_id = context.get("invocation_id")
     if record and invocation_id:
@@ -1302,6 +1322,7 @@ def _adapter_seam(context: dict[str, Any]) -> list[LegOutcome]:
             record, invocation_id, bool(context.get("remote_urls_present")),
             bool(context.get("require_log")),
             context.get("required_scenario", "production"),
+            private=private,
         )
         if problem:
             return [LegOutcome(row.leg, _AGG_DEGRADED, "DEGRADED", problem)
@@ -1558,9 +1579,11 @@ class _WindowsPrivateAPI:
             (self.kernel, "GetCurrentProcess", H, []),
             (self.kernel, "GetFileType", D, [H]),
             (self.kernel, "GetFileInformationByHandle", W.BOOL, [H, C.POINTER(self.FileInfo)]),
+            (self.kernel, "WriteFile", W.BOOL, [H, H, D, dword, H]),
             (self.kernel, "GetFinalPathNameByHandleW", D, [H, W.LPWSTR, D, D]),
             (self.kernel, "GetDriveTypeW", W.UINT, [W.LPCWSTR]),
             (self.kernel, "QueryDosDeviceW", D, [W.LPCWSTR, W.LPWSTR, D]),
+            (self.kernel, "CreateFileW", H, [W.LPCWSTR, D, D, H, D, D, H]),
             (self.kernel, "GetVolumeInformationByHandleW", W.BOOL,
              [H, W.LPWSTR, D, dword, dword, dword, W.LPWSTR, D]),
             (self.kernel, "LocalFree", H, [H]),
@@ -1637,8 +1660,24 @@ class _WindowsPrivateAPI:
             raise Degraded("Windows private files require a local disk without drive aliases")
 
     @contextmanager
-    def open(self, name: str, path: str, parent: int | None, *, directory: bool,
-             descriptor: int | None = None) -> Iterator[int]:
+    def volume_root(self, root: str) -> Iterator[int]:
+        """Open a DOS volume root with Win32 directory semantics."""
+        self.require_local_drive(root)
+        # READ_CONTROL | FILE_READ_ATTRIBUTES; OPEN_EXISTING;
+        # FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT.
+        handle = self.kernel.CreateFileW(root, 0x20080, 3, None, 3, 0x02200000, None)
+        if not handle or handle == self.C.c_void_p(-1).value:
+            raise Degraded(f"the Windows private volume could not be opened ({self.C.get_last_error()})")
+        try:
+            self.verify_path(handle, root, directory=True)
+            self.require_ntfs(handle)
+            yield handle
+        finally:
+            self.kernel.CloseHandle(handle)
+
+    @contextmanager
+    def open(self, name: str, path: str, parent: int, *, directory: bool,
+             descriptor: int | None = None, append: bool = False) -> Iterator[int]:
         C = self.C
         text = C.create_unicode_buffer(name)
         length = len(name.encode("utf-16-le"))
@@ -1651,17 +1690,19 @@ class _WindowsPrivateAPI:
         access = 0x00120080
         if not directory:
             access |= 0x3 if descriptor else 0x1
+            if append:
+                access |= 0x4  # FILE_APPEND_DATA, without FILE_WRITE_DATA
         create = descriptor is not None
         # Open the reparse point itself, synchronously. A directory create
         # cannot combine FILE_OPEN_NO_RECALL with FILE_DIRECTORY_FILE.
-        options = 0x00200020 | (0x1 if directory else 0x40)
+        options = 0x00200020 | ((0x1 if create else 0) if directory else 0x40)
         if not (directory and create):
             options |= 0x00400000
         status = self.nt.NtCreateFile(C.byref(handle), access, C.byref(attrs),
                                       C.byref(ios), None, 0, 3, 2 if create else 1,
                                       options, None, 0)
         if status or not handle.value:
-            raise Degraded("a Windows private path could not be opened")
+            raise Degraded(f"a Windows private path could not be opened (0x{status & 0xffffffff:08x})")
         try:
             self.verify_path(handle, path, directory)
             yield handle.value
@@ -1690,6 +1731,13 @@ class _WindowsPrivateAPI:
         if (not self.kernel.GetVolumeInformationByHandleW(
                 handle, None, 0, None, None, None, fs, len(fs)) or fs.value != "NTFS"):
             raise Degraded("Windows private files require NTFS")
+
+    def append(self, handle: int, data: bytes) -> None:
+        written = self.W.DWORD()
+        buffer = self.C.create_string_buffer(data)
+        if (not self.kernel.WriteFile(handle, buffer, len(data), self.C.byref(written), None)
+                or written.value != len(data)):
+            raise Degraded("the private Git invocation record write was incomplete")
 
     def verify_acl(self, handle: int, *, directory: bool, protected: bool) -> None:
         C, W = self.C, self.W
@@ -1758,9 +1806,11 @@ def _win_private_ancestors(
         raise Degraded("a Windows private path must use canonical local spelling")
     try:
         chain = _GIT_READ._component_chain(value)
-        exclusions = _GIT_READ.worktree_exclusions(str(target))
+        target_path = os.path.abspath(target)
+        exclusions = (*_GIT_READ.worktree_exclusions(target_path), target_path,
+                      os.path.realpath(target_path, strict=True))
         _GIT_READ._assert_off_target(value, value, exclusions)
-    except _GIT_READ.GitReadError as exc:
+    except (_GIT_READ.GitReadError, OSError) as exc:
         raise Degraded("the Windows private path failed the off-target check") from exc
     if len(chain) < 2 or any(
             re.search(r'[<>:"/\\|?*]|[ .]$', os.path.basename(piece))
@@ -1773,11 +1823,8 @@ def _win_private_ancestors(
         if root not in ancestors:
             raise Degraded("the Windows path is outside its protected workspace")
         root_index = ancestors.index(root)
-    api.require_local_drive(chain[0])
     with ExitStack() as held:
-        parent = held.enter_context(api.open("\\??\\" + chain[0], chain[0], None,
-                                             directory=True))
-        api.require_ntfs(parent)
+        parent = held.enter_context(api.volume_root(chain[0]))
         for index, ancestor in enumerate(chain[1:-1]):
             parent = held.enter_context(api.open(os.path.basename(ancestor), ancestor,
                                                  parent, directory=True))
@@ -1808,14 +1855,14 @@ def _win_private_create(path: str | Path, *, target: Path,
 @contextmanager
 def _win_private_open(
     path: str | Path, *, target: Path, directory: bool,
-    protected_root: Path | None = None,
+    protected_root: Path | None = None, require_protected: bool = False,
 ) -> Iterator[int]:
     """Hold a verified private input or an output inherited under a private root."""
     with _win_private_ancestors(path, target=target, protected_root=protected_root) as (
             api, value, parent):
         with api.open(os.path.basename(value), value, parent, directory=directory) as handle:
             _win_private_verify(api, handle, value, directory=directory,
-                                protected=protected_root is None)
+                                protected=protected_root is None or require_protected)
             yield handle
 
 
@@ -1824,11 +1871,39 @@ _INVOCATION_LOG_MAX_RECORDS = 4096
 _INVOCATION_RECORD_MAX_BYTES = 4096
 _INVOCATION_OPERATIONS = frozenset({"version", "log", "url", "config",
                                     "common-dir", "commit"})
-_ACTIVE_INVOCATION: tuple[str, str] | None = None
 
 
-def _create_invocation_log(path: str) -> None:
+class _WindowsInvocation(NamedTuple):
+    target: Path
+    root: Path
+
+
+_ACTIVE_INVOCATION: tuple[str, str, _WindowsInvocation | None] | None = None
+
+
+@contextmanager
+def _private_sweep_workspace(target: Path) -> Iterator[str]:
+    with tempfile.TemporaryDirectory(prefix="cairn-portable-") as parent:
+        if sys.platform == "win32":
+            root = Path(parent) / "private"
+            with _win_private_create(root, target=target, directory=True):
+                yield str(root)
+        else:
+            yield parent
+
+
+def _create_invocation_log(path: str, private: _WindowsInvocation | None = None) -> None:
     """Create this run's private, bounded invocation record."""
+    if os.name == "nt":
+        if private is None:
+            raise Degraded("the Windows invocation record requires a private workspace")
+        with _win_private_ancestors(path, target=private.target,
+                                    protected_root=private.root) as (api, value, parent):
+            with api.descriptor(False) as descriptor:
+                with api.open(os.path.basename(value), value, parent, directory=False,
+                              descriptor=descriptor) as handle:
+                    _win_private_verify(api, handle, value, directory=False, protected=True)
+        return
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
     flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
     fd = os.open(path, flags, 0o600)
@@ -1843,7 +1918,8 @@ def _create_invocation_log(path: str) -> None:
 def _append_invocation(path: str, invocation_id: str, source: str,
                        operation: str, phase: str, *, scenario: str | None = None,
                        state: str = "",
-                       code: int | None = None, reason: str = "") -> None:
+                       code: int | None = None, reason: str = "",
+                       private: _WindowsInvocation | None = None) -> None:
     row = {"id": invocation_id, "source": source, "operation": operation,
            "phase": phase}
     if scenario is not None:
@@ -1853,14 +1929,22 @@ def _append_invocation(path: str, invocation_id: str, source: str,
     data = json.dumps(row, ensure_ascii=True, sort_keys=True).encode("ascii") + b"\n"
     if len(data) > _INVOCATION_RECORD_MAX_BYTES:
         raise Degraded("a Git invocation record exceeded its fixed size cap")
+    if os.name == "nt":
+        if private is None:
+            raise Degraded("the Windows invocation record requires a private workspace")
+        with _win_private_ancestors(path, target=private.target,
+                                    protected_root=private.root) as (api, value, parent):
+            with api.open(os.path.basename(value), value, parent, directory=False,
+                          append=True) as handle:
+                _win_private_verify(api, handle, value, directory=False, protected=True)
+                _check_invocation_capacity(_invocation_bytes(path, private), data)
+                api.append(handle, data)
+        return
     try:
-        prior, _key, _chain = _GIT_READ._checked_bytes(
-            path, _INVOCATION_LOG_MAX_BYTES)
+        prior = _invocation_bytes(path, private)
     except Exception:
         raise Degraded("the private Git invocation record is unreadable") from None
-    if len(prior) + len(data) > _INVOCATION_LOG_MAX_BYTES \
-            or prior.count(b"\n") >= _INVOCATION_LOG_MAX_RECORDS:
-        raise Degraded("the private Git invocation record reached its fixed cap")
+    _check_invocation_capacity(prior, data)
     fd = os.open(path, os.O_WRONLY | os.O_APPEND
                  | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0))
     try:
@@ -1873,17 +1957,35 @@ def _append_invocation(path: str, invocation_id: str, source: str,
         os.close(fd)
 
 
+def _check_invocation_capacity(prior: bytes, record: bytes) -> None:
+    if (len(prior) + len(record) > _INVOCATION_LOG_MAX_BYTES
+            or prior.count(b"\n") >= _INVOCATION_LOG_MAX_RECORDS):
+        raise Degraded("the private Git invocation record reached its fixed cap")
+
+
+def _invocation_bytes(path: str, private: _WindowsInvocation | None) -> bytes:
+    if os.name == "nt":
+        if private is None:
+            raise Degraded("the Windows invocation record requires a private workspace")
+        with _win_private_open(path, target=private.target, directory=False,
+                               protected_root=private.root, require_protected=True):
+            raw, _, _ = _GIT_READ._checked_bytes(path, _INVOCATION_LOG_MAX_BYTES)
+            return raw
+    raw, _, _ = _GIT_READ._checked_bytes(path, _INVOCATION_LOG_MAX_BYTES)
+    return raw
+
+
 def _recorded_read(source: str, operation: str, call):
     active = _ACTIVE_INVOCATION
     if active is None:
         return call()
-    path, invocation_id = active
-    _append_invocation(path, invocation_id, source, operation, "start")
+    path, invocation_id, private = active
+    _append_invocation(path, invocation_id, source, operation, "start", private=private)
     try:
         result = call()
     except BaseException:
         _append_invocation(path, invocation_id, source, operation, "outcome",
-                           state="failed", code=3, reason="read-failed")
+                           state="failed", code=3, reason="read-failed", private=private)
         raise
     state = getattr(result, "state", "completed")
     code = getattr(result, "returncode", 0)
@@ -1891,20 +1993,21 @@ def _recorded_read(source: str, operation: str, call):
               "no-commit" if operation == "commit" and state == "completed"
               and code == 1 else "read-failed")
     _append_invocation(path, invocation_id, source, operation, "outcome",
-                       state=state, code=code, reason=reason)
+                       state=state, code=code, reason=reason, private=private)
     return result
 
 
 def _invocation_log_problem(path: str, invocation_id: str,
                             remote_urls_present: bool,
                             require_log: bool,
-                            required_scenario: str | None = None) -> str | None:
+                            required_scenario: str | None = None, *,
+                            private: _WindowsInvocation | None = None) -> str | None:
     try:
-        raw, _key, _chain = _GIT_READ._checked_bytes(
-            path, _INVOCATION_LOG_MAX_BYTES)
-        info = os.stat(path, follow_symlinks=False)
-        if not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077:
-            return "the private Git invocation record permissions changed"
+        raw = _invocation_bytes(path, private)
+        if os.name != "nt":
+            info = os.stat(path, follow_symlinks=False)
+            if not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077:
+                return "the private Git invocation record permissions changed"
         if len(raw) > _INVOCATION_LOG_MAX_BYTES:
             return "the private Git invocation record exceeds its cap"
         if raw and not raw.endswith(b"\n"):
@@ -2004,9 +2107,10 @@ def _invocation_log_problem(path: str, invocation_id: str,
     return None
 
 
-def _invocation_labels(path: str, invocation_id: str) -> list[str]:
+def _invocation_labels(path: str, invocation_id: str, *,
+                       private: _WindowsInvocation | None = None) -> list[str]:
     """Return source-owned operation labels, without any argv or remote data."""
-    raw, _key, _chain = _GIT_READ._checked_bytes(path, _INVOCATION_LOG_MAX_BYTES)
+    raw = _invocation_bytes(path, private)
     labels = {
         f"{row['source']}:{row['operation']}"
         for line in raw.splitlines()
@@ -2191,10 +2295,426 @@ def _materialize_sweep_git_shim(workdir: str, target: Path, git: Resolved,
     return directory, executable, python
 
 
+_WINDOWS_LOG_OPTS = ("--full-history", "--root", "--diff-merges=first-parent",
+                     "--text", "--no-textconv", "--no-ext-diff")
+_WINDOWS_WORKER_MAX = 1 << 20
+
+
+class _WindowsFrozenHistory(NamedTuple):
+    """Controller-attested store and immutable peeled commit roots."""
+    repository: Path
+    root: Path
+    authority: Path
+    roots: tuple[str, ...]
+
+
+class _WindowsGitRelay(NamedTuple):
+    executable: Resolved
+    interpreter: Resolved
+    worker: Path
+    worker_digest: str
+    private: _WindowsInvocation
+
+
+def _windows_shim_operation(
+    operation: str, git: Resolved, private: _WindowsInvocation, record: str,
+    invocation_id: str, scenario: str, remote_urls_present: bool,
+    history: _WindowsFrozenHistory | None,
+) -> int:
+    """Run one relay operation in the scanner's inherited Windows Job."""
+    if operation not in {"version", "url", "log"}:
+        operation = "unknown"
+    arguments = (record, invocation_id, "shim", operation)
+    _append_invocation(*arguments, "start", scenario=scenario, private=private)
+    if operation == "unknown":
+        _append_invocation(*arguments, "outcome", scenario=scenario, private=private,
+                           state="failed", code=2, reason="unsupported-operation")
+        return 2
+    try:
+        revalidate(git, private.target)
+        if operation == "log":
+            if history is None:
+                raise Degraded("frozen history has not been bound to the Windows relay")
+            with _win_private_open(history.repository, target=history.authority,
+                                   directory=True, protected_root=history.root):
+                token = select_git_reader_token(git, history.repository)
+                result = _GIT_READ.run_git(
+                    str(history.repository),
+                    ("log", "-p", "-U0", *_WINDOWS_LOG_OPTS, *history.roots, "--"),
+                    executable=token, timeout=10, output_limit=_GIT_READ.HISTORY_MAX_BYTES)
+        else:
+            token = select_git_reader_token(git, private.target)
+            if operation == "version":
+                result = _GIT_READ._version_probe(token, str(private.target), timeout=30)
+            else:
+                result = _GIT_READ.run_git(
+                    str(private.target), ("ls-remote", "--quiet", "--get-url"),
+                    executable=token, timeout=10, output_limit=_GIT_READ.ROOTS_MAX_BYTES)
+        code = result.returncode
+        state, reason = result.state, ""
+        if state != "completed":
+            state, reason = "failed", "read-failed"
+        elif operation == "url" and code == 128 and not remote_urls_present:
+            reason = "no-remote"
+        elif code != 0:
+            state, reason = "failed", "read-failed"
+        if state == "completed" and result.stdout:
+            if sys.stdout.buffer.write(result.stdout) != len(result.stdout):
+                raise Degraded("the Windows Git relay output was incomplete")
+            sys.stdout.buffer.flush()
+    except (Degraded, _GIT_READ.GitReadError, OSError, ValueError):
+        state, code, reason = "failed", 3, "shim-failed"
+    _append_invocation(*arguments, "outcome", scenario=scenario, private=private,
+                       state=state, code=code, reason=reason)
+    return code if state == "completed" and code is not None else 3
+
+
+_WINDOWS_RELAY_SOURCE = r'''
+using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
+
+static class CairnGit {
+    [StructLayout(LayoutKind.Sequential)]
+    struct StartupInfo {
+        public uint Size;
+        public IntPtr Reserved, Desktop, Title;
+        public uint X, Y, Width, Height, XChars, YChars, Fill, Flags;
+        public ushort Show, ReservedSize;
+        public IntPtr ReservedBytes, Input, Output, Error;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct StartupInfoEx {
+        public StartupInfo Startup;
+        public IntPtr Attributes;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct ProcessInfo {
+        public IntPtr Process, Thread;
+        public uint ProcessId, ThreadId;
+    }
+
+    [DllImport("kernel32.dll", ExactSpelling = true)]
+    static extern IntPtr GetCurrentProcess();
+    [DllImport("kernel32.dll", ExactSpelling = true)]
+    static extern IntPtr GetStdHandle(int number);
+    [DllImport("kernel32.dll", ExactSpelling = true)]
+    static extern bool DuplicateHandle(IntPtr process, IntPtr source, IntPtr target,
+        out IntPtr duplicate, uint access, bool inherit, uint options);
+    [DllImport("kernel32.dll", ExactSpelling = true)]
+    static extern bool CloseHandle(IntPtr handle);
+    [DllImport("kernel32.dll", ExactSpelling = true)]
+    static extern bool InitializeProcThreadAttributeList(IntPtr list, int count,
+        uint flags, ref IntPtr bytes);
+    [DllImport("kernel32.dll", ExactSpelling = true)]
+    static extern void DeleteProcThreadAttributeList(IntPtr list);
+    [DllImport("kernel32.dll", ExactSpelling = true)]
+    static extern bool UpdateProcThreadAttribute(IntPtr list, uint flags, IntPtr attribute,
+        IntPtr value, IntPtr size, IntPtr previous, IntPtr bytes);
+    [DllImport("kernel32.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
+    static extern bool CreateProcessW(string application, StringBuilder command,
+        IntPtr processSecurity, IntPtr threadSecurity, bool inherit, uint flags,
+        IntPtr environment, string directory, ref StartupInfoEx startup, out ProcessInfo process);
+    [DllImport("kernel32.dll", ExactSpelling = true)]
+    static extern uint WaitForSingleObject(IntPtr handle, uint milliseconds);
+    [DllImport("kernel32.dll", ExactSpelling = true)]
+    static extern bool GetExitCodeProcess(IntPtr process, out uint code);
+
+    static int RunWorker(string python, string operation) {
+        IntPtr current = GetCurrentProcess();
+        IntPtr[] stdio = new IntPtr[3];
+        IntPtr attributes = IntPtr.Zero, handles = IntPtr.Zero, bytes = IntPtr.Zero;
+        bool initialized = false;
+        ProcessInfo child = new ProcessInfo();
+        try {
+            for (int index = 0; index < stdio.Length; index++) {
+                IntPtr original = GetStdHandle(-10 - index);
+                // Each child receives exactly these three inherited handles.
+                if (original == IntPtr.Zero || original == new IntPtr(-1) ||
+                    !DuplicateHandle(current, original, current, out stdio[index], 0, true, 2))
+                    return 3;
+            }
+            InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref bytes);
+            if (bytes.ToInt64() <= 0 || bytes.ToInt64() > 65536) return 3;
+            attributes = Marshal.AllocHGlobal(bytes);
+            initialized = InitializeProcThreadAttributeList(attributes, 1, 0, ref bytes);
+            if (!initialized) return 3;
+            int handleBytes = IntPtr.Size * stdio.Length;
+            handles = Marshal.AllocHGlobal(handleBytes);
+            for (int index = 0; index < stdio.Length; index++)
+                Marshal.WriteIntPtr(handles, IntPtr.Size * index, stdio[index]);
+            // PROC_THREAD_ATTRIBUTE_HANDLE_LIST
+            if (!UpdateProcThreadAttribute(attributes, 0, new IntPtr(0x00020002),
+                handles, new IntPtr(handleBytes), IntPtr.Zero, IntPtr.Zero)) return 3;
+            StartupInfoEx startup = new StartupInfoEx();
+            startup.Startup.Size = (uint)Marshal.SizeOf(typeof(StartupInfoEx));
+            startup.Startup.Flags = 0x100; // STARTF_USESTDHANDLES
+            startup.Startup.Input = stdio[0];
+            startup.Startup.Output = stdio[1];
+            startup.Startup.Error = stdio[2];
+            startup.Attributes = attributes;
+            var command = new StringBuilder("\"" + python + "\" " + @@ARGS@@ + " " + operation);
+            // EXTENDED_STARTUPINFO_PRESENT | CREATE_NO_WINDOW. No Job breakaway.
+            if (!CreateProcessW(python, command, IntPtr.Zero, IntPtr.Zero, true, 0x08080000,
+                IntPtr.Zero, @@CWD@@, ref startup, out child)) return 3;
+            uint code;
+            return WaitForSingleObject(child.Process, UInt32.MaxValue) == 0 &&
+                GetExitCodeProcess(child.Process, out code) ? unchecked((int)code) : 3;
+        } finally {
+            if (child.Thread != IntPtr.Zero) CloseHandle(child.Thread);
+            if (child.Process != IntPtr.Zero) CloseHandle(child.Process);
+            if (initialized) DeleteProcThreadAttributeList(attributes);
+            if (attributes != IntPtr.Zero) Marshal.FreeHGlobal(attributes);
+            if (handles != IntPtr.Zero) Marshal.FreeHGlobal(handles);
+            foreach (IntPtr handle in stdio)
+                if (handle != IntPtr.Zero) CloseHandle(handle);
+        }
+    }
+
+    static bool Matches(string[] actual, string[] expected) {
+        if (actual.Length != expected.Length) return false;
+        for (int i = 0; i < actual.Length; i++)
+            if (!String.Equals(actual[i], expected[i], StringComparison.Ordinal)) return false;
+        return true;
+    }
+
+    static int Main(string[] args) {
+        string operation = "unknown";
+        if (Matches(args, new string[] {"--version"})) operation = "version";
+        if (Matches(args, new string[] {"ls-remote", "--quiet", "--get-url"})) operation = "url";
+        if (Matches(args, new string[] {@@LOG@@})) operation = "log";
+        try {
+            string python = @@PYTHON@@;
+            for (string path = python; !String.IsNullOrEmpty(path); path = Path.GetDirectoryName(path)) {
+                if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0) return 3;
+            }
+            using (var image = File.Open(python, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var sha = SHA256.Create()) {
+                if (image.Length <= 0 || image.Length > 64 * 1024 * 1024) return 3;
+                string digest = BitConverter.ToString(sha.ComputeHash(image)).Replace("-", "");
+                if (!String.Equals(digest, @@DIGEST@@, StringComparison.OrdinalIgnoreCase)) return 3;
+                return RunWorker(python, operation);
+            }
+        } catch { return 3; }
+    }
+}
+'''
+
+
+def _write_windows_private_bytes(path: Path, data: bytes, private: _WindowsInvocation) -> None:
+    with _win_private_ancestors(path, target=private.target,
+                                protected_root=private.root) as (api, value, parent):
+        with api.descriptor(False) as descriptor:
+            with api.open(path.name, value, parent, directory=False,
+                          descriptor=descriptor) as handle:
+                _win_private_verify(api, handle, value, directory=False, protected=True)
+                api.append(handle, data)
+
+
+def _windows_job_process(
+    argv: list[str], exe: Resolved, target: Path, env: dict[str, str],
+    timeout: float, *, stdout_limit: int, stderr_limit: int,
+):
+    """Use the verified Windows Job capture without the origin-config input protocol."""
+    revalidate(exe, target)
+    snapshot = _GIT_READ._snapshot_executable(exe.lexical)
+    if (snapshot is None or snapshot.resolved != exe.resolved
+            or snapshot.digest != exe.digest or not _GIT_READ._snapshot_still_matches(snapshot)):
+        raise Degraded("the supervised executable changed before launch")
+    exclusions = _GIT_READ.worktree_exclusions(str(target))
+    _GIT_READ._assert_off_target(exe.lexical, exe.resolved, exclusions)
+    for key, value in _GIT_READ._base_environment().items():
+        if key in {"SystemRoot", "WINDIR"}:
+            env[key] = value
+    try:
+        result = _GIT_READ._capture_process(
+            argv, env, _GIT_READ._neutral_cwd(str(target), exclusions), timeout,
+            stdout_limit, stderr_limit, snapshot, str(target), exclusions=exclusions)
+    except _GIT_READ.GitReadError as exc:
+        raise Degraded("the Windows Job could not supervise the private process") from exc
+    if result.state != "completed":
+        raise Degraded("the Windows Job process timed out or cleanup was incomplete")
+    return result
+
+
+def _windows_worker_source(
+    git: Resolved, private: _WindowsInvocation, record: str, invocation_id: str,
+    scenario: str, remote_urls_present: bool, history: _WindowsFrozenHistory | None,
+) -> bytes:
+    runner_path = os.path.abspath(__file__)
+    runner, _, _ = _GIT_READ._checked_bytes(runner_path, _WINDOWS_WORKER_MAX)
+    history_expr = "None"
+    if history is not None:
+        repo, root, authority = map(str, (history.repository, history.root, history.authority))
+        history_expr = (f"runner._WindowsFrozenHistory(Path({repo!r}), Path({root!r}), "
+                        f"Path({authority!r}), {history.roots!r})")
+    worker = f"""import base64, sys, types
+from pathlib import Path
+runner = types.ModuleType("_cairn_windows_sweep")
+runner.__file__ = {runner_path!r}
+sys.modules[runner.__name__] = runner
+exec(compile(base64.b64decode({base64.b64encode(runner).decode("ascii")!r}),
+             runner.__file__, "exec", dont_inherit=True), runner.__dict__)
+if len(sys.argv) != 2:
+    raise SystemExit(3)
+private = runner._WindowsInvocation(Path({str(private.target)!r}), Path({str(private.root)!r}))
+raise SystemExit(runner._windows_shim_operation(
+    sys.argv[1], runner.Resolved(*{tuple(git)!r}), private, {record!r}, {invocation_id!r},
+    {scenario!r}, {remote_urls_present!r}, {history_expr}))
+"""
+    payload = worker.encode("utf-8")
+    if len(payload) > _WINDOWS_WORKER_MAX:
+        raise Degraded("the Windows Git worker exceeded its byte cap")
+    return payload
+
+
+def _windows_relay_source(
+    python: Resolved, worker: Path, digest: str, private: _WindowsInvocation,
+) -> bytes:
+    # The bootstrap executes the same bounded bytes it hashes. The command
+    # suffix is one fixed operation token, never Git's original argv.
+    bootstrap = (
+        "import hashlib,sys\n"
+        f"with open({str(worker)!r}, 'rb') as stream: data = stream.read({_WINDOWS_WORKER_MAX + 1})\n"
+        f"if len(data) > {_WINDOWS_WORKER_MAX} or hashlib.sha256(data).hexdigest() != {digest!r}:\n"
+        "    raise SystemExit(3)\n"
+        "exec(compile(data, '<verified Windows Git worker>', 'exec', dont_inherit=True))\n"
+    )
+    arguments = subprocess.list2cmdline(["-I", "-S", "-B", "-c", bootstrap])
+    scanner_args = ("-C", str(private.target), "log", "-p", "-U0", *_WINDOWS_LOG_OPTS)
+    replacements = {
+        "LOG": ", ".join(json.dumps(arg, ensure_ascii=True) for arg in scanner_args),
+        "PYTHON": json.dumps(python.resolved, ensure_ascii=True),
+        "DIGEST": json.dumps(python.digest, ensure_ascii=True),
+        "ARGS": json.dumps(arguments, ensure_ascii=True),
+        "CWD": json.dumps(_GIT_READ._neutral_cwd(str(private.target)), ensure_ascii=True),
+    }
+    return re.sub(r"@@([A-Z]+)@@", lambda match: replacements[match[1]],
+                  _WINDOWS_RELAY_SOURCE).encode("ascii")
+
+
+def _windows_framework_directory(system_root: Path) -> Path:
+    """Ask the inbox CLR host for the exact v4 compiler directory."""
+    import ctypes as C
+    from ctypes import wintypes as W
+    from uuid import UUID
+
+    def guid(value: str):
+        return (C.c_ubyte * 16).from_buffer_copy(UUID(value).bytes_le)
+
+    def method(interface, slot, result, *parameters):
+        table = C.cast(interface, C.POINTER(C.POINTER(C.c_void_p)))[0]
+        return C.WINFUNCTYPE(result, C.c_void_p, *parameters)(table[slot])
+
+    host, runtime = C.c_void_p(), C.c_void_p()
+    host_class = guid("9280188d-0e8e-4867-b30c-7fa83884e8de")
+    host_interface = guid("d332db9e-b9b3-4125-8207-a14884f53216")
+    runtime_interface = guid("bd39d1d2-ba2f-486a-89b0-b4b0cb466891")
+    version = "v4.0.30319"
+    try:
+        create = C.WinDLL("mscoree.dll", winmode=0x800).CLRCreateInstance
+        create.restype = C.c_long
+        create.argtypes = [C.c_void_p, C.c_void_p, C.POINTER(C.c_void_p)]
+        if create(C.byref(host_class), C.byref(host_interface), C.byref(host)) or not host:
+            raise MissingExecutable("the Windows CLR host is unavailable")
+        # ICLRMetaHost::GetRuntime is the first method after IUnknown.
+        get_runtime = method(host, 3, C.c_long, W.LPCWSTR, C.c_void_p, C.POINTER(C.c_void_p))
+        if get_runtime(host, version, C.byref(runtime_interface), C.byref(runtime)) or not runtime:
+            raise MissingExecutable("the Windows CLR v4 runtime is unavailable")
+        # ICLRRuntimeInfo::GetRuntimeDirectory follows GetVersionString.
+        get_directory = method(runtime, 4, C.c_long, W.LPWSTR, C.POINTER(W.DWORD))
+        directory = C.create_unicode_buffer(32768)
+        size = W.DWORD(len(directory))
+        if get_directory(runtime, directory, C.byref(size)) or not 0 < size.value <= len(directory):
+            raise MissingExecutable("the Windows CLR runtime directory is unavailable")
+    except (AttributeError, OSError) as exc:
+        raise MissingExecutable("the Windows CLR host is unavailable") from exc
+    finally:
+        for interface in (runtime, host):
+            if interface:
+                method(interface, 2, W.ULONG)(interface)  # IUnknown::Release
+    framework = Path(directory.value)
+    if (not framework.is_absolute() or framework != Path(os.path.normpath(framework))
+            or not framework.is_relative_to(system_root)
+            or framework.name.casefold() != version
+            or framework.parent.name.casefold() != "framework64"):
+        raise Degraded("the Windows CLR returned an unexpected compiler directory")
+    return framework
+
+
+@contextmanager
+def _windows_git_relay(
+    private: _WindowsInvocation, git: Resolved, record: str, invocation_id: str,
+    remote_urls_present: bool, history: _WindowsFrozenHistory | None,
+    scenario: str = "production",
+) -> Iterator[_WindowsGitRelay]:
+    """Build and hold the fixed Windows relay; no public scan dispatch calls this yet."""
+    if history is not None and (
+            not history.roots or not history.repository.is_absolute()
+            or any(not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", oid) for oid in history.roots)
+            or len({len(oid) for oid in history.roots}) != 1
+            or sum(len(oid) + 1 for oid in history.roots) > 16 * 1024):
+        raise Degraded("the Windows Git relay has invalid frozen roots")
+    target = private.target
+    revalidate(git, target)
+    python = resolve_executable(sys.executable, target, os.path.dirname(sys.executable))
+    revalidate(python, target)
+    env = _GIT_READ._base_environment()
+    if not env.get("SystemRoot"):
+        raise MissingExecutable("the Windows compiler root is unavailable")
+    framework = _windows_framework_directory(Path(env["SystemRoot"]))
+    compiler_path = framework / "csc.exe"
+    compiler = resolve_executable(str(compiler_path), target, str(framework))
+    references = [framework / name for name in ("mscorlib.dll", "System.dll")]
+    runtime_files = [*references, framework / "clr.dll"]
+    if not all(path.is_file() for path in runtime_files):
+        raise MissingExecutable("the Windows compiler framework assemblies are unavailable")
+    for path in (compiler_path, *runtime_files):
+        _GIT_READ._lstat_chain(str(path), leaf_regular=True)
+    directory = private.root / ("relay-" + secrets.token_hex(8))
+    hold_history = nullcontext()
+    if history is not None:
+        hold_history = _win_private_open(history.repository, target=history.authority,
+                                         directory=True, protected_root=history.root)
+    with hold_history, _win_private_create(directory, target=target, directory=True):
+        worker = directory / "git_worker.py"
+        payload = _windows_worker_source(
+            git, private, record, invocation_id, scenario, remote_urls_present, history)
+        digest = hashlib.sha256(payload).hexdigest()
+        _write_windows_private_bytes(worker, payload, private)
+        source = directory / "git_relay.cs"
+        _write_windows_private_bytes(source, _windows_relay_source(
+            python, worker, digest, private), private)
+        relay = directory / "git.exe"
+        env.update({"TMP": str(directory), "TEMP": str(directory)})
+        _GIT_READ._assert_off_target(str(relay), str(relay),
+                                     _GIT_READ.worktree_exclusions(str(target)))
+        with _win_private_open(source, target=target, directory=False, protected_root=private.root,
+                               require_protected=True):
+            result = _windows_job_process(
+                [compiler.resolved, "/nologo", "/noconfig", "/nostdlib+", "/target:exe",
+                 "/platform:anycpu", *(f"/reference:{path}" for path in references),
+                 f"/out:{relay}", str(source)],
+                compiler, target, env, 30, stdout_limit=65536, stderr_limit=65536)
+        if result.returncode != 0:
+            raise Degraded("the Windows Git relay compiler failed")
+        with _win_private_open(relay, target=target, directory=False, protected_root=private.root):
+            executable = resolve_executable(str(relay), target, str(directory))
+            revalidate(executable, target)
+            with _win_private_open(worker, target=target, directory=False,
+                                   protected_root=private.root, require_protected=True):
+                yield _WindowsGitRelay(executable, python, worker, digest, private)
+
+
 def _supervised_process(argv: list[str], exe: Resolved, target: Path,
                         env: dict[str, str], cwd: str, timeout: float,
                         shim: Resolved | None = None,
-                        interpreter: Resolved | None = None):
+                        interpreter: Resolved | None = None, *,
+                        windows_relay: _WindowsGitRelay | None = None):
     if os.name not in ("posix", "nt"):
         raise Degraded("bounded child supervision is unavailable")
     if os.name == "nt":
@@ -2205,8 +2725,26 @@ def _supervised_process(argv: list[str], exe: Resolved, target: Path,
             len(argv) >= 3 and argv[0] == exe.resolved and argv[1] == "dir"
             and argv[2] == str(target) and os.path.isabs(argv[2])
         )
-        if argv[0:1] != [exe.resolved] or not (version_form or current_tree_form):
+        history_form = (windows_relay is not None and argv[0:5] == [
+            exe.resolved, "git", str(target), "--log-opts", " ".join(_WINDOWS_LOG_OPTS)])
+        if argv[0:1] != [exe.resolved] or not (version_form or current_tree_form or history_form):
             raise Degraded("Windows supervision accepts only fixed adapter reads")
+        if windows_relay is not None:
+            if windows_relay.private.target != target:
+                raise Degraded("the Windows relay belongs to another checkout")
+            relay = windows_relay.executable
+            revalidate(relay, target)
+            revalidate(windows_relay.interpreter, target)
+            if file_digest(str(windows_relay.worker)) != windows_relay.worker_digest:
+                raise Degraded("the Windows Git worker changed before launch")
+            windows_env = dict(env)
+            windows_env.update({"PATH": relay.directory, "PATHEXT": ".EXE",
+                                "NoDefaultCurrentDirectoryInExePath": "1"})
+            result = _windows_job_process(
+                argv, exe, target, windows_env, timeout,
+                stdout_limit=8 * 1024 * 1024, stderr_limit=64 * 1024)
+            return types.SimpleNamespace(returncode=result.returncode,
+                                         stdout=result.stdout, stderr=b"")
     revalidate(exe, target)
     if shim is not None:
         revalidate(shim, target)
@@ -2341,7 +2879,7 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
             invocation_id = secrets.token_urlsafe(18)
             _create_invocation_log(git_log)
             global _ACTIVE_INVOCATION
-            _ACTIVE_INVOCATION = (git_log, invocation_id)
+            _ACTIVE_INVOCATION = (git_log, invocation_id, None)
             # The fixture is built with the REAL git, before the shim exists, so
             # the invocation oracle records only what the screen and the
             # candidate do -- never the harness's own setup.
@@ -2695,7 +3233,7 @@ def _leg_argv(
     report = os.path.join(work.report_dir, f"{leg}.json")
     argv = [exe.resolved, "dir" if leg == "current-tree" else "git", str(target)]
     if leg == "history":
-        argv += ["--log-opts", _LOG_OPTS]
+        argv += ["--log-opts", " ".join(_WINDOWS_LOG_OPTS) if os.name == "nt" else _LOG_OPTS]
     else:
         # The current-tree leg does not follow symlinks, and adds no
         # .gitignore filter: a .gitignore'd ordinary file is still scanned.
@@ -2782,7 +3320,7 @@ def _run_sweep_inner(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             "the transitive Git trust root failed validation", facts,
         )
 
-    with tempfile.TemporaryDirectory(prefix="cairn-portable-") as workdir:
+    with _private_sweep_workspace(target) as workdir:
         work = materialize_workspace(
             workdir, policy["gitleaks"]["fingerprints"]
         )
@@ -2790,12 +3328,13 @@ def _run_sweep_inner(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
         invocation_log = invocation_id = None
         global _ACTIVE_INVOCATION
         _ACTIVE_INVOCATION = None
-        if os.name == "posix":
+        private = _WindowsInvocation(target, Path(workdir)) if sys.platform == "win32" else None
+        if os.name == "posix" or private is not None:
             invocation_log = os.path.join(
                 os.path.realpath(workdir, strict=True), "git-invocations.jsonl")
             invocation_id = secrets.token_urlsafe(18)
-            _create_invocation_log(invocation_log)
-            _ACTIVE_INVOCATION = (invocation_log, invocation_id)
+            _create_invocation_log(invocation_log, private)
+            _ACTIVE_INVOCATION = (invocation_log, invocation_id, private)
         if git_token is not None:
             version = _recorded_read(
                 "runner", "version",
@@ -2976,6 +3515,7 @@ def _run_sweep_inner(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             "git_interpreter": shim_interpreter,
             "invocation_log": invocation_log,
             "invocation_id": invocation_id,
+            "windows_private": private,
             "remote_urls_present": remote_urls_present,
             "require_log": any(row[0] == "history" for row in legs_to_run),
             "required_scenario": "production",
@@ -2992,6 +3532,14 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
     global _ACTIVE_INVOCATION
     try:
         return _run_sweep_inner(args)
+    except (Degraded, _GIT_READ.GitReadError, OSError):
+        if sys.platform != "win32":
+            raise
+        target = Path(args.target).absolute()
+        policy = Path(args.policy).absolute() if args.policy else _default_policy_path()
+        reason = "the Windows private sweep workspace or worker could not be verified"
+        legs = [LegOutcome("preflight", _AGG_DEGRADED, "DEGRADED", reason)]
+        return _AGG_DEGRADED, summarize(target, policy, legs, None, reason, {})
     finally:
         _ACTIVE_INVOCATION = None
 
