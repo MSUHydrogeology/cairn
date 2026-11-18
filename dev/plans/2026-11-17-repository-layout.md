@@ -591,3 +591,47 @@ Reviewed commit: 9355e4453fd55b6e3d17f0202f615a24c3c3df3e
 **Waiting-line check**: The reached plan-review authorization and correction disposition waits appear in plan history; the re-anchor is a separate board wait. No missing reached fence or deviation wait found -- `git log -p 21923511..9355e445 -- dev/plans/2026-11-17-repository-layout.md`, `dev/PLANNING.md`.
 
 Elapsed: unknown; tokens: unknown.
+
+## Code Security Review -- Sol -- 2026-11-18
+
+Reviewed commit: 9355e4453fd55b6e3d17f0202f615a24c3c3df3e
+
+**Obligation**: Internal Security Review
+**Tier**: Internal, GPT-6.2 Sol High
+**Verdict**: REVISE
+**Findings**: S1 blocking, S2 nonblocking.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The catalog and receipt bind ownership and old bytes, and verified publication precedes retirement. Signed prior policy and the externally checked candidate identity precede candidate imports -- `install/_scaffold/upgrade.py:4282`, `install/_scaffold/layout_migration.py:401`, `release/repin.py:2439`.
+2. **Best alternative.** Use the existing archived build input method for pinned builds to bind the recipe and files to one commit -- `install/container/acceptance.sh:138`.
+3. **What would show it wrong?** An input outside the pin entering the build falsifies C3. The focused probe below found that gap. Receipt tampering and relocated helper substitution are covered by the existing public tests -- `tests/test_upgrade_layout_migration.py`, `tests/test_repin_ceremony.py`.
+
+**S1, blocking (C3).** The documented pin command returned 3 with committed
+inputs and with an extra inert, Git-ignored engine file in a disposable
+checkout. An unignored extra returned 1. The documented build recursively
+copies the live engine directory, so its labeled commit can omit copied bytes
+(`install/container/verify-ref.sh:125`, `install/container/recipe.md:86`,
+`install/container/Dockerfile:62`). Use the archived input set or refuse extra
+copied bytes. Close with a focused ignored-input control.
+
+**S2, nonblocking.** The safety guide still calls retired-file removal the
+engine's sole deletion route. Describe both routes and the destination/receipt
+checks governing layout retirement (`install/SAFETY.md:247`).
+
+**Rules and audience**: `dev/rules/protected-surfaces.md`,
+`dev/rules/working-agreements.md`. The tested gap affects the adopter's pinned
+build. The two B102 allowances cover bounded reads of the fixed, digest-pinned
+Git helper.
+
+**Tests and cost**: Retain the public refusal and retry controls and exact
+protected IDs. The inherited roster HOLDs stay with the cut.
+
+**Bounding**: WIDER RUN REQUIRED for S1's focused check only. Used committed
+evidence elsewhere. No suite, image build, signing or native certification ran.
+
+**Waiting-line check**: Reached authorization waits are in plan history.
+The v0.8 re-anchor remains a separate board wait. Link this plan there at
+closeout (`dev/PLANNING.md`).
+
+**Elapsed**: unknown. **Tokens**: unknown.
