@@ -397,3 +397,35 @@ passes covered the earlier mapping with neither change. The review cap
 requires express Maintainer authorization before this focused pass.
 
 Elapsed and tokens: unknown.
+
+## Plan amendment review -- Terra -- 2026-11-17
+
+**Prior reviewed commit**: 0622d1ec5ce28c450755c9992403578c8e54cc92
+**Replacement commit**: 2ba9f750c93bc67354691d9f3808e5d29ee29538
+**Affected cells and dependencies**: Scope, Sequence, Acceptance criteria, Verification, C1, C3, C4, C5
+**Obligation**: Internal
+**Tier**: Internal
+**Model basis**: GPT-6.1 Terra, Medium
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown. **Tokens**: unknown.
+
+A purpose-based audit can complete the coherent layout while catching live
+consumers omitted from the original move list.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the audit and route checks extend the accepted folder purposes while retaining migration and authority requirements. -- Accepted proposal, Decision summary and items 1–11; plan, Scope, C3–C5 and Verification.
+2. **Best alternative.** Reuse the existing catalog, container and joined integration selection; a separate audit mechanism would add upkeep without another stated outcome. -- Plan, Reuse, Sequence and Verification.
+3. **What would show it wrong?** A fresh install, contained build or relocated release entry that still reads an old live path would fail the promised layout; run the specified route checks on final bytes. -- Plan, C3 and Verification.
+
+**Rule loss and audience:** The plan retains surgical prose edits, installed
+duties and existing authority checks; the actual revised guidance must still
+be read for its intended agent audience. -- Plan, Scope, documentation surface
+and Layout transition.
+
+**Coverage:** Compared the committed amendment with the prior operative plan,
+accepted layout outcomes and template. The template targets 1,000 opening
+words, 150 per criterion chunk and 300 per review; the previously reviewed
+protocol already exceeded the opening target. No implementation tests, full
+folder inventory, actual rewritten guidance or Security Review were performed.
