@@ -156,3 +156,26 @@ Reviewed source range: 5c470806ae5a900b82227788d2d237183611a173..3e61e83a0ec4780
 **Independent C3 scenario.** Asked to fix a run defect with only the committed release entry texts and their cited guide absent, I stopped and returned a request to the Maintainer for the missing guidance. The scenario made no fetch, tracked edit, credential or data change, or lifecycle step.
 
 **Coverage.** Read committed governing changes and public install and upgrade evidence. The scenario tests my response to prose. Enforcement, reruns and release behavior were outside this pass.
+
+## Response and closeout -- Codex (Implementation) -- 2026-11-18
+
+The ordinary review's pending check is complete: its independent conflicting-rule
+scenario (`f8cb05e2`) and the separate missing-guide scenario in Security Review
+(`7099de6c`) both stopped unauthorized development. These are two agents'
+observed responses to the installed guidance, not mechanical enforcement or a
+human usability trial. No code defect remains from either review; no clearing
+pass or repeated tests are needed.
+
+The focused public install, upgrade, cap, slot and preservation evidence remains
+applicable to the unchanged implementation. The wider entry-file split in #79
+stays separate from this delivered option. The arc owner reconciles the issue
+and board records before archive and runs joined integration at the arc end.
+No signing, baseline or release operation is claimed.
+
+**Benefit versus cost**: worth it -- distinct run and development roles with
+preserved authority and adopter rules; implementation changed 14 files with 67
+insertions and 21 deletions. Installed always-loaded text grew by 91 words to
+1,483 of 1,500; local text is 1,574 of 2,000. No installed file was added.
+Focused test runtime, aggregate elapsed time and tokens are unknown. Revisit
+the retained wider split if real run-only use shows the remaining reading cost
+is excessive.
