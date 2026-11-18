@@ -146,3 +146,26 @@ The new public JSON input was a design option in the first Security Review, but 
 ### Withdrawn / superseded commitments
 
 The review draft's executable registry becomes data. Cairn's preset module count and sibling-checkout behavior remain available through its internal tools. The installed command covers its own project, with distinct skips for absent subdirectories.
+
+## Review -- Sol (Security Review, High, pass 2) -- 2026-11-18
+
+```text
+Reviewed commit: 1a760b4732bb7af7d55bc7b3dae91d9185c27b0c
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, once accepted keys can all be checked. Fixed operations and key-only annotations keep registry edits out of executable support. -- Proposal, `tests/measurements.py:294-302`
+2. **Best alternative.** Keep both tools internal. With the single JSON exclusion, adopters can edit definitions while both Python checks and the upgrade baseline stay in place. -- `install/verify_integrity.py:434-467`, `install/_scaffold/upgrade.py:2050-2084`, `templates/modules/team-gated/run_security_audit.py:876-906`
+3. **What would show it wrong.** An installed upgrade loses an edited definition, or the installed checker accepts changed Git helper bytes, an escaping child link, or a range-shaped filename as valid history. -- Evidence / verification plan, `tests/measurements.py:223-235`, `tests/test_verify_counts.py:814-823`
+
+- **Blocking — make registry and annotation keys agree.** The inherited matcher ignores `<!-- verify: docs.files -->`, so an accepted JSON key `docs.files` could yield a clean zero-check report. Use the same key grammar for both inputs and fail malformed verify markers. Exercise an invalid key and malformed marker through the installed command. -- `tests/verify_counts.py:59-66`, `tests/verify_counts.py:94-114`
+- **Non-blocking — carry these checks into the plan.** Keep skips nonzero. In Git 2.53.0, `log --oneline missing-left..missing-right` returned a commit for a file with that name. Appending `--` made the same input fail. Check that the revision-only call rejects that file, and compare the resolved Git top level with the selected root. The probe distinguished a linked worktree from a plain subdirectory. -- `tests/verify_counts.py:191-197`, `tests/measurements.py:253-268`, `install/_scaffold/install.py:487-511`
+
+Coverage: the new data boundary and a disposable Git probe. The earlier ordinary review still covers the shipping goals. Installed commands, upgrades, other platforms and suites were outside this pass.
