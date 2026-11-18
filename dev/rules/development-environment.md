@@ -107,6 +107,16 @@ Checked 2026-11-13 by a read-only directory listing and `where` over SSH.
   (`verified-helper-buffer-unavailable`, or `hook-index-repository-unavailable`
   through the hook-index route) and some real-Git tests skip with "Git 2.44 or
   newer is required"; that is a test setup gap, not a missing Git.
+- **Gitleaks, Vermin and Bandit (installed 2026-11-18).** With Maintainer
+  permission, `gitleaks.exe` `8.30.1` (`C:\Program Files\Git\cmd\gitleaks.exe`,
+  official `windows_arm64` zip
+  `sha256:b95f5e4f5c425cedca7ee203d9afd29597e692c4924a12ed42f970537c72cc0f`,
+  binary
+  `sha256:200df852fdecbedb19a33960657333cba5e231740bc8968972b507b50f93b194`)
+  and `vermin.exe` `1.9.2` (`C:\Program Files\Git\cmd\vermin.exe` and
+  `lhm\Scripts\vermin.exe`) were installed onto default `PATH`, and `bandit`
+  `1.9.4` was installed in `C:\ProgramData\miniconda3\envs\lhm` (`python -m
+  bandit`, not on default `PATH`).
 
 ### Compiler, transfers and temporary folders
 
