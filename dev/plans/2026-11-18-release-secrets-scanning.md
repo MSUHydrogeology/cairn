@@ -128,3 +128,10 @@ The pinned generic reader excludes worktree and sterile write operations. The Hi
 
 **Elapsed**: unknown
 **Tokens**: unknown
+
+## Implementation clarification -- Windows private boundary -- 2026-11-18
+
+The runner twins own the Windows private creation and verification helpers. They adapt the smallest applicable Meter token, security descriptor and ACL routines without importing Meter or Pulse: reject impersonation; create exclusively with a protected current-user, SYSTEM and Administrators DACL before writing; hold and validate the local non-reparse ancestor chain; and verify file identity, type, link count, owner, protected DACL and permitted ACEs by handle. Child outputs may inherit the protected root but receive the same SID and handle checks. API, ACL, identity or inheritance failures remain incomplete or refused; there is no chmod fallback. This specifies the reviewed boundary without adding an outcome or fence.
+
+**Elapsed**: unknown
+**Tokens**: unknown
