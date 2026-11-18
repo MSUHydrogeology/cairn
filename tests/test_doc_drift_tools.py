@@ -1020,6 +1020,13 @@ def test_installed_release_boundary_report(tmp_path: Path):
     write('kept.md', '<!-- link-check-allow: dev/tools/README.md -->\n[development](dev/tools/README.md)\n')
     found = run()
     assert found.returncode == 0 and 'WITH FINDINGS' in found.stdout and 'dev reference' in found.stdout
+    (root / 'kept.md').unlink()
+    (root / 'kept.md').symlink_to(tmp_path / 'outside.md')
+    assert run().returncode == 2
+    (root / 'kept.md').unlink()
+    (root / 'kept.md').write_bytes(b'\xff')
+    assert run().returncode == 2
+    write('kept.md', 'safe again\n')
     write('other.md', 'unclassified')
     subprocess.run(['git', '-C', str(root), 'add', 'other.md'], check=True)
     assert run().returncode == 2 and 'unclassified' in run().stdout
