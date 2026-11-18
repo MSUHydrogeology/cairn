@@ -9,10 +9,10 @@ to answer `unknown`.
 
 **Why it is a gate, not a document.** The threshold in §3 is read out of *this
 file* by `test_closure_stays_a_bounded_fraction_of_the_discoverable_set` in
-[`bootstrap/tests/test_security_stack.py`](../../bootstrap/tests/test_security_stack.py),
+[`tests/test_security_stack.py`](../../tests/test_security_stack.py),
 so the number here is the only copy and the test cannot drift from it. **Cairn
 has no CI**: that node runs when a person types
-`CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests`. Nothing runs it
+`CAIRN_FULL_SUITE=1 python -m pytest tests`. Nothing runs it
 automatically.
 
 **Why the annotation needs a ratio at all.** The leg audits the Python

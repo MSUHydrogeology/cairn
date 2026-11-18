@@ -339,8 +339,8 @@ judgment overrides it; the dimensional matrix in
 [`install/dimensions/`](../dimensions/) carries the full doctrine.
 
 * **Mostly Good (≥8 G)**: **install the profile your axes give**.
-  Pick it from [`install/profiles/`](../bootstrap/profiles/) and run
-  [`install/BOOTSTRAP.md`](../bootstrap/BOOTSTRAP.md).
+  Pick it from [`install/profiles/`](profiles/) and run
+  [`install/BOOTSTRAP.md`](BOOTSTRAP.md).
 * **Mostly Mixed, 1-2 Poor (≥6 G/M, ≤2 P)**: **start with the
   smallest profile that fits** -- for a solo maintainer, the composed
   profile in [`docs/solo-legacy-recipe.md`](../docs/solo-legacy-recipe.md).
@@ -356,7 +356,7 @@ judgment overrides it; the dimensional matrix in
 * **Section 10 (Security boundaries) is Poor regardless of
   others**: do not scaffold Cairn yet.  Establish the
   privacy boundary first (see
-  [`install/SAFETY.md`](../bootstrap/SAFETY.md)).  An AI
+  [`install/SAFETY.md`](SAFETY.md)).  An AI
   agent reading a tree where the maintainer cannot say what
   is sensitive is a risk multiplier.
 External-repo paths: `docs/assumptions.md`
@@ -378,7 +378,7 @@ External-repo paths: `docs/assumptions.md`
 * It does not commit you to anything.  Filling it is useful
   even if you decide Cairn is not the right framework.
 * It does not replace
-  [`install/BOOTSTRAP.md`](../bootstrap/BOOTSTRAP.md)'s Act I
+  [`install/BOOTSTRAP.md`](BOOTSTRAP.md)'s Act I
   assessment -- the bootstrap's six-axis dimensional profile is
   a different lens (the codebase + team, not the codebase's
   fitness for adoption).  Run both before a full bootstrap.

@@ -36,7 +36,7 @@ New to Cairn? Start with the [quickstart](quickstart.md).
   codebase and the team.
 * [Solo legacy recipe](solo-legacy-recipe.md) -- one person adopting Cairn on
   an existing codebase.
-* [Adding another agent type](agent-team-onboarding.md) -- bringing a second
+* [Adding another agent type](../templates/onboarding/agent-team-onboarding.md) -- bringing a second
   or third AI agent into a deployment.
 
 ## Work with it day to day
@@ -45,7 +45,7 @@ New to Cairn? Start with the [quickstart](quickstart.md).
   [start or end a session](tool-usage.md#starting-and-ending-a-session).
 
 * [Tool usage](tool-usage.md) -- worked examples of Cairn's tools.
-* [A tour of `dev/`](dev-tour.md) -- the folder where proposals, plans and
+* [A tour of `dev/`](../templates/onboarding/dev-tour.md) -- the folder where proposals, plans and
   reviews live.
 * [Build a board view](build-a-board-view.md) -- for maintainers, or teams
   running several agents: turning the board's data into a page.

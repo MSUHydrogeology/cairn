@@ -2,7 +2,7 @@
 
 # Scientific minimal example — Cairn on a tiny science workflow
 
-The two [`case-studies/`](../../case-studies/) are the full-apparatus
+The two [`case-studies/`](../../docs/case-studies/) are the full-apparatus
 examples on real scientific projects. The
 [`minimal/`](../minimal/README.md) example is a one-file `greet` CLI
 showing the lifecycle at the smallest possible *generic* scale. This
@@ -31,7 +31,7 @@ data, but the lifecycle shape is identical.
 
 This example, like [`minimal/`](../minimal/), carries a Cairn kernel
 copied in by hand, with no lockfile (see
-[`../../on-ramp/README.md`](../../on-ramp/README.md)): a `dev/`
+[`../../install/on-ramp/README.md`](../../install/on-ramp/README.md)): a `dev/`
 tree with the proposal lifecycle, run by hand.
 
 ## The change, traced through the lifecycle

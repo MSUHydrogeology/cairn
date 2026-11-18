@@ -2,14 +2,14 @@
 
 # Minimal example — Cairn on a throwaway project
 
-The two [`case-studies/`](../../case-studies/) are the full-apparatus
+The two [`case-studies/`](../../docs/case-studies/) are the full-apparatus
 examples on real projects. This is the opposite: the **whole loop at
 the smallest possible scale**, so a newcomer sees the shape of a Cairn
 change *small* before reading the large ones.
 
 The toy project is a one-file `greet` CLI. Its Cairn kernel was copied
 in by hand, with no lockfile (see
-[`../../on-ramp/README.md`](../../on-ramp/README.md)): a `dev/` tree
+[`../../install/on-ramp/README.md`](../../install/on-ramp/README.md)): a `dev/` tree
 with the proposal lifecycle, run by hand.
 
 ## The change, traced through the lifecycle
@@ -51,7 +51,7 @@ not write the work. For the narrated, step-by-step version see
 > **The default-on disciplines come with tools.** This hand-copied
 > example runs the lifecycle by hand, but an adopter who installs
 > with the scaffold gets the claim-check discipline as a
-> *runnable script*, not just prose: `claim_check.py` (in `scripts/`) is
+> *runnable script*, not just prose: `claim_check.py` (in `dev/tools/`) is
 > installed and wired to the `{{claim_check_command}}` token. See the
 > [`claim-check`](../../templates/modules/default-on/claim-check.md)
 > module.

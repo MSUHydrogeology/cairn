@@ -559,7 +559,7 @@ needs a plan.  That is where the apparatus pays back.
 In order:
 
 * **Pick a real project to assess** -- use the
-  [Codebase Readiness Report template](../templates/codebase-readiness-report.md)
+  [Codebase Readiness Report template](../install/codebase-readiness-report.md)
   to surface the questions before you choose a profile.  Fill it
   locally first; the template's "What to check in" section names
   the safer default check-in posture.

@@ -5,7 +5,7 @@
 **Date**: 2026-11-10
 **Status**: draft
 **Type**: design-exploration
-**Surfaces this would feed**: the v0.8 oversight-website proposal (the "One local oversight website with tabs" row in [`dev/PLANNING.md`](../PLANNING.md), with the [website note](2026-11-10-claude-local-oversight-website.md)); [`tools/gauge.py`](../../tools/gauge.py); the v0.9 meter comparisons
+**Surfaces this would feed**: the v0.8 oversight-website proposal (the "One local oversight website with tabs" row in [`dev/PLANNING.md`](../PLANNING.md), with the [website note](2026-11-10-claude-local-oversight-website.md)); [`tests/gauge.py`](../../tests/gauge.py); the v0.9 meter comparisons
 
 ## Summary
 
@@ -73,7 +73,7 @@ Each widget is a card marked **ready** (inputs exist), **partial** (inputs exist
 
 - **A. A first slice early (recommended).** One command writes one self-contained file: the Development tab from the board, the ready widgets, and cards for the rest. Value comes soon; the layout move later relocates it, and the role map keeps series stable.
 - **B. All five tabs after the layout lands.** Cleaner paths; a later start.
-- **C. Add the numbers to `tools/gauge.py --pulse` only.** Least involved. Loses trends and tabs.
+- **C. Add the numbers to `tests/gauge.py --pulse` only.** Least involved. Loses trends and tabs.
 
 ## Recommendation
 

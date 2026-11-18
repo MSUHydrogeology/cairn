@@ -33,7 +33,7 @@ traces do not demonstrate a separate implementation plan, installed tools,
 an upgrade or a handoff. Their commands and links also refer to today's
 repository layout.
 
-The [repository-layout proposal](2026-11-09-claude-repository-layout.md)
+The [repository-layout proposal](archive/2026-11-09-claude-repository-layout.md)
 would move installation to `install/`, consolidate installed tools under
 `dev/tools/`, and separate Cairn's tests and release machinery. It does not
 propose moving `examples/`. New walkthroughs should teach that resulting

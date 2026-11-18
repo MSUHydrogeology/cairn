@@ -26,7 +26,7 @@ export SSH_ASKPASS_REQUIRE=force
 
 These settings apply to that Terminal and its children; they do not load a key
 into `ssh-agent`. No background service was enabled. The existing
-[Maintainer-only signing procedure](../../bootstrap/REANCHOR_RUNBOOK.md)
+[Maintainer-only signing procedure](../../release/REANCHOR_RUNBOOK.md)
 still applies. Both signing paths worked with this prompt on 2026-11-03.
 
 ## Windows VM

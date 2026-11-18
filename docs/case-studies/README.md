@@ -45,4 +45,4 @@ one, open an issue on Cairn's tracker describing the project, how Cairn is
 set up there, and two or three moments from its record. The project's
 maintainer must approve the text before it is added. A contributed case
 study is licensed like the rest of Cairn's prose, under CC BY 4.0
-([`../LICENSE-CC-BY.md`](../LICENSE-CC-BY.md)).
+([`../../LICENSE-CC-BY.md`](../../LICENSE-CC-BY.md)).

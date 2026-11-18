@@ -68,7 +68,7 @@ what makes "the invariant core is small" an honest claim.
   them: reflections, claim-check, incident-trackers,
   documentation-plan, content-security, and security-verification. (The
   authoritative per-module rationale is the gate table in
-  `bootstrap/BOOTSTRAP.md` > I-5.)
+  `install/BOOTSTRAP.md` > I-5.)
 * **Team-gated modules** — activated only when the team has the
   structure to run them: staffing guidance for a read the
   Maintainer has called, in the Dual-Review module; the
@@ -107,7 +107,7 @@ three are judgments about the project, and one waits on a profile token. If you
 fill in the six axes and stop, those four are the ones you silently skipped.
 Age is a similar case: setting `age: legacy` does not add `legacy-agent` by
 itself, so for an existing codebase you add it (and `testing-discipline`)
-yourself; see [`../docs/solo-legacy-recipe.md`](../docs/solo-legacy-recipe.md).*
+yourself; see [`../../docs/solo-legacy-recipe.md`](../../docs/solo-legacy-recipe.md).*
 
 A team-gated module is not "advanced" — it is simply unstaffable
 below a certain team shape. A solo, single-agent team still runs every
@@ -131,12 +131,12 @@ core.
 
 ## How the matrix is used
 
-The bootstrap (`../bootstrap/`) assesses a target project against
+The bootstrap (`../`) assesses a target project against
 these axes, writes a **dimension profile** — for example,
 "legacy · large · complex · multi-language · multi-agent" — and
 selects the role roster, the modules, and the review weight from
 that profile. The profile is presented to the Maintainer for
 acceptance before anything is installed. The per-axis documents
 here are what the bootstrap reads to make those selections; the
-case studies (`../case-studies/`) show the matrix applied to two
+case studies (`../../docs/case-studies/`) show the matrix applied to two
 real projects.

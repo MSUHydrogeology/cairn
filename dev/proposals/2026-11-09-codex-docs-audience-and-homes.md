@@ -36,7 +36,7 @@ domain it governs. It is itself documentation governance, rather than an
 ordinary user guide. `dev/rules/README.md` describes project-owned agent
 discipline read on demand; it is not a catch-all developer manual.
 
-The [repository-layout proposal](2026-11-09-claude-repository-layout.md)
+The [repository-layout proposal](archive/2026-11-09-claude-repository-layout.md)
 would establish `release/` and move Cairn-only test/reporting tools. This
 proposal clarifies the companion document destinations and audience, without
 repeating or authorizing those executable moves.
