@@ -1,8 +1,7 @@
 # Plan: Repository layout and self-adoption
 
 **Source proposal**: dev/proposals/archive/2026-11-09-claude-repository-layout.md
-**Status**: revising-plan
-**Waiting on Maintainer**: Dispose of the recipe-binding correction
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-17
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/development-environment.md
@@ -510,5 +509,23 @@ relative recipe path can resolve outside the verified checkout.
 
 The checker move, prior verifier, HOLDs and Maintainer cut retain their
 requirements. This successor records the correction for disposition.
+
+Elapsed and tokens: unknown.
+
+## Response -- Codex -- 2026-11-18
+
+**Disposition**: ready-to-implement
+
+The Maintainer accepted the recipe-binding correction at
+3389c79f4097dab8762d309cbad74b69ba3e13fb and closed the remaining plan-review
+obligation, replying in chat:
+
+> Implement correction; close further plan reviews
+
+This disposes of the focused finding in e9c79955 without another plan pass.
+The exact corrected build-input requirements remain operative. Independent
+ordinary and Security code reviews, focused checks, accepted scope, and the
+separate Maintainer trust operation remain required. Earlier reviews retain
+their original verdicts and coverage.
 
 Elapsed and tokens: unknown.
