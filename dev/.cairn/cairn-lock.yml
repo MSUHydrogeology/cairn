@@ -28,7 +28,7 @@
     },
     {
       "dst": "AGENTS.md",
-      "hash": "sha256:a06308f55f8b51125cfb3f14115c4c252033dd1383fd2b4dd4bfe90318f6ae28",
+      "hash": "sha256:85a0bfe60c5098d689e9f52a10d97cd6ac2096540e7451e9b25ec8307c861dc0",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -66,7 +66,7 @@
     },
     {
       "dst": "dev/agent_collaboration.md",
-      "hash": "sha256:3eb744fcdacd18977e083ef91512ab506b3b62237d46f47abcee7c6071144e25",
+      "hash": "sha256:2cef39b907b071d494f6481417b95dc2de30bad1a37011c006a9e622125063d0",
       "src": "core/dev/agent_collaboration.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -144,14 +144,14 @@
     },
     {
       "dst": "dev/modules/issue-capture.md",
-      "hash": "sha256:f1373c8af5f1fd81cda44b3e00f5d58be87fc9b81df4883a8bf9f4bbdc9e99b9",
+      "hash": "sha256:d746323f480c04636d3fbfc9b18006e1cfa723966c77e6eb4951de3ee456e3f0",
       "src": "modules/team-gated/issue-capture.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/model-selection.md",
-      "hash": "sha256:f60acd73535469df4003594baac7b27188f7e6f35666063c6dd7684a99add8b7",
+      "hash": "sha256:bda4d73dc48c8532c05d071ead7efdbe81c9189d17bb41d97db8914374b61ff3",
       "src": "modules/team-gated/model-selection.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -208,7 +208,7 @@
     },
     {
       "dst": "dev/rules/README.md",
-      "hash": "sha256:7b66136d84d59ce65d15bfc371dba1c5198d14f9d11c8bfaaeb59fb83d51f55f",
+      "hash": "sha256:0af1e4f0f6b3404f297f0f3b9c1a639c39564f193b38edcbda3428994e720ca3",
       "src": "core/dev/rules/README.md",
       "unrecoverable_base": true,
       "verbatim": false
