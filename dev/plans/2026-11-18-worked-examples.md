@@ -69,3 +69,19 @@ C1–C2 ship at `5e20fb14`. The v0.7.0 input `49dfa217102545d44e57190a48941cabce
 **Benefit versus cost**: unknown -- reproducible workflows and a discriminating upgrade check; cost two temporary Git clones and 28.73 s for the focused upgrade check; remaining maintenance burden unknown. Revisit if fixture compatibility or runtime becomes onerous.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Code review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: cea93e2dfbe37bb174bff77e393a511a99f28419
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the greeting and water-budget traces distinguish illustrative records from real assurance, while the upgrade and handoff demonstrate usable continuation. -- `examples/minimal/README.md`, `examples/scientific-minimal/README.md`, `examples/scientific-minimal/handoff.md`
+2. **Best alternative.** Extending the two existing examples and public installer avoids a new tutorial framework or copied installed tree. -- `examples/README.md`, `examples/scientific-minimal/upgrade.md`
+3. **What would show it wrong?** A sign inversion surviving the independently calculated residual, or a managed slot disappearing after staged review and apply, would falsify the result. -- `examples/scientific-minimal/test_water_budget.py::TestResidualWriter::test_hand_calculated_row_through_cli`, `tests/test_upgrade.py`, Implementation evidence
+
+The hand calculation uses 100−30−20−40−10 = 0 mm; recorded inversion produced 60 and failed. The upgrade identifies the prior tag and commit, managed `AGENTS.md` slot, staged review and applied result. Coverage: read committed walkthroughs, public checks and recorded results; did not rerun commands, verify a real research model or perform release verification. No governing doctrine changes were made.
