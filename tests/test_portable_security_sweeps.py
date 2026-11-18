@@ -101,8 +101,9 @@ def load_runner(path: Path | None = None):
     return module
 
 
-_ADMISSIONS_LINE = (
-    "_ADMITTED_ARTIFACTS: dict[tuple[str, str, str], Admission] = {}"
+_ADMISSIONS_BLOCK_RE = re.compile(
+    r"(# CAIRN-ADMISSIONS-BEGIN[^\n]*\n).*?(# CAIRN-ADMISSIONS-END)",
+    re.DOTALL,
 )
 
 
@@ -121,17 +122,19 @@ def runner_copy(tmp_path: Path, admissions: dict | None = None) -> Path:
     variable or a flag.  The shipped file is never touched; a node below
     asserts that."""
     text = RUNNER_SRC.read_text(encoding="utf-8")
-    assert text.count(_ADMISSIONS_LINE) == 1
+    assert len(_ADMISSIONS_BLOCK_RE.findall(text)) == 1
     if admissions:
         entries = ", ".join(
             f'({k[0]!r}, {k[1]!r}, {k[2]!r}): Admission({v[0]!r}, {v[1]!r})'
             for k, v in admissions.items()
         )
-        text = text.replace(
-            _ADMISSIONS_LINE,
+        body = (
             "_ADMITTED_ARTIFACTS: dict[tuple[str, str, str], Admission] = "
-            "{%s}" % entries,
+            "{%s}\n" % entries
         )
+    else:
+        body = "_ADMITTED_ARTIFACTS: dict[tuple[str, str, str], Admission] = {}\n"
+    text = _ADMISSIONS_BLOCK_RE.sub(rf"\g<1>{body}\g<2>", text, count=1)
     dest_dir = tmp_path / "runner"
     dest_dir.mkdir(exist_ok=True)
     dest = dest_dir / RUNNER_SRC.name
@@ -3392,6 +3395,8 @@ def test_windows_relay_wiring_uses_executable_directory_and_target_authority(
     def _fake_resolve(name: str, tgt: Path, path_env: str | None = None):
         if name == "git":
             return fake_relay.executable
+        if name == "gitleaks":
+            return runner.Resolved("gitleaks", str(adapter), str(adapter), str(bd), digest)
         return real_resolve(name, tgt, path_env)
 
     class _OsProxy:
@@ -3588,3 +3593,54 @@ def test_frozen_history_shim_detects_non_candidate_ref_secret_end_to_end(
     assert leg(summary, "current-tree")["status"] == "CLEAN"
     assert leg(summary, "history")["status"] == "FINDINGS"
     assert leg(summary, "history")["finding_count"] == 1
+
+
+def test_shipped_admitted_artifacts_match_evidence_ledger() -> None:
+    """Bijection between ``_ADMITTED_ARTIFACTS`` in both shipped runners and
+    the ``### <evidence-id>`` sections under ``## Admitted artifacts`` in
+    ``dev/measurement/gitleaks-version-support.md``."""
+    src_runner = load_runner(RUNNER_SRC)
+    twin_runner = load_runner(RUNNER_TWIN)
+    admitted = dict(src_runner._ADMITTED_ARTIFACTS)
+    assert admitted == dict(twin_runner._ADMITTED_ARTIFACTS)
+    assert ("8.30.1", "darwin", "arm64") in admitted
+    assert ("8.30.1", "windows", "arm64") in admitted
+
+    ledger_text = LEDGER.read_text(encoding="utf-8")
+    section_match = re.search(
+        r"^## Admitted artifacts\n(.*?)^## Retirement log\b",
+        ledger_text,
+        re.MULTILINE | re.DOTALL,
+    )
+    assert section_match is not None, "missing ## Admitted artifacts section"
+    admitted_section = section_match.group(1)
+
+    subsections = re.findall(
+        r"^### ([^\n]+)\n(.*?)(?=^### |\Z)",
+        admitted_section,
+        re.MULTILINE | re.DOTALL,
+    )
+    ledger_records: dict[str, dict] = {}
+    for evidence_id, body in subsections:
+        evidence_key = evidence_id.strip()
+        assert evidence_key not in ledger_records, f"duplicate ledger section {evidence_key}"
+        json_match = re.search(r"```json\s*\n(.*?)\n```", body, re.DOTALL)
+        assert json_match is not None, f"missing json block in {evidence_key}"
+        ledger_records[evidence_key] = json.loads(json_match.group(1))
+
+    runner_by_evidence = {
+        admission.evidence: (triple, admission)
+        for triple, admission in admitted.items()
+    }
+    assert len(runner_by_evidence) == len(admitted), "duplicate evidence IDs in _ADMITTED_ARTIFACTS"
+    assert set(runner_by_evidence) == set(ledger_records), (
+        f"runner vs ledger mismatch: {set(runner_by_evidence) ^ set(ledger_records)}"
+    )
+
+    for evidence_id, (triple, admission) in runner_by_evidence.items():
+        version, system, arch = triple
+        record = ledger_records[evidence_id]
+        assert record.get("admit") is True, evidence_id
+        assert record.get("candidate_version_key") == version, evidence_id
+        assert tuple(record.get("platform", ())) == (system, arch), evidence_id
+        assert record.get("unadmitted_binary_executed", {}).get("sha256") == admission.sha256, evidence_id

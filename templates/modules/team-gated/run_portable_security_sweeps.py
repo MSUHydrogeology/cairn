@@ -220,7 +220,9 @@ _ADAPTER = "gitleaks"
 #: a candidate *admit its own binary* -- strictly weaker than the self-reported
 #: version string it replaces.
 #:
-#: **Initially empty, and nothing this program does can change that.**
+#: **Nothing this program does can mutate this set; it ships empty for
+#: unmeasured triples and currently admits the verified ``8.30.1`` builds
+#: recorded in ``dev/measurement/gitleaks-version-support.md``.**
 #: ``--verify-version-support`` emits an *evidence record*; **emitting one
 #: admits nothing**.  A version enters this set only at the fourth step of a
 #: four-step, deliberately un-automated ceremony: the project supplies a
@@ -231,8 +233,9 @@ _ADAPTER = "gitleaks"
 #: which anything that can produce a record can admit a binary -- the manual
 #: step **is** the control.
 #:
-#: An empty set means the module ships reduced-provenance-only: useful
-#: current-tree findings and an honest INCOMPLETE, never CLEAN.
+#: Any unmeasured ``(version, system, machine)`` triple runs in
+#: reduced-provenance mode: useful current-tree findings and an honest
+#: INCOMPLETE, never CLEAN.
 
 
 class Admission(NamedTuple):
@@ -243,7 +246,16 @@ class Admission(NamedTuple):
 
 
 # CAIRN-ADMISSIONS-BEGIN (the admission ceremony edits exactly this block)
-_ADMITTED_ARTIFACTS: dict[tuple[str, str, str], Admission] = {}
+_ADMITTED_ARTIFACTS: dict[tuple[str, str, str], Admission] = {
+    ("8.30.1", "darwin", "arm64"): Admission(
+        "f414bc2fb952be6c9072b75cb411e3368614ef4b16d48dbd9ad238034afd2302",
+        "GL-2026-11-18-darwin-arm64-8.30.1",
+    ),
+    ("8.30.1", "windows", "arm64"): Admission(
+        "200df852fdecbedb19a33960657333cba5e231740bc8968972b507b50f93b194",
+        "GL-2026-11-18-windows-arm64-8.30.1",
+    ),
+}
 # CAIRN-ADMISSIONS-END
 
 #: The one major this runner's argv, output schema and Git-invocation

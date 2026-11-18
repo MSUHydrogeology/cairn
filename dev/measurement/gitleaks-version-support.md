@@ -6,7 +6,7 @@ module's *admitted-artifact set*. One section per admitted
 emitted by
 
 ```
-python scripts/run_portable_security_sweeps.py \
+python dev/tools/run_portable_security_sweeps.py \
     --verify-version-support /abs/path/to/candidate \
     --confirm-executing-an-unadmitted-binary
 ```
@@ -15,12 +15,12 @@ plus a retirement log. Sits beside `dev/measurement/attestation-replay-failures.
 and `dev/measurement/review-floor-deviations.md`, which is where this repository
 already keeps measurement records.
 
-**Why it is a gate, not a document.** `bootstrap/tests/test_portable_security_sweeps.py`
+**Why it is a gate, not a document.** `tests/test_portable_security_sweeps.py`
 asserts a **bijection** between the runner's source-owned admitted-artifact set
 and the sections below: adding a version in source without a section here turns
 that node red, and leaving a retired version in the active list turns its
 reverse red. The test is run by a person typing
-`python -m pytest bootstrap/tests` — **Cairn has no CI**, so nothing runs it
+`python -m pytest tests` — **Cairn has no CI**, so nothing runs it
 automatically.
 
 ## How a version is admitted
@@ -100,36 +100,65 @@ here.
 record in a fenced `json` block. The evidence-id is the identifier the runner's
 admitted-artifact set carries.*
 
-**Empty.** The admitted-artifact set ships **empty**: no
-`(version, platform, architecture)` has been measured against a
-Maintainer-supplied, checksum-verified binary yet. Measured `as_of 2026-08-05`:
-`gitleaks` is **not on this host's `PATH`**, and the plan's second Maintainer
-fence forbids an implementing agent acquiring one.
+Historical disposition (preserved for auditability):
 
-Superseded `as_of 2026-08-31`: `gitleaks 8.30.1` **is** now on this host's
-`PATH`, at `/opt/homebrew/bin/gitleaks`. **The disposition does not change and
-the set stays empty** — availability was never the control. What admission
-requires is a *Maintainer-supplied, checksum-verified* binary and a
-security-lens review of the record measured against it; a binary an agent finds
-on `PATH` satisfies neither, and the fence above still forbids acquiring one.
-The earlier line is left standing rather than overwritten, so a reader can see
-which fact was true when.
+* Measured `as_of 2026-08-05`: the admitted-artifact set shipped **empty** —
+  `gitleaks` was **not on this host's `PATH`**, and the plan's second
+  Maintainer fence forbade an implementing agent acquiring one.
+* Superseded `as_of 2026-08-31`: `gitleaks 8.30.1` **was** on this host's
+  `PATH`, at `/opt/homebrew/bin/gitleaks`. **The disposition did not change and
+  the set stayed empty** — availability was never the control. What admission
+  required was a *Maintainer-supplied, checksum-verified* binary and a
+  security-lens review of the record measured against it; a binary an agent
+  found on `PATH` satisfied neither, and the fence above still forbade
+  acquiring one.
 
-The consequence, stated plainly rather than left to be discovered: the module
-ships **reduced-provenance-only**. Full mode — the only mode that can report
-`0` — is unreachable until a record lands here. An adopter gets useful
-current-tree findings and an honest `INCOMPLETE`, or admits a release
-themselves through the procedure above.
+Superseded `as_of 2026-11-18`: the Maintainer supplied and verified the two
+`8.30.1` builds below (`darwin/arm64` and `windows/arm64`), and `--verify-version-support`
+emitted `"admit": true` on both. Unmeasured `(version, platform, architecture)`
+triples remain in **reduced-provenance** mode (`INCOMPLETE` rather than `0`);
+full mode is reachable on the two admitted triples below.
+
+### GL-2026-11-18-darwin-arm64-8.30.1
+
+* **Triple**: `("8.30.1", "darwin", "arm64")`
+* **Provenance**: Homebrew `gitleaks` 8.30.1 bottle (`/opt/homebrew/bin/gitleaks` -> `/opt/homebrew/Cellar/gitleaks/8.30.1/bin/gitleaks`)
+* **Binary SHA-256**: `f414bc2fb952be6c9072b75cb411e3368614ef4b16d48dbd9ad238034afd2302`
+* **Measured date**: `2026-11-18`
+
+```json
+{"admit": true, "candidate_version": "gitleaks version 8.30.1", "candidate_version_key": "8.30.1", "end_to_end": {"current-tree": {"clean": {"exit": 0, "validated_findings": 0}, "invalid_argv": {"element": "--timeout=cairn-not-an-integer", "exit": 1}, "planted_finding": {"exit": 42, "validated_findings": 1}}, "history": {"clean": {"exit": 0, "validated_findings": 0}, "invalid_argv": {"element": "--timeout=cairn-not-an-integer", "exit": 1}, "planted_finding": {"exit": 42, "validated_findings": 1}}}, "git_invocations": ["runner:common-dir", "runner:config", "runner:version", "shim:log", "shim:url"], "git_version": "git version 2.53.0", "hostile_config": {"candidate_ignore_file": "refused before execution", "counted_git_config_keys": "8", "runner_owned_config_flag": "sent off-tree"}, "kind": "portable-security-sweeps/version-support-record", "network_observation": {"bound": "This observes a candidate that honours proxy variables or connects to the advertised address and the exact Git URL query.  It is NOT a sandbox and does not establish absence of egress.", "canary_connections": 0, "method": "loopback canary advertised as http_proxy/https_proxy/ALL_PROXY and as CAIRN_PORTABLE_NETWORK_CANARY, plus helper-mediated fixed Git operations"}, "output_schema": "validated on both legs", "platform": ["darwin", "arm64"], "refusals": [], "schema": 1, "screen": "ran through the bound helper token", "unadmitted_binary_executed": {"declared_source": "Homebrew gitleaks 8.30.1 bottle (/opt/homebrew/Cellar/gitleaks/8.30.1/bin/gitleaks)", "path": "/opt/homebrew/bin/gitleaks", "resolved": "/opt/homebrew/Cellar/gitleaks/8.30.1/bin/gitleaks", "sha256": "f414bc2fb952be6c9072b75cb411e3368614ef4b16d48dbd9ad238034afd2302", "statement": "This command executed an external file that Cairn has NOT admitted, at the operator's instruction."}}
+```
+
+### GL-2026-11-18-windows-arm64-8.30.1
+
+* **Triple**: `("8.30.1", "windows", "arm64")`
+* **Provenance**: Installed on `cairn-windows` at `C:\Program Files\Git\cmd\gitleaks.exe` from official `https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_windows_arm64.zip` (archive SHA-256 verified against `gitleaks_8.30.1_checksums.txt`: `b95f5e4f5c425cedca7ee203d9afd29597e692c4924a12ed42f970537c72cc0f`)
+* **Binary SHA-256**: `200df852fdecbedb19a33960657333cba5e231740bc8968972b507b50f93b194`
+* **Measured date**: `2026-11-18`
+
+```json
+{"admit": true, "candidate_version": "gitleaks version 8.30.1", "candidate_version_key": "8.30.1", "end_to_end": {"current-tree": {"clean": {"exit": 0, "validated_findings": 0}, "invalid_argv": {"element": "--timeout=cairn-not-an-integer", "exit": 1}, "planted_finding": {"exit": 42, "validated_findings": 1}}, "history": {"clean": {"exit": 0, "validated_findings": 0}, "invalid_argv": {"element": "--timeout=cairn-not-an-integer", "exit": 1}, "planted_finding": {"exit": 42, "validated_findings": 1}}}, "git_invocations": ["runner:common-dir", "runner:config", "runner:version", "shim:log", "shim:url"], "git_version": "git version 2.56.0.windows.4", "hostile_config": {"candidate_ignore_file": "refused before execution", "counted_git_config_keys": "8", "runner_owned_config_flag": "sent off-tree"}, "kind": "portable-security-sweeps/version-support-record", "network_observation": {"bound": "This observes a candidate that honours proxy variables or connects to the advertised address and the exact Git URL query.  It is NOT a sandbox and does not establish absence of egress.", "canary_connections": 0, "method": "loopback canary advertised as http_proxy/https_proxy/ALL_PROXY and as CAIRN_PORTABLE_NETWORK_CANARY, plus helper-mediated fixed Git operations"}, "output_schema": "validated on both legs", "platform": ["windows", "arm64"], "refusals": [], "schema": 1, "screen": "ran through the bound helper token", "unadmitted_binary_executed": {"declared_source": "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_windows_arm64.zip (zip sha256:b95f5e4f5c425cedca7ee203d9afd29597e692c4924a12ed42f970537c72cc0f)", "path": "C:\\Program Files\\Git\\cmd\\gitleaks.exe", "resolved": "C:\\Program Files\\Git\\cmd\\gitleaks.exe", "sha256": "200df852fdecbedb19a33960657333cba5e231740bc8968972b507b50f93b194", "statement": "This command executed an external file that Cairn has NOT admitted, at the operator's instruction."}}
+```
 
 ## Retirement log
 
 *A triple leaves the active list by moving here, with the reason and the date.
 A retired triple does not linger above.*
 
-**Empty.** Nothing has been admitted, so nothing has been retired.
+**Empty.** Nothing has been retired yet.
 
 ## Known gaps, per admitted triple
 
-* **Cross-platform coverage.** All measurement anyone has taken for this module
-  is Darwin arm64. Admitting a second platform is ledger work under the cadence
-  above — one more triple, one more record — not a new proposal.
+* **Resolution of the `2026-08-31` `Match` redaction gap.** The `release-secrets-scanning`
+  work (archived at commit `f68f5dba`) resolved the redaction gap noted above:
+  the runner now checks `Secret == "REDACTED"` and `"REDACTED" in Match` and
+  discards `Match` wholesale so surrounding context is not retained. Both
+  `GL-2026-11-18-darwin-arm64-8.30.1` and `GL-2026-11-18-windows-arm64-8.30.1`
+  passed `planted_finding` under that control.
+* **Cross-platform coverage.** Only `("8.30.1", "darwin", "arm64")` and
+  `("8.30.1", "windows", "arm64")` are admitted. Other platforms and
+  architectures (such as `linux/x86_64`, `linux/arm64`, `darwin/x86_64`, and
+  `windows/x86_64`) remain unmeasured and therefore run in reduced-provenance
+  mode until a Maintainer-supplied, checksum-verified build is measured and
+  reviewed under the cadence above.
