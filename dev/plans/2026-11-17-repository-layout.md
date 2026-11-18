@@ -203,10 +203,6 @@ Record limitations, dispositions, changed-file burden and benefit versus cost.
 
 **Scope delta**: preserved
 
-Proposed paths:
-- `release/security_check.py`
-- `tests/requirements-dev.txt`
-
 ## Verification
 
 Use the canonical Python and the reviewed range for governing text. Use
@@ -529,3 +525,45 @@ separate Maintainer trust operation remain required. Earlier reviews retain
 their original verdicts and coverage.
 
 Elapsed and tokens: unknown.
+
+## Implementation verification -- Codex -- 2026-11-18
+
+Implementation through `5f9d0742` delivers the catalog, receipt-bound migration,
+real self-adoption, source moves, current callers and unsigned transition.
+C2's transaction passed its focused checks and an earlier native Windows
+retry (Python 3.13.18, 21.98 seconds); that evidence covers the unchanged
+transaction, not a certification of the final relocated tree.
+
+Python 3.13.13: the joined selection passed 30 cases in 45.66 seconds with one
+runner-fixture failure. The corrected record/join workflow passed at `56eff8ac`
+in 23.08 seconds; six caller checks passed in 4.50 seconds. The final catalog's
+unsigned transition passed separately in 13.74 seconds. Passing unaffected
+results were reused. Discovery initially found five broken readers; their
+collection-only retry found 590 cases without error. No whole suite ran.
+
+The actual Podman workflow at `56eff8ac` passed contained two-version install,
+upgrade, ownership, filesystem and offline controls. A fresh installation's
+installed link checker passed 25 Markdown files. Layout and 70 installed-file
+hashes pass. Live links, snippets and neutrality pass; seven released-changelog
+links remain historical. Earlier review citations resolve in their reviewed
+commits. Empty legacy folders, 470 old bytecode caches and the container's
+disposable working tree were removed; purposeful folders remain.
+
+The non-test inventory command is `tests/tier_inventory.py`; 135 test files
+remain assigned once. Protected parameter labels remain stable. The existing
+wrapper stays because a fresh wrapper-free desktop trial was unavailable.
+
+Ordinary and Security code reviews remain owed. Real signing, certification,
+the inherited HOLDs and base-cache limitations stay with the named cut wait.
+Issue #67 also needs the accepted release-without-dev follow-on; #90's adopter
+standard and check are not delivered by Cairn's test-root helper.
+
+**Benefit versus cost**: worth it -- one adopted tool home and preserved local
+work; cost 398 changed files including moves, 6,781 added and 3,588 removed
+lines over `21923511..5f9d0742`; remaining burden one ownership catalog and
+layout guard, ongoing maintenance cost unknown.
+
+Always-loaded words: Cairn 1,483 (+14), shipped kernel 1,392 (+29). Installed
+hash records remain 70 plus four living-state exclusions. Revisit if the
+catalog or guard creates repeated manual work. Aggregate elapsed and tokens:
+unknown.
