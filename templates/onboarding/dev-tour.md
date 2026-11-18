@@ -125,6 +125,5 @@ code review.
 * Try the typo fix above on a real change in your tree.
 * When you coordinate two or more agents, read *docs/methodology/coordination.md*;
   it covers the work-intent mechanism that prevents collisions.
-* When you have an improvement for Cairn itself, the template
-  `.github/ISSUE_TEMPLATE/foldback.md` in the Cairn repository walks
-  you through filing it.
+* When you have an improvement for Cairn itself, use
+  `dev/upstream/foldback.md` to draft it and follow the publication protocol.

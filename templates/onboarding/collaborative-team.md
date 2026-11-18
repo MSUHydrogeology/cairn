@@ -95,10 +95,9 @@ candidates upstream early, rather than letting the practice lapse.
 * [seed; id: walk-foldback-protocol]
   The fold-back practice: when the team improves the method
   itself, not just this project, that improvement belongs
-  upstream. Notice it, then file a Cairn issue with the fold-back
-  issue template (`.github/ISSUE_TEMPLATE/foldback.md`); the
-  team-handoff owner files, coordinating with the team first to
-  avoid duplicate Cairn issues.
+  upstream. Notice it, then draft a Cairn issue using
+  `dev/upstream/foldback.md`; the team-handoff owner coordinates with the
+  team and follows its duplicate-check and publication protocol.
 
 <!-- cairn:if complexity in moderate,complex -->
 * [seed; id: fill-model-selection-mapping]

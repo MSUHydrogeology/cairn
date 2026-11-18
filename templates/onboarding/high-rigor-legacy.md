@@ -108,9 +108,9 @@ goes live.
 * [seed; id: walk-foldback-protocol]
   The fold-back practice: when the method itself improves, not
   just this legacy tree, that improvement belongs upstream.
-  Notice it, then file a Cairn issue with the fold-back issue
-  template (`.github/ISSUE_TEMPLATE/foldback.md`); the
-  high-rigor-legacy profile installs the content-security scanner
+  Notice it, then draft a Cairn issue using `dev/upstream/foldback.md`
+  and follow its publication protocol. The high-rigor-legacy profile
+  installs the content-security scanner
   and the security-review checklist -- run `python
   dev/tools/content_scan.py` over the drafted filing body and walk
   the security-review checklist before it leaves the deployment.

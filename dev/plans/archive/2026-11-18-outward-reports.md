@@ -179,3 +179,17 @@ was added; always-loaded text did not grow. The shared measurement/report range
 cost, not reporting alone. Two focused delivery checks took 2.37 seconds and four
 existing collision cases 5.86 seconds under Python 3.13.13. Aggregate time and
 tokens are unknown. Revisit if real reports remain hard to prepare safely.
+
+## Post-archive repair -- Terra (Implementation) -- 2026-11-18
+
+The shared protocol now directs safe generalized duplicate searches, records
+unknown when unavailable, and names internal hosts and IPs, local paths and
+private coordinates alongside the existing export classes. The published
+session method and onboarding routes point to that installed protocol while
+retaining optional capture, empty-capture success and existing security duties.
+A reader search also found and corrected older onboarding references; the old
+hand-filing wording search was checked against its prior committed positive.
+The two protocol copies are byte-identical. Python 3.13.13 claim, link, snippet,
+neutrality and Cairn prose checks passed. No real search, publication, wording
+test or suite was run. Ordinary and second Security code reviews remain due.
+Elapsed: unknown; tokens: unknown.

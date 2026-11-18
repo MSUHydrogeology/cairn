@@ -56,6 +56,6 @@ no multi-agent coordination, no legacy-tree pre-pass.
 * [seed; id: walk-foldback-protocol]
   The fold-back practice: when you improve the method itself, not
   just your project, that improvement belongs upstream. This is
-  your introduction to the fold-back issue template
-  (`.github/ISSUE_TEMPLATE/foldback.md`); it walks you through
-  filing your first upstream Cairn issue or PR.
+  your introduction to the installed fold-back template and publication
+  protocol (`dev/upstream/foldback.md`); follow it when preparing an upstream
+  Cairn issue or PR.

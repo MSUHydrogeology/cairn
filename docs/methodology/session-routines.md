@@ -373,16 +373,14 @@ unless the Maintainer has classified it high-risk.
 A project may configure its full-handoff owner to scan the
 session-day's doctrine activity for **Cairn-portable** candidates —
 generalizable improvements that should fold *up* into Cairn — and
-capture each as a draft fold-back issue, using the fold-back issue
-template (`.github/ISSUE_TEMPLATE/foldback.md`) in the Cairn repository.
+capture each as a draft fold-back issue using the installed
+`dev/upstream/foldback.md` template and its
+[publication protocol](../../templates/core/dev/upstream/foldback.md#publication-protocol).
 Capture never lapses; an **empty capture is success** (do not
-manufacture marginal candidates). Filing is the separate,
-judgment-gated step: an agent may draft the issue body, but only the
-Maintainer files it, by hand, on Cairn's public issue tracker — a
-fold-back issue is a public export surface, so a candidate carries no
-secrets, credentials, internal hostnames/IPs, local paths, or
-proprietary domain detail, and the Maintainer confirms no private
-coordinate leaks before it becomes a public Cairn issue.
+manufacture marginal candidates). Filing remains separate: follow that protocol
+for duplicate checks, export safety and approval of the actual report and
+destination. It permits an agent to file an individually approved Cairn issue;
+the Human Maintainer submits a Cairn pull request by hand.
 
 ### Project-owned RULES.md maintenance
 

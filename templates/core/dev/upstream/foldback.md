@@ -23,10 +23,15 @@ versions, expected and actual behavior when reporting a defect.
 
 A report and its attachments are public. Check the entire proposed body and
 attachments for unpublished data or hints, proprietary project or customer
-detail, and credentials. For a pull request also check every changed file. After
-writing, reread the complete payload and, for a pull request, its full diff with
-those classes in mind. Remove or generalize anything unsafe; no automated scan
-replaces this judgment.
+detail, and credentials, including internal hostnames or IP addresses, local
+paths and private coordinate leaks. For a pull request also check every changed
+file. After writing, reread the complete payload and, for a pull request, its
+full diff with those classes in mind. Remove or generalize anything unsafe; no
+automated scan replaces this judgment.
+
+Check accessible public Cairn issues for a duplicate using safe, generalized
+public terms. If the search is unavailable, record that duplicate status is
+unknown; do not include private details in a search.
 
 Show the Human Maintainer the actual report and destination, and obtain explicit
 approval for each report and destination before filing. Approval for one is not

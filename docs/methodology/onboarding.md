@@ -42,7 +42,7 @@ Every profile also seeds a day-one pointer to the lifecycle skills
 those skills unconditionally and reports the count.
 
 Three short pointers say where the list is: the last line of a
-successful install, one sentence in `bootstrap/BOOTSTRAP.md` step II-6,
+successful install, one sentence in `install/BOOTSTRAP.md` step II-6,
 and one bullet in the `session-start` routine, which names the first
 open task under Onboarding as a candidate for the operator.
 
@@ -58,8 +58,8 @@ Two pages are installed to `dev/modules/onboarding/` for every profile:
   `skim-coordination-doctrine` task.
 
 The upstream PR and issue walkthrough is a day-one seed task that hands
-off to the fold-back issue template
-(`.github/ISSUE_TEMPLATE/foldback.md`).
+off to the installed fold-back template and publication protocol
+(`dev/upstream/foldback.md`).
 
 ## Dispatching an agent session
 
