@@ -668,3 +668,55 @@ certification ran.
 No fence became due in this correction -- `dev/PLANNING.md`.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Response -- Codex -- 2026-11-18 (code findings)
+
+S1 is fixed by the guide's verified-commit archive program (`3b95348b`), not
+an added pin exception. Its public ignored-input check passed on Python
+3.13.13 in 0.69 seconds. S2 is fixed by the separate descriptions of retired
+file removal and verified layout retirement (`2e35a655`). The C3 wording still
+requires the same commit-bound inputs. The focused second Security Review
+accepted both corrections (`609e56be`); no clearing suite ran. The original
+ordinary acceptance remains applicable to its unchanged implementation.
+
+Elapsed and tokens: unknown.
+
+## Implementation closeout -- Codex -- 2026-11-18
+
+C1–C5 hold: tested roots and ownership mapping; receipt-bound, preserving
+migration; purpose-correct source and tool homes; actual self-adoption and
+unsigned transition; reviewed checks, current guidance and folder cleanup.
+Both code-review obligations accept. All cheap findings were fixed. No plan
+folder or review sidecar was created; historical evidence and harness
+worktrees were preserved.
+
+- Not run: real signed baseline operation and final native certification.
+  Home: the grouped v0.8 cut wait in `dev/PLANNING.md`.
+- Not covered: wrapper-free desktop trial. The existing wrapper is retained.
+  Home: the accepted C3 conditional fence; no removal is claimed.
+- Not covered: original ancestry for 31 slot bases and the inherited base
+  mismatch. Current installed bytes pass; history was not fabricated.
+  Home: accepted reconciliation limits in C2/C4. No historical repair is queued.
+- Remaining: kept-file release references and the wider adopter root standard.
+  Home: the accepted release-without-dev proposal and the existing conditional
+  issue #90 queue in `dev/PLANNING.md`. These are not missing layout scope.
+
+Dispositions: accept all code findings and folder repairs; guard layout
+invariants with the existing five-case public check, and pinned build inputs
+with the public archive checks. No accepted scope or required check deferred.
+
+The earlier benefit/cost record covers the measured implementation; later
+changes add the reviewed build program and its subsecond guard without new
+tools, always-loaded text or installed files. Revisit on repeated catalog or
+guard maintenance. Aggregate elapsed and tokens: unknown.
+
+## Implementation verification -- final -- 2026-11-18
+
+The reviewed source through `2e35a655` retains the earlier applicable results
+and the additional 0.69-second build-input check. Both code-review obligations
+accept, and all their findings are fixed.
+
+**Benefit versus cost**: worth it -- one adopted tool home with preserved project work; cost 398 changed files including moves, 6,979 added and 3,600 removed lines over 21923511..2e35a655; remaining burden one ownership catalog and layout guard, ongoing maintenance cost unknown.
+
+Revisit on repeated manual catalog or guard work. Aggregate elapsed and tokens:
+unknown. No further suite or trust operation ran.
