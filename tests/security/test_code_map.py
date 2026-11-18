@@ -24,7 +24,7 @@ import pytest
 from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
-SCRIPT = ROOT / "tools" / "code_map.py"
+SCRIPT = ROOT / "dev" / "tools" / "code_map.py"
 TEMPLATE_SCRIPT = ROOT / "templates" / "modules" / "team-gated" / "code_map.py"
 sys.path.insert(0, str(ROOT))
 

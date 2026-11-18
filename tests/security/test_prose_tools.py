@@ -30,7 +30,7 @@ from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
 TEMPLATE = ROOT / "templates" / "modules" / "team-gated"
-GIT_HELPER = ROOT / "tools" / "git_read.py"
+GIT_HELPER = ROOT / "dev" / "tools" / "git_read.py"
 GIT_SHA = hashlib.sha256(GIT_HELPER.read_bytes()).hexdigest()
 
 

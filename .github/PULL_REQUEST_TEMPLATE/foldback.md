@@ -26,16 +26,16 @@
 
 * `cairn/docs/methodology/<file>.md`:
 * `cairn/templates/modules/<file>`:
-* `cairn/scripts/<file>.py`:
+* `cairn/tests/<file>.py`:
 
 ## Tests added / extended
 
-<!-- Cairn's test apparatus is `bootstrap/tests/`.  Name the test
+<!-- Cairn's test apparatus is `tests/`.  Name the test
      files this PR adds / extends, and the load-bearing surfaces
      each pins.  The contribution is not landable without
      test coverage matching the contribution's surface. -->
 
-* `cairn/bootstrap/tests/test_<file>.py`:
+* `cairn/tests/test_<file>.py`:
 
 ## Deployment-side cross-link
 

@@ -75,9 +75,9 @@ how something is built or organized**.  The layer has two ranges:
   domain-governance doc names the things it governs without living
   among each of them.  Examples in the Cairn tree:
   * `cairn/install/BOOTSTRAP.md` governs the install sequence +
-    scaffold contract; lives in `bootstrap/`.
+    scaffold contract; lives in `install/`.
   * `cairn/install/fidelity-check.md` governs the fidelity
-    contract; lives in `bootstrap/`.
+    contract; lives in `install/`.
   * **This file** (`cairn/docs/DOCUMENTATION_PLAN.md`) governs
     documentation placement and lives in `docs/`.  Organizing
     documentation is the documentation domain's own concern -- so

@@ -42,7 +42,7 @@ from tests.test_verify_counts import (
 from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
-_spec = importlib.util.spec_from_file_location("_test_tiers_tool", ROOT / "tools" / "test_tiers.py")
+_spec = importlib.util.spec_from_file_location("_test_tiers_tool", ROOT / "tests" / "test_tiers.py")
 tiers_tool = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(tiers_tool)
 

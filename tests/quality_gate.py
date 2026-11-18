@@ -535,9 +535,9 @@ _R1_SCAN_ROOTS = ("install/dimensions", "install/on-ramp", "docs")
 #: false-positive class, add to ``_UNUSED_DEF_WHITELIST`` rather than
 #: expanding this list.
 _R6_SCAN_ROOTS = (
-    "install", "release", "templates/modules",
+    "install", "release", "tests", "templates/modules",
 )
-_R6_EXCLUDE_DIRS = ("tests",)
+_R6_EXCLUDE_DIRS = ()
 
 
 def _word_shingles(text: str, size: int) -> set[tuple[str, ...]]:
@@ -656,6 +656,9 @@ def _run_r6_redundancy(repo_root: Path) -> list[Finding]:
             continue
         for p in sorted(d.rglob("*.py")):
             rel = p.relative_to(repo_root).as_posix()
+            if rel.startswith("tests/") and (p.parent != repo_root / "tests"
+                    or p.name.startswith(("test_", "_", "conftest"))):
+                continue
             if any(rel.startswith(ex + "/") or rel == ex
                    for ex in _R6_EXCLUDE_DIRS):
                 continue

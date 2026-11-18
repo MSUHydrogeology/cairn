@@ -800,9 +800,9 @@ def _native_meter_setup(root, native_git_exe, *, git_mode="ordinary",
     runtime_meter = runtime_tools / "meter.py"
     runtime_git = runtime_tools / "git_read.py"
     shutil.copyfile(METER, runtime_meter)
-    shutil.copyfile(ROOT / "tools" / "git_read.py", runtime_git)
+    shutil.copyfile(ROOT / "dev" / "tools" / "git_read.py", runtime_git)
     for original, copied in ((METER, runtime_meter),
-                             (ROOT / "tools" / "git_read.py", runtime_git)):
+                             (ROOT / "dev" / "tools" / "git_read.py", runtime_git)):
         assert hashlib.sha256(original.read_bytes()).digest() == hashlib.sha256(
             copied.read_bytes()).digest()
     if meter_overrides:
@@ -3867,11 +3867,11 @@ def test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile(
     runtime_pulse = runtime_tools / "pulse.py"
     runtime_git_helper = runtime_tools / "git_read.py"
     shutil.copyfile(METER, runtime_meter)
-    shutil.copyfile(ROOT / "tools" / "pulse.py", runtime_pulse)
-    shutil.copyfile(ROOT / "tools" / "git_read.py", runtime_git_helper)
+    shutil.copyfile(ROOT / "dev" / "tools" / "pulse.py", runtime_pulse)
+    shutil.copyfile(ROOT / "dev" / "tools" / "git_read.py", runtime_git_helper)
     for original, copied in ((METER, runtime_meter),
-                             (ROOT / "tools" / "pulse.py", runtime_pulse),
-                             (ROOT / "tools" / "git_read.py", runtime_git_helper)):
+                             (ROOT / "dev" / "tools" / "pulse.py", runtime_pulse),
+                             (ROOT / "dev" / "tools" / "git_read.py", runtime_git_helper)):
         assert hashlib.sha256(original.read_bytes()).digest() == hashlib.sha256(
             copied.read_bytes()).digest()
     assert native_windows_root in runtime_tools.parents

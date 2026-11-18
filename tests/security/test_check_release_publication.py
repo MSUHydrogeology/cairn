@@ -26,7 +26,7 @@ import pytest
 from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
-SCRIPT = ROOT / "scripts" / "check_release_publication.py"
+SCRIPT = ROOT / "release" / "check_release_publication.py"
 sys.path.insert(0, str(ROOT))
 
 _SPEC = importlib.util.spec_from_file_location(

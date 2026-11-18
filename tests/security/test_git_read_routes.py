@@ -35,9 +35,9 @@ from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
 TEAM = ROOT / "templates" / "modules" / "team-gated"
-INSTALLED_HELPER = ROOT / "tools" / "git_read.py"
+INSTALLED_HELPER = ROOT / "dev" / "tools" / "git_read.py"
 SOURCE_HELPER = ROOT / "templates" / "skills" / "_lib" / "git_read.py"
-SCAFFOLD = ROOT / "bootstrap" / "scaffold.py"
+SCAFFOLD = ROOT / "install" / "scaffold.py"
 LAYOUTS = ("installed", "source")
 
 # --------------------------------------------------------------------------
@@ -371,7 +371,7 @@ class Lab:
 def _source(layout: str, name: str) -> tuple[str, bytes]:
     """The delivery path and bytes of a team-gated tool in *layout*."""
     if layout == "installed":
-        return f"scripts/{name}", (ROOT / "scripts" / name).read_bytes()
+        return f"scripts/{name}", (ROOT / "dev" / "tools" / name).read_bytes()
     return f"templates/modules/team-gated/{name}", (TEAM / name).read_bytes()
 
 
@@ -594,7 +594,7 @@ def test_intent_commands_refuse_a_git_inside_the_repository(
         tmp_path: Path, layout: str) -> None:
     # Positive control for: the intent commands finding the repository root with a repository-supplied `git`, or an unreadable root reading as "nothing staged".
     lab = Lab(tmp_path)
-    source = ROOT / "tools" if layout == "installed" else TEAM
+    source = ROOT / "dev" / "tools" if layout == "installed" else TEAM
     folder = "tools" if layout == "installed" else "templates/modules/team-gated"
     helper_rel, helper = _helper(layout)
     files: dict[str, bytes | str] = {
@@ -658,7 +658,7 @@ def _plant_git(lab: Lab, folder: Path) -> Path:
 
 def _intent_repo(lab: Lab, layout: str) -> tuple[Path, list[str]]:
     """A committed repository holding its own copy of the intent tool in *layout*."""
-    source = ROOT / "tools" if layout == "installed" else TEAM
+    source = ROOT / "dev" / "tools" if layout == "installed" else TEAM
     folder = "tools" if layout == "installed" else "templates/modules/team-gated"
     helper_rel, helper = _helper(layout)
     files: dict[str, bytes | str] = {
@@ -797,7 +797,7 @@ def test_hooks_path_question_answers_none_when_the_safe_reader_finds_no_git_or_r
             "print(repr(hooks._git_hooks_path(sys.argv[2])))")
 
     def ask(path_value: str) -> subprocess.CompletedProcess:
-        return lab.run([sys.executable, "-I", "-B", "-c", code, str(ROOT / "tools"), str(repo)],
+        return lab.run([sys.executable, "-I", "-B", "-c", code, str(ROOT / "dev" / "tools"), str(repo)],
                        repo, extra_env={"PATH": path_value})
 
     answer = ask(str(Path(lab.real_git).parent))  # control: a safe Git answers
@@ -821,8 +821,8 @@ def _cairn_source(lab: Lab, name: str) -> Path:
     """A committed, minimal Cairn source: templates, citation and the two renderer files."""
     return lab.repo(name, {}, copy={
         "templates": ROOT / "templates", "CITATION.cff": ROOT / "CITATION.cff",
-        "bootstrap/_scaffold/config.py": ROOT / "bootstrap/_scaffold/config.py",
-        "bootstrap/_scaffold/install.py": ROOT / "bootstrap/_scaffold/install.py"})
+        "install/_scaffold/config.py": ROOT / "install/_scaffold/config.py",
+        "install/_scaffold/install.py": ROOT / "install/_scaffold/install.py"})
 
 
 def _scaffold(lab: Lab, args: list[str], *, hostile_bin: Path | None = None,
@@ -941,7 +941,7 @@ def test_upgrade_to_a_ref_never_fetches_a_missing_object_through_a_source_progra
     subprocess.run([lab.real_git, "clone", "-q", "--no-checkout", "--filter=blob:none",
                     f"file://{origin}", str(source)],
                    env=lab.env(), check=True, capture_output=True)
-    for rel in ("templates", "CITATION.cff", "bootstrap"):  # the clone has no checkout
+    for rel in ("templates", "CITATION.cff", "install"):  # the clone has no checkout
         if (origin / rel).is_dir():
             shutil.copytree(origin / rel, source / rel)
         else:

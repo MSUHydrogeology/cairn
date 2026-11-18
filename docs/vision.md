@@ -81,10 +81,10 @@ trust through how it is built. Five areas, each with a concrete commitment:
   diagrams under CC BY 4.0; the brand mark alone under CC BY-ND 4.0. No vendor
   lock-in: the record is plain files in git.
 * **Technology** — the installer makes no network requests
-  (`bootstrap/SAFETY.md`), and Cairn ships an export-safety scrub, content
+  (`install/SAFETY.md`), and Cairn ships an export-safety scrub, content
   scanning, and an explicit trust boundary: a project's own runs are trusted;
   artifacts supplied by colleagues are not. Some installed modules do use the
-  network when you run them; `bootstrap/SAFETY.md` says which.
+  network when you run them; `install/SAFETY.md` says which.
 
 The fuller treatment — and where Cairn deliberately *diverges* from the
 literature it draws on — is `docs/methodology/rationale.md`; the contract for what

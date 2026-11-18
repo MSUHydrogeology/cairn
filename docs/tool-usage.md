@@ -1,10 +1,10 @@
 # Tool usage — worked examples
 
 Cairn ships Python tools and scripts that use only the standard library.
-Both `tools/` and `scripts/` can contain installed files: the selected profile,
+`dev/tools/` contains installed files: the selected profile,
 modules and installer mapping determine what reaches a project.
-Orientation and coordination tools (`tools/session.py`, `tools/board.py`,
-`tools/intent.py`) report repository state without blocking your work.
+Orientation and coordination tools (`dev/tools/session.py`, `dev/tools/board.py`,
+`dev/tools/intent.py`) report repository state without blocking your work.
 Verification and security scripts return a non-zero exit code when their own
 check fails: `claim_check.py` for broken paths, `link_check.py` for broken
 links, and `run_portable_security_sweeps.py` for security findings. This page
@@ -19,8 +19,8 @@ module is selected.
 
 Consider an upgrade when a newer Cairn release offers changes your project
 needs. Before running candidate code, have the Maintainer choose the release
-and route in the [upgrade reference](../bootstrap/UPGRADE.md) and
-[provenance guide](../bootstrap/PROVENANCE.md#choosing-an-adopter-verification-route).
+and route in the [upgrade reference](../install/UPGRADE.md) and
+[provenance guide](../install/PROVENANCE.md#choosing-an-adopter-verification-route).
 The ordinary stable-release route checks the fixed official release selection
 and exact checkout without signing-key setup; it trusts the distribution
 channel and does not authenticate the release operator. The optional stronger
@@ -35,7 +35,7 @@ and review-only files. Review clean merges too: a clean textual merge can still
 leave incompatible rules. Decide how to resolve conflicts or policy differences
 and give any required approval before applying. After an authorized apply, ask
 for the integrity and applicable check results and the tracked change. A push
-requires separate authorization. The [upgrade reference](../bootstrap/UPGRADE.md)
+requires separate authorization. The [upgrade reference](../install/UPGRADE.md)
 contains the complete operational procedure and safeguards.
 
 ## Starting and ending a session
@@ -56,20 +56,20 @@ Skill invocation syntax depends on your agent; the [compatibility guide](skills-
 records what is supported and what remains unverified. Ordinary chatter alone
 does not invoke either skill.
 
-## tools/session.py — session mechanics *(default-on)*
+## dev/tools/session.py — session mechanics *(default-on)*
 
 The session skills use this tool to collect orientation and prepare a
 reflection. Full-handoff preparation is separate from the guarded handoff;
 the installed skills describe when each applies.
 
-## scripts/claim_check.py — verify path and line claims *(default-on: claim-check)*
+## dev/tools/claim_check.py — verify path and line claims *(default-on: claim-check)*
 
 **What it does.** Reads a Markdown proposal, plan or doc and flags file paths
 that do not exist and line numbers that are out of range. Run it while you
 write and before you commit a proposal or plan.
 
 ```bash
-python scripts/claim_check.py dev/proposals/2026-06-01-me-new-thing.md
+python dev/tools/claim_check.py dev/proposals/2026-06-01-me-new-thing.md
 ```
 
 A clean file:
@@ -91,25 +91,25 @@ or line range, list a planned or external path under a
 document-scoped path exemption in `dev/.cairn/claim-check-allow.json` (or a
 one-off `<!-- claim-check-allow: <glob> -->` directive).
 
-## tools/intent.py — claim work before editing *(team-gated: coordination-tiers)*
+## dev/tools/intent.py — claim work before editing *(team-gated: coordination-tiers)*
 
 **What it does.** On a concurrent team, you claim a set of files before
 editing them so a second agent sees the claim and coordinates rather than
 colliding. The post-commit hook auto-releases your claim.
 
 ```bash
-python tools/intent.py claim --files frontend/prep/soils.py tests/test_soils.py \
+python dev/tools/intent.py claim --files frontend/prep/soils.py tests/test_soils.py \
     --action "fix soil-temp fold-in"
 # ... edit, commit (the post-commit hook releases the claim) ...
-python tools/intent.py list            # what is claimed right now, by whom
+python dev/tools/intent.py list            # what is claimed right now, by whom
 ```
 
 First-session setup (opt-in; the scaffold never mutates `.git/hooks`):
 
 ```bash
-python tools/intent.py install-hook        # post-commit auto-release
-python tools/intent.py install-precommit   # pre-commit work-intent check (warn-only)
-python tools/intent.py hooks-status        # confirm both are installed
+python dev/tools/intent.py install-hook        # post-commit auto-release
+python dev/tools/intent.py install-precommit   # pre-commit work-intent check (warn-only)
+python dev/tools/intent.py hooks-status        # confirm both are installed
 ```
 
 **What to do.** If a pre-commit warning says a staged path has no active
@@ -117,14 +117,14 @@ claim, either claim it or proceed deliberately — the check is warn-only, not a
 gate. If `list` shows a path held by another session, coordinate before
 editing it.
 
-## tools/board.py — see what is actually in flight *(default-on)*
+## dev/tools/board.py — see what is actually in flight *(default-on)*
 
 **What it does.** Prints one row for every proposal and plan under `dev/`: kind, artifact, status, the Review and Plan review lines, when it opened, its source proposal, and any `Waiting on Maintainer` line. With `--maintainer` or `--json` it also reads the `dev/PLANNING.md` rows that declare a wait. `--json` prints the same board as plain JSON (`cairn-board/1`), so you can build your own view without scraping the table; see [`docs/build-a-board-view.md`](build-a-board-view.md). It only reports what the artifacts say and skips symbolic links. The one check it makes is on the status word: if an active proposal or plan carries a retired status (such as `proposed`) or a value that is not a status, it adds an advisory line naming it, and still lists the artifact. `session-start` prints the same advisory under its in-flight threads. The artifact is the authority; this is a view of it.
 
 ```bash
-python tools/board.py
-python tools/board.py --maintainer
-python tools/board.py --json
+python dev/tools/board.py
+python dev/tools/board.py --maintainer
+python dev/tools/board.py --json
 ```
 
 **What to do.** Run it instead of maintaining a hand-written "currently active"
@@ -132,16 +132,16 @@ list. It builds the list from proposal and plan files each time, so archived
 work does not stay listed as active. If a row looks wrong, fix the artifact's
 header block — not this output.
 
-## scripts/link_check.py — check cross-references resolve *(team-gated: doc-drift-prevention)*
+## dev/tools/link_check.py — check cross-references resolve *(team-gated: doc-drift-prevention)*
 
 **What it does.** Resolves the Markdown links across your tracked docs and
 reports the ones that do not. A tracked file that is deleted from disk but not
 yet committed is skipped, and the run prints how many it skipped.
 
 ```bash
-python scripts/link_check.py                 # whole tracked tree
-python scripts/link_check.py docs/guide.md   # specific files
-python scripts/link_check.py --check-external # also probe http(s) links
+python dev/tools/link_check.py                 # whole tracked tree
+python dev/tools/link_check.py docs/guide.md   # specific files
+python dev/tools/link_check.py --check-external # also probe http(s) links
 ```
 
 **What to do.** Fix a broken internal link before committing the doc change
@@ -156,13 +156,13 @@ The doc-drift-prevention module describes the schema, legacy comment behavior
 and diagnostics. These entries do not suppress bad anchors or links to
 existing files outside the repository.
 
-## scripts/run_portable_security_sweeps.py — one measured offline secret sweep *(team-gated: portable-security-sweeps)*
+## dev/tools/run_portable_security_sweeps.py — one measured offline secret sweep *(team-gated: portable-security-sweeps)*
 
 This runs a local secret scan. It needs Gitleaks installed, and it never reports "clean" unless it fully ran.
 
 **Installation check.** The module installs three files as one group:
-`scripts/run_portable_security_sweeps.py`,
-`scripts/portable_security_policy.json`, and
+`dev/tools/run_portable_security_sweeps.py`,
+`dev/tools/portable_security_policy.json`, and
 `dev/modules/portable-security-sweeps.md`. If they are not there, the module is
 not selected in your profile.
 
@@ -171,9 +171,9 @@ must also be present — the runner calls it for a pre-execution configuration
 screen, and Gitleaks calls it transitively for the history leg.
 
 ```bash
-python scripts/run_portable_security_sweeps.py --target .
-python scripts/run_portable_security_sweeps.py --json    # deterministic summary
-python scripts/run_portable_security_sweeps.py --security-verification
+python dev/tools/run_portable_security_sweeps.py --target .
+python dev/tools/run_portable_security_sweeps.py --json    # deterministic summary
+python dev/tools/run_portable_security_sweeps.py --security-verification
 ```
 
 **Offline by default, and there is no other mode.** No network flag exists; the
@@ -229,7 +229,7 @@ version. A `.gitleaksignore` found *inside* the tree under check is a **refusal*
 never reachable from a standing command:
 
 ```bash
-python scripts/run_portable_security_sweeps.py \
+python dev/tools/run_portable_security_sweeps.py \
     --verify-version-support /abs/path/to/candidate \
     --confirm-executing-an-unadmitted-binary
 ```
@@ -238,19 +238,19 @@ It **executes a binary the project has not admitted**, says so in its first line
 of output, and emits an evidence record. It never admits anything itself:
 admission is a reviewed source change.
 
-## For Cairn maintainers: scripts/verify_counts.py — re-measure registered counts
+## For Cairn maintainers: tests/verify_counts.py — re-measure registered counts
 
 *This script is for Cairn's own maintainers. It is not installed in your project, so skip this section unless you work on Cairn itself.*
 
 **What it does.** Checks that numbers cited as current facts in Cairn's own
 documentation still match the repository. Each checked number is registered in
-`scripts/measurements.py` and followed in the Markdown file by an HTML comment
+`tests/measurements.py` and followed in the Markdown file by an HTML comment
 naming its registry key: `<!-- verify: <key> -->` placed immediately after the
 number on the same line. The comment holds only a registry key—never a file
 path or shell command—so checking a document never runs arbitrary commands.
 
 ```bash
-python scripts/verify_counts.py docs/tool-usage.md
+python tests/verify_counts.py docs/tool-usage.md
 ```
 
 The registry supports two entry types:
@@ -272,7 +272,7 @@ Worked example (the number and its comment share one line):
 `verify_counts.py` re-measures that file and flags the line above if the line
 count changes.
 
-**What to do.** Keep `scripts/measurements.py` small (around 10 keys or fewer)
+**What to do.** Keep `tests/measurements.py` small (around 10 keys or fewer)
 and each measurement fast. Most numbers in prose do not need a registered check:
 use approximate wording or a dated snapshot unless a number must stay exact as
 the tree changes.

@@ -33,8 +33,8 @@ from tests.test_verify_counts import (
 from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
-GAUGE = ROOT / "tools" / "gauge.py"
-PULSE = ROOT / "tools" / "pulse.py"
+GAUGE = ROOT / "tests" / "gauge.py"
+PULSE = ROOT / "dev" / "tools" / "pulse.py"
 
 
 def _run(*args: str, env=None) -> subprocess.CompletedProcess:
@@ -892,7 +892,7 @@ def test_explicit_artifact_snapshot_runs_producer_into_pulse(tmp_path):
         "Deliberation only.\n", encoding="utf-8")
     bundle = tmp_path / "artifacts.json"
     produced = subprocess.run(
-        [sys.executable, str(ROOT / "tools" / "audit_report.py"),
+        [sys.executable, str(ROOT / "tests" / "audit_report.py"),
          "--pulse-input", "--root", str(root), "--week", "2026-W45",
          "--project-alias", "cairn", "--artifact", "dev/plans/example.md",
          "--artifact", "dev/plans/example.code-review.md",
@@ -1169,7 +1169,7 @@ def test_artifact_producer_does_not_run_git_or_import_target_modules(tmp_path):
     env = os.environ.copy()
     env["PATH"] = str(bin_dir)
     output = subprocess.run(
-        [sys.executable, str(ROOT / "tools" / "audit_report.py"),
+        [sys.executable, str(ROOT / "tests" / "audit_report.py"),
          "--pulse-input", "--root", str(root), "--week", "2026-W45",
          "--project-alias", "cairn", "--artifact", "plan.md"],
         cwd=tmp_path, env=env, capture_output=True, text=True, check=False)
@@ -1188,7 +1188,7 @@ def test_artifact_producer_does_not_run_git_or_import_target_modules(tmp_path):
         labels.append("linked.md")
     for label in labels:
         refused = subprocess.run(
-            [sys.executable, str(ROOT / "tools" / "audit_report.py"),
+            [sys.executable, str(ROOT / "tests" / "audit_report.py"),
              "--pulse-input", "--root", str(root), "--week", "2026-W45",
              "--project-alias", "cairn", "--artifact", label],
             cwd=tmp_path, env=env, capture_output=True, text=True, check=False)

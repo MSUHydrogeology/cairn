@@ -21,7 +21,7 @@ from types import ModuleType
 from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
-QUALITY_GATE = ROOT / "scripts" / "quality_gate.py"
+QUALITY_GATE = ROOT / "tests" / "quality_gate.py"
 TESTING_MODULES = (
     ROOT / "dev" / "modules" / "testing-discipline.md",
     ROOT / "templates" / "modules" / "team-gated" / "testing-discipline.md",

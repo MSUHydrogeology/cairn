@@ -149,7 +149,7 @@ Keep three trust boundaries in mind when reading any generated page:
 
 Adopters do not receive `docs/` when they scaffold or upgrade a project. This guide is read in Cairn's published documentation (`cairn/docs/build-a-board-view.md`, cited at the bottom of `python tools/board.py --help`).
 
-The board tool itself arrived after Cairn 0.3.0, and `--json` arrived after that. In an older install, `tools/board.py` may be absent altogether, or running `python tools/board.py --json` may exit with code `2` and `unrecognized arguments: --json`. Either result means the project has an older Cairn install; follow [`bootstrap/UPGRADE.md`](../bootstrap/UPGRADE.md) for the upgrade path.
+The board tool itself arrived after Cairn 0.3.0, and `--json` arrived after that. In an older install, `tools/board.py` may be absent altogether, or running `python tools/board.py --json` may exit with code `2` and `unrecognized arguments: --json`. Either result means the project has an older Cairn install; follow [`install/UPGRADE.md`](../install/UPGRADE.md) for the upgrade path.
 
 
 ## Worked example: a regenerated HTML board page

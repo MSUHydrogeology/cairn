@@ -711,14 +711,14 @@ def _linked_worktree(project: Path, path: Path) -> Path:
 def _mutated_scaffold_root(tmp_path: Path) -> Path:
     """Copy only the importable engine and mutate the exact gitfile guard."""
     copied = tmp_path / "mutated-cairn"
-    bootstrap = copied / "bootstrap"
-    bootstrap.mkdir(parents=True)
-    shutil.copyfile(ROOT / "bootstrap" / "scaffold.py", bootstrap / "scaffold.py")
-    shutil.copytree(ROOT / "bootstrap" / "_scaffold", bootstrap / "_scaffold")
+    installer = copied / "install"
+    installer.mkdir(parents=True)
+    shutil.copyfile(ROOT / "install" / "scaffold.py", installer / "scaffold.py")
+    shutil.copytree(ROOT / "install" / "_scaffold", installer / "_scaffold")
     helper = copied / "templates" / "skills" / "_lib" / "git_read.py"
     helper.parent.mkdir(parents=True)
     shutil.copyfile(ROOT / "templates" / "skills" / "_lib" / "git_read.py", helper)
-    source = bootstrap / "_scaffold" / "upgrade.py"
+    source = installer / "_scaffold" / "upgrade.py"
     text = source.read_text(encoding="utf-8")
     old = 'os.path.lexists(folder / ".git")'
     changed, count = text.replace(old, 'os.path.isdir(folder / ".git")'), text.count(old)

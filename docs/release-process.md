@@ -62,8 +62,8 @@ git ls-tree -r --name-only <candidate> -- templates
 
 Reconcile that list with the install registries and the candidate's scaffold
 manifest so the reader knows which sources are delivered, including optional
-and module-specific files. Include `docs/agent-team-onboarding.md` and
-`docs/dev-tour.md`, which the installer also ships. Read prose in any format,
+and module-specific files. Include `templates/onboarding/agent-team-onboarding.md` and
+`templates/onboarding/dev-tour.md`, which the installer also ships. Read prose in any format,
 including prose embedded in structured files. Classify each excluded
 non-prose source with a reason. A file extension does not decide whether a
 source is prose.
@@ -72,7 +72,7 @@ Run both scanners from a fresh detached checkout of that candidate, using its
 scanner code and policy inputs:
 
 ```bash
-python scripts/check_cairn.py
+python tests/check_cairn.py
 python scripts/content_scan_runner.py
 ```
 
@@ -119,7 +119,7 @@ automatic release gate. Scanner silence is not proof of safety.
   Record the plans examined and unresolved items with the cut's existing sweep
   evidence; add no separate follow-up ledger. For an advisory, plan-by-plan
   benefit-versus-cost summary, the existing closeout owner can run
-  `python tools/audit_report.py`; it reads archive records, is read-only, and
+  `python tests/audit_report.py`; it reads archive records, is read-only, and
   is not a release gate.
   Treat old pending language as historical when later records supersede it.
   Fix genuinely easy, already-authorized items with applicable checks; bring
@@ -166,7 +166,7 @@ report="$report_dir/pytest.xml"
 test ! -e "$report" && test ! -L "$report" || exit 1
 started_ns=$(python -c 'import time; print(time.time_ns())') || exit 1
 pytest_status=0
-CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0 --junitxml="$report" || pytest_status=$?
+CAIRN_FULL_SUITE=1 python -m pytest tests --quality-gate-shuffle-seed=0 --junitxml="$report" || pytest_status=$?
 compare_status=0
 python scripts/check_release_test_members.py "$report" --started-ns "$started_ns" || compare_status=$?
 test "$pytest_status" -eq 0 || exit "$pytest_status"
@@ -177,13 +177,13 @@ test "$compare_status" -eq 0 || exit "$compare_status"
 After that block succeeds, run the remaining existing gates:
 
 ```bash
-python scripts/quality_gate.py --sub neutrality --sub redundancy
-python scripts/check_cairn.py
+python tests/quality_gate.py --sub neutrality --sub redundancy
+python tests/check_cairn.py
 ```
 
 The comparison requires every file in
-`bootstrap/tests/security_manifest.py`'s `SECURITY_FAMILY` and a successful case
-from `bootstrap/tests/test_security_marker.py`. Verify the reviewed family pin
+`tests/security_manifest.py`'s `SECURITY_FAMILY` and a successful case
+from `tests/test_security_marker.py`. Verify the reviewed family pin
 through that file's `test_the_manifest_still_names_exactly_the_reviewed_set`
 test as part of the selected run. The comparator rejects missing or stale
 reports, malformed or ambiguous identities, missing source files, missing
@@ -194,7 +194,7 @@ including the files the strict run leaves out.
 
 This is file-level presence and reported outcomes only, not every required node,
 command provenance or semantic adequacy. It does not authenticate forged XML.
-The separate `bootstrap/security_check.py` run and all existing safety, security
+The separate `install/security_check.py` run and all existing safety, security
 and release checks remain required at their own triggers. A goodnight smoke
 result does not replace any of them.
 
@@ -205,8 +205,8 @@ under Python 3.13. Give each run a new absolute record path outside its
 checkout:
 
 ```bash
-python bootstrap/security_check.py --record /absolute/path/mac.json
-python bootstrap/security_check.py --record /absolute/path/windows.json
+python install/security_check.py --record /absolute/path/mac.json
+python install/security_check.py --record /absolute/path/windows.json
 ```
 
 Each local run preserves both orders of the shipped-only selection
@@ -221,7 +221,7 @@ The Maintainer joins the two records from a clean checkout at the same final
 commit:
 
 ```bash
-python bootstrap/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json
+python install/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json
 ```
 
 Only the join can print `PASS`. It checks the fixed source-reviewed native-ID
@@ -243,13 +243,13 @@ observed report. This creates no Cairn registry or new test run. Cairn's release
 block above always uses the default security family, not this adopter mode.
 
 Name the interpreter alongside every suite figure — see
-`bootstrap/DEPENDENCY_BUDGET.md` for the canonical one. Security-capability
+`install/DEPENDENCY_BUDGET.md` for the canonical one. Security-capability
 sweeps are run through their own module runners rather than this list; see
-`bootstrap/SAFETY.md` for which surfaces carry which gate.
+`install/SAFETY.md` for which surfaces carry which gate.
 
 **Retired files — a person runs this; nothing else fires it.** `upgrade
 --remove-retired` removes only files on the list `_RETIRED_INSTALLS` in
-`bootstrap/_scaffold/config.py`, so a template deleted without a row there
+`install/_scaffold/config.py`, so a template deleted without a row there
 leaves its file in every project, and nothing warns. Before each cut, run
 `git diff --name-status --no-renames --diff-filter=D <previous-tag> <new-tag> -- templates`.
 Then run the manifest comparison, which the diff cannot do and which also sees
@@ -296,7 +296,7 @@ produces the confidence the cut rests on.
   has already installed Cairn, and what they need to do about it. Then check
   the page against the tree: the repository URL, the profile names and every
   command it shows. Record the commit id the security gate checked, with the
-  gate output (`bootstrap/PROVENANCE.md`).
+  gate output (`install/PROVENANCE.md`).
 * A **signed annotated tag** naming the exact full commit id reported by the
   security gate. That commit must be on the protected branch; then push the
   tag.

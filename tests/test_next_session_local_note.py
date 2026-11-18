@@ -42,7 +42,7 @@ PLANNING = "dev/PLANNING.md"
 
 # Both copies of the script: Cairn's own and the one adopters receive.
 VERIFY_STEMS_TWINS = (
-    ROOT / "scripts" / "verify_stems.py",
+    ROOT / "dev" / "tools" / "verify_stems.py",
     ROOT / "templates" / "modules" / "default-on" / "verify_stems.py",
 )
 
@@ -206,14 +206,14 @@ def test_the_note_path_is_ignored_and_both_prunes_spare_it(
         folder, keep=1, dry_run=True)}
     assert listed == {old_dated}
 
-    kernel = _load("_nsl_session_kernel", ROOT / "tools" / "session.py")
+    kernel = _load("_nsl_session_kernel", ROOT / "dev" / "tools" / "session.py")
     pruned = {p.name for p in kernel._prune_reflections(
         tmp_path, 14, dry_run=True)}
     assert pruned == {old_dated}
 
 
 def test_the_session_kernel_copies_are_identical_and_name_no_retired_file() -> None:
-    kernel = (ROOT / "tools" / "session.py").read_bytes()
+    kernel = (ROOT / "dev" / "tools" / "session.py").read_bytes()
     assert kernel == (ROOT / "templates" / "skills" / "_lib" / "session.py").read_bytes()
     assert b"NEXT_SESSION" not in kernel
 
