@@ -1,7 +1,7 @@
 # Plan: Usable outward report drafts
 
 **Source proposal**: dev/proposals/archive/2026-11-18-terra-outward-reports.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md
