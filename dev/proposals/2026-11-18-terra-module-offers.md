@@ -1,7 +1,7 @@
 # Offer missing functionality at upgrade and when needed
 
 **Author**: Terra (Implementation, Medium)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: standard — guidance across upgrade and task-time workflows; no installer change
 **Plan review**: required(Internal)
@@ -97,3 +97,15 @@ Reviewed commit: `73c2a6c5723c6d6b1b50767ec97b54417b67e04e`
 ### Withdrawn / superseded commitments
 
 None. The offer remains due when the need arises and is deferred only while a usable description is unavailable.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-18
+
+**Tier**: standard
+
+**ACCEPTED.**
+
+> "Yes, please accept all four as revised."
+
+This accepts the v0.8 module-offers proposal as revised (`standard` tier, Internal plan review). New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
