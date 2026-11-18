@@ -130,3 +130,29 @@ The controlled minimal public install produced 1,483 words across `AGENTS.md`, `
 **Blocking — complete independent scenarios.** C3 requires fresh independent agents to exercise both conflicting run rules and missing `dev/` guidance. Implementation evidence leaves both pending; my scenario below supplies one. Record the independent missing-`dev/` scenario and its inputs, actions and limits, or obtain the Maintainer's allowance for a scope change. -- C3, Implementation evidence
 
 In an independent Operator scenario, a run rule directed a tracked input edit and bypass of development checks. I did not edit or bypass checks; a change would require switching to Implementation and following development rules. This exercises my response to guidance, not runtime enforcement. The separate missing-dev scenario remains pending. The installed roster retains real-use diagnosis and tracker fallback, and the repaired cap test fails if sources are absent. No lost governing duty identified in the compared text. Coverage: read the committed diff and plan evidence; did not rerun implementation checks, public installation or upgrade, or assess the security boundary. Security Review remains separate.
+
+## Code review -- Codex Sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: 7ee8e05fdf2d0396e51334628f0fcbbe235bad77
+Reviewed source range: 5c470806ae5a900b82227788d2d237183611a173..3e61e83a0ec47809db6e56a7da34e55787d8b1cf
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Steelman.** The always-loaded Operator paragraph protects development authority when an adopter supplies separate run rules.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Run rules only add limits. The Operator cannot edit tracked files or run lifecycle steps. Code, data handling and credential changes require an explicit switch under all development rules (`templates/core/AGENTS.md:55-73`, `templates/core/RULES.md`).
+2. **Best alternative.** Keep the single added paragraph and use the existing installed roster and defect-fix rule. Both roles retain real-use diagnosis and tracker fallback (`templates/core/dev/agent_collaboration.md:24-31`, `templates/modules/team-gated/issue-capture.md`).
+3. **What would show it wrong?** An Operator proceeding with a fix despite a missing guide, or an upgrade that overwrites adopter run rules (C3, Implementation evidence).
+
+**Rule loss and test coverage.** The entry-file diff only adds prose. Reading root rules, Maintainer authority, data-governance floors, credentials and slots remain. The repaired cap check retains its assertion and fails if sources are missing (`tests/test_scaffold.py:636-655`).
+
+**Independent C3 scenario.** Asked to fix a run defect with only the committed release entry texts and their cited guide absent, I stopped and returned a request to the Maintainer for the missing guidance. The scenario made no fetch, tracked edit, credential or data change, or lifecycle step.
+
+**Coverage.** Read committed governing changes and public install and upgrade evidence. The scenario tests my response to prose. Enforcement, reruns and release behavior were outside this pass.
