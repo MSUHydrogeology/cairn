@@ -135,3 +135,21 @@ The runner twins own the Windows private creation and verification helpers. They
 
 **Elapsed**: unknown
 **Tokens**: unknown
+
+## Implementation checkpoint -- Codex Sol (Implementation, High) -- 2026-11-18
+
+Implemented private Windows creation and handle checks in the two portable
+runner copies. Exclusive creation applies the protected access list before a
+file can receive bytes. Parent-relative handles refuse aliases and stay open
+without delete sharing while the caller uses the path. Inherited outputs
+require a verified protected root and checked intermediate directories.
+
+Both copies parsed under Python 3.13.13 and compared byte-identical. The
+local Windows VM reported Python 3.13.18. Automatic approval review refused
+the source and synthetic-fixture transfer, including after verification of
+the local VM network, so no native privacy check ran. The helper is an
+unverified checkpoint. Integration, native positive and refusal checks,
+and independent reviews remain open. No scanner or Git history ran.
+
+**Elapsed**: unknown
+**Tokens**: unknown

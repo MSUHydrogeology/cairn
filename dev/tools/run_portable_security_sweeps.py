@@ -59,8 +59,9 @@ import sys
 import tempfile
 import stat
 import types
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, Iterator, NamedTuple
 
 
 _HERE = Path(__file__).resolve().parent
@@ -1494,6 +1495,328 @@ class _Canary:
             self._sock.close()
         except OSError:
             pass
+
+
+class _WindowsPrivateAPI:
+    """Create and inspect private local Windows files by held handle."""
+
+    def __init__(self) -> None:
+        import ctypes as C
+        from ctypes import wintypes as W
+
+        if os.name != "nt" or C.sizeof(C.c_void_p) != 8:
+            raise Degraded("Windows private file APIs are unavailable")
+        handle = C.c_void_p
+
+        class UnicodeString(C.Structure):
+            _fields_ = [("length", W.USHORT), ("capacity", W.USHORT),
+                        ("buffer", handle)]
+
+        class ObjectAttributes(C.Structure):
+            _fields_ = [("length", W.ULONG), ("parent", handle),
+                        ("name", C.POINTER(UnicodeString)), ("flags", W.ULONG),
+                        ("descriptor", handle), ("quality_of_service", handle)]
+
+        class IoStatus(C.Structure):
+            _fields_ = [("status", handle), ("information", C.c_size_t)]
+
+        class FileInfo(C.Structure):
+            _fields_ = [("attributes", W.DWORD), ("created", W.FILETIME),
+                        ("accessed", W.FILETIME), ("written", W.FILETIME),
+                        ("volume", W.DWORD), ("size_high", W.DWORD),
+                        ("size_low", W.DWORD), ("links", W.DWORD),
+                        ("id_high", W.DWORD), ("id_low", W.DWORD)]
+
+        class AclSize(C.Structure):
+            _fields_ = [("count", W.DWORD), ("used", W.DWORD), ("free", W.DWORD)]
+
+        if (C.sizeof(UnicodeString), C.sizeof(ObjectAttributes),
+                C.sizeof(IoStatus), C.sizeof(FileInfo)) != (16, 48, 16, 52):
+            raise Degraded("Windows private file ABI is unavailable")
+        self.C, self.W = C, W
+        self.UnicodeString, self.ObjectAttributes = UnicodeString, ObjectAttributes
+        self.IoStatus, self.FileInfo, self.AclSize = IoStatus, FileInfo, AclSize
+        try:
+            self.nt = C.WinDLL("ntdll.dll", winmode=0x800, use_last_error=True)
+            self.kernel = C.WinDLL("kernel32.dll", winmode=0x800, use_last_error=True)
+            self.advapi = C.WinDLL("advapi32.dll", winmode=0x800, use_last_error=True)
+            self._bind()
+        except (AttributeError, OSError) as exc:
+            raise Degraded("Windows private file APIs are unavailable") from exc
+        self.user_sid = self._current_user()
+        self.trusted_sids = {self.user_sid, "S-1-5-18", "S-1-5-32-544"}
+
+    def _bind(self) -> None:
+        C, W = self.C, self.W
+        H, D = C.c_void_p, W.DWORD
+        pointer, dword = C.POINTER(H), C.POINTER(D)
+        bindings = (
+            (self.nt, "NtCreateFile", C.c_int32, [pointer, D, C.POINTER(self.ObjectAttributes),
+             C.POINTER(self.IoStatus), H, D, D, D, D, H, D]),
+            (self.kernel, "CloseHandle", W.BOOL, [H]),
+            (self.kernel, "GetCurrentThread", H, []),
+            (self.kernel, "GetCurrentProcess", H, []),
+            (self.kernel, "GetFileType", D, [H]),
+            (self.kernel, "GetFileInformationByHandle", W.BOOL, [H, C.POINTER(self.FileInfo)]),
+            (self.kernel, "GetFinalPathNameByHandleW", D, [H, W.LPWSTR, D, D]),
+            (self.kernel, "GetDriveTypeW", W.UINT, [W.LPCWSTR]),
+            (self.kernel, "QueryDosDeviceW", D, [W.LPCWSTR, W.LPWSTR, D]),
+            (self.kernel, "GetVolumeInformationByHandleW", W.BOOL,
+             [H, W.LPWSTR, D, dword, dword, dword, W.LPWSTR, D]),
+            (self.kernel, "LocalFree", H, [H]),
+            (self.advapi, "OpenThreadToken", W.BOOL, [H, D, W.BOOL, pointer]),
+            (self.advapi, "OpenProcessToken", W.BOOL, [H, D, pointer]),
+            (self.advapi, "GetTokenInformation", W.BOOL, [H, C.c_int, H, D, dword]),
+            (self.advapi, "ConvertSidToStringSidW", W.BOOL, [H, C.POINTER(W.LPWSTR)]),
+            (self.advapi, "ConvertStringSecurityDescriptorToSecurityDescriptorW",
+             W.BOOL, [W.LPCWSTR, D, pointer, dword]),
+            (self.advapi, "GetSecurityInfo", D, [H, C.c_int, D, pointer, pointer,
+                                                pointer, pointer, pointer]),
+            (self.advapi, "GetSecurityDescriptorControl", W.BOOL,
+             [H, C.POINTER(W.WORD), dword]),
+            (self.advapi, "GetAclInformation", W.BOOL, [H, H, D, C.c_int]),
+            (self.advapi, "GetAce", W.BOOL, [H, D, pointer]),
+        )
+        for library, name, result, arguments in bindings:
+            function = getattr(library, name)
+            function.restype = result
+            function.argtypes = arguments
+
+    def _sid_text(self, sid: int) -> str:
+        text = self.W.LPWSTR()
+        if not sid or not self.advapi.ConvertSidToStringSidW(sid, self.C.byref(text)):
+            raise Degraded("a Windows private file SID is unavailable")
+        try:
+            return text.value
+        finally:
+            self.kernel.LocalFree(self.C.cast(text, self.C.c_void_p))
+
+    def _current_user(self) -> str:
+        C, W = self.C, self.W
+        token = C.c_void_p()
+        if self.advapi.OpenThreadToken(self.kernel.GetCurrentThread(), 0x8, True,
+                                       C.byref(token)):
+            self.kernel.CloseHandle(token)
+            raise Degraded("Windows private files refuse impersonation")
+        if C.get_last_error() != 1008 or not self.advapi.OpenProcessToken(
+                self.kernel.GetCurrentProcess(), 0x8, C.byref(token)):
+            raise Degraded("the Windows process token is unavailable")
+        try:
+            size = W.DWORD()
+            if (self.advapi.GetTokenInformation(token, 1, None, 0, C.byref(size))
+                    or C.get_last_error() != 122 or not 16 <= size.value <= 4096):
+                raise Degraded("the Windows process user is unavailable")
+            buf = C.create_string_buffer(size.value)
+            if not self.advapi.GetTokenInformation(token, 1, buf, size, C.byref(size)):
+                raise Degraded("the Windows process user is unavailable")
+            return self._sid_text(C.c_void_p.from_buffer(buf).value)
+        finally:
+            self.kernel.CloseHandle(token)
+
+    @contextmanager
+    def descriptor(self, directory: bool) -> Iterator[int]:
+        flags = "OICI" if directory else ""
+        user = self.user_sid
+        sddl = (f"O:{user}D:P(A;{flags};FA;;;{user})"
+                f"(A;{flags};FA;;;SY)(A;{flags};FA;;;BA)")
+        descriptor = self.C.c_void_p()
+        if not self.advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW(
+                sddl, 1, self.C.byref(descriptor), None):
+            raise Degraded("the Windows private DACL could not be created")
+        try:
+            yield descriptor.value
+        finally:
+            self.kernel.LocalFree(descriptor)
+
+    def require_local_drive(self, root: str) -> None:
+        mapping = self.C.create_unicode_buffer(1024)
+        if (self.kernel.GetDriveTypeW(root) != 3
+                or not self.kernel.QueryDosDeviceW(root[:2], mapping, len(mapping))
+                or not re.fullmatch(r"\\Device\\HarddiskVolume[0-9]+", mapping.value,
+                                    flags=re.IGNORECASE)):
+            raise Degraded("Windows private files require a local disk without drive aliases")
+
+    @contextmanager
+    def open(self, name: str, path: str, parent: int | None, *, directory: bool,
+             descriptor: int | None = None) -> Iterator[int]:
+        C = self.C
+        text = C.create_unicode_buffer(name)
+        length = len(name.encode("utf-16-le"))
+        native_name = self.UnicodeString(length, length + 2, C.cast(text, C.c_void_p))
+        attrs = self.ObjectAttributes(C.sizeof(self.ObjectAttributes), parent,
+                                      C.pointer(native_name), 0x40, descriptor, None)
+        ios, handle = self.IoStatus(), C.c_void_p()
+        # Read attributes, READ_CONTROL and SYNCHRONIZE. Files also get read
+        # data, and exclusively created files get write data. Omit delete sharing.
+        access = 0x00120080
+        if not directory:
+            access |= 0x3 if descriptor else 0x1
+        create = descriptor is not None
+        # Open the reparse point itself, synchronously. A directory create
+        # cannot combine FILE_OPEN_NO_RECALL with FILE_DIRECTORY_FILE.
+        options = 0x00200020 | (0x1 if directory else 0x40)
+        if not (directory and create):
+            options |= 0x00400000
+        status = self.nt.NtCreateFile(C.byref(handle), access, C.byref(attrs),
+                                      C.byref(ios), None, 0, 3, 2 if create else 1,
+                                      options, None, 0)
+        if status or not handle.value:
+            raise Degraded("a Windows private path could not be opened")
+        try:
+            self.verify_path(handle, path, directory)
+            yield handle.value
+        finally:
+            self.kernel.CloseHandle(handle)
+
+    def verify_path(self, handle: int, path: str, directory: bool) -> None:
+        C = self.C
+        info = self.FileInfo()
+        invalid_attrs = 0x400 | 0x40 | 0x1000 | 0x40000 | 0x400000
+        if (self.kernel.GetFileType(handle) != 1
+                or not self.kernel.GetFileInformationByHandle(handle, C.byref(info))
+                or info.attributes & invalid_attrs
+                or bool(info.attributes & 0x10) != directory
+                or (not directory and info.links != 1)):
+            raise Degraded("a Windows private path is linked or has an unexpected type")
+        final = C.create_unicode_buffer(32768)
+        length = self.kernel.GetFinalPathNameByHandleW(handle, final, len(final), 0)
+        final_path = final.value
+        if (not 0 < length < len(final) or not final_path.startswith("\\\\?\\")
+                or os.path.normcase(final_path[4:]) != os.path.normcase(path)):
+            raise Degraded("a Windows private path resolved to an unexpected name")
+
+    def require_ntfs(self, handle: int) -> None:
+        fs = self.C.create_unicode_buffer(32)
+        if (not self.kernel.GetVolumeInformationByHandleW(
+                handle, None, 0, None, None, None, fs, len(fs)) or fs.value != "NTFS"):
+            raise Degraded("Windows private files require NTFS")
+
+    def verify_acl(self, handle: int, *, directory: bool, protected: bool) -> None:
+        C, W = self.C, self.W
+        owner, dacl, descriptor = C.c_void_p(), C.c_void_p(), C.c_void_p()
+        result = self.advapi.GetSecurityInfo(handle, 1, 0x5, C.byref(owner), None,
+                                             C.byref(dacl), None, C.byref(descriptor))
+        try:
+            if result or not dacl.value or not descriptor.value:
+                raise Degraded("the Windows private DACL is unavailable")
+            owner_sid = self._sid_text(owner.value)
+            owners = {self.user_sid} if protected else self.trusted_sids
+            control, revision = W.WORD(), W.DWORD()
+            if (owner_sid not in owners or not self.advapi.GetSecurityDescriptorControl(
+                    descriptor, C.byref(control), C.byref(revision))
+                    or (protected and not control.value & 0x1000)):
+                raise Degraded("Windows private file ownership or inheritance is unsafe")
+            size = self.AclSize()
+            if (not self.advapi.GetAclInformation(dacl, C.byref(size), C.sizeof(size), 2)
+                    or not 8 <= size.used <= 65535 or not 1 <= size.count <= 1024):
+                raise Degraded("the Windows private DACL has an invalid size")
+            self._verify_aces(dacl, size, directory)
+        finally:
+            if descriptor.value:
+                self.kernel.LocalFree(descriptor)
+
+    def _verify_aces(self, dacl: Any, size: Any, directory: bool) -> None:
+        C = self.C
+        caller_access = 0
+        for index in range(size.count):
+            entry = C.c_void_p()
+            if not self.advapi.GetAce(dacl, index, C.byref(entry)):
+                raise Degraded("a Windows private access entry is unavailable")
+            if not entry.value or not dacl.value + 8 <= entry.value <= dacl.value + size.used - 16:
+                raise Degraded("a Windows private access entry has an invalid size")
+            kind, flags, ace_size = self._ace_header(entry)
+            if (kind != 0 or flags & ~0x1f or ace_size < 16 or ace_size % 4
+                    or entry.value + ace_size > dacl.value + size.used):
+                raise Degraded("a Windows private access entry is not a simple allow entry")
+            sid_size = 8 + 4 * C.c_uint8.from_address(entry.value + 9).value
+            if sid_size > ace_size - 8:
+                raise Degraded("a Windows private access entry has an invalid SID")
+            sid = self._sid_text(entry.value + 8)
+            if sid not in self.trusted_sids:
+                raise Degraded("a Windows private access entry grants access to a foreign SID")
+            inheritable = flags & 7 == 3  # Both inheritance bits, without NO_PROPAGATE.
+            if sid == self.user_sid and not flags & 0x8 and (not directory or inheritable):
+                caller_access |= C.c_uint32.from_address(entry.value + 4).value
+        if caller_access & 0x001f01ff != 0x001f01ff:
+            raise Degraded("the Windows caller lacks full private access")
+
+    def _ace_header(self, entry: Any) -> tuple[int, int, int]:
+        raw = self.C.string_at(entry, 4)
+        return raw[0], raw[1], int.from_bytes(raw[2:4], "little")
+
+
+@contextmanager
+def _win_private_ancestors(
+    path: str | Path, *, target: Path, protected_root: Path | None = None,
+) -> Iterator[tuple[_WindowsPrivateAPI, str, int]]:
+    """Hold a local NTFS parent chain without delete sharing until use ends."""
+    api = _WindowsPrivateAPI()
+    value = os.fspath(path)
+    drive, rest = os.path.splitdrive(value)
+    if (not re.fullmatch(r"[A-Za-z]:", drive) or not rest.startswith("\\")
+            or value != os.path.normpath(value) or "\x00" in value):
+        raise Degraded("a Windows private path must use canonical local spelling")
+    try:
+        chain = _GIT_READ._component_chain(value)
+        exclusions = _GIT_READ.worktree_exclusions(str(target))
+        _GIT_READ._assert_off_target(value, value, exclusions)
+    except _GIT_READ.GitReadError as exc:
+        raise Degraded("the Windows private path failed the off-target check") from exc
+    if len(chain) < 2 or any(
+            re.search(r'[<>:"/\\|?*]|[ .]$', os.path.basename(piece))
+            for piece in chain[1:]):
+        raise Degraded("a Windows private path component is invalid")
+    root_index = None
+    if protected_root is not None:
+        ancestors = [os.path.normcase(item) for item in chain[1:-1]]
+        root = os.path.normcase(os.fspath(protected_root))
+        if root not in ancestors:
+            raise Degraded("the Windows path is outside its protected workspace")
+        root_index = ancestors.index(root)
+    api.require_local_drive(chain[0])
+    with ExitStack() as held:
+        parent = held.enter_context(api.open("\\??\\" + chain[0], chain[0], None,
+                                             directory=True))
+        api.require_ntfs(parent)
+        for index, ancestor in enumerate(chain[1:-1]):
+            parent = held.enter_context(api.open(os.path.basename(ancestor), ancestor,
+                                                 parent, directory=True))
+            if root_index is not None and index >= root_index:
+                api.verify_acl(parent, directory=True, protected=index == root_index)
+        yield api, value, parent
+
+
+def _win_private_verify(api: _WindowsPrivateAPI, handle: int, path: str, *,
+                        directory: bool, protected: bool) -> None:
+    """Verify the object opened inside the held path, without following aliases."""
+    api.verify_path(handle, path, directory)
+    api.verify_acl(handle, directory=directory, protected=protected)
+
+
+@contextmanager
+def _win_private_create(path: str | Path, *, target: Path,
+                        directory: bool) -> Iterator[int]:
+    """Exclusively create a protected object and hold it through its first use."""
+    with _win_private_ancestors(path, target=target) as (api, value, parent):
+        with api.descriptor(directory) as descriptor:
+            with api.open(os.path.basename(value), value, parent, directory=directory,
+                          descriptor=descriptor) as handle:
+                _win_private_verify(api, handle, value, directory=directory, protected=True)
+                yield handle
+
+
+@contextmanager
+def _win_private_open(
+    path: str | Path, *, target: Path, directory: bool,
+    protected_root: Path | None = None,
+) -> Iterator[int]:
+    """Hold a verified private input or an output inherited under a private root."""
+    with _win_private_ancestors(path, target=target, protected_root=protected_root) as (
+            api, value, parent):
+        with api.open(os.path.basename(value), value, parent, directory=directory) as handle:
+            _win_private_verify(api, handle, value, directory=directory,
+                                protected=protected_root is None)
+            yield handle
 
 
 _INVOCATION_LOG_MAX_BYTES = 1 << 20
