@@ -1,7 +1,7 @@
 # Proposal: let a project leave Cairn out of a release
 
 **Author**: Codex
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -138,3 +138,15 @@ Reviewed commit: faa0a07528352101c97c16a9ac4a8f82affc8898
 The proposed narrow rule-pointer exception is replaced by the accepted broader `AGENTS.md` pointer exception, preserving existing duties.
 
 Elapsed: unknown. Tokens: unknown.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-17
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Accept both as revised"
+
+This accepts the v0.8 proposal as revised (`heavy` tier), to be planned and implemented after the repository layout's settled mapping lands. New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
