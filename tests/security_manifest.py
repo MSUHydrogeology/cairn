@@ -525,8 +525,6 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'tests/integration/test_gauge.py::test_gauge_snapshot_date_refuses_target_local_path_git_route'),
     ('posix', 'tests/test_check_cairn_content.py::TestContentComposition::test_default_selfcheck_uses_verified_index_reads_with_literal_decoy'),
     ('posix', 'tests/test_check_cairn_content.py::TestContentComposition::test_selfcheck_cli_keeps_broken_file_with_decoy_and_catches_literal_mutant'),
-    ('posix', 'tests/test_doc_drift_tools.py::TestLinkCheck::test_default_discovery_uses_all_tracked_markdown_with_literal_decoy'),
-    ('posix', 'tests/test_doc_drift_tools.py::TestSnippetSync::test_default_discovery_uses_all_tracked_markdown_with_literal_decoy'),
     ('posix', 'tests/test_doc_drift_tools.py::test_each_markdown_owner_refuses_hostile_git_and_catches_path_route_mutant[dev/tools/link_check.py]'),
     ('posix', 'tests/test_doc_drift_tools.py::test_each_markdown_owner_refuses_hostile_git_and_catches_path_route_mutant[dev/tools/sync_doc_snippets.py]'),
     ('posix', 'tests/test_doc_drift_tools.py::test_each_markdown_owner_refuses_hostile_git_and_catches_path_route_mutant[templates/modules/team-gated/link_check.py]'),
@@ -652,7 +650,7 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'tests/test_upgrade_removes_retired_files.py::test_post_unlink_stat_denial_does_not_claim_absence[folder handles]'),
 )
 
-NATIVE_ONLY_POLICY_ID = "sha256:1089b44337ae08905517169a51658ee51c23bca7043530fa39fc717e0fe9408b"
+NATIVE_ONLY_POLICY_ID = "sha256:8ddfdfa0bca851145883b292a43b9ba65f69d2d92c8754dac56a55c9db0ed50a"
 
 
 def validated_native_only_nodes() -> dict[str, frozenset[str]]:
@@ -685,6 +683,6 @@ def validated_native_only_nodes() -> dict[str, frozenset[str]]:
     identity = "sha256:" + hashlib.sha256(canonical).hexdigest()
     if identity != NATIVE_ONLY_POLICY_ID:
         raise ValueError("native-only policy identity mismatch")
-    if len(grouped["nt"]) != 63 or len(grouped["posix"]) != 361:
+    if len(grouped["nt"]) != 63 or len(grouped["posix"]) != 359:
         raise ValueError("native-only policy member count mismatch")
     return {host: frozenset(nodeids) for host, nodeids in grouped.items()}
