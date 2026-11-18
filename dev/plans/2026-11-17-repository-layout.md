@@ -567,3 +567,27 @@ Always-loaded words: Cairn 1,483 (+14), shipped kernel 1,392 (+29). Installed
 hash records remain 70 plus four living-state exclusions. Revisit if the
 catalog or guard creates repeated manual work. Aggregate elapsed and tokens:
 unknown.
+
+## Code review -- Terra -- 2026-11-18
+
+Reviewed commit: 9355e4453fd55b6e3d17f0202f615a24c3c3df3e
+
+**Tier**: Internal
+**Verdict**: ACCEPT
+**Findings**: none
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the accepted layout and preserved local work are supported by the real self-upgrade, contained install/upgrade and unsigned transition evidence; migration tests cover interruptions, changed inputs and reconciliation through the scaffold entry -- Implementation verification above; `tests/test_upgrade_layout_migration.py`.
+2. **Best alternative.** Retain the existing upgrade and historical source machinery rather than a parallel installer: the catalog separates source moves from adopter authority and the transaction reuses upgrade staging; I found no simpler alternative delivering all accepted outcomes -- `install/_scaffold/layout_catalog.py`, `install/_scaffold/upgrade.py`.
+3. **What would show it wrong?** A modified file lost on retry, a historical revision read from today's path, or a substituted candidate accepted would falsify the promise. The public migration tests and recorded unsigned transition challenge these cases; a signed cut on the exact candidate remains a forward test, not a passed result -- `tests/test_upgrade_layout_migration.py`, Implementation verification above.
+
+**Rules and audience**: The reviewed governing changes route commands to their new homes and retain the wrapper fallback and agent duties in installed instructions; no weakening found in the inspected functional-prose changes. The unavailable wrapper-free desktop trial is expressly held, not assumed passed -- `AGENTS.md`, `templates/core/AGENTS.md`, C3 above.
+
+**Tests and cost**: No test files were deleted in the rename-aware range. The new migration tests exercise public outcomes, including refusal and retry, rather than pinning private wording; the layout guard preserves the set-wide promise. Their continuing cost is justified by preserving adopter work -- `tests/test_upgrade_layout_migration.py`, `tests/test_scaffold_substrate.py`.
+
+**Bounding**: ACCEPTED after challenging the migration retry and historical-source promises against those tests and the recorded results. No implementation checks were rerun; this pass did not independently certify every moved reader, the signed cut, native final-tree certification or inherited HOLDs. Separate Security Review remains owed.
+
+**Waiting-line check**: The reached plan-review authorization and correction disposition waits appear in plan history; the re-anchor is a separate board wait. No missing reached fence or deviation wait found -- `git log -p 21923511..9355e445 -- dev/plans/2026-11-17-repository-layout.md`, `dev/PLANNING.md`.
+
+Elapsed: unknown; tokens: unknown.
