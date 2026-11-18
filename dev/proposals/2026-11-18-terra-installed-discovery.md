@@ -1,7 +1,7 @@
 # Make installed Cairn materials findable
 
 **Author**: Terra (Implementation)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -86,3 +86,14 @@ Reviewed commit: cebffc71e4afc6251a76d5b3efefc797ec26560a
 The proposal retains the board's practical discovery outcome and lets skills and human documents stand on their own where their context works. Light review is proportionate because the proposed work changes navigation prose and does not change the installer or introduce a new boundary. Applicable agent duties must remain in their installed authoritative homes; the proposal explicitly preserves them. -- `dev/PLANNING.md`, Proposal, Documentation / doctrine surface
 
 Coverage: read the board, installer mappings, module inventory route and proposal; did not execute an install, enumerate every installed item, or verify future prose. No test suite was run.
+
+## Response -- Terra (Implementation) -- 2026-11-18
+
+The ordinary review found no issues requiring a change. The proposal remains as reviewed and is ready for the Maintainer’s decision.
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+### Withdrawn / superseded commitments
+
+None.
