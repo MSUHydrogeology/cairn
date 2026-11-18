@@ -123,3 +123,19 @@ report was filed. These are demonstrations, not a guarantee that a real report
 contains no private material. Claim, link, snippet, neutrality and Cairn prose
 checks passed; no full suite or wording test ran. Elapsed: unknown; tokens:
 unknown.
+
+## Code review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: 2ff8c7b6a48db98ec1365bc3a0772a102c7a617c
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the installed routes use one protocol, sanitize dependency evidence before drafting and require approval of each actual report and destination; the Maintainer files Cairn PRs by hand. -- `templates/core/dev/upstream/README.md`, `templates/core/dev/upstream/foldback.md`
+2. **Best alternative.** Existing dependency and forge forms point to the shared protocol, avoiding a second reporting service or parallel protocol. -- `templates/core/dev/upstream/_template.md`, `.github/ISSUE_TEMPLATE/foldback.md`, `.github/PULL_REQUEST_TEMPLATE/foldback.md`
+3. **What would show it wrong?** A public upgrade missing the installed template, or a dependency draft containing the synthetic secret before approval, would falsify delivery. -- C1–C2, Implementation evidence
+
+The installed guide names practical dependency-template locations and fallback, retains separate drafts and approvals, and checks and rereads bodies, attachments and the full PR diff. The recorded public install, upgrade, collision and mapping-removal checks exercise delivery; the synthetic walkthrough covers both draft routes. No rule loss found in the compared guidance. Coverage: read the committed changes and evidence; did not repeat tests or scenarios, file a report, or assess the security boundary. Security Review remains separate.
