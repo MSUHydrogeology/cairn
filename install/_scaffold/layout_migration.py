@@ -205,7 +205,9 @@ def _flushed_temp(target: Path, path: Path, raw: bytes, mode: int) -> Path:
     _folders(target, path.parent)
     tmp = _stage_exclusive(path, raw, target)
     try:
-        flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+        # Windows needs a writable handle to set file attributes and flush it.
+        access = os.O_RDWR if os.name == "nt" else os.O_RDONLY
+        flags = access | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
         fd = os.open(tmp, flags)
         try:
             if hasattr(os, "fchmod"):
