@@ -873,6 +873,17 @@ def test_installed_measurement_commands(tmp_path: Path):
     registry.unlink()
     registry.write_text("{")
     assert run(verifier, document).returncode == 1
+    registry.unlink()
+    registry.mkdir()
+    assert run(verifier, document).returncode == 1
+    registry.rmdir()
+    registry.write_text("{}")
+    registry.chmod(0)
+    try:
+        if not os.access(registry, os.R_OK):
+            assert run(verifier, document).returncode == 1
+    finally:
+        registry.chmod(0o600)
     report = run(token, "--json")
     assert report.returncode == 0 and "estimate" in json.loads(report.stdout)["estimator"]
     assert run(token, project / "AGENTS.md", "--cap", "0").returncode == 0
@@ -913,6 +924,8 @@ def test_installed_measurement_security_and_history(tmp_path: Path):
     assert check(invariant("count_files", "folder")).returncode == 0
     (folder / "escape").symlink_to(tmp_path / "outside")
     assert check(invariant("count_files", "folder")).returncode == 1
+    (project / "outside-link").symlink_to(tmp_path / "outside")
+    assert check(invariant("count_lines", "outside-link")).returncode == 1
     assert check(invariant("count_lines", "x", root="../absent")).returncode == 1
     assert check(invariant("git_commits_in_range", "HEAD~1..HEAD")).returncode == 0
     (project / "missing-left..missing-right").write_text("x")

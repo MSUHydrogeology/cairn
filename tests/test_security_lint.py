@@ -240,7 +240,7 @@ def test_every_manifest_verbatim_py_is_scanned_by_some_path() -> None:
     assert shipped, "expected at least one verbatim .py reference script"
     missing = shipped - targets
     assert not missing, f"shipped scripts not scanned: {sorted(missing)}"
-    for dev in ("bootstrap/scaffold.py", "scripts/check_cairn.py",
+    for dev in ("install/scaffold.py", "tests/check_cairn.py",
                 # content_scan moved to the content-security module (single
                 # source); it is now covered via the verbatim derivation.
                 "templates/modules/team-gated/content_scan.py"):
