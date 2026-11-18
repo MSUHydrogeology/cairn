@@ -1,7 +1,7 @@
 # Make outward report drafts usable
 
 **Author**: Terra (Implementation, Medium)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — a shipped file changes the install mapping
 **Plan review**: required(Internal + Internal Security Review)
@@ -118,3 +118,15 @@ Coverage: committed workflow, mappings and named test paths. No installer, forge
 ### Withdrawn / superseded commitments
 
 None; the proposal clarifies the requested issue change and retains the existing PR control.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-18
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Yes, please accept all four as revised."
+
+This accepts the v0.8 outward-reports proposal as revised (`heavy` tier), shipping `dev/upstream/foldback.md`, retaining full export-safety checks and Maintainer PR submission, and permitting agent filing of individually approved Cairn issues.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
