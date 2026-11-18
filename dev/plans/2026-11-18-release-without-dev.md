@@ -207,3 +207,11 @@ Reviewed range: dd74d132..1b9adfe3
 - The new native Windows drive control uses an unmatched selector, so file opening never reaches the component guard. Test the nested drive component in the scope filename and require its refusal.
 
 **Coverage.** Scoped to newly revised code and controls. No rules or tests removed. No suite replay or native Windows run. The stage-aware index implementation and conflicted-guide control showed no new defect on inspection.
+
+## Response -- Terra (Implementation) -- 2026-11-18
+
+**Disposition**: revising-code
+**Elapsed**: unknown
+**Tokens**: unknown
+
+Accepted the second Security pass. The next correction checks a leaf's no-follow type before opening and matches the descriptor identity, reports unavailable helper binding in equals-form as incomplete, and directs the native Windows drive-path control to the actual guard. The installed-command and ancestor-replacement checks passed locally under Python 3.13.13. Native Windows execution remains required; transfer of the committed snapshot to the configured VM was rejected by automatic approval review. No third Security pass is requested.
