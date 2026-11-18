@@ -1,7 +1,7 @@
 # Plan: Ship measurement tools
 
 **Source proposal**: `dev/proposals/archive/2026-11-18-terra-ship-measurement-tools.md`
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: `dev/rules/conventions.md`, `dev/rules/working-agreements.md`, `dev/rules/protected-surfaces.md`
