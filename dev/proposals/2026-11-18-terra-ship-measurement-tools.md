@@ -1,7 +1,7 @@
 # Ship the existing measurement tools to adopters
 
 **Author**: Terra (Implementation)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -185,3 +185,15 @@ This resolves how the reviewed registry reaches the existing operations. I read 
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-18
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Yes, please accept all four as revised."
+
+This accepts the v0.8 measurement-tools proposal as revised (`heavy` tier), shipping `token_budget.py`, `verify_counts.py`, `measurements.py`, and the empty mergeable `dev/.cairn/measurements.json` data registry. Adopters review definition edits in Git; zero new Cairn recurring human operations.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
