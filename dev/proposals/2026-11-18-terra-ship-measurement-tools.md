@@ -90,3 +90,26 @@ Reviewed commit: 1122369eabd6a40e9831ac16fec2753270657672
 The proposal accounts for the paired checker and support, including the eagerly verified Git helper; its plan must resolve their installed paths and ownership. The current support derives its root from its present location, so copying it into `dev/tools/` unchanged would not suffice. The proposed fresh-install and upgrade checks exercise that risk. The high-assurance path and separate Security Review are appropriate for adopter-executed code and the changed install contract. -- `tests/measurements.py`, `install/_scaffold/config.py`
 
 The guide paragraphs route use to the installed modules and preserve the key-only annotation duty; no existing rule is proposed for removal. Coverage: read the board, installer mappings, tools and proposed checks; did not execute the tools or upgrades, determine the final registry design, or assess the security boundary. No test suite was run.
+
+## Review -- Sol (Security Review, High) -- 2026-11-18
+
+```text
+Reviewed commit: 73c2a6c5723c6d6b1b50767ec97b54417b67e04e
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Ship both tools once the installed defaults and upgrade boundary are explicit. The mapping and adopter-executed Python warrant the heavy lane. `install/_scaffold/config.py:1044-1058`, `dev/rules/protected-surfaces.md`.
+2. **Best alternative.** Reuse the existing core-owned Git helper and keep mutable definitions separate from integrity-checked measurement code. `install/_scaffold/config.py:908-917`, `install/_scaffold/lockfile.py:175-200`.
+3. **What would show it wrong?** A public install and upgrade that loses a local count, accepts drift or an escaping measurement target, or executes a changed Git helper falsifies delivery. `tests/test_upgrade_module_additions.py:241-273`, `tests/test_verify_counts.py:537-579`, `tests/test_verify_counts.py:649-660`, `tests/test_verify_counts.py:814-823`.
+
+- **Blocking — define the registry boundary.** The checker executes its sibling registry on import. Its support derives the root from its current location and can import Cairn's own installer. Specify the adopter root, the existing helper's canonical path, and the supported operations without Cairn's installer. Separate mutable definitions from shipped executable support. Say whether definitions are parsed data or explicitly trusted project code, who reviews changes, and which files remain integrity-checked. Verify integrity still accepts registry customization and rejects changed shipped support after upgrade. `tests/verify_counts.py:59-79`, `tests/measurements.py:49-61`, `tests/measurements.py:271-302`.
+- **Blocking — define honest defaults.** The estimator automatically imports optional third-party code. Use a labelled standard-library estimate in the installed command. The checker exits successfully on zero matches. Make the empty seed and zero verified claims explicit in the command and guide, while preserving unknown-key failure and distinct visible skips. Exercise these through the installed commands. `tests/token_budget.py:52-61`, `tests/verify_counts.py:191-246`, `RULES.md`.
+
+Coverage: committed source and named test paths, with no implementation, installer, command, suite or platform execution.
