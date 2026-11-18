@@ -4716,7 +4716,10 @@ def test_numeric_values_are_exact_bounded_integers(tool, fixture, bad):
 @pytest.mark.parametrize("bad", [b'{"type":"assistant","type":"user"}\n',
                                  b'{"x":NaN}\n', b'{"x":Infinity}\n',
                                  b'{}', b'\xff\n', b'[]\n',
-                                 b' ' * (meter.MAX_LINE + 1) + b'\n'])
+                                 b' ' * (meter.MAX_LINE + 1) + b'\n'],
+                         ids=["duplicate-key", "nan", "infinity",
+                              "partial-no-newline", "invalid-utf8",
+                              "non-object", "oversized-line"])
 def test_invalid_json_and_partial_or_oversized_lines_are_unknown(bad):
     result = meter.read_records("codex", [bad])
     assert not result["events"]
@@ -4835,7 +4838,7 @@ def test_config_rejects_unknown_policy_wrong_types_and_bad_bindings(mutate):
 @pytest.mark.parametrize("raw", [
     b'{"version":1,"version":1}', b'{"version":NaN}', b'{"version":Infinity}',
     b"\xff", b" " * (meter.MAX_CONFIG_BYTES + 1),
-])
+], ids=["duplicate-key", "nan", "infinity", "invalid-utf8", "oversized-config"])
 def test_config_rejects_duplicate_keys_nonfinite_invalid_utf8_and_oversize(raw):
     with pytest.raises(meter.Unavailable):
         meter.validate_config_bytes(raw)
