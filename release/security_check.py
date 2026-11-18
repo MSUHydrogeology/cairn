@@ -238,6 +238,10 @@ ALLOWLIST: dict[tuple[str, str], str] = {
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from the fixed source/tools layout after the literal "
         "`_GIT_READ_SHA256` pin matches; target and CWD data do not select code.",
+    ("tests/test_tiers.py", "B102"):
+        "`_load_verified_git_read` executes only bounded, revalidated helper "
+        "bytes from the fixed repository tool directory after the literal "
+        "`_GIT_READ_SHA256` pin matches; selected paths cannot supply code.",
     ("tests/measurements.py", "B102"):
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from the fixed source/tools layout after the literal "

@@ -24,6 +24,9 @@ work around it. Standard library only; it reads files and writes nothing.
 """
 from __future__ import annotations
 
+# This command lives beside the tests; its public functions are not test cases.
+__test__ = False
+
 import argparse
 import fnmatch
 import hashlib

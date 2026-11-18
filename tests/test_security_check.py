@@ -1271,11 +1271,10 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
     init_bytes = package_init.read_bytes() if package_init.is_file() else None
     closure_paths = security_check._CEREMONY_CLOSURE_PY
     closure = {rel: (root / rel).read_bytes() for rel in closure_paths}
-    tools = {name: (test_root / name).read_bytes() for name in (
-        "check_cairn.py", "measurements.py", "verify_counts.py",
-        "quality_gate.py", "quality_gate_unused_def_whitelist.py",
-        "test_tiers.py", "test_tiers.json",
-    )}
+    tools = {path.name: path.read_bytes() for path in test_root.glob("*.py")
+             if not path.name.startswith(("test_", "_", "conftest"))}
+    for name in ("test_tiers.py", "test_tiers.json"):
+        tools[name] = (test_root / name).read_bytes()
 
     posix_id = "tests/test_security_fixture.py::test_native_posix"
     windows_id = "tests/test_security_fixture.py::test_native_windows"
@@ -1340,7 +1339,10 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
     # fixture. Keep one simple tracked page so check_cairn exercises its real
     # tracked-Markdown path without pointing into the reduced test tree.
     for path in root.rglob("*.md"):
-        path.unlink()
+        if path.is_relative_to(root / "templates"):
+            path.write_text("Fixture template.\n", encoding="utf-8")
+        else:
+            path.unlink()
     scanner_config = root / "dev" / ".cairn" / "scanner-check-allow.json"
     if scanner_config.is_file():
         scanner_config.write_text(
