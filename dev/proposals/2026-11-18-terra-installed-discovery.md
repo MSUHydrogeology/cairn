@@ -1,7 +1,7 @@
 # Make installed Cairn materials findable
 
 **Author**: Terra (Implementation)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -66,3 +66,23 @@ Readers still cannot find an installed item when they need it, or navigation add
 ## Assurance path
 
 **Assurance path**: standard. The work changes prose navigation only; installer structure and executable behavior are outside scope. Light review is proportionate and needs no plan.
+
+## Review -- Terra (Reviewer) -- 2026-11-18
+
+Reviewed commit: cebffc71e4afc6251a76d5b3efefc797ec26560a
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: tracing the current installed roster serves readers after the layout change without adding a permanent wording gate; selection-dependent mappings are the right starting point. -- `install/_scaffold/config.py`
+2. **Best alternative.** Directory browsing costs no navigation maintenance but can leave useful material undiscovered; existing selected-module rows and seeded tasks reduce the need for duplicate pointers. -- `templates/core/dev/modules/README.md`, `tests/test_onboarding_seed_roster.py`
+3. **What would show it wrong.** A fresh installed selection containing an item with no usable route or justified discovery context would falsify completion; trace the inventory and sample routes as proposed. -- Proposal, Evidence / verification plan
+
+The proposal retains the board's practical discovery outcome and lets skills and human documents stand on their own where their context works. Light review is proportionate because the proposed work changes navigation prose and does not change the installer or introduce a new boundary. Applicable agent duties must remain in their installed authoritative homes; the proposal explicitly preserves them. -- `dev/PLANNING.md`, Proposal, Documentation / doctrine surface
+
+Coverage: read the board, installer mappings, module inventory route and proposal; did not execute an install, enumerate every installed item, or verify future prose. No test suite was run.
