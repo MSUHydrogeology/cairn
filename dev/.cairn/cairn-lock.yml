@@ -1,6 +1,6 @@
 # cairn-lock.yml -- machine-generated install lockfile (tool-owned; regenerate-only; do not hand-edit).
 # JSON-encoded (valid YAML 1.2) so it round-trips without a YAML dependency.
-# source_repository/source_licenses are declared, not attested -- see "Adding a lockfile field without bumping the schema" in bootstrap/UPGRADE.md (a reference in the Cairn source repository, not a file installed into this tree).
+# source_repository/source_licenses are declared, not attested -- see "Adding a lockfile field without bumping the schema" in install/UPGRADE.md (a reference in the Cairn source repository, not a file installed into this tree).
 {
   "cairn_commit": "unknown",
   "cairn_version": "0.3.0",
@@ -28,7 +28,7 @@
     },
     {
       "dst": "AGENTS.md",
-      "hash": "sha256:8c2688c5500e8a8e2e2f64be8507e1d504d991ef3124c85154f7f0d726a30e5f",
+      "hash": "sha256:a06308f55f8b51125cfb3f14115c4c252033dd1383fd2b4dd4bfe90318f6ae28",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -59,7 +59,7 @@
     },
     {
       "dst": "dev/README.md",
-      "hash": "sha256:b61743b8cb087f2e0a9d8240bde3f3faf23828e2e405437384f04621e54aed12",
+      "hash": "sha256:e591db98e48124b2ad5c97a23b5270bef7aea4ff062b72dd0168dbea15fab2cf",
       "src": "core/dev/README.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -73,7 +73,7 @@
     },
     {
       "dst": "dev/measurement/README.md",
-      "hash": "sha256:a4b89f5a60d797a193b7a642b4738da80007ccf34cd2cfc2e65871828cc5f78f",
+      "hash": "sha256:609c8bba59cc546013e355dcc5fb8df94709bd965d7a248e2fc1de34b1fd36c5",
       "src": "core/dev/measurement/README.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -187,7 +187,7 @@
     },
     {
       "dst": "dev/plans/_template.md",
-      "hash": "sha256:be096f8e9f157c64c50f51261c81c1bc2fd38e95ff64fe283672de986923ed38",
+      "hash": "sha256:5ed5951862ddf7979fedd5c7775e3efd4af7d65682282efcd7fd823ad7998390",
       "src": "core/dev/plans/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
