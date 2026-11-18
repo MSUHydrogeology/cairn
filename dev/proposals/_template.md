@@ -17,25 +17,25 @@ Cairn guards several protected contracts — a change touching any of
 these opens a proposal regardless of size:
 
 * **Invariant-kernel or doctrine change** — anything under
-  `docs/methodology/`, the dimension matrix / module gate-table (`dimensions/`,
-  `bootstrap/BOOTSTRAP.md`), or the framework anchors in
+  `docs/methodology/`, the dimension matrix / module gate-table (`install/dimensions/`,
+  `install/BOOTSTRAP.md`), or the framework anchors in
   `docs/methodology/rationale.md`. The kernel is what makes a thing Cairn at
   all; it does not move silently, and a doctrine change additionally
   clears the doctrine-evolution rate-limit gate (`docs/methodology/rationale.md`
   > "How the doctrine evolves under evidence").
 * **Bootstrap fidelity / install contract** — the scaffold's install
-  set, the fidelity manifest (`bootstrap/fidelity-check.md`), the gate
+  set, the fidelity manifest (`install/fidelity-check.md`), the gate
   manifest, the lockfile schema, or the published install manifest
   (`scaffold.py --manifest`). Adopters depend on these.
 * **Vendor-neutrality boundary** — introducing a model / vendor name
   into doctrine or a template (the `quality_gate.py --sub neutrality`
   surface). The deliberation record may name reviewers; shipped
   doctrine may not.
-* **Bootstrap safety / security stack** — `bootstrap/SAFETY.md` (R-I),
-  `bootstrap/security_check.py`, or the content scanner; a change here
+* **Bootstrap safety / security stack** — `install/SAFETY.md` (R-I),
+  `release/security_check.py`, or the content scanner; a change here
   is also a Security Review trigger.
 * **Licensing / provenance** — the by-file license split or
-  `bootstrap/PROVENANCE.md`.
+  `install/PROVENANCE.md`.
 <!-- cairn:end triage-extra-triggers -->
 
 ## Lifecycle
@@ -214,7 +214,7 @@ For each implementation change, name its caller-visible promise and public entry
 <!-- cairn:slot tests-tier-home -->
 Cairn's behavioral **test homes** are:
 
-* **`bootstrap/tests/`** — the engine suite (the scaffold, the module
+* **`tests/`** — the engine suite (the scaffold, the module
   merge, the upgrade path, the security stack, the gates). Fast,
   offline, `pytest` + standard library only (`vermin` is the one
   dev-only floor-check dep). Route affected changes by file
@@ -254,10 +254,10 @@ End-to-end surfaces a change can exercise:
   `examples/scientific-minimal/` run their own `greet.py` /
   `water_budget.py` under `pytest`; a change that touches what the
   examples demonstrate runs them.
-* **The scaffold, without writing** — `python bootstrap/scaffold.py
+* **The scaffold, without writing** — `python install/scaffold.py
   --summary --config <profile>`, `--dry-run`, and `--manifest`
   exercise the install path end-to-end with no side effects.
-* **The prose-integrity gate** — `python scripts/check_cairn.py`
+* **The prose-integrity gate** — `python tests/check_cairn.py`
   (internal link resolution + claim-path check) is the doc smoke for
   any Markdown / doctrine change.
 <!-- cairn:end examples-smoke-home -->
@@ -386,8 +386,8 @@ checker attests that a path was declared, never that it was right.
 Cairn's own mandatory high-assurance surfaces, each named in `AGENTS.md` >
 "High-risk surfaces" and each a Security-Review trigger when a change alters what it does or accepts (when in doubt, take the Security Review; `dev/agent_collaboration.md` > "Review rules"):
 
-* the **scaffold / merge engine** (`bootstrap/scaffold.py` →
-  `bootstrap/_scaffold/`) — untrusted module/profile parsing, path handling,
+* the **scaffold / merge engine** (`install/scaffold.py` →
+  `install/_scaffold/`) — untrusted module/profile parsing, path handling,
   and writes into a target tree;
 * the **install contract** — the fidelity manifest, the gate manifest, the
   lockfile schema, and the published `scaffold.py --manifest`;
