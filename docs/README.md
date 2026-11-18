@@ -3,14 +3,16 @@
 A map of the guides in this folder and where the rest of Cairn's reading lives.
 New to Cairn? Start with the [quickstart](quickstart.md).
 
-## Try it
+## Using Cairn
+
+### Try it
 
 * [Quickstart](quickstart.md) -- one small change with one human and one AI
   agent, on a disposable repository.
 * [Getting started](getting-started.md) -- the same steps explained in more
   detail.
 
-## Understand it
+### Understand it
 
 * [Vision and charter](vision.md) -- what Cairn is for and what it is not.
 * [Cairn's role in the workflow](workflow-role.md) -- where Cairn sits in
@@ -23,7 +25,7 @@ New to Cairn? Start with the [quickstart](quickstart.md).
 * [Further reading](further-reading.md) -- the craft Cairn relies on but does
   not re-teach.
 
-## Adopt it
+### Adopt it
 
 * [The on-ramp](../install/on-ramp/README.md) -- two ways in: read the guidance, or
   install it.
@@ -39,7 +41,7 @@ New to Cairn? Start with the [quickstart](quickstart.md).
 * [Adding another agent type](../templates/onboarding/agent-team-onboarding.md) -- bringing a second
   or third AI agent into a deployment.
 
-## Work with it day to day
+### Work with it day to day
 
 * [Upgrade through a conversation](tool-usage.md#upgrading-an-existing-install) and
   [start or end a session](tool-usage.md#starting-and-ending-a-session).
@@ -50,14 +52,14 @@ New to Cairn? Start with the [quickstart](quickstart.md).
 * [Build a board view](build-a-board-view.md) -- for maintainers, or teams
   running several agents: turning the board's data into a page.
 
-## The rules
+## Reference
 
 * [The methodology](methodology/README.md) -- the method itself; its front
   page explains how to read it.
 
-## Maintaining Cairn itself
+## Contributing to Cairn
 
-* [Release process](release-process.md) -- how a Cairn release is cut.
+* [Release process](../release/RELEASE_PROCESS.md) -- how a Cairn release is cut.
 * [Skills compatibility](skills-compatibility.md) -- which agents can run
   Cairn's skills.
 * [Documentation plan](DOCUMENTATION_PLAN.md) -- where each kind of document

@@ -214,7 +214,7 @@ dispatches this script: the strict release-security check runs Bandit,
 the Markdown self-check, the engine suite and the quality gate; its native
 Mac/Windows record and Maintainer join are described in
 [`SECURITY.md`](../../SECURITY.md) and
-[`docs/release-process.md`](../release-process.md). It does **not** invoke
+[`release/RELEASE_PROCESS.md`](../../release/RELEASE_PROCESS.md). It does **not** invoke
 `floor-gate.sh`. Nor does the suite: `tests/test_python_floor.py`
 runs `vermin` directly on the host. So the container slice is a
 Maintainer-run check whose scheduling is a person's memory, and calling it

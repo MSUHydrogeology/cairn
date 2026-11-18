@@ -78,6 +78,8 @@ how something is built or organized**.  The layer has two ranges:
     contract; lives in `install/`.
   * `cairn/install/PROVENANCE.md` and `cairn/install/SAFETY.md`
     govern release provenance and the install safety threat model.
+  * `cairn/release/RELEASE_PROCESS.md` governs Cairn release procedures
+    and lives beside the release machinery.
   * **This file** (`cairn/docs/DOCUMENTATION_PLAN.md`) governs
     documentation placement and lives in `docs/`.  Organizing
     documentation is the documentation domain's own concern -- so
@@ -115,7 +117,7 @@ Documentation of Cairn *as it exists today*, by audience
 (`getting-started`, `quickstart`, `plain-language`, `tool-usage`,
 `build-a-board-view`, `dev-tour`, `agent-team-onboarding`,
 `solo-legacy-recipe`, `workflow-role`, `further-reading`,
-`release-process`, `related-practices`, `glossary`). Its defining property: it
+`related-practices`, `glossary`). Its defining property: it
 **describes current reality** -- it neither prescribes how to build
 nor deliberates what to build. Cairn's public methodology essays live in
 `cairn/docs/methodology/`; they explain the method and its rationale.

@@ -90,7 +90,7 @@ of these routes before running candidate code. The ordinary route trusts the
 official GitHub distribution channel and needs no signing-key setup. The
 optional stronger route also checks the release signature against fingerprints
 you establish independently. Neither route changes the publisher's signing,
-testing or publication duties in [`../docs/release-process.md`](../docs/release-process.md).
+testing or publication duties in [`../release/RELEASE_PROCESS.md`](../release/RELEASE_PROCESS.md).
 An adopter policy that already requires a signature remains binding; this
 ordinary option does not override it. Security-conscious adopters may choose
 the stronger route. Unless your policy requires a signature, the ordinary route

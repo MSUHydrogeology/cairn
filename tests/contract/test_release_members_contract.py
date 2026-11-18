@@ -6,7 +6,7 @@ Promises:
 - An adopter-owned slow selection is independent of the required members.
 - Refuses an existing report path, malformed or invalid required configuration, and an invalid start time.
 - An empty security manifest is never a pass.
-Sources: release/check_release_test_members.py module docstring; docs/release-process.md (the release sequence, around lines 115-148).
+Sources: release/check_release_test_members.py module docstring; release/RELEASE_PROCESS.md (the release sequence, around lines 115-148).
 
 
 Small isolated release-shaped fixtures do not run Cairn's certifying suite.
@@ -31,7 +31,7 @@ from tests._repo_root import repository_root
 
 ROOT = repository_root(Path(__file__))
 SCRIPT = ROOT / "release/check_release_test_members.py"
-DOC = ROOT / "docs/release-process.md"
+DOC = ROOT / "release/RELEASE_PROCESS.md"
 MANIFEST = ROOT / "tests/security_manifest.py"
 VICTIM = "tests/test_security_lint.py"
 

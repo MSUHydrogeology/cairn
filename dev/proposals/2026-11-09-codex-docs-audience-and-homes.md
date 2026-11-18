@@ -211,3 +211,24 @@ None.
 This accepts the v0.8 guide navigation and Cairn-only instruction placement proposal as revised, to be executed in the light lane after the v0.8 repository layout lands. New recurring human operations: zero.
 
 **Elapsed:** under 1 minute. **Tokens:** unknown.
+
+## Implementation -- Terra (Implementation) -- 2026-11-18
+
+Moved the release procedure byte-for-byte to `release/RELEASE_PROCESS.md`;
+its duties and commands are unchanged. The guide index now offers the three
+accepted routes, and count maintenance lives beside its tools in
+`tests/README.md`. The documentation map identifies release governance in its
+new home. Live links and the release-membership reader follow the move;
+archived deliberation remains historical. The board's live references are
+coordinated separately with the arc owner.
+
+The release-membership sequence selection passed six cases under Python
+3.12.9 (noncanonical; the arc will cover the committed change under 3.13); link, snippet, neutrality, claim and Cairn document checks passed on
+the changed documents. The proposal's own claim check reports historical paths
+in its context and review, preserved as evidence. The release procedure
+compared equal to its original; no release or certification ran. Final
+committed-byte change verification belongs to the arc's joined integration.
+
+**Benefit versus cost**: unknown -- clearer audience routes and local authority;
+cost and remaining burden unknown. Revisit if users cannot find a guide or
+release duties drift. Elapsed: unknown. Tokens: unknown.
