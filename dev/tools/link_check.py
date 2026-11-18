@@ -66,6 +66,7 @@ import posixpath
 import re
 import socket
 import stat
+import struct
 import sys
 import types
 import urllib.error
@@ -74,6 +75,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path, PureWindowsPath
 from urllib.parse import urljoin, urlsplit
+from typing import Any
 
 
 _HERE = Path(__file__).resolve().parent
@@ -186,7 +188,13 @@ def _load_verified_git_read():
     return module
 
 
-_GIT_READ = _load_verified_git_read()
+try:
+    _GIT_READ = _load_verified_git_read()
+except RuntimeError:
+    if __name__ == '__main__' and '--release-boundary' in sys.argv:
+        print('release-boundary: INCOMPLETE: Git helper binding failed')
+        raise SystemExit(2) from None
+    raise
 
 # Inline links + images: optional '!', [text](target "title").
 _LINK_RE = re.compile(r'!?\[[^\]]*\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)')
@@ -950,40 +958,331 @@ def check_tree(root: Path, files: list[Path],
     return result
 
 
+_BOUNDARY_MAX_READ = (1 << 63) - 1
+
+
+class _WindowsUnavailable(ValueError):
+    pass
+
+
+class _WindowsLimit(ValueError):
+    pass
+
+
+class _WindowsAPI:
+    """Lazily bind the small, fixed set of Windows system APIs we need."""
+
+    def __init__(self) -> None:
+        import ctypes as C
+        from ctypes import wintypes as W
+
+        if C.sizeof(C.c_void_p) != 8:
+            raise _WindowsUnavailable("unsupported-pointer-layout")
+        try:
+            nt = C.WinDLL("ntdll.dll", winmode=0x800, use_last_error=True)
+            kernel = C.WinDLL("kernel32.dll", winmode=0x800, use_last_error=True)
+        except (AttributeError, OSError):
+            raise _WindowsUnavailable("system-api-unavailable") from None
+
+        HANDLE = C.c_void_p
+        ULONG_PTR = C.c_size_t
+        NTSTATUS = C.c_int32
+
+        class UNICODE_STRING(C.Structure):
+            _fields_ = [("Length", W.USHORT), ("MaximumLength", W.USHORT),
+                        ("Buffer", C.c_void_p)]
+
+        class OBJECT_ATTRIBUTES(C.Structure):
+            _fields_ = [("Length", W.ULONG), ("RootDirectory", HANDLE),
+                        ("ObjectName", C.POINTER(UNICODE_STRING)),
+                        ("Attributes", W.ULONG), ("SecurityDescriptor", C.c_void_p),
+                        ("SecurityQualityOfService", C.c_void_p)]
+
+        class IO_STATUS_UNION(C.Union):
+            _fields_ = [("Status", NTSTATUS), ("Pointer", C.c_void_p)]
+
+        class IO_STATUS_BLOCK(C.Structure):
+            _fields_ = [("u", IO_STATUS_UNION), ("Information", ULONG_PTR)]
+
+        class BY_HANDLE_INFO(C.Structure):
+            _fields_ = [("attributes", W.DWORD), ("created", W.FILETIME),
+                        ("accessed", W.FILETIME), ("written", W.FILETIME),
+                        ("volume", W.DWORD), ("size_high", W.DWORD),
+                        ("size_low", W.DWORD), ("links", W.DWORD),
+                        ("id_high", W.DWORD), ("id_low", W.DWORD)]
+
+        class BASIC_LIMIT(C.Structure):
+            _fields_ = [("process_time", C.c_int64), ("job_time", C.c_int64),
+                        ("flags", W.DWORD), ("minimum", C.c_size_t),
+                        ("maximum", C.c_size_t), ("processes", W.DWORD),
+                        ("affinity", C.c_size_t), ("priority", W.DWORD),
+                        ("scheduling", W.DWORD)]
+
+        class IO_COUNTERS(C.Structure):
+            _fields_ = [(name, C.c_uint64) for name in
+                        ("read_ops", "write_ops", "other_ops", "read_bytes",
+                         "write_bytes", "other_bytes")]
+
+        class EXTENDED_LIMIT(C.Structure):
+            _fields_ = [("basic", BASIC_LIMIT), ("io", IO_COUNTERS),
+                        ("process_memory", C.c_size_t), ("job_memory", C.c_size_t),
+                        ("peak_process_memory", C.c_size_t),
+                        ("peak_job_memory", C.c_size_t)]
+
+        sizes = (C.sizeof(UNICODE_STRING), C.sizeof(OBJECT_ATTRIBUTES),
+                 C.sizeof(IO_STATUS_BLOCK), C.sizeof(BY_HANDLE_INFO),
+                 struct.calcsize("<II6qIIIbx24s2xq"), C.sizeof(BASIC_LIMIT),
+                 C.sizeof(EXTENDED_LIMIT))
+        if sizes != (16, 48, 16, 52, 104, 64, 144):
+            raise _WindowsUnavailable("unsupported-windows-abi-layout")
+
+        try:
+            nt.NtCreateFile.argtypes = [C.POINTER(HANDLE), W.ULONG,
+                C.POINTER(OBJECT_ATTRIBUTES), C.POINTER(IO_STATUS_BLOCK), C.c_void_p,
+                W.ULONG, W.ULONG, W.ULONG, W.ULONG, C.c_void_p, W.ULONG]
+            nt.NtCreateFile.restype = NTSTATUS
+            kernel.QueryDosDeviceW.argtypes = [W.LPCWSTR, W.LPWSTR, W.DWORD]
+            kernel.QueryDosDeviceW.restype = W.DWORD
+            kernel.GetFileType.argtypes = [HANDLE]
+            kernel.GetFileType.restype = W.DWORD
+            kernel.GetFileInformationByHandle.argtypes = [HANDLE, C.POINTER(BY_HANDLE_INFO)]
+            kernel.GetFileInformationByHandle.restype = W.BOOL
+            kernel.GetFileInformationByHandleEx.argtypes = [HANDLE, C.c_int, C.c_void_p, W.DWORD]
+            kernel.GetFileInformationByHandleEx.restype = W.BOOL
+            kernel.GetVolumeInformationByHandleW.argtypes = [HANDLE, W.LPWSTR, W.DWORD,
+                C.POINTER(W.DWORD), C.POINTER(W.DWORD), C.POINTER(W.DWORD), W.LPWSTR, W.DWORD]
+            kernel.GetVolumeInformationByHandleW.restype = W.BOOL
+            kernel.ReadFile.argtypes = [HANDLE, C.c_void_p, W.DWORD,
+                C.POINTER(W.DWORD), C.c_void_p]
+            kernel.ReadFile.restype = W.BOOL
+            kernel.CloseHandle.argtypes = [HANDLE]
+            kernel.CloseHandle.restype = W.BOOL
+            kernel.CreateJobObjectW.argtypes = [C.c_void_p, W.LPCWSTR]
+            kernel.CreateJobObjectW.restype = HANDLE
+            kernel.SetInformationJobObject.argtypes = [HANDLE, C.c_int, C.c_void_p, W.DWORD]
+            kernel.SetInformationJobObject.restype = W.BOOL
+            kernel.GetCurrentProcess.argtypes = []
+            kernel.GetCurrentProcess.restype = HANDLE
+            kernel.AssignProcessToJobObject.argtypes = [HANDLE, HANDLE]
+            kernel.AssignProcessToJobObject.restype = W.BOOL
+        except (AttributeError, OSError):
+            raise _WindowsUnavailable("system-api-unavailable") from None
+
+        self.C = C
+        self.W = W
+        self.nt = nt
+        self.kernel = kernel
+        self.HANDLE = HANDLE
+        self.UNICODE_STRING = UNICODE_STRING
+        self.OBJECT_ATTRIBUTES = OBJECT_ATTRIBUTES
+        self.IO_STATUS_BLOCK = IO_STATUS_BLOCK
+        self.BY_HANDLE_INFO = BY_HANDLE_INFO
+        self.EXTENDED_LIMIT = EXTENDED_LIMIT
+
+    def close(self, handle: int | None) -> None:
+        if handle:
+            self.kernel.CloseHandle(self.HANDLE(handle))
+
+    def open(self, name: str, parent: int | None = None, *, file_read: bool = False) -> int:
+        C, W = self.C, self.W
+        if parent is not None and (not name or name in {".", ".."}
+                                   or any(char in name for char in "\\/:\x00")
+                                   or len(name.encode("utf-16-le")) > 510):
+            raise _WindowsUnavailable("not-one-component")
+        text = C.create_unicode_buffer(name)
+        byte_length = len(name.encode("utf-16-le"))
+        unicode_name = self.UNICODE_STRING(byte_length, byte_length + 2,
+                                            C.cast(text, C.c_void_p))
+        attributes = self.OBJECT_ATTRIBUTES(
+            C.sizeof(self.OBJECT_ATTRIBUTES), parent, C.pointer(unicode_name), 0, None, None)
+        io_status = self.IO_STATUS_BLOCK()
+        handle = self.HANDLE()
+        status = self.nt.NtCreateFile(
+            C.byref(handle), 1 | 0x80 | 0x100000, C.byref(attributes),
+            C.byref(io_status), None, 0, 1 if file_read else 3, 1,
+            0x00200000 | 0x20, None, 0)
+        if status != 0:
+            self.close(handle.value)
+            raise _WindowsUnavailable(f"open-status-0x{status & 0xffffffff:08X}")
+        return int(handle.value)
+
+    def info(self, handle: int) -> dict[str, Any]:
+        C, W = self.C, self.W
+        value = self.BY_HANDLE_INFO()
+        if (self.kernel.GetFileType(handle) != 1
+                or not self.kernel.GetFileInformationByHandle(handle, C.byref(value))):
+            raise _WindowsUnavailable("not-verifiable-disk-object")
+        attributes = int(value.attributes)
+        if attributes & (0x400 | 0x40):
+            raise _WindowsUnavailable("reparse-or-device")
+        return {
+            "identity": (int(value.volume), (int(value.id_high) << 32) | int(value.id_low)),
+            "size": (int(value.size_high) << 32) | int(value.size_low),
+            "directory": bool(attributes & 0x10),
+            "written": (int(value.written.dwHighDateTime) << 32)
+                       | int(value.written.dwLowDateTime),
+        }
+
+    def admit_root(self, path: str) -> tuple[list[int], str]:
+        import ntpath
+        import re
+
+        if not isinstance(path, str) or path.startswith("\\\\"):
+            raise _WindowsUnavailable("unsupported-root-form")
+        drive, tail = ntpath.splitdrive(path)
+        if not re.fullmatch(r"[A-Za-z]:", drive) or not tail.startswith("\\"):
+            raise _WindowsUnavailable("unsupported-root-form")
+        parts = tail[1:].split("\\")
+        if parts == [""]:
+            parts = []
+        for part in parts:
+            if (not part or part in {".", ".."} or any(c in part for c in "/:\x00")
+                    or len(part.encode("utf-16-le")) > 510):
+                raise _WindowsUnavailable("unsupported-root-component")
+        targets = self.C.create_unicode_buffer(32768)
+        if not self.kernel.QueryDosDeviceW(drive, targets, len(targets)):
+            raise _WindowsUnavailable("drive-map-unavailable")
+        target = targets.value
+        if not re.fullmatch(r"\\Device\\HarddiskVolume[0-9]+", target):
+            raise _WindowsUnavailable("unsupported-drive-alias")
+        handles: list[int] = []
+        try:
+            volume = self.open(target + "\\")
+            handles.append(volume)
+            if not self.info(volume)["directory"]:
+                raise _WindowsUnavailable("volume-not-directory")
+            fs_name = self.C.create_unicode_buffer(64)
+            serial, name_limit, flags = self.W.DWORD(), self.W.DWORD(), self.W.DWORD()
+            if not self.kernel.GetVolumeInformationByHandleW(
+                    volume, None, 0, self.C.byref(serial), self.C.byref(name_limit),
+                    self.C.byref(flags), fs_name, len(fs_name)):
+                raise _WindowsUnavailable("volume-info-unavailable")
+            if fs_name.value != "NTFS":
+                raise _WindowsUnavailable("unsupported-volume")
+            for part in parts:
+                child = self.open_child(handles[-1], part)
+                handles.append(child)
+                if not self.info(child)["directory"]:
+                    raise _WindowsUnavailable("root-component-not-directory")
+            return handles, fs_name.value
+        except BaseException:
+            for handle in reversed(handles):
+                self.close(handle)
+            raise
+
+    def open_child(self, parent: int, entry: dict[str, Any] | str,
+                   *, file_read: bool = False) -> int:
+        name = entry if isinstance(entry, str) else entry["name"]
+        before = self.info(parent)
+        if not before["directory"]:
+            raise _WindowsUnavailable("parent-not-directory")
+        handle = self.open(name, parent, file_read=file_read)
+        try:
+            child = self.info(handle)
+            after = self.info(parent)
+            if after["identity"] != before["identity"]:
+                raise _WindowsUnavailable("parent-changed")
+            if child["identity"][0] != before["identity"][0]:
+                raise _WindowsUnavailable("volume-changed")
+            if isinstance(entry, dict) and (
+                    child["identity"][1] != entry["file_id"]
+                    or child["directory"] != entry["directory"]
+                    or child["size"] != entry["size"]):
+                raise _WindowsUnavailable("enumerated-identity-or-type-changed")
+            return handle
+        except BaseException:
+            self.close(handle)
+            raise
+
+    def read(self, handle: int, allowance: int, counted: list[int]) -> bytes:
+        before = self.info(handle)
+        if before["directory"]:
+            raise _WindowsUnavailable("source-not-file")
+        if before["size"] > _BOUNDARY_MAX_READ:
+            raise _WindowsLimit("per-file source limit")
+        if before["size"] > allowance:
+            raise _WindowsLimit("total read budget would be exceeded")
+        chunks: list[bytes] = []
+        remaining = min(_BOUNDARY_MAX_READ + 1, allowance)
+        while remaining:
+            buffer = self.C.create_string_buffer(min(65536, remaining))
+            count = self.W.DWORD()
+            ok = self.kernel.ReadFile(handle, buffer, len(buffer), self.C.byref(count), None)
+            counted[0] += int(count.value)
+            if not ok:
+                raise _WindowsUnavailable("read-failed")
+            if count.value > len(buffer):
+                raise _WindowsUnavailable("invalid-read-count")
+            if not count.value:
+                break
+            chunks.append(buffer.raw[:count.value])
+            remaining -= count.value
+        after = self.info(handle)
+        if after != before:
+            raise _WindowsUnavailable("source-changed")
+        data = b"".join(chunks)
+        if len(data) != before["size"]:
+            raise _WindowsUnavailable("source-size-changed")
+        if len(data) > _BOUNDARY_MAX_READ:
+            raise _WindowsLimit("per-file source limit")
+        if len(data) > allowance:
+            raise _WindowsLimit("total read budget would be exceeded")
+        return data
+
+
 def _boundary_read(root: Path, rel: str) -> str:
-    """Read a contained regular UTF-8 file without following links."""
+    """Read a contained file through bound, no-follow directory handles."""
     parts = rel.split('/')
-    if not parts or any(p in ('', '.', '..') for p in parts):
-        raise ValueError("unsafe path")
-    current = root
-    for i, part in enumerate(parts):
-        current = current / part
-        info = current.lstat()
-        attrs = getattr(info, 'st_file_attributes', 0)
-        if stat.S_ISLNK(info.st_mode) or attrs & getattr(stat, 'FILE_ATTRIBUTE_REPARSE_POINT', 0):
-            raise ValueError("linked path")
-        if i < len(parts) - 1 and not stat.S_ISDIR(info.st_mode):
-            raise ValueError("non-directory component")
-    if not stat.S_ISREG(info.st_mode):
-        raise ValueError("not a regular file")
-    flags = os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0) | getattr(os, 'O_NONBLOCK', 0)
-    fd = os.open(current, flags)
-    try:
-        opened = os.fstat(fd)
-        if not stat.S_ISREG(opened.st_mode) or (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino):
-            raise ValueError("file changed while opening")
-        with os.fdopen(fd, 'rb') as handle:
-            fd = -1
-            data = handle.read()
-    finally:
-        if fd >= 0:
-            os.close(fd)
+    if not parts or any(p in ('', '.', '..') or '\\' in p or ':' in p or '\0' in p for p in parts):
+        raise ValueError("unsafe path component")
+    if os.name == 'nt':
+        api = _WindowsAPI()
+        handles, _ = api.admit_root(str(root))
+        try:
+            for part in parts:
+                handle = api.open_child(handles[-1], part, file_read=True)
+                handles.append(handle)
+            data = api.read(handles[-1], _BOUNDARY_MAX_READ + 1, [0])
+        finally:
+            for handle in reversed(handles):
+                api.close(handle)
+    else:
+        if os.open not in os.supports_dir_fd or not hasattr(os, 'O_NOFOLLOW') or not hasattr(os, 'O_DIRECTORY'):
+            raise ValueError("safe directory binding unavailable")
+        flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+        handles = []
+        try:
+            handles.append(os.open('/', flags))
+            for part in root.parts[1:]:
+                handles.append(os.open(part, flags, dir_fd=handles[-1]))
+            for part in parts[:-1]:
+                handles.append(os.open(part, flags, dir_fd=handles[-1]))
+            fd = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | getattr(os, 'O_NONBLOCK', 0), dir_fd=handles[-1])
+            handles.append(fd)
+            info = os.fstat(fd)
+            if not stat.S_ISREG(info.st_mode) or info.st_size > _BOUNDARY_MAX_READ:
+                raise ValueError("nonregular or oversized file")
+            chunks = []
+            remaining = _BOUNDARY_MAX_READ + 1
+            while remaining:
+                chunk = os.read(fd, min(65536, remaining))
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                remaining -= len(chunk)
+            data = b''.join(chunks)
+            after = os.fstat(fd)
+            if (len(data) != info.st_size or (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns, after.st_ctime_ns) != (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)):
+                raise ValueError("file changed while reading")
+        finally:
+            for handle in reversed(handles):
+                os.close(handle)
     if b'\0' in data:
         raise ValueError("non-text file")
     return data.decode('utf-8', 'strict')
 
 
-def _boundary_index(root: Path) -> dict[str, tuple[bytes, bytes]]:
+def _boundary_index(root: Path) -> dict[str, list[tuple[bytes, bytes]]]:
     top = _GIT_READ.run_git(str(root), ('rev-parse', '--show-toplevel'))
     if top.state != 'completed' or top.returncode != 0 or Path(os.fsdecode(top.stdout.strip())).resolve() != root:
         raise ValueError("Git worktree root unavailable or different")
@@ -994,12 +1293,14 @@ def _boundary_index(root: Path) -> dict[str, tuple[bytes, bytes]]:
     for row in result.stdout.split(b'\0')[:-1]:
         meta, sep, name = row.partition(b'\t')
         fields = meta.split()
-        if not sep or len(fields) != 3 or len(fields[0]) != 6 or fields[2] not in (b'0', b'1', b'2', b'3') or not name:
+        if (not sep or len(fields) != 3 or len(fields[0]) != 6
+                or any(c not in b'01234567' for c in fields[0])
+                or len(fields[1]) not in (40, 64)
+                or any(c not in b'0123456789abcdefABCDEF' for c in fields[1])
+                or fields[2] not in (b'0', b'1', b'2', b'3') or not name):
             raise ValueError("malformed Git index")
-        path = os.fsdecode(name).replace('\\', '/')
-        if path in entries:
-            raise ValueError("unmerged index path")
-        entries[path] = (fields[0], fields[2])
+        path = os.fsdecode(name)
+        entries.setdefault(path, []).append((fields[0], fields[2]))
     return entries
 
 
@@ -1058,7 +1359,7 @@ def release_boundary(root: Path, scope_path: Path) -> int:
         if path.startswith('dev/scratch/') and path not in ('dev/scratch/README.md', 'dev/scratch/.gitignore'):
             findings.append(f'tracked scratch: {path}')
     def regular(path):
-        return index.get(path) in ((b'100644', b'0'), (b'100755', b'0'))
+        return index.get(path) in ([(b'100644', b'0')], [(b'100755', b'0')])
     for directory in sorted(directories):
         if not regular(directory + '/README.md'):
             findings.append(f'missing folder README: {directory}')
@@ -1095,7 +1396,11 @@ def release_boundary(root: Path, scope_path: Path) -> int:
                 targets.append(ref.group(1))
             hit = bool(literal.search(line))
             for target in targets:
-                parsed = urlsplit(target)
+                try:
+                    parsed = urlsplit(target)
+                except ValueError:
+                    incomplete.append(f'malformed link: {path}:{number}')
+                    continue
                 if parsed.scheme or parsed.netloc:
                     continue
                 pathpart = unquote(parsed.path).replace('\\', '/')

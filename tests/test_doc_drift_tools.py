@@ -1020,6 +1020,10 @@ def test_installed_release_boundary_report(tmp_path: Path):
     write('kept.md', '<!-- link-check-allow: dev/tools/README.md -->\n[development](dev/tools/README.md)\n')
     found = run()
     assert found.returncode == 0 and 'WITH FINDINGS' in found.stdout and 'dev reference' in found.stdout
+    write('kept.md', '[bad](http://[)\n')
+    malformed = run()
+    assert malformed.returncode == 2 and 'malformed link' in malformed.stdout
+    write('kept.md', 'safe\n')
     (root / 'kept.md').unlink()
     (root / 'kept.md').symlink_to(tmp_path / 'outside.md')
     assert run().returncode == 2
@@ -1046,6 +1050,16 @@ def test_installed_release_boundary_report(tmp_path: Path):
     subprocess.run(['git', '-C', str(root), 'add', 'dev/README.md'], check=True)
     subprocess.run(['git', '-C', str(root), 'update-index', '--cacheinfo', '120000,' + subprocess.check_output(['git', '-C', str(root), 'hash-object', '-w', '--stdin'], input=b'outside').decode().strip() + ',dev/README.md'], check=True)
     assert run().returncode == 2
+    blob = subprocess.check_output(['git', '-C', str(root), 'hash-object', '-w', '--stdin'], input=b'conflict').decode().strip()
+    rows = f'0 {"0" * 40}\tdev/README.md\n100644 {blob} 2\tdev/README.md\n100644 {blob} 3\tdev/README.md\n'
+    subprocess.run(['git', '-C', str(root), 'update-index', '--index-info'], input=rows, text=True, check=True)
+    conflicted = run()
+    assert conflicted.returncode == 2 and 'missing folder README: dev/scratch' in conflicted.stdout
+    if os.name != 'nt':
+        write('dev/literal\\name', 'literal')
+        subprocess.run(['git', '-C', str(root), 'add', '-f', r'dev/literal\name'], check=True)
+        exact = run()
+        assert 'missing folder README: dev/literal' not in exact.stdout
 
 
 def test_project_tests_can_use_both_locations_and_release_without_dev(tmp_path: Path):
@@ -1064,3 +1078,80 @@ def test_project_tests_can_use_both_locations_and_release_without_dev(tmp_path: 
     assert run('tests', 'dev/tests').returncode == 0
     shutil.rmtree(root / 'dev')
     assert run('tests').returncode == 0
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='requires native Windows junctions')
+def test_release_boundary_native_windows_containment(tmp_path: Path):
+    import json
+
+    root = tmp_path / 'project'
+    root.mkdir()
+    assert _scaffold(root, ['doc-drift-prevention']) == 0
+    checker = root / 'dev/tools/link_check.py'
+    subprocess.run(['git', 'init', '-q', str(root)], check=True)
+    (root / 'nested').mkdir()
+    (root / 'nested/kept.md').write_text('safe\n')
+    (root / 'AGENTS.md').write_text('entry\n')
+    (root / 'dev/README.md').write_text('## The tree\n\n| `tools/` | tools |\n')
+    (root / 'dev/tools/README.md').write_text('tools\n')
+    scope = root / 'scope.json'
+    scope.write_text(json.dumps({'kept': ['AGENTS.md', 'nested/kept.md'], 'development': ['scope.json']}))
+    subprocess.run(['git', '-C', str(root), 'add', '-f', 'AGENTS.md', 'nested/kept.md', 'scope.json', 'dev/README.md', 'dev/tools/README.md'], check=True)
+    def run():
+        return subprocess.run([sys.executable, str(checker), '--root', str(root), '--release-boundary', 'scope.json'], cwd=tmp_path, text=True, capture_output=True)
+    assert run().returncode == 0
+    outside = tmp_path / 'outside'
+    outside.mkdir()
+    (outside / 'kept.md').write_text('dev/outside\n')
+    (root / 'nested').rename(root / 'original')
+    subprocess.run(['cmd', '/c', 'mklink', '/J', str(root / 'nested'), str(outside)], check=True, capture_output=True)
+    result = run()
+    assert result.returncode == 2 and 'dev reference: nested/kept.md' not in result.stdout
+    scope.write_text(json.dumps({'kept': ['AGENTS.md', 'nested/C:bad'], 'development': ['scope.json']}))
+    assert run().returncode == 2
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='POSIX rename and symlink race')
+def test_release_boundary_resists_ancestor_replacement(tmp_path: Path):
+    import json
+
+    root = tmp_path / 'project'
+    root.mkdir()
+    assert _scaffold(root, ['doc-drift-prevention']) == 0
+    checker = root / 'dev/tools/link_check.py'
+    subprocess.run(['git', 'init', '-q', str(root)], check=True)
+    (root / 'nested').mkdir()
+    kept = root / 'nested/kept.md'
+    kept.write_text('dev/positive\n')
+    (root / 'AGENTS.md').write_text('entry\n')
+    (root / 'dev/README.md').write_text('## The tree\n\n| `tools/` | tools |\n')
+    (root / 'dev/tools/README.md').write_text('tools\n')
+    (root / 'scope.json').write_text(json.dumps({'kept': ['AGENTS.md', 'nested/kept.md'], 'development': ['scope.json']}))
+    subprocess.run(['git', '-C', str(root), 'add', '-f', 'AGENTS.md', 'nested/kept.md', 'scope.json', 'dev/README.md', 'dev/tools/README.md'], check=True)
+    def run():
+        return subprocess.run([sys.executable, str(checker), '--root', str(root), '--release-boundary', 'scope.json'], cwd=tmp_path, text=True, capture_output=True)
+    assert 'dev reference: nested/kept.md' in run().stdout
+    kept.write_text('safe\n')
+    outside = tmp_path / 'outside'
+    outside.mkdir()
+    (outside / 'kept.md').write_text('dev/escaped\n')
+    done = threading.Event()
+    def swap():
+        while not done.is_set():
+            try:
+                (root / 'nested').rename(root / 'holding')
+                (root / 'nested').symlink_to(outside, target_is_directory=True)
+                (root / 'nested').unlink()
+                (root / 'holding').rename(root / 'nested')
+            except OSError:
+                continue
+    worker = threading.Thread(target=swap)
+    worker.start()
+    try:
+        for _ in range(8):
+            result = run()
+            assert result.returncode in (0, 2)
+            assert 'dev reference: nested/kept.md' not in result.stdout
+    finally:
+        done.set()
+        worker.join()

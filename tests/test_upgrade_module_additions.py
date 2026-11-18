@@ -82,11 +82,11 @@ def _src_for(dst: str) -> str:
     return "modules/team-gated/_intent/" + dst.rsplit("/", 1)[1]
 
 
-def _install(target: Path) -> None:
+def _install(target: Path, *, include_report: bool = False) -> None:
     cfg = target / "profile.yml"
     cfg.write_text(
         "project_name: Demo\ntest_command: pytest\npreset: solo-greenfield\n"
-        f"modules_add:\n  - {_MODULE}\n",
+        f"modules_add:\n  - {_MODULE}\n" + ("  - doc-drift-prevention\n" if include_report else ""),
         encoding="utf-8",
     )
     assert s.main([
@@ -1386,10 +1386,11 @@ def test_measurement_registry_survives_upgrade_and_support_is_checked(tmp_path: 
 
 
 def test_scratch_install_and_upgrade_preserve_project_content(tmp_path: Path):
+    import json
     import subprocess
 
     target = tmp_path.resolve()
-    _install(target)
+    _install(target, include_report=True)
     scratch = target / 'dev/scratch'
     assert (scratch / 'README.md').is_file() and (scratch / '.gitignore').is_file()
     user = target / 'project.txt'
@@ -1403,3 +1404,21 @@ def test_scratch_install_and_upgrade_preserve_project_content(tmp_path: Path):
     assert s.main(base + ['--apply']) == 0
     assert user.read_text() == 'keep me' and note.read_text() == 'temporary'
     assert (scratch / 'README.md').is_file() and (scratch / '.gitignore').is_file()
+    (target / 'kept.md').write_text('See dev/tools/link_check.py\n')
+    subprocess.run(['git', '-C', str(target), 'add', '-A'], check=True)
+    paths = subprocess.check_output(['git', '-C', str(target), 'ls-files'], text=True).splitlines()
+    kept = ['AGENTS.md', 'project.txt', 'kept.md']
+    scope = scratch / 'release-scope.json'
+    scope.write_text(json.dumps({'kept': kept, 'development': [p for p in paths if not p.startswith('dev/') and p not in kept]}))
+    report = subprocess.run([sys.executable, str(target / 'dev/tools/link_check.py'), '--root', str(target), '--release-boundary', str(scope)], capture_output=True, text=True)
+    assert report.returncode == 0 and 'dev reference: kept.md' in report.stdout
+    destinations = {row['dst'] for row in s.read_lockfile(target)['files']}
+    assert {'AGENTS.md', 'RULES.md', 'NOTICE.md', 'VENDOR.md',
+            'dev/scratch/README.md', 'dev/scratch/.gitignore'} <= destinations
+    tests = target / 'tests'
+    tests.mkdir()
+    (tests / 'test_release.py').write_text('from pathlib import Path\ndef test_project():\n    assert (Path(__file__).resolve().parents[1] / "project.txt").read_text() == "keep me"\n')
+    shutil.rmtree(target / 'dev')
+    result = subprocess.run([sys.executable, '-m', 'pytest', '-q', 'tests'], cwd=target,
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
