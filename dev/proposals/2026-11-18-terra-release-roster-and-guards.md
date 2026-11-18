@@ -100,3 +100,25 @@ Usual and Security proposal review, a heavy plan with Internal and Internal Secu
 3. **What would show it wrong?** A strict record accepting an unexpected skip or a removed guard leaving a distinct unsafe path unchecked would falsify the result. -- Evidence / verification plan, Security preflight S2–S4
 
 Option B retains a guard when equivalence is unproven and specifies the unresolved question for any explicitly authorized extra pass; this proposal cannot reset the old review cap. The now-lifted claims fence is scoped to the named file and public warn/block promises. The proposed longer opening supplies the decision and platform context rather than a per-test ledger. No governing rule change is proposed; roster and release work remain in their existing homes. Coverage: read the committed proposal, template and relevant archived hold disposition; did not collect tests, run either platform, establish current roster membership or assess the security boundary. Security Review remains separate.
+
+## Review -- Codex Sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: cad52724f43cb26e7c12066caf0ec2e18c5929b2
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Steelman.** Refresh the native roster against actual behavior and retire a held guard only when its protection and any named procedural duties survive.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Only known opposite-platform setup skips are eligible. Missing tools, call-phase skips and unexpected outcomes leave evidence unpassed (Proposal S1–S4, `release/security_check.py:329-381`).
+2. **Best alternative.** Option A keeps all 28 guards while refreshing the roster. It avoids losing a distinct protection and retains their current cost (Proposal A–B, archived promise-testing closeout).
+3. **What would show it wrong?** A native-only test skipped on its own host, an omitted required ID accepted, or a retired guard's public failure path going undetected (Proposal Verification and S2–S4).
+
+**Protections and authority.** Option B requires a public witness for each distinct protection and resolves named roster, shipped, parity and procedure duties. Unproven guards stay. Claims pruning stays within the named file and retains warn-default and explicit-block behavior. Any extra pass on the capped code requires the Maintainer's explicit authorization for the question as scoped in the Proposal. This pass grants no such authorization.
+
+**Coverage.** Read the committed proposal, hold disposition, claims Decision and current outcome validator. No native test collection, execution, guard-equivalence assessment or old-code review ran.
