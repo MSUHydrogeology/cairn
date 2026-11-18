@@ -52,9 +52,15 @@ before the generic bootstrap prefix. Preserve their modes. Update the
 checker's committed-child launch, imports, roster and closure paths, and
 operator commands. Follow the requirements consumers, including contributor,
 floor and security guidance, and update container consumers only where they
-read the moved file. Resolve current contained builds, pin checks and their
-fixtures against the same relocated engine files. Preserve the old signed
-anchor, its closure and baselines.
+read the moved file. In the contained recipe, use the absolute Dockerfile
+path in the same verified checkout as the build context. The pin verifier's
+dirty and untracked checks cover `install/container/Dockerfile`,
+`install/scaffold.py`, `install/_scaffold/`, `templates/` and `CITATION.cff`.
+Acceptance archives that set from the selected commit into each source
+context `$S` and builds it with `-f "$S/install/container/Dockerfile"`.
+Keep its controlled upgrade changes. The developer floor check uses
+the relocated engine and entry point for its existing compatibility exercise.
+Preserve the old signed anchor, its closure, HOLDs and baselines.
 
 ### Upgrade transaction
 
@@ -157,10 +163,11 @@ moves. Keep shipped twins byte-identical and module behavior intact.
 `cairn/…` means Cairn source. Repair bare `bootstrap/` citations.
 `bootstrap/scaffold.py` reports the new command until v1.0.
 Current tests and user commands resolve the relocated modules. The container
-copies the live installer and launches it, and its pin verifier checks that
-same source surface. Installed root skills invoke the relocated tools,
-preserving local edits and refreshing only their affected lock records through
-scoped finalization.
+copies and launches the relocated installer. Its pinned route verifies
+the Dockerfile and its COPY inputs, with acceptance building from the
+recipe extracted alongside its inputs. Installed root skills invoke the
+relocated tools, preserving local edits and refreshing only their affected
+lock records through scoped finalization.
 
 Keep `VENDOR.md` for other tools. Move wrapper duties to vendor-neutral
 `AGENTS.md` and document the uncommitted `CLAUDE.md` fallback containing
@@ -216,9 +223,13 @@ Scan current Python syntax for stale imports and distinguish historical
 fixtures from live paths. Run one collection-only pass over the relocated test
 tree after repairing imports. In the single joined integration selection,
 verify the moved release-checker entry and committed child, contained
-installer entry and rejection of a dirty live build input, and the affected
-installed-skill paths and lock integrity. Use focused changed-route tests and
-the unsigned transition on the final bound paths. Keep unmatched prior
+installer entry, and the affected installed-skill paths and lock integrity.
+Extend the existing `tests/test_verify_ref.py` and acceptance probes to show
+refusal for a dirty Dockerfile and dirty or untracked engine inputs, and that
+a live Dockerfile substituted after extraction cannot supply the build recipe.
+These focused controls can run without an OCI engine. Record the actual
+contained workflow result separately, including any unavailable runtime.
+Use the unsigned transition on the final bound paths. Keep unmatched prior
 records and signed or native certification evidence in the separate cut.
 
 Run scaffold summary and dry-run, both example self-tests, prose gates at their new paths, and test-install link checking. In the separate authorized certification operation compare clean before/after pass, skip and node counts; counts alone establish neither behavior nor authority. Keep those results unpassed until the Maintainer runs it. The arc owner runs one joined integration selection at arc end, not a suite per chunk. Record covered bytes, inputs, platform, omissions and results. Scientific independent check: N/A, as in the proposal. Obtain fresh ordinary and Security code reviews; a review names what it did not cover. Unexpected drift, missing evidence or failed checks remain implementation work.
@@ -483,3 +494,20 @@ verified recipe path in the build command. -- Plan, Layout transition and C4.
 the checker and executable build inputs. Earlier passes preceded both changes.
 Tracing the committed consumers exposed the recipe gap. No build, tests,
 ceremony, migration or review of rewritten guidance.
+
+## Plan change -- Codex -- 2026-11-18
+
+**Prior reviewed commit**: 2ba9f750c93bc67354691d9f3808e5d29ee29538
+**Replacement commit**: this commit
+**Affected cells and dependencies**: Scope, Sequence, Acceptance criteria, Verification, C1, C3, C4, C5
+**Change**: Bind the Dockerfile to the same selected source as its COPY
+inputs. Extend the existing refusal and recipe selection checks.
+**Reason**: The focused Security Review in e9c79955 found that acceptance
+archives the COPY inputs but takes a live Dockerfile, and the adopter's
+relative recipe path can resolve outside the verified checkout.
+**Required obligations**: Internal + Internal Security Review
+
+The checker move, prior verifier, HOLDs and Maintainer cut retain their
+requirements. This successor records the correction for disposition.
+
+Elapsed and tokens: unknown.
