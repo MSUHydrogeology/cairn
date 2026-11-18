@@ -56,6 +56,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
+- **Changed** — The guide index separates using Cairn, reference material and contributing. Cairn's release procedure now lives beside its release tools, and count-maintenance instructions live beside the test tools. ([proposal](dev/proposals/archive/2026-11-09-codex-docs-audience-and-homes.md))
 - **Changed** — On the official-release route, the installer's closing checklist now tells you to run `verify_integrity.py` before editing any file, and the release guides document Git Bash as the tested Windows shell, with a recorded run of both release routes on Windows. ([proposal](dev/proposals/archive/2026-11-16-claude-release-route-documentation.md))
 - **Changed** — In Cairn's own repository, not shipped to adopters: the checks that each tool refuses a hostile `git` hidden in a repository now also run on Windows, through a small compiled `git.exe` stand-in the test builds itself. ([proposal](dev/proposals/archive/2026-11-16-claude-windows-safe-git-route-checks.md))
 - **Changed** — The strict release check now skips 16 test files for Cairn-only signing and gate tools, and its output names them as not certified. Ordinary checks and full certifying runs still include every test; expected runtime savings have not been measured. ([archived plan](dev/plans/archive/2026-11-16-release-tests-shipped-only.md); [accepted proposal](dev/proposals/archive/2026-11-16-claude-release-tests-shipped-only.md))

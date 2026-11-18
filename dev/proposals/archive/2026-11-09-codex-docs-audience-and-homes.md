@@ -232,3 +232,21 @@ committed-byte change verification belongs to the arc's joined integration.
 **Benefit versus cost**: unknown -- clearer audience routes and local authority;
 cost and remaining burden unknown. Revisit if users cannot find a guide or
 release duties drift. Elapsed: unknown. Tokens: unknown.
+
+## Completion -- Codex (Implementation) -- 2026-11-18
+
+The committed implementation `d43c31dc` passed the six release-membership
+sequence cases under canonical Python 3.13.13 in 1.21 seconds. This covers
+documented command order, omitted security results, pytest failure and refusal
+to overwrite an existing report. It supplements the earlier Python 3.12.9
+result; neither is a whole-tree certification. The release procedure moved
+without byte changes. No release, signing or baseline operation ran.
+
+The arc owner updates the live board routes and finalizes only the committed
+documentation-map hash. No new tool, recurring check or follow-up is needed.
+
+**Benefit versus cost**: worth it -- clearer guide routes and maintenance
+instructions beside their tools; implementation changed 10 files, with 83
+insertions and 52 deletions, and the canonical focused checks took 1.21 seconds.
+Agent elapsed time and token use are unknown. No always-loaded instructions or
+installed file count changed. Revisit if users cannot find the right guide.
