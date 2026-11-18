@@ -1,7 +1,7 @@
 # Plan: Offer unselected modules
 
 **Source proposal**: dev/proposals/archive/2026-11-18-terra-module-offers.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md
@@ -60,3 +60,9 @@ Before implementation run `/Users/kendal30/conda_envs/lhm/bin/python3.13 tests/t
 3. **What would show it wrong?** A disposable plan that writes, adoption without a yes, or a task-time offer invented when descriptions are unavailable would falsify the result. -- C2, Verification
 
 The plan names accessible verified source guidance and an honest fallback when it is unavailable. Its scenarios cover both; permanent tests are limited to public promises, not wording. Installed collaboration and onboarding guidance are appropriate homes, and the existing rules-folder duties are retained. Coverage: compared the committed plan with the accepted proposal and review rules; did not run installer or scenarios, inspect implementation, or inspect every module description.
+
+## Response -- Terra (Implementation) -- 2026-11-18
+
+The Internal review accepted the plan without findings. **Disposition**: ready-to-implement.
+
+**Elapsed**: unknown. **Tokens**: unknown.
