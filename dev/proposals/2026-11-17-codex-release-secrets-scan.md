@@ -1,7 +1,7 @@
 # Proposal: release secrets scanning on Mac and Windows
 
 **Author**: Codex
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -136,3 +136,15 @@ Two native scans can add useful release evidence while retaining human admission
 None.
 
 Elapsed: unknown. Tokens: unknown.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-17
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Accept both as revised"
+
+This accepts the v0.8 proposal as revised (`heavy` tier), making the two-leg offline secrets scan (current files + frozen complete Git history) a required release check on both Mac and Windows. Maintainer build approvals and actual release scans remain separate release waits.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
