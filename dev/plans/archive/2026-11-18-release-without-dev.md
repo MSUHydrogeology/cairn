@@ -236,3 +236,19 @@ Not run: full release certification and signing; Home: the separate release prep
 
 **Elapsed**: unknown
 **Tokens**: unknown
+
+## Post-archive review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+Reviewed commit: a3401200bb1fca117223946080e453004dc7c3ff
+
+**Verdict**: ACCEPT. **Elapsed**: unknown. **Tokens**: unknown.
+
+The correction routes temporary working material to ignored scratch while keeping durable conclusions in records and committed briefs traceable. It makes the existing rule easier for authors of plans and proposals to apply.
+
+1. **Should this happen as framed?** Yes. All four template changes match the temporary-draft and durable-record duties in `dev/agent_collaboration.md`, “Plans and records”; its installed counterpart contains the same rule.
+2. **Best alternative.** The existing scratch folder and records are sufficient; the four short pointers avoid creating another procedure. Compare the local and shipped template diffs at `a3401200`.
+3. **What would show it wrong?** A future plan or proposal that puts a temporary brief outside scratch, loses its durable conclusion, or cites a committed brief without its path and commit would contradict the guidance. Check that example against the templates and the governing rule.
+
+**Rule retention and audience.** Compared all four changes with their parents: checker placement, keeping scripts and briefs out of the artifact, carrying criteria and results, and path-and-commit citation for committed briefs remain. Temporary briefs now follow the accepted scratch rule instead of requiring a committed citation. These instructions address agents without requiring a person-level decision; the installed templates and installed collaboration rule retain the applicable duties. No findings.
+
+**Coverage.** Read the four committed diffs and both collaboration rules. Did not replay author checks, examine other templates, or conduct Security Review; this is a prose-only ordinary review.
