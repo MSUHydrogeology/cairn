@@ -140,3 +140,19 @@ Reviewed measurement source range: fc880f8ea6bd336c85aa96d68f7711bcee2f86ab..089
 **Tokens**: unknown
 
 Accepted the cross-line opener finding. The parser now finds attempts across the whole document and rejects any that span lines. The existing installed malformed-marker check includes the reported case; `test_installed_measurement_commands` passed under Python 3.13.13. No other checks were rerun. Ordinary code review remains outstanding.
+
+## Code review -- Terra (Reviewer, Medium) -- 2026-11-18
+
+**Reviewed commit**: 4c296221817b11d18f4771096d28c4a306887f02
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the installed estimator labels its approximation, and the count checker uses the fixed registry and operations with visible drift, skips and failures. -- `templates/modules/default-on/token_budget.py`, `templates/modules/default-on/verify_counts.py`, `templates/modules/default-on/measurements.py`
+2. **Best alternative.** Reusing existing counters, module installation and verified Git support avoids a parallel installer or executable adopter registry. -- Scope, `install/_scaffold/config.py`, `templates/modules/default-on/measurements.py`
+3. **What would show it wrong?** An installed upgrade losing a local definition, or a malformed marker reporting zero checks, would falsify delivery. -- `tests/test_upgrade_module_additions.py::test_measurement_registry_survives_upgrade_and_support_is_checked`, `tests/test_verify_counts.py::test_installed_measurement_commands`
+
+The public tests cover the four operations, containment, Git range behavior, integrity and upgrade preservation; the recorded correction rejects a cross-line attempted marker through the installed command. Guides and inventory describe the delivered tools without changing governing doctrine. Coverage: read the committed implementation, correction and recorded results; did not repeat tests, run native Windows, assess the security boundary, or perform signing and joined integration. The earlier Security finding is addressed in the author response.
