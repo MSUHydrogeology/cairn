@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -203,3 +204,23 @@ def test_layout_migration_refuses_or_reconciles(layout, capsys, problem):
     assert (target / OLD[1]).read_bytes() == FORK
     assert not destination.exists()
     assert _upgrade(layout, "--stage", "--to", "HEAD") == 0
+
+
+def test_packaged_source_only_needs_history_for_legacy_paths(layout, capsys):
+    source, target, _ = layout
+    shutil.rmtree(source / ".git")
+    assert _upgrade(layout, "--plan") == 2
+    error = capsys.readouterr().err
+    assert "Git checkout" in error and OLD[0] in error
+
+    lock = scaffold.read_lockfile(target)
+    for record in lock["files"]:
+        if record["dst"] in OLD:
+            old = record["dst"]
+            record["dst"] = NEW[OLD.index(old)]
+            destination = target / record["dst"]
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            (target / old).rename(destination)
+    _put(target, LOCK, json.dumps(lock).encode("utf-8"))
+    assert _upgrade(layout, "--plan") == 0
+    assert not (target / RECEIPT).exists()

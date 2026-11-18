@@ -4133,12 +4133,41 @@ def _layout_config_path(cairn_root: Path) -> Path | None:
     return None
 
 
-def _layout_target(cairn_root: Path, to_ref: str | None) -> SourceRevision | None:
+def _legacy_layout_paths(target: Path, templates_root: Path) -> list[str]:
+    state = _read_layout_state(target, _LOCKFILE_REL)
+    if state is None:
+        return []
+    lock = _layout_decode_lock(state.raw)
+    _check_lockfile_paths(lock, target, templates_root)
+    records = {record["dst"] for record in lock.get("files", ())}
+    modules = set(lock.get("modules") or ())
+    pending = []
+    for owner, _, old, _, _, new in _LAYOUT_MOVES:
+        if old in records:
+            pending.append(old)
+        elif new not in records and (owner == "skills" or owner.removeprefix("module:") in modules):
+            path = target / old
+            _assert_safe_write(path, target)
+            if path.exists():
+                pending.append(old)
+    return pending
+
+
+def _layout_target(cairn_root: Path, to_ref: str | None, *,
+                   target: Path | None = None) -> SourceRevision | None:
     """Recognize a relocated source from installer data, never from target paths."""
     if to_ref is None:
         cfg = _layout_config_path(cairn_root)
         if cfg is None or not _layout_installer_rows(cfg.read_bytes()) & _LAYOUT_NEW_ROWS:
             return None
+        if target is not None:
+            remaining = _legacy_layout_paths(target, cairn_root / "templates")
+            if not remaining:
+                return None
+            if not _cairn_is_git(cairn_root):
+                raise ScaffoldSecurityError(
+                    "use a Cairn Git checkout with the legacy installer history to "
+                    "verify these old copies: " + ", ".join(remaining))
     elif not _cairn_is_git(cairn_root):
         return None  # ordinary --to reports its existing source error
     selected = SourceRevision(cairn_root, _resolve_layout_revision(cairn_root, to_ref or "HEAD"))
@@ -4477,7 +4506,7 @@ def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
             raise ScaffoldSecurityError("the layout comparison commit is outside Cairn's history")
         comparison = SourceRevision(cairn_root, compare_oid)
     else:
-        source = _layout_target(cairn_root, args.to)
+        source = _layout_target(cairn_root, args.to, target=target)
         comparison = None
         if source is None or not (target / _LOCKFILE_REL).exists():
             return None
