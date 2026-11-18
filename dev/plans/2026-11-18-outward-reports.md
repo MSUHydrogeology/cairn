@@ -1,7 +1,7 @@
 # Plan: Usable outward report drafts
 
 **Source proposal**: dev/proposals/archive/2026-11-18-terra-outward-reports.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-18
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md
@@ -163,3 +163,19 @@ Reviewed source range: 8e462bf6894a0986c00e54707e5894220f8a8977..4e7fae3f2bb2956
 **Rule retention.** The sanctioned change is agent filing of an individually approved Cairn issue. Separate approvals and the prohibition on disclosing private material remain operative in the shared protocol.
 
 **Coverage.** Read committed guide and form changes, mapping and public verification evidence. Existing collision checks cover their named examples. I did not rerun tests or scenarios, submit a report, or assess whether a real payload is safe to publish.
+
+## Completion -- Codex (Implementation) -- 2026-11-18
+
+Ordinary review `0cf9a1bb` and Security Review `1dafce7e` accepted the unchanged
+implementation without findings. Focused delivery checks, failing mapping-removal
+controls and synthetic drafting scenarios satisfy the plan. No actual report was
+filed; joined integration remains with the arc owner. No follow-up remains.
+
+**Benefit versus cost**: worth it -- one installed protocol replaces competing
+instructions and preserves individual publication approval. One installed file
+was added; always-loaded text did not grow. The shared measurement/report range
+`19406866..4c296221` changed 30 source, test and guidance files (1,047 insertions,
+158 deletions), excluding records and installed lock metadata; this is combined
+cost, not reporting alone. Two focused delivery checks took 2.37 seconds and four
+existing collision cases 5.86 seconds under Python 3.13.13. Aggregate time and
+tokens are unknown. Revisit if real reports remain hard to prepare safely.
