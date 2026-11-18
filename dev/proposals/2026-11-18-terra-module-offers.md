@@ -65,3 +65,25 @@ N/A: no scientific assumption or result touched.
 ## Assurance path
 
 Usual proposal review, an internally reviewed standard plan, and independent implementation review. No implementation or Decision is claimed. Elapsed: unknown; tokens: unknown.
+
+## Review -- Terra (ordinary Reviewer) -- 2026-11-18
+
+Reviewed commit: `73c2a6c5723c6d6b1b50767ec97b54417b67e04e`
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: offers at upgrade and at an actual need use existing adoption while preserving explicit choice and the read-only plan. Evidence: `dev/PLANNING.md` Group 4, module-offers row; `install/UPGRADE.md`.
+2. **Best alternative.** Guidance using the existing plan, inventory and adoption command is cheaper to build and maintain than a trigger engine or refusal store; upgrade-only misses later needs. Evidence: `install/_scaffold/upgrade.py`; `dev/proposals/archive/2026-11-16-claude-staged-modules-and-triggers.md`.
+3. **What would show it wrong?** In a disposable project, a plan that writes or an unselected module adopted without a yes falsifies the proposal; exercise both upgrade and a later need. Evidence: proposal, Evidence / verification plan.
+
+**Steelman and audience.** The summary makes the choice understandable; instructions belong in installed guidance and the upgrade guide. Preserve the existing rules-folder duty and separate approval; the accepted Decision already keeps core and skills automatic, so it needs no new decision. Per-offer time and maintenance are unmeasured. A light Decision could be considered for guidance-only delivery, but the proposed standard tier stands unless the Maintainer changes it.
+
+**Blocking — make task-time discovery actionable.** The installed inventory describes selected modules only, while the proposal requires source descriptions even between upgrades; it does not say how an adopter without the Cairn source available should identify unselected choices or what to do when the source cannot be accessed. Specify a reachable existing source and a truthful fallback that does not invent costs or adopt without consent; demonstrate both availability and absence in the task-time smoke check. Evidence: `templates/core/dev/modules/README.md`; proposal, Proposal.
+
+**Coverage.** Read both board directions, the accepted Decision, installed inventory and upgrade guide. Did not run the installer, measure offer time or inspect every module description. No other rule loss identified in the proposed prose; implementation must preserve the existing adoption and collision checks.
