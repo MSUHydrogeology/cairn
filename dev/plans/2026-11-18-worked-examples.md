@@ -61,3 +61,11 @@ Before implementation select tests with `python tests/tier_inventory.py for <cha
 3. **What would show it wrong?** A sign inversion surviving the independent expected-value check, or a managed customization lost after staged review and apply, would falsify the result. -- C1–C2, Verification
 
 The named local revision is an input; compatibility is an implementation check, not a human gate. Public checks cover scientific output and actual upgrade behavior without wording pins; parent-owned joined integration remains under the project verification rule. Coverage: compared the committed plan with the accepted proposal and review rules; did not run examples, inspect fixture compatibility or test an upgrade. No governing doctrine changes are planned.
+
+## Implementation evidence -- Terra -- 2026-11-18
+
+C1–C2 ship at `5e20fb14`. The v0.7.0 input `49dfa217102545d44e57190a48941cabcec422c3` is an annotated tag object, resolving to commit `2f9fda2ba410077e2523547b8ef3c055257ea61d`; the walkthrough identifies both. In a disposable copy, greeting output matched; the balanced budget wrote six zero-residual rows and exited 0, and the unbalanced row produced 10 mm and exited 2. Python 3.13 example and upgrade checks passed (11 in 19.96 s); the focused upgrade including `--plan` passed (1 in 28.73 s). The staged and applied managed slot retained its customization. A temporary inverted ET sign failed the independent expected-residual assertion (60 versus 0); the unmodified check passed. Claim, link, snippet, check_cairn and neutrality checks passed. The first upgrade probe used the current source accidentally and an exported archive lacked ancestry; the corrected real local checkout passed. No full suite, actual research validation or release verification was run. Independent code review remains.
+
+**Benefit versus cost**: unknown -- reproducible workflows and a discriminating upgrade check; cost two temporary Git clones and 28.73 s for the focused upgrade check; remaining maintenance burden unknown. Revisit if fixture compatibility or runtime becomes onerous.
+
+**Elapsed**: unknown. **Tokens**: unknown.
