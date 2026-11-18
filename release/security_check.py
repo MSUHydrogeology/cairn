@@ -168,7 +168,7 @@ _PHASE_RESULTS: dict[str, str] = {}
 #: LOW findings there -- and was deleted rather than left as a latch. Its
 #: rationale (the opt-in, SSRF-guarded external-link probe) is preserved in
 #: that module and in ``SECURITY.md``'s documented residual risks. The current
-#: twenty entries below classify guarded Pulse XML parsing and fixed-pin,
+#: entries below classify guarded Pulse XML parsing and fixed-pin,
 #: verified-buffer helper loading; they remain subject to the same
 #: report-liveness check.
 ALLOWLIST: dict[tuple[str, str], str] = {
@@ -242,6 +242,10 @@ ALLOWLIST: dict[tuple[str, str], str] = {
         "`_load_verified_git_read` executes only bounded, revalidated helper "
         "bytes from the fixed repository tool directory after the literal "
         "`_GIT_READ_SHA256` pin matches; selected paths cannot supply code.",
+    ("tests/gauge.py", "B102"):
+        "`_load_verified_git_read` executes only the bounded buffer read from "
+        "the fixed repository helper path after descriptor and path-component "
+        "rechecks and a match to the literal `_GIT_READ_SHA256` pin.",
     ("tests/measurements.py", "B102"):
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from the fixed source/tools layout after the literal "
