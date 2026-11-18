@@ -358,7 +358,7 @@ positive controls, and release operations.
 
 
 <!-- cairn:slot verification-commands -->
-Before implementation, run `python tools/test_tiers.py for <paths>` to list
+Before implementation, run `python tests/tier_inventory.py for <paths>` to list
 tests that import or cite each changed file by path or file name. This is the
 iteration scope; do not widen it by judgment. Run applicable standing prose
 gates for prose. For governing text such as AGENTS.md, pass the complete

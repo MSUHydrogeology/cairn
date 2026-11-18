@@ -30,17 +30,17 @@ them.
   figure which must be re-measured every time it is wanted *will* be
   re-measured every time it is wanted, and lost again in between.
 
-* **Public test reports** — `tools/gauge.py --pulse` reads explicitly named
+* **Public test reports** — `tests/gauge.py --pulse` reads explicitly named
   JUnit XML reports and optional aggregate before/after inventories from
-  `tools/test_tiers.py list --json`. It prints case-record, outcome, duration,
+  `tests/tier_inventory.py list --json`. It prints case-record, outcome, duration,
   and tier file/line deltas. Case records are not unique tests or collected
   nodes, and equal run labels do not establish equivalence. Missing reports,
   inventories, labels, timings, and tool usage remain unknown. The pulse does
   not persist a store or join a private collector.
 
-* **Explicit public artifact pulse** — `tools/audit_report.py --pulse-input`
+* **Explicit public artifact pulse** — `tests/audit_report.py --pulse-input`
   can emit a bounded snapshot from caller-named Markdown files, and
-  `tools/gauge.py --pulse --artifact-input PATH` can render that snapshot beside
+  `tests/gauge.py --pulse --artifact-input PATH` can render that snapshot beside
   the ordinary test pulse. The snapshot reports caller-declared cohort week and
   file labels, parent/sidefile word and byte counts, review records, declared
   model-tier observations, and chars/4 manifest estimates. Cohort selection,
@@ -49,8 +49,8 @@ them.
   bundle is used. One reproducible example is:
 
   ```sh
-  python tools/audit_report.py --pulse-input --root . --week 2026-W45 --project-alias cairn --artifact dev/plans/2026-11-04-metered-cost.md --always-loaded AGENTS.md --deliberation dev/agent_collaboration.md --model-tier Sol=high > /tmp/cairn-pulse-artifacts.json
-  python tools/gauge.py --pulse --artifact-input /tmp/cairn-pulse-artifacts.json
+  python tests/audit_report.py --pulse-input --root . --week 2026-W45 --project-alias cairn --artifact dev/plans/2026-11-04-metered-cost.md --always-loaded AGENTS.md --deliberation dev/agent_collaboration.md --model-tier Sol=high > /tmp/cairn-pulse-artifacts.json
+  python tests/gauge.py --pulse --artifact-input /tmp/cairn-pulse-artifacts.json
   ```
 
   Replace the example labels with the explicit cohort and manifests being

@@ -3,7 +3,7 @@
 # Cairn's own mapping, assigned by the Maintainer on 2026-10-28.
 # These dated assignments are by family name, not benchmarks. Re-verify with:
 #
-#   python scripts/check_model_selection.py
+#   python dev/tools/check_model_selection.py
 #
 # Record schema: dev/modules/model-selection.md > "Mapping-record schema".
 # Models are named by family, never by version. Each row binds a tier by

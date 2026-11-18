@@ -367,8 +367,9 @@ one broad command is not independent review.
 
 ### Boundary A — Iteration (scoped)
 
-For each changed file, `python tools/test_tiers.py for <paths>` lists tests
-that import it or cite its path or file name. For `AGENTS.md`, include the full
+For each changed file, the project's test-tier tool's `for <paths>` subcommand
+lists tests that import it or cite its path or file name. Cairn's own command
+is `python tests/tier_inventory.py for <paths>`. For `AGENTS.md`, include the full
 reviewed commit range with `--range BASE..HEAD`. Run that list while iterating;
 do not widen it by judgment. Run applicable standing prose gates for prose.
 For governing text, when the broad reader list exceeds 40, use only tests
