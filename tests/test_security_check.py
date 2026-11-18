@@ -1,6 +1,6 @@
 """Tests for the fail-closed release security check (security-hardening Chunk 7).
 
-``install/security_check.py`` is the release-facing counterpart to the dev
+``release/security_check.py`` is the release-facing counterpart to the dev
 Bandit gate: where the gate *skips* when Bandit is absent locally, the
 release check **fails closed** -- release evidence must be unskippable.
 
@@ -34,7 +34,7 @@ from tests._repo_root import repository_root
 CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from install import security_check  # noqa: E402
+from release import security_check  # noqa: E402
 from tests import security_manifest  # noqa: E402
 
 
@@ -273,7 +273,7 @@ def test_scan_targets_are_explicit_files_and_name_the_expected_executables() -> 
     targets = set(security_check.scan_targets())
     assert "install/scaffold.py" in targets
     # Cairn's own bootstrap security tooling is itself scanned.
-    assert "install/security_check.py" in targets
+    assert "release/security_check.py" in targets
     assert "install/verify_integrity.py" in targets
     assert "templates/modules/team-gated/link_check.py" in targets
     # content_scan is single-sourced as the content-security module script.
@@ -2071,8 +2071,8 @@ def test_candidate_config_filters_ignored_files_and_environment_cannot_steer_the
         encoding="utf-8")
     hostile_command = f"{sys.executable} {hostile}"
 
-    (repo / "install").mkdir()
-    (repo / "install" / "security_check.py").write_text(
+    (repo / "release").mkdir()
+    (repo / "release" / "security_check.py").write_text(
         _CHILD_STUB, encoding="utf-8")
     if setup == "smudge-filter":
         (repo / ".gitattributes").write_text(

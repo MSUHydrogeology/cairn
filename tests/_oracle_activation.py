@@ -44,7 +44,7 @@ SENSITIVE_ROSTER: tuple[str, ...] = (
     "tests/_gate_reanchor.py",
     "tests/_gate_manifest.py",
     "install/verify_integrity.py",
-    "install/security_check.py",
+    "release/security_check.py",
 )
 
 

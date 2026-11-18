@@ -5,11 +5,11 @@
 # gates need, plus development-workflow support.
 #
 # Install with:
-#   pip install -r bootstrap/requirements-dev.txt
+#   pip install -r tests/requirements-dev.txt
 #
 # Cairn has NO CI. Every check below is run by a person or an agent typing a
 # command -- `python -m pytest bootstrap/tests` for the suite-resident ones,
-# `python bootstrap/security_check.py --record <external-path>` for each
+# `python release/security_check.py --record <external-path>` for each
 # native Mac/Windows local record. The Maintainer's same-runner join is what
 # turns the two local INCOMPLETE records into release-security PASS. A tool
 # missing from this environment does not fail somewhere else; it fails, or
@@ -27,7 +27,7 @@
 # release cannot be cut without it.
 vermin>=1.8.0
 
-# bandit: static analysis, run by bootstrap/security_check.py as
+# bandit: static analysis, run by release/security_check.py as
 # `sys.executable -m bandit`.  That gate FAILS CLOSED without it, so a clone
 # following this file alone had a release gate that could not pass.  Already
 # sanctioned as DEPENDENCY_BUDGET.md Exception 1; listed here because Cairn's

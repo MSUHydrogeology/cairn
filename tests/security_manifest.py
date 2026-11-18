@@ -10,7 +10,7 @@ re-anchor ceremony to express a fact about zero of them.  The membership lives
 here; ``conftest.py`` applies the marker from it.
 
 **What membership means.** A member does not run in the per-change loop. It
-runs in the release ceremony, where ``install/security_check.py`` executes
+runs in the release ceremony, where ``release/security_check.py`` executes
 the shipped-only selection under ``CAIRN_RELEASE_GATE_ACTIVE=1``. Only a fixed,
 source-reviewed opposite-platform setup skip is eligible in the local record;
 all other skips and every xfail or xpass fail closed. Nothing is deleted or
@@ -60,7 +60,7 @@ SECURITY_FAMILY: dict[str, tuple[str, str]] = {
     ),
     "test_security_check.py": (
         "release gate entry point",
-        "install/security_check.py itself -- the command the release ceremony "
+        "release/security_check.py itself -- the command the release ceremony "
         "runs. Unchanged by the split, and the reason the split is safe.",
     ),
     "test_security_finding_confidentiality.py": (

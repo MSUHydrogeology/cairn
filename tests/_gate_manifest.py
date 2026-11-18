@@ -163,7 +163,7 @@ _INTERPRETER_NOTE = ("ast.dump / differential-oracle digests are interpreter-min
 #
 # There is **one guarded
 # launcher per executable boundary**, not one shared module: this file,
-# `_gate_preflight.py`, `install/security_check.py` and
+# `_gate_preflight.py`, `release/security_check.py` and
 # `install/container/verify-ref.sh` are four independently executable entry
 # points, and a Python launcher cannot serve the shell one.
 #

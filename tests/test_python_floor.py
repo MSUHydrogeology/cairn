@@ -12,7 +12,7 @@ require a Python version **higher** than the declared supported minimum
 **What triggers it.** Cairn has no CI. This is a test node inside
 ``python -m pytest bootstrap/tests`` -- a command a person or an agent
 types -- and inside the release run
-(``python bootstrap/security_check.py --record <external-path>``, phase 3).
+(``python release/security_check.py --record <external-path>``, phase 3).
 This portable node is not in the fixed opposite-platform skip policy, so its
 graceful skip below still refuses the release when ``vermin`` is missing.
 
@@ -24,7 +24,7 @@ inadvertently raises the floor above the declared support line.
 
 The check skips gracefully when ``vermin`` is not importable or not
 on PATH; vermin is a dev/test-only dependency (install via
-``pip install -r bootstrap/requirements-dev.txt``). That graceful skip is
+``pip install -r tests/requirements-dev.txt``). That graceful skip is
 for the ordinary contributor run only -- see *What triggers it* above.
 
 A container-pinned compile check (compiling the engine inside a
@@ -110,7 +110,7 @@ def _vermin_available() -> bool:
 
 _SKIP_REASON = (
     "vermin is not installed; install dev dependencies with "
-    "'pip install -r bootstrap/requirements-dev.txt' to run this check"
+    "'pip install -r tests/requirements-dev.txt' to run this check"
 )
 
 

@@ -135,6 +135,8 @@ SELF_HOST_UNLISTED = (("module:architecture-review", "tools/code_map.py"),)
 # expand against a trusted
 # revision's tracked paths, not an adopter's lock or filesystem.
 SOURCE_FILE_MOVES = (
+    ('bootstrap/security_check.py', 'release/security_check.py'),
+    ('bootstrap/requirements-dev.txt', 'tests/requirements-dev.txt'),
     ('bootstrap/AST_BASELINE_RUNBOOK.md', 'release/AST_BASELINE_RUNBOOK.md'),
     ('bootstrap/REANCHOR_RUNBOOK.md', 'release/REANCHOR_RUNBOOK.md'),
     ('bootstrap/reanchor.sh', 'release/reanchor.sh'),

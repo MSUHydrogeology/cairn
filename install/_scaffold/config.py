@@ -19,7 +19,7 @@ never the reverse.
 
 Pure motion from the pre-split monolith (Stage 4): the symbols are unchanged;
 only their home moved. ``_MODULE_MAPPINGS`` migrates here as its owning module
-(plan 0B.3); ``bootstrap/security_check.py`` imports the trust anchor from this
+(plan 0B.3); ``release/security_check.py`` imports the trust anchor from this
 narrow owner. Loaded via the engine's verifying finder, so this file's real path
 is confirmed within the Cairn root before it executes.
 """

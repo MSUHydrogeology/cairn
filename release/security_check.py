@@ -12,13 +12,13 @@ exit.
 
 Run from the Cairn repo root on each native host and retain the local record:
 
-    python install/security_check.py --record /absolute/path/mac.json
+    python release/security_check.py --record /absolute/path/mac.json
 
 The Windows host uses the same command with a distinct external record path.
 Each clean local run prints ``INCOMPLETE`` and exits 5. Only the explicit join
 on the clean final candidate can print ``PASS``:
 
-    python install/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json
+    python release/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json
 
 **A repository-state preflight runs first and stops the command on failure**:
 the invocation must name the checkout root, the worktree must be clean of
@@ -1816,7 +1816,7 @@ def _run_in_detached_checkout(head: str, context: dict[str, str],
     """Execute this checker from an exact-byte detached checkout of *head*."""
     try:
         with _detached_checkout(head) as checkout:
-            checker = checkout / "install" / "security_check.py"
+            checker = checkout / "release" / "security_check.py"
             env = dict(os.environ)
             env["PYTHONDONTWRITEBYTECODE"] = "1"
             env[NATIVE_RUN_NONCE_ENV] = context["nonce"]
