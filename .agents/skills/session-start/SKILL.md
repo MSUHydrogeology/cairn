@@ -1,6 +1,6 @@
 ---
 name: session-start
-description: Manual lifecycle routine -- session-start (good-morning) orientation. Invoke only on an explicit operator request to orient / catch up; not a conversational helper and not a response to chatter. Mechanics live in tools/session.py; the canonical doctrine is Cairn's published session-routines method.
+description: Manual lifecycle routine -- session-start (good-morning) orientation. Invoke only on an explicit operator request to orient / catch up; not a conversational helper and not a response to chatter. Mechanics live in dev/tools/session.py; the canonical doctrine is Cairn's published session-routines method.
 disable-model-invocation: true
 ---
 External-repo paths: `docs/methodology/session-routines.md`, `docs/methodology/lifecycle.md`
@@ -21,7 +21,7 @@ when the arguments contain `--drain`.
 ## 1. Run the mechanizable gather + skills self-heal
 
 ```
-python tools/session.py session-start
+python dev/tools/session.py session-start
 ```
 
 It **reports** (read-only): commits since the last handoff (with a graceful
@@ -35,17 +35,17 @@ table; today `.claude/skills`) points at the canonical `.agents/skills/` source,
 an adopter established by lockfile-copy -- or whose harness was absent at
 install -- gets working skills with no manual step. It is a no-op when already
 linked, and never clobbers a divergent target (it refuses or quarantines). The
-mechanics live in `tools/session.py`; this skill never reimplements them.
+mechanics live in `dev/tools/session.py`; this skill never reimplements them.
 
 ## 2. Route through the board before reading artifacts
 
 ```
-python tools/board.py
+python dev/tools/board.py
 ```
 
 One row per active proposal and plan: its kind and name, then the header
 fields its author wrote -- status, the Review line, the Plan review line, opened
-date, source proposal. The ordinary view is descriptive. `python tools/board.py
+date, source proposal. The ordinary view is descriptive. `python dev/tools/board.py
 --next` separately proposes one advisory owner and move from written evidence;
 it is not permission, proof that a review cleared, or proof of completion.
 **Read the named artifact and its evidence before acting** -- the artifact is
@@ -102,7 +102,7 @@ authoritative. Both views are read-only.
 ### Optional Meter setup offer
 
 Only at an attended, explicitly requested session-start, and only when
-`tools/meter.py` is installed, consider the opt-in offer. Do not run it during an
+`dev/tools/meter.py` is installed, consider the opt-in offer. Do not run it during an
 unattended start. If an enabled consent config already exists or the project's
 `## Session start` routine records a remembered refusal, do not offer or read
 provider logs. Otherwise, show the exact proposed provider-log roots and
@@ -130,7 +130,7 @@ makes no offer, private-source read or configuration write.
 you edit and commit locally. It never lets you push, post or publish. Run steps 1
 to 3 first.
 
-After each commit, read `python tools/board.py --next`. Continue only when its
+After each commit, read `python dev/tools/board.py --next`. Continue only when its
 advisory move is in this run's one drain target and belongs to your own role.
 Send review moves to a fresh subagent as usual. Outside `--drain`, the output is
 information only. If claims checking is unavailable, do not read that as an
@@ -146,7 +146,7 @@ order, and use the first rule that fits:
    `gh issue view <n> --json number,title,author,labels,body,comments`, where `<n>`
    is the digits alone, without `#` or leading zeros.
 2. `board`, which is also the target when no word follows `--drain`: what
-   `python tools/board.py` lists.
+   `python dev/tools/board.py` lists.
 3. `issues`: the open issues.
 4. A proposal or plan that exists under `dev/`, by its name or its path.
 
@@ -191,7 +191,7 @@ reassessment.
 **Show the plan** in about ten lines: the items found; which eligible trivial
 repairs or accepted proposal next moves you will work (and how `git revert`
 undoes the code); which wait for the Maintainer
-(`python tools/board.py --maintainer`), and why. Then start. The operator may
+(`python dev/tools/board.py --maintainer`), and why. Then start. The operator may
 interrupt at any time.
 
 **Work each eligible item, one at a time.** Do its next move: for an artifact, what
