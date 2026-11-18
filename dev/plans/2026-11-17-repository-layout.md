@@ -2,7 +2,6 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-09-claude-repository-layout.md
 **Status**: revising-plan
-**Waiting on Maintainer**: Authorize focused third plan Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-17
 **Rules that apply**: dev/rules/conventions.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/development-environment.md
@@ -429,3 +428,18 @@ accepted layout outcomes and template. The template targets 1,000 opening
 words, 150 per criterion chunk and 300 per review; the previously reviewed
 protocol already exceeded the opening target. No implementation tests, full
 folder inventory, actual rewritten guidance or Security Review were performed.
+
+## Maintainer authorization -- 2026-11-18
+
+Maintainer, chat reply to the focused-review request:
+
+> Authorize the focused review
+
+This authorizes one additional Sol plan Security Review of the amendment's
+release-checker mapping and container launch protections. Its question is
+whether those paths bind the intended code and executable build inputs while
+preserving the prior authority and HOLDs. The earlier two passes covered the
+original paths; this pass covers only the correction, without rerunning test
+suites. No further pass or trust operation is authorized.
+
+Elapsed and tokens: unknown.
