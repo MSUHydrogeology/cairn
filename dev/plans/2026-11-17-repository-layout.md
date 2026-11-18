@@ -21,6 +21,13 @@ Apply the proposal's items 1–12, including the root `.gitattributes` exception
 
 Move `bootstrap/tests/` to `tests/`, `bootstrap/` to `install/`, pre-install phase-0 and readiness inputs to `install/`, root `dimensions/` and `on-ramp/` to `install/`, onboarding guides into `templates/`, and `case-studies/` into `docs/case-studies/`. Move the two baseline and re-anchor runbooks, `reanchor.sh`, launcher and values templates from `bootstrap/`, and `repin.py`, `reanchor_ceremony.py`, `check_release_publication.py` and `check_release_test_members.py` from `scripts/` to `release/`. Place remaining Cairn-only scripts in `tests/`, keeping `audit_report.py` beside `gauge.py`; migrate the installed tools from `tools/` and `scripts/` to flat `dev/tools/` through upgrade. Move associated manifests and configuration alongside their readers. Machine-assisted path rewrites must be surgical: inspect each functional-prose patch, retain its duties and do not rewrap it.
 
+Place the native release-only checker at `release/security_check.py` and
+Cairn's floor and security check dependencies at `tests/requirements-dev.txt`.
+Keep the contained adopter installer and its coupled checks in `install/container/`.
+The accepted documentation-audience proposal owns moving the release procedure
+and count-maintenance guidance. The later release-without-dev plan owns
+kept-file reference guidance and checks.
+
 **Reuse.** Extend the installer catalog, upgrade staging and historical reads in
 `bootstrap/_scaffold/{config,install,upgrade}.py` and the ceremony in
 `scripts/repin.py`. The self-hosted tool directory is flat at the command
@@ -39,6 +46,15 @@ Update both `AGENTS.md` files for commands, citations and `dev/` as records, sta
 | C3 | Relocate sources and update references | C1–C2 | New layout, compatibility entry and wrapper guidance |
 | C4 | Reconcile Cairn's existing lock, run real self-upgrade and exercise the layout transition | C2–C3 | Self-adopted tools and verified candidate chain |
 | C5 | Verify promises and close records | C1–C4 | Focused evidence, reviews and issue closure |
+
+Add exact source-file overrides for the release checker and test requirements
+before the generic bootstrap prefix. Preserve their modes. Update the
+checker's committed-child launch, imports, roster and closure paths, and
+operator commands. Follow the requirements consumers, including contributor,
+floor and security guidance, and update container consumers only where they
+read the moved file. Resolve current contained builds, pin checks and their
+fixtures against the same relocated engine files. Preserve the old signed
+anchor, its closure and baselines.
 
 ### Upgrade transaction
 
@@ -140,6 +156,11 @@ excluding `dev/`. Hooks, imports, configuration, hashes and manifests follow
 moves. Keep shipped twins byte-identical and module behavior intact.
 `cairn/…` means Cairn source. Repair bare `bootstrap/` citations.
 `bootstrap/scaffold.py` reports the new command until v1.0.
+Current tests and user commands resolve the relocated modules. The container
+copies the live installer and launches it, and its pin verifier checks that
+same source surface. Installed root skills invoke the relocated tools,
+preserving local edits and refreshing only their affected lock records through
+scoped finalization.
 
 Keep `VENDOR.md` for other tools. Move wrapper duties to vendor-neutral
 `AGENTS.md` and document the uncommitted `CLAUDE.md` fallback containing
@@ -159,20 +180,30 @@ separate linked board wait. The anchor remains unpassed until performed.
 Plan archive attests to the reviewed machinery and unsigned exercise.
 Activation and release require the signed cut.
 
-**C5.** Run the checks below on the final relevant bytes; remedy failures before code review and archive. Close #67 when the destination inventory and root exceptions establish its promise. Close #90 only if its full issue scope is satisfied; the broader helper standard remains queued. Close a satisfied issue at its fixing commit, not release. Record limitations, review dispositions, changed-file burden and benefit versus cost.
+**C5.** Run the checks below on the final relevant bytes and remedy failures
+before code review and archive. Audit actual folder contents and consumers
+against their purpose: adopter inputs and tools, public methodology,
+development records, verification and release. Remove empty legacy folders
+and obsolete generated caches. Preserve intentional runtime directories,
+historical evidence and harness-owned worktrees. Close #67 only when verified
+installed destinations, named root exceptions and the omit-`dev/` archive
+establish its full promise. Leave kept-file reference gaps visible for the
+accepted follow-on and do not close an issue that still depends on it. Close
+#90 only if fully satisfied. Close a satisfied issue at its fixing commit.
+Record limitations, dispositions, changed-file burden and benefit versus cost.
 
 ## Scope delta
 
 **Scope delta**: preserved
 
 Proposed paths:
-- `dev/tools/`
-- `docs/case-studies/`
+- `release/security_check.py`
+- `tests/requirements-dev.txt`
 
 ## Verification
 
 Use the canonical Python and the reviewed range for governing text. Use
-`python tools/test_tiers.py for <changed paths>` to identify checks for
+`python tests/test_tiers.py for <changed paths>` to identify checks for
 changed behavior. Reserve wider checks for changed public promises and
 required certification.
 Run the claim, link, snippet and neutrality prose gates. Exercise the named
@@ -180,6 +211,15 @@ promises through fresh install, v0.7 migration, real self-upgrade and the
 disposable ceremony. Include one failing mutation for each layout rule.
 The layout check joins certification. Test a negative search against a
 known positive. Keep external-promise tests and protected guards.
+
+Scan current Python syntax for stale imports and distinguish historical
+fixtures from live paths. Run one collection-only pass over the relocated test
+tree after repairing imports. In the single joined integration selection,
+verify the moved release-checker entry and committed child, contained
+installer entry and rejection of a dirty live build input, and the affected
+installed-skill paths and lock integrity. Use focused changed-route tests and
+the unsigned transition on the final bound paths. Keep unmatched prior
+records and signed or native certification evidence in the separate cut.
 
 Run scaffold summary and dry-run, both example self-tests, prose gates at their new paths, and test-install link checking. In the separate authorized certification operation compare clean before/after pass, skip and node counts; counts alone establish neither behavior nor authority. Keep those results unpassed until the Maintainer runs it. The arc owner runs one joined integration selection at arc end, not a suite per chunk. Record covered bytes, inputs, platform, omissions and results. Scientific independent check: N/A, as in the proposal. Obtain fresh ordinary and Security code reviews; a review names what it did not cover. Unexpected drift, missing evidence or failed checks remain implementation work.
 
@@ -324,3 +364,35 @@ C1 source work is committed: shared test roots (`62461f5d`, exact trailing-paren
 The two standalone gate files and two `conftest.py` roots retain their pre-authentication behavior for C4's explicit transition. Relocated end-to-end Meter/network execution, lock finalization and final combined checks remain with C3–C5; C1 is not whole-tree certification.
 
 C2 execution escalated to Sol after two Terra attempts ended at inspection without product edits or tests. The reviewed transaction and accepted scope remain unchanged. Luna is absent from the current model catalog; Terra is the available ordinary execution model. Elapsed and tokens: unknown.
+
+## Plan change -- Codex -- 2026-11-17
+
+**Prior reviewed commit**: 0622d1ec5ce28c450755c9992403578c8e54cc92
+**Replacement commit**: this commit
+**Affected cells and dependencies**: Scope, Sequence, Acceptance criteria, Verification, C1, C3, C4, C5
+**Change**: Complete the folder-purpose audit, relocate the two overlooked
+Cairn-only files and verify the affected paths.
+**Reason**: The current native checker records and joins release evidence.
+The development dependency file enables Cairn's floor and security checks.
+The audit also found a container copying the old engine paths, live test
+imports of removed modules, and the self-installed skills calling retired
+paths. The already reviewed migration design is recorded at
+5036c3db3e49e4ac6b31533e1fc26310ffcbc57b. The parent anchor, protected tests
+and Maintainer cut requirements remain unchanged.
+**Required obligations**: Internal + Internal Security Review
+
+Maintainer direction, chat, 2026-11-17:
+
+> Make sure to clean up the folders when you're done
+
+> I would audit all folders when you're done to make sure they belong. Follow on with a plan modification if not before you archive
+
+> Think carefully about "intended layout" to mean what the intention is, not the list--in case we forgot to include something
+
+The unresolved Security question is whether the exact mapping and launch paths
+bind the relocated release checker and cover the executable container build
+surface while preserving the prior authority and its HOLDs. The two prior
+passes covered the earlier mapping with neither change. The review cap
+requires express Maintainer authorization before this focused pass.
+
+Elapsed and tokens: unknown.
