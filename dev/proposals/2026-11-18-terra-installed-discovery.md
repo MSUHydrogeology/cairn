@@ -1,7 +1,7 @@
 # Make installed Cairn materials findable
 
 **Author**: Terra (Implementation)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -97,3 +97,15 @@ The ordinary review found no issues requiring a change. The proposal remains as 
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-18
+
+**Tier**: light
+
+**ACCEPTED.**
+
+> "Yes, please accept all four as revised."
+
+This accepts the v0.8 installed-discovery proposal as revised (`light` tier, no plan). New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
