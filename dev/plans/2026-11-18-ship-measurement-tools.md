@@ -68,3 +68,26 @@ Before implementation run `python tests/tier_inventory.py for <changed paths>` a
 3. **What would show it wrong?** A disposable public install or upgrade that loses an edited registry, accepts an escaping count or changed helper, or cannot run either command would falsify delivery. -- C1–C3, Verification
 
 The criteria focus permanent checks on public promises; developmental probes are removed. The module guides are the installed homes for the new procedures, and no governing rule is removed. Parent-owned joined integration is named in Sequence. Coverage: compared the committed plan with the accepted proposal, template and review rules; did not run commands, tests or upgrades, inspect implementation, or assess the security boundary. Security Review remains a separate obligation.
+
+## Plan review -- Codex Sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: 91a3f77bbdad3373bc64fb452f44dda42c8ab638
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Steelman.** Adopters can edit count definitions while installed Python remains covered by integrity checks.
+
+**Foundations**
+
+1. **Should this happen as framed?** The schema, key-only markers, fixed operations and upgrade ownership deliver the Decision once the registry load itself is contained (Scope, C1–C3, accepted Proposal).
+2. **Best alternative.** Use the existing unconditional helper and verified-buffer binding for Git. An exact worktree root and trailing `--` keep the bounded call revision-only (`install/_scaffold/config.py:916`, `tests/measurements.py:53-157`, Scope).
+3. **What would show it wrong?** An installed check accepting a registry link outside the project, changed helper bytes or an invalid revision range matching a filename, or an upgrade losing an edited registry (C1–C3, Verification).
+
+**Blocking — contain the registry before reading it.** The accepted Proposal explicitly refuses an escaping link at the fixed JSON registry path. Scope contains measurement roots and targets. A fixed registry pathname can still follow a link outside the project. In C1, require containment before loading the registry and failure for an absent or invalid registry, as in Security preflight S4. In C3, verify refusal of an escaping registry link through the installed command, alongside a valid in-project registry.
+
+**Coverage.** Compared the committed plan with the accepted proposal and final Security response, helper ownership, and current binding. No implementation, install, upgrade, command probe or suite ran.
