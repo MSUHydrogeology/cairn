@@ -78,3 +78,25 @@ The comparison cannot run under demonstrated confinement, cannot reproduce both 
 ## Assurance path
 
 Usual and Security proposal reviews, a heavy plan with Internal and Internal Security Review, then independent ordinary and Security code reviews of the trial and evidence. No implementation, Decision or completed comparison is claimed. Elapsed: unknown; tokens: unknown.
+
+## Review -- Codex Sol (Security Review, High) -- 2026-11-18
+
+Reviewed commit: f9a6211c17157e2621c2b20aad2cf0af64f3fbc5
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Steelman.** A comparison on matched synthetic projects can measure preservation and write behavior without putting adopter data at risk.
+
+**Foundations**
+
+1. **Should this happen as framed?** A retry is defensible once the confined launcher can start. Rebuilding the two omitted overlays and comparing against the saved clean install keeps a guessed baseline out of the trial (Proposal; archived plan lines 124–134).
+2. **Best alternative.** Keep the existing operating-system boundary and test the trusted interpreter before building the trial fixtures. Reuse the fixed driver and require all C0 controls before writes (archived plan C0).
+3. **What would show it wrong?** A protected write, a confined loopback connection, an undetected sentinel change or an unmatched baseline would stop the affected work (archived C0; S2–S4).
+
+**Blocking — demonstrate a usable strict launch.** Exit 134 and driver −6 do not identify the denied operation. The archived profile file is absent at its recorded path. Before Decision, specify a reproducible deny-default profile with named read-only dependencies, exact executable paths, no network and writes confined to the island and `/dev/null`. Show the canonical interpreter's constant `-I -B -c` print starting under that profile. If outer launch permissions are suspected, compare using the same inner profile bytes. Startup alone clears no C0 pre-write check (archived plan line 124; Proposal S3–S4).
+
+**Coverage.** Read committed records and checked scratch profile presence. No startup probe, sandbox control, Git write or comparison ran. The historical abort remains unexplained.
