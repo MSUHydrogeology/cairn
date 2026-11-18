@@ -35,6 +35,7 @@ import io
 import re
 import shutil
 import stat
+import subprocess
 import sys
 from pathlib import Path, PureWindowsPath
 
@@ -3504,3 +3505,47 @@ class TestTrackedDirectoryCollisions:
         assert (second / "dev/.cairn/cairn-lock.yml").read_bytes() == lock_before
         assert (second / "dev/.cairn/base/AGENTS.md").read_bytes() == cache_before
         assert (second / "dev/.cairn-upgrade").exists()
+
+
+def test_worked_example_preserves_managed_slot_through_upgrade(tmp_path: Path) -> None:
+    """The documented v0.7 exercise reviews and preserves a managed slot."""
+    old = tmp_path / "old"
+    current = tmp_path / "current"
+    project = tmp_path / "project"
+    prior = "2f9fda2ba410077e2523547b8ef3c055257ea61d"
+
+    def run(*args: str) -> str:
+        result = subprocess.run(args, text=True, capture_output=True, timeout=120)
+        assert result.returncode == 0, result.stdout + result.stderr
+        return result.stdout
+
+    for checkout in (old, current):
+        run("git", "clone", "--no-hardlinks", "--quiet", str(CAIRN_ROOT), str(checkout))
+    run("git", "-C", str(old), "checkout", "--quiet", prior)
+    shutil.copytree(CAIRN_ROOT / "examples/scientific-minimal", project)
+    profile = tmp_path / "profile.yml"
+    profile.write_text("project_name: Water budget\ntest_command: pytest\npreset: solo-greenfield\n")
+    run(sys.executable, str(old / "bootstrap/scaffold.py"), "--config", str(profile),
+        "--target", str(project), "--cairn-root", str(old), "--allow-dev", "--non-interactive")
+    lock = s.read_lockfile(project)
+    assert lock is not None and prior.startswith(lock["cairn_commit"])
+    assert any(item["dst"] == "AGENTS.md" and item.get("base_cache") for item in lock["files"])
+    agents = project / "AGENTS.md"
+    text = agents.read_text()
+    start = text.index("<!-- cairn:slot project-conventions -->")
+    end = text.index("<!-- cairn:end project-conventions -->", start)
+    customization = "Use millimetres per month for water-budget inputs."
+    agents.write_text(text[:start] + "<!-- cairn:slot project-conventions -->\n"
+                      + customization + "\n" + text[end:])
+    command = (sys.executable, str(current / "install/scaffold.py"), "upgrade",
+               "--target", str(project))
+    run(*command, "--plan")
+    output = run(*command, "--stage")
+    receipt = re.search(r"--migration-receipt ([0-9a-f]{64})", output)
+    assert receipt, output
+    run(*command, "--apply", "--migration-receipt", receipt.group(1))
+    run(*command, "--stage")
+    staged = project / "dev/.cairn-upgrade/files/AGENTS.md"
+    assert customization in staged.read_text()
+    run(*command, "--apply")
+    assert customization in agents.read_text()

@@ -5,7 +5,7 @@ adopt: read the guidance, or install it with a profile. This page follows
 **one change through the lifecycle** so you can see what each step produces.
 
 If you want to read the artifacts of a real (tiny) instance alongside
-this narrative, open [`examples/minimal/`](../examples/minimal/) —
+this narrative, open the [worked examples index](../examples/README.md) or [`examples/minimal/`](../examples/minimal/) —
 it carries the actual proposal, code, and test for the change traced
 below. ([`examples/scientific-minimal/`](../examples/scientific-minimal/)
 shows the same shape on a tiny science workflow — a mass-balance

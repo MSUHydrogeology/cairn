@@ -3,7 +3,8 @@
 **Author**: Maintainer
 **Status**: accepted
 **Review**: usual
-**Plan review**: not required(one test module and a small dataset; implemented and archived in one commit)
+**Proposed tier**: standard
+**Plan review**: required(Internal)
 **Opened**: 2026-05-28
 **In brief**: Test that the water budget closes, so a sign, unit or column mistake can no longer ship silently.
 
@@ -82,6 +83,8 @@ Assurance path: standard
 
 **Tier**: usual
 **Findings**: none
+**Elapsed**: unknown
+**Tokens**: unknown
 **Verdict**: ACCEPT
 
 **Foundations**:
@@ -99,13 +102,12 @@ Assurance path: standard
    sentinels pass, which their test catches. A renamed column raises
    `KeyError` in `test_default_dataset_satisfies_invariant`.
 
-No findings. A plan is not needed at this size.
+No findings. The illustrative standard change uses the accompanying plan.
 
 ## Decision -- Maintainer -- 2026-05-28
 
 **ACCEPTED.** The Maintainer's authorization, quoted verbatim:
 
-> "Accepted. Land the test with the dataset and archive this proposal in the same commit."
+> "Accepted. Plan and implement the test and dataset, then review and archive the work."
 
-Implemented in the commit that archived this proposal, with the test and a
-CHANGELOG line.
+Illustrative Decision: proceed through the accompanying plan and its checks.

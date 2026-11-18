@@ -84,15 +84,15 @@ class TestMassBalanceInvariant:
 class TestResidualWriter:
     """Round-trip the residual writer through tmp_path."""
 
-    def test_compute_residuals_preserves_independent_inputs(self) -> None:
+    def test_hand_calculated_row_through_cli(self, tmp_path: Path) -> None:
         """Protect two synthetic input values, not just budget closure.
 
         The declared fictional monthly inputs are P=100, ET=30, runoff=20,
         and recharge=40 mm. The stated budget P - ET - runoff - recharge =
         dS gives an independently hand-derived storage change of 10 mm.
         These exact integer values need no floating-point tolerance. This
-        checks row preservation only; it does not validate a physical model
-        or represent observed field data.
+        checks the residual and row preservation; it does not validate a
+        physical model or represent observed field data.
         """
         trusted_row = {
             "month": "2099-01",
@@ -103,10 +103,18 @@ class TestResidualWriter:
             "dS_storage_mm": 10,
         }
 
-        result = compute_residuals([trusted_row])
-
-        assert result[0]["precip_mm"] == 100
-        assert result[0]["dS_storage_mm"] == 10
+        source = tmp_path / "input.csv"
+        with source.open("w", newline="") as fh:
+            writer = csv.DictWriter(fh, fieldnames=list(trusted_row))
+            writer.writeheader()
+            writer.writerow(trusted_row)
+        output = tmp_path / "output.csv"
+        status = main([str(source), str(output)])
+        result = _load_rows(output)[0]
+        assert result["residual_mm"] == "0.000000"
+        assert result["precip_mm"] == "100"
+        assert result["dS_storage_mm"] == "10"
+        assert status == 0
 
     def test_compute_then_write_round_trip(self, tmp_path: Path) -> None:
         rows = _load_rows(DEFAULT_INPUT)
@@ -149,3 +157,9 @@ def test_unbalanced_rows_exceed_tolerance(broken_row: dict) -> None:
         f"unbalanced row {broken_row} returned residual {residual}, "
         "which is below tolerance -- the invariant test would not catch this."
     )
+
+
+def test_cli_rejects_unbalanced_input(tmp_path: Path) -> None:
+    output = tmp_path / "unbalanced.csv"
+    assert main([str(HERE / "data" / "unbalanced.csv"), str(output)]) == 2
+    assert float(_load_rows(output)[0]["residual_mm"]) == 10.0

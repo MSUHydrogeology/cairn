@@ -36,43 +36,22 @@ tree with the proposal lifecycle, run by hand.
 
 ## The change, traced through the lifecycle
 
-Cairn first sorts a change into one of three lanes
-([`../../docs/methodology/lifecycle.md`](../../docs/methodology/lifecycle.md)): a typo or
-one-line fix is just a commit with its test and no code review; a change
-with a settled shape gets a short note and a review; a new capability gets
-the full path. The change here -- *add the mass-balance invariant test and
-the residual writer to `water_budget.py`* -- adds a capability, so it took
-the full path, shown in five steps:
+This example narrates a **planned** standard change. Its records are
+illustrative: they do not claim an actual independent review, Decision or
+research result.
 
-1. **Propose.** A proposal is written and committed:
-   [`dev/proposals/archive/0001-add-mass-balance-invariant-test.md`](dev/proposals/archive/0001-add-mass-balance-invariant-test.md).
-   It states the context, the change, and that it is small enough that
-   no separate plan was needed.
-2. **Review.** A fresh reviewer who did not write the proposal appends
-   a `## Review` section to the same file -- here, confirming
-   that the residual formula matches the canonical mass-balance and
-   that the test pins both the closed-dataset case and unbalanced
-   sentinels (so the invariant is not vacuous).
-3. **Decide.** The Maintainer appends the `## Decision` section
-   (accept), closing the deliberation. The proposal then moves to
-   `dev/proposals/archive/`.
-4. **Implement (absorbing tests + docs).** The code change lands
-   with its test in the same step —
-   [`water_budget.py`](water_budget.py) (the change) and
-   [`test_water_budget.py`](test_water_budget.py) (the absorbed
-   test). "A change absorbs its tests" is the discipline.
-5. **Record.** The decision and rationale live in the archived
-   proposal; a one-line CHANGELOG entry would record the invariant
-   addition. The git history plus the archived proposal *are* the
-   record.
+1. The [proposal](dev/proposals/archive/0001-add-mass-balance-invariant-test.md)
+   describes the invariant and an illustrative review and Decision.
+2. The [plan](dev/plans/archive/0001-mass-balance.md) sets a result and checks;
+   its example review, code review and archive show how work can continue.
+3. The shipped program and tests are the implemented result. Run the commands
+   below, then try the deliberately unbalanced input. A zero exit means the
+   synthetic rows close; exit 2 means a row exceeds the tolerance.
+4. Try [installation and upgrade](upgrade.md), then read the [handoff](handoff.md).
 
-That is the entire loop on a scientific shape. On a real project the
-proposal is larger (the tolerance comes from the data rather than a
-constant, the dataset is real and may not close to within machine
-epsilon, and the residual gets its own diagnostic plot) and a change
-that is not this small opens a plan. Review is the same at every stage:
-a fresh reviewer, plus a domain expert if you have one, who checks the
-conservation-law step. The shape is identical.
+The hand-calculated row P=100, ET=30, runoff=20, recharge=40 and storage
+change=10 gives `100 - 30 - 20 - 40 - 10 = 0 mm/month` independently of the
+program. Closure alone does not validate a scientific model.
 
 ## Running the example
 
@@ -103,6 +82,9 @@ python examples/scientific-minimal/water_budget.py
 
 # Run the invariant test:
 python -m pytest examples/scientific-minimal/test_water_budget.py
+
+# Deliberately unbalanced: writes a residual and exits 2.
+python examples/scientific-minimal/water_budget.py examples/scientific-minimal/data/unbalanced.csv /tmp/cairn-unbalanced.csv
 ```
 
 The CLI exits 0 when the mass-balance invariant holds; it exits 2
@@ -121,7 +103,7 @@ The workflow output (after a clean run):
 The lifecycle record (already in this tree):
 
 * `dev/proposals/archive/0001-add-mass-balance-invariant-test.md`
-  — the trivial-accept proposal that introduced the invariant.
+  — the illustrative accepted proposal that introduced the invariant.
 
 ## Scientific assumptions made explicit
 

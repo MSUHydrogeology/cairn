@@ -3,14 +3,14 @@
 **Author**: Maintainer
 **Status**: accepted
 **Review**: usual
+**Proposed tier**: light
 **Plan review**: not required(one function and one test; implemented and archived in one commit)
 **Opened**: 2026-05-22
 **In brief**: Let `greet` say hello to a named person, keeping "world" as the default.
 
 > This is a deliberately tiny, illustrative proposal for the
 > `examples/minimal/` walkthrough. It shows the *shape* of a Cairn
-> record at the smallest scale. Adding an option is a new capability, so
-> it takes the full proposal path; see the example `README.md` for the
+> record at the smallest scale. This follows the light proposal lane; see the example `README.md` for the
 > narrated trace.
 
 ## Context
@@ -49,6 +49,8 @@ Assurance path: standard
 
 **Tier**: usual
 **Findings**: none
+**Elapsed**: unknown
+**Tokens**: unknown
 **Verdict**: ACCEPT
 
 **Foundations**:

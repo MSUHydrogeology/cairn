@@ -14,47 +14,19 @@ with the proposal lifecycle, run by hand.
 
 ## The change, traced through the lifecycle
 
-Cairn first sorts a change into one of three lanes
-([`../../docs/methodology/lifecycle.md`](../../docs/methodology/lifecycle.md)): a typo or
-one-line fix is just a commit with its test and no code review; a change
-with a settled shape gets a short note and a review; a new capability gets
-the full path. The change here -- *add an optional name argument to
-`greet`* -- adds a capability, so it took the full path, shown in five steps:
+This is a **light** change: an illustrative proposal, review and Decision
+authorize an optional name without a separate plan. The record is a teaching
+example, not evidence that an independent review or real Decision occurred.
 
-1. **Propose.** A proposal is written and committed:
-   [`dev/proposals/archive/0001-add-name-argument.md`](dev/proposals/archive/0001-add-name-argument.md).
-   It states the context, the change, and that it is small enough that no
-   separate plan was needed.
-2. **Review.** A fresh reviewer who did not write the proposal appends
-   a `## Review` section to the same file -- here, confirming the change
-   is backward-compatible and that its test is absorbed alongside the
-   code.
-3. **Decide.** The Maintainer appends the `## Decision` section
-   (accept), closing the deliberation. The proposal then moves to
-   `dev/proposals/archive/`.
-4. **Implement (absorbing tests + docs).** The code change lands with
-   its test in the same step — [`greet.py`](greet.py) (the change) and
-   [`test_greet.py`](test_greet.py) (the absorbed test). "A change
-   absorbs its tests" is the discipline; your test framework runs them
-   (`python -m pytest test_greet.py`), not Cairn — see
-   [`../../docs/workflow-role.md`](../../docs/workflow-role.md).
-5. **Record.** The decision and rationale live in the archived
-   proposal; a one-line CHANGELOG entry would record the user-visible
-   change. The git history plus the archived proposal *are* the record.
+1. Read the [illustrative proposal](dev/proposals/archive/0001-add-name-argument.md),
+   including its review and Decision.
+2. Run `python greet.py` for `Hello, world!` and `python greet.py Ada` for
+   `Hello, Ada!` from this directory.
+3. Run `python -m pytest test_greet.py`; both checks should pass. The code and
+   test are the result of the illustrated change.
 
-That is the entire loop. On a real project the proposal is larger and
-a change that is not this small opens a plan, but the shape is
-identical. Review is the same at every stage: one fresh reviewer who did
-not write the work. For the narrated, step-by-step version see
-[`../../docs/getting-started.md`](../../docs/getting-started.md).
-
-> **The default-on disciplines come with tools.** This hand-copied
-> example runs the lifecycle by hand, but an adopter who installs
-> with the scaffold gets the claim-check discipline as a
-> *runnable script*, not just prose: `claim_check.py` (in `dev/tools/`) is
-> installed and wired to the `{{claim_check_command}}` token. See the
-> [`claim-check`](../../templates/modules/default-on/claim-check.md)
-> module.
+A real project records its actual review, Decision and implementation; it
+uses a plan when its accepted standard or heavy work requires one.
 
 ## Files in this example
 
