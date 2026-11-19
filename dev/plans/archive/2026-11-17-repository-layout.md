@@ -950,3 +950,17 @@ in this range and were not assessed. The protected-test edits still need the
 forward gate re-anchor ceremony; this pass does not replace it.
 
 **Elapsed**: about 9 minutes for this pass. **Tokens**: unknown.
+
+## Post-archive layout repair: ordinary code review -- Terra (Reviewer, Medium) -- 2026-11-19
+
+**Verdict: ACCEPT. Findings: none.** The repair brings the installer instruction and protected dispatcher fixtures to the installed `dev/tools/` layout and preserves refusal of a hardlinked lock on apply.
+
+**Should this happen as framed?** Yes. The command matches the destination in `install/_scaffold/config.py`; the fixture paths now address the installed dispatcher, helper and capabilities. C2 requires linked paths to refuse without overwrite, and C3 requires commands and tests to resolve relocated modules.
+
+**Best alternative.** Leaving the old fixture paths would test missing files instead of the installed dispatcher. Keeping the old successful-apply assertion would conflict with the current preflight refusal; the separate finalize test still checks replacement without writing through the link.
+
+**What would show it wrong?** A relocated dispatcher that launches a tampered child, an apply that changes the linked victim, or a printed command that does not name the installed dispatcher would falsify this review.
+
+**Evidence and limits.** Read commit `2fdc2c2c`, C2 and C3, the affected public tests and installer mapping. The commit reports 23 focused dispatcher cases passed on Python 3.12.9 and two hardlink cases passed on Python 3.13.13; I did not rerun them. I did not review earlier layout changes or perform Security Review.
+
+**Elapsed**: unknown. **Tokens**: unknown.
