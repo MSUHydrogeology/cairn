@@ -1046,3 +1046,31 @@ run. Prior layout work and full certification were outside this pass.
 **B2 (blocking).** In `tests/test_gate_preflight.py:2201`, `_packet_text` indexes the old bootstrap/reanchor.sh path in the dictionary built from `P.declared_authority_closure()`, which names `release/reanchor.sh`; it raises `KeyError` before its launcher callers exercise their checks. Its artifact line also retains the old path. Update both current-packet paths and run affected launcher cases with their assertions intact.
 
 **Evidence and limits.** Read the exact diffs in `0bf3a46d` and `093c2d84`, the affected fixture consumers and the current fixed closure. No tests were rerun; this is not a review of unrelated layout changes or a Security Review. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Focused fixture repair Security Review — Sol (High) — 2026-11-19
+
+**Obligation**: Internal Security Review, focused follow-up
+
+**Verdict**: ACCEPT. Both Security Review findings are closed in the reviewed range.
+
+**Should this happen as framed?** Yes. Live checker help must succeed and
+produce output before checking for suppression flags. The archive and smoke
+case target the current test tree (`tests/test_gate_preflight.py:501-528`,
+`:1014-1097`). The packet now names and hashes the launcher's fixed artifact
+(`tests/test_gate_preflight.py:2193-2207`, `release/reanchor-launcher.template.sh:67`).
+
+**Best alternative.** Keep the real launcher, archive control and checker
+entry point. Their fixtures now place the filter and unsafe entries under
+the subtree the launcher lists and the transport witness under a root the
+checker scans (`tests/test_reanchor.py:2119-2207`, `:2731-2769`).
+
+**What would show it wrong?** The focused nodes fail if the checker is not
+invoked, collection omits the smoke case, the real artifact cannot load, or
+the launcher accepts an unsafe entry or runs the archive filter or helper.
+
+**Evidence and limits.** Read `093c2d84`, `0bf3a46d`, `91287e24` and the
+current launcher and checker path rules. Implementation reported seven
+preflight cases, ten launcher cases, and one real runbook packet case passed.
+No tests rerun. Prior layout work and full certification were outside this pass.
+
+**Elapsed**: unknown. **Tokens**: unknown.
