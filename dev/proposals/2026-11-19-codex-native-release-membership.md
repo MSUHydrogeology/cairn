@@ -66,3 +66,36 @@ A required case can fail or skip on its own host and still pass the applicable c
 **Should this happen as framed?** Yes. The recorded Mac XML has one pass and two Windows-only skips in the same file, and the existing file checker refuses skipped required cases. **Best alternative:** retain the present refusal; it would continue rejecting that expected evidence. An unrestricted skip allowance would weaken coverage. **What would show it wrong?** A current-platform or unlisted skip passing, a listed skip counting as a file pass, or the native join accepting a case that did not execute on its own host would falsify the assurance. The plan should specify malformed-policy and ambiguous-identity tests alongside the named cases.
 
 **Evidence and limits.** Read proposal `ce02e4c9`, the recorded XML, the file checker's identity and outcome handling, the native-list validation and release join instructions. No tests were run; I did not independently review the join implementation, other platforms or security boundaries. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Security proposal review — Sol (High) — 2026-11-19
+
+Reviewed commit `ce02e4c97978be86c92f244e4e794b3cd229fe65`.
+
+**Tier**: Security Review. **Findings**: none. **Verdict**: ACCEPT.
+
+**Should this happen as framed?** Yes. The saved Mac JUnit report contains
+one pass and two `pytest.skip` outcomes for exact Windows IDs listed in
+`tests/security_manifest.py:290-291`. The file check currently refuses both
+(`release/check_release_test_members.py:145-150`), while the release shell
+already preserves the pytest exit status (`release/RELEASE_PROCESS.md:168-173`).
+
+**Best alternative.** Keep the blanket refusal and its false rejection of
+this report. The proposed literal read lets the report supply outcomes and
+the existing manifest supply platform ownership. Keep validation of the
+full policy and its digest, and preserve explicit adopter-list behavior
+(`tests/security_manifest.py:656-691`, `release/check_release_test_members.py:48-58`).
+
+**What would show it wrong?** The planned contract check should refuse an
+xfail encoded as a skip, ambiguous or mislabelled identities, an exact
+same-host skip, and a required file with zero passes. A listed node's failure
+or error must still refuse. Both native records must still name the same
+commit and roster, and each listed test must pass on its own host in both
+orders (`release/security_check.py:732-771`).
+
+**Evidence and limits.** Read the saved Mac XML, the manifest validator, the
+comparison and the native join. At plan review, check that the literal reader
+rejects competing bindings and mismatched policy digests. The waiver should
+match only a genuine `pytest.skip` with the full file, class and case identity
+including parameters. No test reruns or implementation review.
+
+**Elapsed**: unknown. **Tokens**: unknown.
