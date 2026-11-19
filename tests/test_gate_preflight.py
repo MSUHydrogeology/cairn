@@ -3589,10 +3589,11 @@ class TestReportBindsTheProspectiveManifest:
 
         with_pros = P.range_review_report(
             c.anchor, c.head, branch="master", expected_old=c.head,
-            prospective_manifest=prospective, repo=c.repo)
+            prospective_manifest=prospective, repo=c.repo,
+            protected_roster=c.roster)
         without = P.range_review_report(
             c.anchor, c.head, branch="master", expected_old=c.head,
-            repo=c.repo)
+            repo=c.repo, protected_roster=c.roster)
 
         assert with_pros["manifest_sha256"] == \
             hashlib.sha256(prospective).hexdigest()
@@ -4899,14 +4900,22 @@ def _layout_anchored_clone(tmp_path_factory):
     anchor = git("rev-parse", "HEAD", cwd=clone).strip()
     git("update-ref", P._ANCHOR_REF, anchor, cwd=clone)   # the clone's ref only
     git("checkout", "-q", "--detach", head, cwd=clone)
-    return types.SimpleNamespace(repo=clone, anchor=anchor, head=head)
+    # The roster the anchor's manifest names, resolved the way every caller in
+    # the checker resolves it and then passes it down. A report call that
+    # leaves it out classifies a roster-frozen path that is also phase-mutable
+    # twice, so the tests pass it as the checker's own callers do.
+    roster = P.resolve_protected_roster(anchor, head, transition=None,
+                                        repo=clone)
+    return types.SimpleNamespace(repo=clone, anchor=anchor, head=head,
+                                 roster=roster)
 
 
 @pytest.fixture(scope="session")
 def _live_report(_layout_anchored_clone):
     c = _layout_anchored_clone
     return P.range_review_report(c.anchor, c.head, branch="master",
-                                 expected_old=c.head, repo=c.repo)
+                                 expected_old=c.head, repo=c.repo,
+                                 protected_roster=c.roster)
 
 
 class TestRangeReviewReport:
@@ -4917,7 +4926,8 @@ class TestRangeReviewReport:
             _live_report["anchor"], _live_report["candidate_head"],
             branch=_live_report["branch"],
             expected_old=_live_report["expected_old"],
-            repo=_layout_anchored_clone.repo)
+            repo=_layout_anchored_clone.repo,
+            protected_roster=_layout_anchored_clone.roster)
         assert P.range_report_digest(again) == P.range_report_digest(_live_report)
 
     def test_every_path_is_in_exactly_one_class(self, _live_report):
@@ -5001,9 +5011,7 @@ class TestReportAgreesWithManifestPolicy:
     def test_the_classifier_consumes_the_manifest_source(
             self, _live_report, _layout_anchored_clone):
         repo = _layout_anchored_clone.repo
-        roster = P.resolve_protected_roster(
-            _live_report["anchor"], _live_report["candidate_head"],
-            transition=None, repo=repo)
+        roster = _layout_anchored_clone.roster
         frozen = set(G._frozen_files(repo, roster))
         cascade = set(G.CASCADE_MUTABLE)
         phase = set(G.PHASE_SPLIT_TARGETS)
@@ -5072,7 +5080,7 @@ class TestCheckpointBindsTheReport:
         with pytest.raises(P.RangeReportDrift) as exc:
             P.rederive_and_bind(c.anchor, c.head, branch="master",
                                 expected_old=c.head, confirmed_digest="0" * 64,
-                                repo=c.repo)
+                                repo=c.repo, protected_roster=c.roster)
         assert "confirmation is void" in str(exc.value)
 
     def test_rederivation_accepts_the_matching_digest(
@@ -5080,10 +5088,10 @@ class TestCheckpointBindsTheReport:
         c = _layout_anchored_clone
         good = P.range_report_digest(P.range_review_report(
             c.anchor, c.head, branch="master", expected_old=c.head,
-            repo=c.repo))
+            repo=c.repo, protected_roster=c.roster))
         fresh = P.rederive_and_bind(c.anchor, c.head, branch="master",
                                     expected_old=c.head, confirmed_digest=good,
-                                    repo=c.repo)
+                                    repo=c.repo, protected_roster=c.roster)
         assert P.range_report_digest(fresh) == good
 
     def test_a_draft_missing_a_binding_field_refuses_before_construction(self):
