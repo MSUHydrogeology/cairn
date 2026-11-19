@@ -234,7 +234,7 @@
         "dev/proposals/archive/0001-add-mass-balance-invariant-test.md"
       ]
     },
-    "templates/codebase-readiness-report.md": {
+    "install/codebase-readiness-report.md": {
       "paths": [
         "dev/readiness-report.md",
         "dev/readiness-report-summary.md",
@@ -253,6 +253,7 @@
     },
     "templates/modules/default-on/documentation_plan_template.md": {
       "paths": [
+        "tests/TEST_PLAN.md",
         "docs/quickstart/",
         "docs/user_guide/",
         "docs/how-to/",
@@ -266,6 +267,7 @@
     },
     "templates/modules/default-on/security-verification.md": {
       "paths": [
+        "dev/tools/run_security_verification.py",
         "scripts/run_security_verification.py"
       ]
     },

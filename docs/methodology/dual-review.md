@@ -84,7 +84,7 @@ reasoning behind it.
   the Decision are the check.
 
 **No standing call survives.** The re-anchor ceremony
-(`bootstrap/REANCHOR_RUNBOOK.md`) asks for no External read. A fresh local
+(`release/REANCHOR_RUNBOOK.md`) asks for no External read. A fresh local
 session that wrote nothing in the range reads the change and runs fixed
 scanners, and the Maintainer compares printed values and signs. Each ceremony's
 record states that the reader is a session of the builder's own vendor, and that

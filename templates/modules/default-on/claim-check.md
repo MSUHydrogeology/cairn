@@ -27,10 +27,10 @@ proposal and plan stems resolve to work items; use `--help` for scan options.
 The registry starts empty. Edit `dev/.cairn/measurements.json` as project data
 and review definition changes in Git. For example, register a file count as
 `{"docs-files":{"kind":"invariant","fn":"count_files","target":"docs"}}`,
-then write the number followed by `<!-- verify: docs-files -->` on the same
+then write the number followed by &lt;!-- verify: docs-files --&gt; on the same
 line. A snapshot uses `{"kind":"snapshot","value":3,"as_of":"2026-01-01"}`
 and its date must appear before the verified number on that line, for example
-`as of 2026-01-01: 3 <!-- verify: snapshot -->`. Invariants use `count_lines`,
+`as of 2026-01-01: 3` &lt;!-- verify: snapshot --&gt;. Invariants use `count_lines`,
 `count_files`, `count_defs` or `git_commits_in_range`; optional `root` selects
 a project-relative directory. History needs Git 2.45 or later and a revision
 range. Run `python dev/tools/verify_counts.py <file> ...`. The command checks

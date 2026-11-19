@@ -59,7 +59,7 @@ No review requires a particular agent type. If you want a rough guide
 for which agent takes which kind of work, note each agent's
 capability in the roster using your own labels (high, medium or low
 capability), as `docs/methodology/roles.md` in Cairn's
-published methodology describes. The labels are optional roster notes. Applicable task capability floors still
+published methodology describes. <!-- cairn-internal-ref: docs/methodology/roles.md reason=published methodology citation; the optional labels are described here --> The labels are optional roster notes. Applicable task capability floors still
 bind the work; the Maintainer sets direction.
 
 ## Step 4 -- try one called read on a trivial proposal

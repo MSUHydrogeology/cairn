@@ -4,29 +4,9 @@
       "source": "dev/modules/documentation-plan.md",
       "target": "docs/DOCUMENTATION_PLAN.md",
       "reason": "The documentation-plan examples are meant to be copied from the repository root; this target is intentionally absent when the source lives under dev/modules."
-    },
-    {
-      "source": "templates/modules/default-on/documentation-plan.md",
-      "target": "docs/DOCUMENTATION_PLAN.md",
-      "reason": "The documentation-plan examples are meant to be copied from the repository root; this target is intentionally absent when the source lives under dev/modules."
     }
   ],
   "internal_refs": [
-    {
-      "source": "templates/core/AGENTS.md",
-      "target": "docs/methodology/dual-review.md",
-      "reason": "docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, \"Where docs/methodology/ references resolve\")"
-    },
-    {
-      "source": "templates/core/AGENTS.md",
-      "target": "docs/methodology/lifecycle.md",
-      "reason": "docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, \"Where docs/methodology/ references resolve\")"
-    },
-    {
-      "source": "templates/core/AGENTS.md",
-      "target": "docs/methodology/rationale.md",
-      "reason": "docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, \"Where docs/methodology/ references resolve\")"
-    },
     {
       "source": "templates/core/dev/PLANNING.md",
       "target": "docs/methodology/coordination.md",
@@ -74,21 +54,6 @@
     },
     {
       "source": "templates/modules/default-on/incident_log_template.md",
-      "target": "docs/methodology/rationale.md",
-      "reason": "docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, \"Where docs/methodology/ references resolve\")"
-    },
-    {
-      "source": "templates/modules/default-on/security-verification.md",
-      "target": "docs/methodology/coordination.md",
-      "reason": "docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, \"Where docs/methodology/ references resolve\")"
-    },
-    {
-      "source": "templates/modules/default-on/security-verification.md",
-      "target": "docs/methodology/dual-review.md",
-      "reason": "docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, \"Where docs/methodology/ references resolve\")"
-    },
-    {
-      "source": "templates/modules/default-on/security-verification.md",
       "target": "docs/methodology/rationale.md",
       "reason": "docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, \"Where docs/methodology/ references resolve\")"
     },

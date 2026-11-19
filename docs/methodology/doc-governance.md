@@ -380,7 +380,7 @@ and since the lockfile hash is now the hash of the *stripped* install,
 the check stays consistent.
 
 The implementation lives in
-`bootstrap/_scaffold/config.py` (`strip_conditional_regions`), at the
+`install/_scaffold/config.py` (`strip_conditional_regions`), at the
 DAG root beside `resolve_axes`. The tests (dedicated
 profile-sized-assembly suite) assert both the grammar semantics and
 the never-gate constraint.
