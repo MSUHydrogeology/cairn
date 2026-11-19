@@ -1048,10 +1048,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:git_provenance_warning": {
-    "digest": "c6d9f9b8838b515d",
+    "digest": "73bf4c9b5d8de59e",
     "span": [
-      2158,
-      2213
+      2225,
+      2293
     ],
     "type": "FunctionDef"
   },
@@ -1128,7 +1128,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:main": {
-    "digest": "638623b0b326a18c",
+    "digest": "98d08f97621544ba",
     "span": [
       191,
       826

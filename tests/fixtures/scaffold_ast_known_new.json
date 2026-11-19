@@ -380,6 +380,9 @@
   "FunctionDef:_private_ready": [
     "b80571d1944c135f"
   ],
+  "FunctionDef:_provenance_bytes_match": [
+    "f009d46b22d8cd58"
+  ],
   "FunctionDef:_read_git_pointer": [
     "af7038dd7d037d51"
   ],
@@ -387,7 +390,7 @@
     "085f45fa358ba1a1"
   ],
   "FunctionDef:_read_regular_bytes": [
-    "fea7c9399cf2c67f"
+    "1f27f5d5254d5841"
   ],
   "FunctionDef:_reconcile_generated_blocks": [
     "a79f2adb8b91c6f0"
@@ -435,7 +438,7 @@
     "c8257381a05c0e0f"
   ],
   "FunctionDef:_stage_exclusive": [
-    "a4ae528b29ebf978"
+    "9c65742291737b58"
   ],
   "FunctionDef:_stage_private": [
     "89e3e609e688bbfd"
