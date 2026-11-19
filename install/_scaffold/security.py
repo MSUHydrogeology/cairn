@@ -59,8 +59,10 @@ def _stage_exclusive(path: Path, data: bytes, target: Path) -> Path:
     for name in ("O_NOFOLLOW", "O_BINARY"):
         flags |= getattr(os, name, 0)
     fd = os.open(tmp, flags, 0o666)
-    created = os.fstat(fd)
+    fd_closed = False
+    created: os.stat_result | None = None
     try:
+        created = os.fstat(fd)
         with os.fdopen(fd, "wb", closefd=False) as stream:
             stream.write(data)
             stream.flush()
@@ -76,15 +78,29 @@ def _stage_exclusive(path: Path, data: bytes, target: Path) -> Path:
             raise ScaffoldSecurityError("staged file changed during write")
         return tmp
     except BaseException:
-        try:
-            current = tmp.stat(follow_symlinks=False)
-            if (current.st_dev, current.st_ino) == (created.st_dev, created.st_ino):
-                tmp.unlink()
-        except FileNotFoundError:
-            pass
+        should_unlink = False
+        if created is not None:
+            try:
+                current = tmp.stat(follow_symlinks=False)
+                should_unlink = (
+                    current.st_dev, current.st_ino
+                ) == (created.st_dev, created.st_ino)
+            except FileNotFoundError:
+                pass
+        if not fd_closed:
+            fd_closed = True
+            os.close(fd)
+        if should_unlink:
+            try:
+                current = tmp.stat(follow_symlinks=False)
+                if (current.st_dev, current.st_ino) == (created.st_dev, created.st_ino):
+                    tmp.unlink()
+            except FileNotFoundError:
+                pass
         raise
     finally:
-        os.close(fd)
+        if not fd_closed:
+            os.close(fd)
 
 
 def _write_by_replacing(path: Path, data: bytes, target: Path) -> None:

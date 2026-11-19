@@ -91,7 +91,7 @@ def _templates_py_on_disk(root: Path) -> set[str]:
     which it and the filesystem agree is asserted by
     ``test_templates_tree_contains_no_symlink`` below."""
     return {
-        str(p.relative_to(root))
+        p.relative_to(root).as_posix()
         for p in (root / "templates").rglob("*.py")
     }
 

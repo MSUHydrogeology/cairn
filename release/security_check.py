@@ -1407,10 +1407,10 @@ def scan_targets() -> list[str]:
     # under scripts/. Include the latter at either known path during migration.
     for sub in ("install", "release"):
         targets.update(
-            str(p.relative_to(CAIRN_ROOT))
+            p.relative_to(CAIRN_ROOT).as_posix()
             for p in (CAIRN_ROOT / sub).glob("*.py")
         )
-    targets.update(str(p.relative_to(CAIRN_ROOT)) for p in (CAIRN_ROOT / "tests").glob("*.py")
+    targets.update(p.relative_to(CAIRN_ROOT).as_posix() for p in (CAIRN_ROOT / "tests").glob("*.py")
                    if not p.name.startswith(("test_", "_", "conftest")))
     for _, _, old_dst, _, _, new_dst in LAYOUT_INSTALLS:
         if old_dst.startswith("scripts/") and old_dst.count("/") == 1 and old_dst.endswith(".py"):
@@ -1425,7 +1425,7 @@ def scan_targets() -> list[str]:
     engine_pkg = CAIRN_ROOT / "install" / "_scaffold"
     if engine_pkg.is_dir():
         targets.update(
-            str(p.relative_to(CAIRN_ROOT))
+            p.relative_to(CAIRN_ROOT).as_posix()
             for p in engine_pkg.rglob("*.py")
         )
     # The Python files that decide what a re-anchor ceremony blesses and runs.

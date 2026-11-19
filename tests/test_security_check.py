@@ -2237,14 +2237,14 @@ def _init_frozen_pipeline_repo(tmp_path: Path, name: str = "repo") -> tuple[Path
     src_runner = security_check.CAIRN_ROOT / "dev" / "tools" / "run_portable_security_sweeps.py"
     src_policy = security_check.CAIRN_ROOT / "dev" / "tools" / "portable_security_policy.json"
     src_git_read = security_check.CAIRN_ROOT / "dev" / "tools" / "git_read.py"
-    (repo / "dev" / "tools" / "run_portable_security_sweeps.py").write_text(
-        src_runner.read_text(encoding="utf-8"), encoding="utf-8"
+    (repo / "dev" / "tools" / "run_portable_security_sweeps.py").write_bytes(
+        src_runner.read_bytes()
     )
-    (repo / "dev" / "tools" / "portable_security_policy.json").write_text(
-        src_policy.read_text(encoding="utf-8"), encoding="utf-8"
+    (repo / "dev" / "tools" / "portable_security_policy.json").write_bytes(
+        src_policy.read_bytes()
     )
-    (repo / "dev" / "tools" / "git_read.py").write_text(
-        src_git_read.read_text(encoding="utf-8"), encoding="utf-8"
+    (repo / "dev" / "tools" / "git_read.py").write_bytes(
+        src_git_read.read_bytes()
     )
     (repo / "a.txt").write_text("clean\n", encoding="utf-8")
     _setup_git("add", "-A", cwd=repo)
@@ -2372,11 +2372,12 @@ def test_frozen_history_end_to_end_cross_host_and_projection_tamper(
     # Second host checkout with differing source/refs must still succeed in --record.
     monkeypatch.setattr(security_check, "CAIRN_ROOT", clone)
     monkeypatch.chdir(clone)
-    win_stub_rec = _synthetic_local_record("win32", head, "0" * 64)
-    monkeypatch.setenv("CAIRN_TEST_BOUND_RECORD", json.dumps(win_stub_rec))
+    other_platform = "win32" if sys.platform == "darwin" else "darwin"
+    other_os = "nt" if other_platform == "win32" else "posix"
+    other_stub_rec = _synthetic_local_record(other_platform, head, "0" * 64)
     win_rec_path = tmp_path / "win-raw.json"
     # _run_local_record checks record["platform"] == sys.platform; write host2's record
-    # on host1's platform first, then re-label as win32 for the join check.
+    # on host1's platform first, then re-label as the counterpart host for the join check.
     monkeypatch.setenv("CAIRN_TEST_BOUND_RECORD", json.dumps(
         _synthetic_local_record(sys.platform, head, "0" * 64)
     ))
@@ -2385,9 +2386,9 @@ def test_frozen_history_end_to_end_cross_host_and_projection_tamper(
     ) == 5, capsys.readouterr().err
     win_doc = json.loads(win_rec_path.read_text(encoding="utf-8"))
     assert win_doc["history_sweep"]["projection_before"] == expected_proj
-    win_doc["platform"] = "win32"
-    win_doc["os_name"] = "nt"
-    win_doc["orders"] = win_stub_rec["orders"]
+    win_doc["platform"] = other_platform
+    win_doc["os_name"] = other_os
+    win_doc["orders"] = other_stub_rec["orders"]
     win_join_path = tmp_path / "win.json"
     win_join_path.write_text(json.dumps(win_doc), encoding="utf-8")
 
