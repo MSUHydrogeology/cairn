@@ -1,7 +1,7 @@
 # Check installer source bytes before calling a checkout clean
 
 **Author**: Codex Sol
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
