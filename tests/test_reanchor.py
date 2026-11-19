@@ -41,8 +41,8 @@ from tests.test_repin import a_copy_of_this_interpreter
 from tests._repo_root import repository_root
 
 _REPO = repository_root(Path(__file__))
-_ARTIFACT = _REPO / "bootstrap/reanchor.sh"
-_EXAMPLE = _REPO / "bootstrap/reanchor-values.example"
+_ARTIFACT = _REPO / "release/reanchor.sh"
+_EXAMPLE = _REPO / "release/reanchor-values.example"
 
 #: Every key in the closed schema, in the order the template presents them.
 #: Retyped deliberately: this list is the *test's* statement of the contract,
@@ -1331,25 +1331,25 @@ class TestEveryPublicCommandIsExercised:
 # the launcher: the packet, the closure, and what must not start
 # --------------------------------------------------------------------------
 
-_LAUNCHER_TEMPLATE = _REPO / "bootstrap/reanchor-launcher.template.sh"
+_LAUNCHER_TEMPLATE = _REPO / "release/reanchor-launcher.template.sh"
 
 #: The authority-closure members, in LC_ALL=C order. Retyped rather than
 #: imported so the launcher, the runbook and the checker are three independent
 #: statements of one set: importing would make this test agree with whatever
 #: the code says, which is not a check.
 CLOSURE = (
-    "bootstrap/REANCHOR_RUNBOOK.md",
-    "bootstrap/reanchor-launcher.template.sh",
-    "bootstrap/reanchor.sh",
-    "bootstrap/tests/_gate_manifest.py",
-    "bootstrap/tests/_gate_preflight.py",
-    "bootstrap/tests/_gate_reanchor.py",
-    "bootstrap/tests/_gate_transition.py",
-    "bootstrap/tests/_oracle.py",
-    "bootstrap/tests/_oracle_activation.py",
-    "bootstrap/tests/_oracle_trust.py",
-    "bootstrap/tests/fixtures/protected_test_roster.json",
     "dev/.cairn/allowed_signers",
+    "release/REANCHOR_RUNBOOK.md",
+    "release/reanchor-launcher.template.sh",
+    "release/reanchor.sh",
+    "tests/_gate_manifest.py",
+    "tests/_gate_preflight.py",
+    "tests/_gate_reanchor.py",
+    "tests/_gate_transition.py",
+    "tests/_oracle.py",
+    "tests/_oracle_activation.py",
+    "tests/_oracle_trust.py",
+    "tests/fixtures/protected_test_roster.json",
 )
 
 #: THE MARKER INTERPRETER. The candidate's `reanchor.sh` writes a file and
@@ -1379,7 +1379,7 @@ def ceremony(bed, tmp_path):
     for rel in CLOSURE:
         p = repo / rel
         p.parent.mkdir(parents=True, exist_ok=True)
-        if rel == "bootstrap/reanchor.sh":
+        if rel == "release/reanchor.sh":
             p.write_text(_MARKER_ARTIFACT.replace("@MARKER@", str(marker)))
         else:
             p.write_text(f"stub for {rel}\n")
@@ -1400,14 +1400,14 @@ def ceremony(bed, tmp_path):
     return state
 
 
-def _compose_packet(state, *, rows=None, artifact_rel="bootstrap/reanchor.sh",
+def _compose_packet(state, *, rows=None, artifact_rel="release/reanchor.sh",
                     artifact_sha=None, extra=(), schema=None,
                     provenance="builder and reader, test fixture"):
     repo = state["repo"]
     if rows is None:
         rows = [(_sha256_file(repo / rel), rel) for rel in CLOSURE]
     if artifact_sha is None:
-        artifact_sha = _sha256_file(repo / "bootstrap/reanchor.sh")
+        artifact_sha = _sha256_file(repo / "release/reanchor.sh")
     lines = [f"schema {schema or 'cairn-authorization-packet/v1'}",
              f"provenance {provenance}",
              f"artifact {artifact_rel}",
@@ -1597,7 +1597,7 @@ class TestTheClosureIsVerifiedAtTheResolvedOid:
         before any candidate code can run: the launcher is the template with
         a slot filled, so a changed template is a different launcher."""
         repo = ceremony["repo"]
-        template = repo / "bootstrap/reanchor-launcher.template.sh"
+        template = repo / "release/reanchor-launcher.template.sh"
         template.write_text(template.read_text() + "#\n")
         subprocess.run(["git", "-C", str(repo), "-c", "user.email=t@t",
                         "-c", "user.name=t", "commit", "-qam",
@@ -1618,18 +1618,18 @@ class TestTheClosureIsVerifiedAtTheResolvedOid:
         well-formed packet describing a different closure. Only the launcher's
         own fixed list catches that."""
         rows = [(_sha256_file(ceremony["repo"] / rel), rel)
-                for rel in CLOSURE if rel != "bootstrap/tests/_oracle.py"]
+                for rel in CLOSURE if rel != "tests/_oracle.py"]
         _instantiate(ceremony, _compose_packet(ceremony, rows=rows))
         r = _launch(ceremony)
         _assert_no_candidate_code_ran(ceremony, r, "not the authority closure")
 
     def test_an_added_member_refuses_against_the_fixed_set(self, ceremony):
-        extra = ceremony["repo"] / "bootstrap/tests/_smuggled.py"
+        extra = ceremony["repo"] / "tests/_smuggled.py"
         extra.write_text("smuggled\n")
         subprocess.run(["git", "-C", str(ceremony["repo"]), "add", "-A"],
                        check=True, capture_output=True)
         rows = [(_sha256_file(ceremony["repo"] / rel), rel) for rel in CLOSURE]
-        rows.append((_sha256_file(extra), "bootstrap/tests/_smuggled.py"))
+        rows.append((_sha256_file(extra), "tests/_smuggled.py"))
         rows.sort(key=lambda r: r[1])
         _instantiate(ceremony, _compose_packet(ceremony, rows=rows))
         r = _launch(ceremony)
@@ -2049,7 +2049,7 @@ _ANCHOR_CHECKER = (
     "import sys, hashlib\n"
     "print('ANCHOR-CHECKER', 'no_site=%d' % sys.flags.no_site, "
     "'isolated=%d' % sys.flags.ignore_environment, *sys.argv[1:])\n")
-_CHECKER_PATH = "bootstrap/tests/_gate_preflight.py"
+_CHECKER_PATH = "tests/_gate_preflight.py"
 
 
 def _interpreter_with_a_planted_pth_file(tmp_path):
@@ -2378,10 +2378,10 @@ class TestTheCeremonyClosureCarriesNoUnexplainedTag:
     #: gate that failed on somebody else's file would be this plan reaching
     #: past its own scope.
     CEREMONY_FILES = (
-        "bootstrap/reanchor.sh",
-        "bootstrap/reanchor-launcher.template.sh",
-        "bootstrap/reanchor-values.example",
-        "bootstrap/tests/test_reanchor.py",
+        "release/reanchor.sh",
+        "release/reanchor-launcher.template.sh",
+        "release/reanchor-values.example",
+        "tests/test_reanchor.py",
     )
 
     #: A bare finding label: `[FUR5]`, `[S1]`, `[M2-R1]`, `[R2-E2]`, `[X7]`.
@@ -2420,7 +2420,7 @@ class TestTheCeremonyClosureCarriesNoUnexplainedTag:
 # the runbook and the registry describe one procedure
 # --------------------------------------------------------------------------
 
-_RUNBOOK = _REPO / "bootstrap/REANCHOR_RUNBOOK.md"
+_RUNBOOK = _REPO / "release/REANCHOR_RUNBOOK.md"
 
 
 class TestTheRunbookAndTheRegistryAgree:

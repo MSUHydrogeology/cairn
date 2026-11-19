@@ -5,7 +5,7 @@ The canonical skill artifacts participate in the shipped
 upgrade machinery exactly like a ``core/`` file --
 
 * a substituted ``SKILL.md`` an adopter customized **rides the token-/slot-aware
-  3-way merge** and the verbatim CLI (``tools/session.py``) follows the **hash
+  3-way merge** and the verbatim CLI (``dev/tools/session.py``) follows the **hash
   policy** -- both pinned in ``test_upgrade_side_door_parity.py``
   (``test_adopter_edit_survives_an_upstream_change``).
 
@@ -42,7 +42,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 SKILL_START = ".agents/skills/session-start/SKILL.md"
-METER = "tools/meter.py"
+METER = "dev/tools/meter.py"
 
 
 def _install(target: Path) -> None:
@@ -66,7 +66,7 @@ def _install(target: Path) -> None:
 # ---------------------------------------------------------------------------
 
 SKILL_END = ".agents/skills/session-end/SKILL.md"
-LIFECYCLE = "tools/session.py"
+LIFECYCLE = "dev/tools/session.py"
 _SKILL_DSTS = {SKILL_START, SKILL_END, LIFECYCLE, METER}
 
 

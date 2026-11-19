@@ -115,7 +115,7 @@ class TestTheTwinIsByteIdentical:
 
 
 _SESSION_ROUTE_OWNERS = (
-    "tools/session.py",
+    "dev/tools/session.py",
     "templates/skills/_lib/session.py",
 )
 _SESSION_ROUTE_SPECS = (
