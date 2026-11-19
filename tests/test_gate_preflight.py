@@ -26,6 +26,7 @@ from __future__ import annotations
 import ast
 import base64
 import contextlib
+import hashlib
 import io
 import json
 import re
@@ -34,6 +35,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -214,9 +216,9 @@ class TestAuthorityClosure:
         assert _findings(report, "CLOSURE") == []
 
     @pytest.mark.parametrize("member", [
-        "bootstrap/tests/_gate_preflight.py",   # the checker itself
-        "bootstrap/REANCHOR_RUNBOOK.md",        # the invocation source
-        "bootstrap/reanchor-launcher.template.sh",  # the launcher's source
+        "tests/_gate_preflight.py",             # the checker itself
+        "release/REANCHOR_RUNBOOK.md",          # the invocation source
+        "release/reanchor-launcher.template.sh",  # the launcher's source
         "dev/.cairn/allowed_signers",           # the pinned key set
     ])
     def test_a_changed_member_routes_to_review(self, tmp_path, member):
@@ -257,7 +259,7 @@ class TestAuthorityClosure:
         monkeypatch.setattr(
             P, "_imported_local_modules",
             lambda: set(P.declared_authority_closure())
-            | {"bootstrap/tests/_sneaky_helper.py"})
+            | {"tests/_sneaky_helper.py"})
         report = P.Report()
         P.check_authority_closure(anchor, report, repo=repo)
         assert any("outside the declared authority closure" in f.message
@@ -510,10 +512,12 @@ class TestPublicCli:
         assert "Traceback" not in r.stderr, "must refuse cleanly, not crash"
         assert "anchor" in r.stderr
         if r.returncode == 2:
-            # The live tree's anchor predates the roster commit, so the
-            # anchored-roster read fail-closes. That is the first-use bootstrap
-            # condition, and it must say so rather than merely erroring.
-            assert "bootstrap" in r.stderr
+            # The live tree's anchor can predate the layout or the roster
+            # commit, so reading the anchored manifest or roster fail-closes.
+            # That refusal must be a reasoned one: the checker's own refusal
+            # line with a named reason, not a bare error exit.
+            first = r.stderr.splitlines()[0]
+            assert first.startswith("[REFUSE ] ") and first[len("[REFUSE ] "):].strip()
 
     def test_no_flag_can_turn_a_refusal_into_a_pass(self):
         """There is deliberately no suppression switch."""
@@ -820,7 +824,7 @@ def _evidence_repo(tmp_path: Path, producer: str = _STUB_PRODUCER) -> Path:
     _write(repo, G._MANIFEST_REL, json.dumps(legacy_manifest))
     anchor = _commit(repo, "legacy broad-policy anchor")
     _run("git", "update-ref", P._ANCHOR_REF, anchor, cwd=repo)
-    _write(repo, "bootstrap/tests/_gate_manifest.py", producer)
+    _write(repo, "tests/_gate_manifest.py", producer)
     _commit(repo, "stub producer")
     return repo
 
@@ -869,7 +873,7 @@ class TestEvidenceStage:
     @pytest.mark.parametrize("value", ["", " ", "-p no:cacheprovider ",
                                         " -p no:cacheprovider",
                                         "-p no:cacheprovider --ignore=tests",
-                                        "--ignore=bootstrap/tests"])
+                                        "--ignore=tests"])
     def test_non_exact_addopts_refuses_before_producer_and_hides_value(
             self, tmp_path, monkeypatch, value):
         marker = tmp_path / "producer-ran"
@@ -1054,7 +1058,7 @@ def _ceremony_repo(tmp_path: Path, *, rosterless: bool = False):
         dst = repo / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
         data = src.read_bytes()
-        if not rosterless and rel == "bootstrap/tests/_gate_preflight.py":
+        if not rosterless and rel == "tests/_gate_preflight.py":
             data = data.replace(b'_PROTECTED_ROSTER_MODE = "dormant"',
                                 b'_PROTECTED_ROSTER_MODE = "active"', 1)
             assert b'_PROTECTED_ROSTER_MODE = "active"' in data
@@ -1073,7 +1077,7 @@ def _ceremony_repo(tmp_path: Path, *, rosterless: bool = False):
         dst.parent.mkdir(parents=True, exist_ok=True)
         if rel == P.G._PROTECTED_ROSTER_REL:
             dst.write_bytes(roster_src.read_bytes())
-        elif rel.startswith("bootstrap/tests/fixtures/"):
+        elif rel.startswith("tests/fixtures/"):
             dst.write_bytes((_REPO / rel).read_bytes())
         else:
             # These fixtures test the ceremony protocol. Regular placeholder
@@ -1081,7 +1085,7 @@ def _ceremony_repo(tmp_path: Path, *, rosterless: bool = False):
             # copy of the repository's full test suite into each tiny fixture.
             dst.write_text("# protected synthetic ceremony member\n",
                            encoding="utf-8")
-    _write(repo, "bootstrap/tests/__init__.py", "")
+    _write(repo, "tests/__init__.py", "")
     _write(repo, P._ALLOWED_SIGNERS_REL, f"m@example {keydata}\n")
     # The REAL manifest producer runs in this fixture, so supply the two things
     # it refuses without: a non-empty pytest collection, and the AST baseline
@@ -1142,7 +1146,7 @@ def _fake_evidence(head: str, manifest=None):
 def _plan_for(repo, anchor, head):
     report = P.Report()
     report.facts.update({"anchor": anchor, "head": head,
-                         "authority_hashes": {"bootstrap/tests/_m.py":
+                         "authority_hashes": {"tests/_m.py":
                                               "sha256:" + "1" * 64}})
     return P.blessing_plan(report, _fake_evidence(head), repo=repo)
 
@@ -1390,7 +1394,7 @@ def _stub_report(repo, head):
     anchor = _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip()
     r = P.Report()
     r.facts.update({"anchor": anchor, "head": head,
-                    "authority_hashes": {"bootstrap/tests/_m.py":
+                    "authority_hashes": {"tests/_m.py":
                                          "sha256:" + "1" * 64}})
     return r
 
@@ -1480,7 +1484,7 @@ class TestApplySuccessPath:
 
     def test_blocked_checks_write_nothing(self, tmp_path, monkeypatch):
         repo, anchor, head = self._prepared(tmp_path, monkeypatch)
-        _write(repo, "bootstrap/tests/_gate_preflight.py", "# tampered\n")
+        _write(repo, "tests/_gate_preflight.py", "# tampered\n")
         before = self._refs(repo)
         with pytest.raises(P.PreflightError, match="refuse this state"):
             _two_stage(repo, monkeypatch)
@@ -1669,7 +1673,7 @@ class TestThreeCommandIntegration:
         roster_path = repo / P.G._PROTECTED_ROSTER_REL
         roster_path.parent.mkdir(parents=True, exist_ok=True)
         roster_path.write_bytes((_REPO / P.G._PROTECTED_ROSTER_REL).read_bytes())
-        preflight_path = repo / "bootstrap/tests/_gate_preflight.py"
+        preflight_path = repo / "tests/_gate_preflight.py"
         source = preflight_path.read_text(encoding="utf-8")
         source = source.replace("_PROTECTED_ROSTER_MODE = \"active\"",
                                 "_PROTECTED_ROSTER_MODE = \"dormant\"", 1)
@@ -1695,7 +1699,7 @@ class TestThreeCommandIntegration:
         roster_path = repo / P.G._PROTECTED_ROSTER_REL
         roster_path.parent.mkdir(parents=True, exist_ok=True)
         roster_path.write_bytes((_REPO / P.G._PROTECTED_ROSTER_REL).read_bytes())
-        preflight_path = repo / "bootstrap/tests/_gate_preflight.py"
+        preflight_path = repo / "tests/_gate_preflight.py"
         bridge_source = preflight_path.read_text(encoding="utf-8")
         if "_PROTECTED_ROSTER_MODE = \"active\"" in bridge_source:
             bridge_source = bridge_source.replace(
@@ -1735,7 +1739,7 @@ class TestThreeCommandIntegration:
             encoding="utf-8")
         # A changed ordinary test makes broad and narrowed report policies
         # observably different throughout the stage-2 reconstruction.
-        _write(repo, "bootstrap/tests/test_smoke.py",
+        _write(repo, "tests/test_smoke.py",
                "def test_smoke():\n    assert True\n    assert 1 + 1 == 2\n")
         second_head = _signed_commit(repo, "activate reviewed protected roster")
         second_review = tmp_path / "activate-roster-review.txt"
@@ -1755,16 +1759,16 @@ class TestThreeCommandIntegration:
                 encoding="utf-8"))
         path_entries = {entry["display"]: entry
                         for entry in second_package["range_report"]["paths"]}
-        assert path_entries["bootstrap/tests/test_smoke.py"]["class"] == "outside-coverage"
-        assert path_entries["bootstrap/tests/test_smoke.py"]["role"] == "other"
+        assert path_entries["tests/test_smoke.py"]["class"] == "outside-coverage"
+        assert path_entries["tests/test_smoke.py"]["role"] == "other"
         old_extract = tmp_path / "bridge-anchor-checker"
         old_extract.mkdir()
         subprocess.run(
             f"git -C {shlex.quote(str(repo))} archive "
-            f"{shlex.quote(first['new_anchor'])} bootstrap/tests | "
+            f"{shlex.quote(first['new_anchor'])} tests | "
             f"tar -x -C {shlex.quote(str(old_extract))}",
             shell=True, check=True)
-        bridge_checker = old_extract / "bootstrap/tests/_gate_preflight.py"
+        bridge_checker = old_extract / "tests/_gate_preflight.py"
         old_bridge_scan = self._cli(
             bridge_checker, "scan-digest", "--repo", str(repo),
             "--anchor", first["new_anchor"], "--candidate", second_head)
@@ -1779,7 +1783,7 @@ class TestThreeCommandIntegration:
                                           transition=None, repo=repo) == approved
 
         # Exercise both ceremony stages after P carries the narrowed manifest.
-        _write(repo, "bootstrap/tests/test_smoke.py",
+        _write(repo, "tests/test_smoke.py",
                "def test_smoke():\n    assert True\n    assert 2 + 2 == 4\n")
         steady_head = _signed_commit(repo, "steady-state candidate")
         P._phase = P._PHASE_CANDIDATE   # separate process in the recorded ceremony
@@ -1810,7 +1814,7 @@ class TestThreeCommandIntegration:
         repo, bridge_anchor = self._bridge_anchor(tmp_path, monkeypatch)
         roster_path = repo / P.G._PROTECTED_ROSTER_REL
         roster_path.write_bytes(b'{"protected_python_paths": []}\n')
-        preflight_path = repo / "bootstrap/tests/_gate_preflight.py"
+        preflight_path = repo / "tests/_gate_preflight.py"
         preflight_path.write_text(
             preflight_path.read_text(encoding="utf-8").replace(
                 "_PROTECTED_ROSTER_MODE = \"dormant\"",
@@ -1835,7 +1839,7 @@ class TestThreeCommandIntegration:
             self, tmp_path, monkeypatch):
         import hashlib
         repo, _bridge_anchor = self._bridge_anchor(tmp_path, monkeypatch)
-        preflight_path = repo / "bootstrap/tests/_gate_preflight.py"
+        preflight_path = repo / "tests/_gate_preflight.py"
         preflight_path.write_text(
             preflight_path.read_text(encoding="utf-8").replace(
                 "_PROTECTED_ROSTER_MODE = \"dormant\"",
@@ -1860,7 +1864,7 @@ class TestThreeCommandIntegration:
         staged_manifest = json.loads(base64.b64decode(
             package["prospective_manifest_b64"]))
         staged_manifest["protected_roster"]["protected_python_paths"].append(
-            "bootstrap/tests/test_agreement_retired.py")
+            "tests/test_agreement_retired.py")
         substituted = (json.dumps(staged_manifest, indent=2, sort_keys=True)
                        .encode() + b"\n")
         package["prospective_manifest_b64"] = base64.b64encode(substituted).decode()
@@ -2057,7 +2061,7 @@ class TestThreeCommandIntegration:
 # the recorded anchored invocation, actually executed
 #
 # The runbook recorded a ceremony that had never been run once. It extracted
-# `bootstrap/tests` into a temp directory and invoked the checker with no
+# `tests` into a temp directory and invoked the checker with no
 # `--repo`, so the `_REPO` default -- derived from `__file__` -- named the
 # extraction directory. Executing the recorded steps refused with git's bare
 # `fatal: not a git repository` before reaching the checkout at all.
@@ -2376,7 +2380,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         """
         import hashlib
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        _write(repo, "bootstrap/tests/_oracle.py", "# a reviewed change\n")
+        _write(repo, "tests/_oracle.py", "# a reviewed change\n")
         resolved = _signed_commit(repo, "reviewed authority change")
         manifest = tmp_path / "review-manifest.txt"
         manifest.write_text(_review_manifest(repo, resolved), encoding="utf-8")
@@ -2430,7 +2434,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         """
         import hashlib
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        rel = "bootstrap/tests/_gate_preflight.py"
+        rel = "tests/_gate_preflight.py"
         original = (repo / rel).read_text(encoding="utf-8")
         (repo / rel).write_text(
             original + "\n# reviewed change to the checker itself ([D2])\n",
@@ -2594,21 +2598,21 @@ class TestRawTreeMaterialization:
 
     def test_export_ignore_cannot_hide_a_tracked_file(self, tmp_path):
         repo = _repo(tmp_path)
-        _write(repo, "bootstrap/tests/normal.py", "x = 1\n")
-        _write(repo, "bootstrap/tests/omitted.py", "hidden = True\n")
+        _write(repo, "tests/normal.py", "x = 1\n")
+        _write(repo, "tests/omitted.py", "hidden = True\n")
         _write(repo, ".gitattributes",
-               "bootstrap/tests/omitted.py export-ignore\n")
+               "tests/omitted.py export-ignore\n")
         head = _commit(repo, "with an export-ignore")
 
         # The attack is live: `git archive` drops it while the tree keeps it.
         archived = subprocess.run(
             f"git -C {shlex.quote(str(repo))} archive --format=tar HEAD | tar -t",
             shell=True, capture_output=True, text=True)
-        assert "bootstrap/tests/omitted.py" not in archived.stdout
+        assert "tests/omitted.py" not in archived.stdout
 
         with P.raw_tree(head, repo=repo) as tree:
-            assert (tree / "bootstrap/tests/omitted.py").exists()
-            assert (tree / "bootstrap/tests/normal.py").exists()
+            assert (tree / "tests/omitted.py").exists()
+            assert (tree / "tests/normal.py").exists()
 
     def test_a_tracked_symlink_refuses_rather_than_being_written(self, tmp_path):
         repo = _repo(tmp_path)
@@ -2808,9 +2812,9 @@ class TestTheCheckpointCarriesTheAdmittedSet:
     """
 
     _ADMITTED = {
-        "bootstrap/tests/_gate_manifest.py": "a" * 64,
-        "bootstrap/tests/_gate_preflight.py": "b" * 64,
-        "bootstrap/tests/_oracle.py": "c" * 64,
+        "tests/_gate_manifest.py": "a" * 64,
+        "tests/_gate_preflight.py": "b" * 64,
+        "tests/_oracle.py": "c" * 64,
     }
 
     def _message(self, admitted=None, *, digest="d" * 64, provenance="ESR 1"):
@@ -2908,8 +2912,8 @@ class TestTheCheckpointCarriesTheAdmittedSet:
         """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
         # A real closure change, or the transition refuses with no delta.
-        changed = {"bootstrap/tests/_oracle.py"}
-        _write(repo, "bootstrap/tests/_oracle.py", "# a reviewed change\n")
+        changed = {"tests/_oracle.py"}
+        _write(repo, "tests/_oracle.py", "# a reviewed change\n")
         head = _signed_commit(repo, "authority change")
         manifest = tmp_path / "review.txt"
         manifest.write_text(_review_manifest(repo, head), encoding="utf-8")
@@ -2962,7 +2966,7 @@ class TestTheClosureCheckAdmitsOnlyTheReviewedSet:
     def _changed(self, tmp_path):
         """An anchor, and a worktree whose closure member genuinely differs."""
         repo, anchor = _closure_repo(tmp_path)
-        rel = "bootstrap/tests/_oracle.py"
+        rel = "tests/_oracle.py"
         _write(repo, rel, "# a reviewed change\n")
         _commit(repo, "authority change")
         live = (repo / rel).read_bytes()
@@ -3004,7 +3008,7 @@ class TestTheClosureCheckAdmitsOnlyTheReviewedSet:
         """Per-path, not per-transition. A set that admits one changed member
         must leave every other member held to the anchor."""
         repo, anchor, rel, sha = self._changed(tmp_path)
-        other = "bootstrap/tests/_oracle_trust.py"
+        other = "tests/_oracle_trust.py"
         _write(repo, other, "# an unreviewed change\n")
         _commit(repo, "a second, unreviewed authority change")
 
@@ -3107,7 +3111,7 @@ class TestTransitionRefusesWithoutADelta:
         """
         repo, anchor_sha = _closure_repo(tmp_path)
         if change:
-            _write(repo, "bootstrap/tests/_oracle.py", "# changed\n")
+            _write(repo, "tests/_oracle.py", "# changed\n")
             head = _commit(repo, "authority change")
         else:
             _write(repo, "unrelated.txt", "x\n")
@@ -3117,7 +3121,7 @@ class TestTransitionRefusesWithoutADelta:
     def test_a_closure_change_is_a_delta(self, tmp_path):
         repo, anchor, head = self._closure_repo(tmp_path, change=True)
         delta = P.authority_closure_delta(anchor, head, repo=repo)
-        assert "bootstrap/tests/_oracle.py" in delta
+        assert "tests/_oracle.py" in delta
 
     def test_no_closure_change_is_no_delta(self, tmp_path):
         repo, anchor, head = self._closure_repo(tmp_path, change=False)
@@ -3206,7 +3210,7 @@ class TestAuthorizationPackage:
             "range_report_digest": "d" * 64,
             "review_manifest": {"provenance": "review 2026-08-12",
                                 "candidate": "b" * 40, "digest": "d" * 64,
-                                "members": {"bootstrap/tests/_oracle.py":
+                                "members": {"tests/_oracle.py":
                                             "a" * 64}},
             "prospective_manifest_b64": "e30=",
             "prospective_manifest_sha256": "e" * 64,
@@ -3559,15 +3563,14 @@ class TestAuthorizationPackage:
         with pytest.raises(P.PackageError, match="unexpected"):
             P.read_package(dest, confirmed_sha256=digest)
 
-    def test_the_executable_only_list_is_closed(self):
+    def test_the_executable_only_list_is_closed(self, _layout_anchored_clone):
         """These are exactly the fields static re-derivation cannot
         produce. A third member without a matching change to
         `rederive_static_manifest` means something derivable is being
         delegated to the candidate."""
         assert P.PACKAGE_EXECUTABLE_ONLY == ("collection", "interpreter")
-        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(P._REPO),
-                              capture_output=True, text=True).stdout.strip()
-        derived = set(_rederived(P._REPO, head))
+        c = _layout_anchored_clone
+        derived = set(_rederived(c.repo, c.head))
         for name in P.PACKAGE_EXECUTABLE_ONLY:
             assert name not in derived, (
                 f"{name} IS statically re-derivable; delegating it to the "
@@ -3579,19 +3582,17 @@ class TestReportBindsTheProspectiveManifest:
     report bound the manifest already in the worktree while `apply` committed a
     different one, so `rederive_and_bind` reconfirmed the wrong identity."""
 
-    def test_the_prospective_bytes_win_over_the_worktree_copy(self):
-        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(P._REPO),
-                              capture_output=True, text=True).stdout.strip()
-        anchor = subprocess.run(["git", "rev-parse", "HEAD~3"], cwd=str(P._REPO),
-                                capture_output=True, text=True).stdout.strip()
+    def test_the_prospective_bytes_win_over_the_worktree_copy(
+            self, _layout_anchored_clone):
+        c = _layout_anchored_clone
         prospective = b'{"prospective": true}\n'
-        import hashlib
 
         with_pros = P.range_review_report(
-            anchor, head, branch="master", expected_old=head,
-            prospective_manifest=prospective)
+            c.anchor, c.head, branch="master", expected_old=c.head,
+            prospective_manifest=prospective, repo=c.repo)
         without = P.range_review_report(
-            anchor, head, branch="master", expected_old=head)
+            c.anchor, c.head, branch="master", expected_old=c.head,
+            repo=c.repo)
 
         assert with_pros["manifest_sha256"] == \
             hashlib.sha256(prospective).hexdigest()
@@ -3977,12 +3978,13 @@ class TestCandidateCodeCannotSignFromStageOne:
         keygen, _agent, _add = _ssh_tooling()
         root = tmp_path / "extracted"
         (root / "tests").mkdir(parents=True, exist_ok=True)
-        shutil.copy2(_ARTIFACT_PATH, root / "reanchor.sh")
+        (root / "release").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(_ARTIFACT_PATH, root / "release" / "reanchor.sh")
         (root / "tests" / "_gate_preflight.py").write_text(
             _SIGNING_CHECKER_SRC.replace("@KEYGEN@", keygen)
             .replace("@PUB@", str(pub)).replace("@OUT@", str(out))
             .replace("@DIR@", str(tmp_path)))
-        return root / "reanchor.sh"
+        return root / "release" / "reanchor.sh"
 
     def test_the_candidate_position_cannot_sign_through_a_live_agent(
             self, tmp_path):
@@ -4046,7 +4048,7 @@ class TestTheTwoStagesWantOppositeAgentStates:
 
 
 class TestTheCeremonyArtifactIsAClosureMember:
-    """`bootstrap/reanchor.sh` IS the procedure, so its bytes decide what
+    """`release/reanchor.sh` IS the procedure, so its bytes decide what
     executes at the next ceremony -- which is the definition the closure uses,
     and the reason the runbook and the roster are already in it.
 
@@ -4457,7 +4459,7 @@ class TestStaticManifestIsWiredIntoCheck:
         unpinned; that is the gap, and pinning it is the fix.
         """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        sneaked = "bootstrap/tests/test_omitted.py"
+        sneaked = "tests/test_omitted.py"
         _write(repo, sneaked, "SNEAKED = True\n")
         _write(repo, ".gitattributes", f"{sneaked} export-ignore\n")
         _signed_commit(repo, "a file archive cannot see")
@@ -4497,7 +4499,7 @@ class TestLoaderTrustBoundary:
         The tamper is loud on purpose: if the substituted bytes ever run, they
         leave a file behind, so the test cannot pass by accident.
         """
-        rel = "bootstrap/tests/_gate_preflight.py"
+        rel = "tests/_gate_preflight.py"
         original = (repo / rel).read_text(encoding="utf-8")
         (repo / rel).write_text(
             f"import pathlib\n"
@@ -4517,7 +4519,7 @@ class TestLoaderTrustBoundary:
 
         # The substitution is live: an ambient read returns the tampered bytes.
         ambient = _run("git", "show",
-                       f"{anchor}:bootstrap/tests/_gate_preflight.py", cwd=repo)
+                       f"{anchor}:tests/_gate_preflight.py", cwd=repo)
         assert self._MARKER in ambient.stdout, (
             "the probe must actually substitute, or this proves nothing")
 
@@ -4656,8 +4658,8 @@ class TestLoaderTrustBoundary:
             # rewrite the extracted checker, then vouch for it
             f"printf 'import pathlib\\n"
             f"pathlib.Path({str(repo / 'PWNED')!r}).write_text(\"x\")\\n' "
-            f"> bootstrap/tests/_gate_preflight.py 2>/dev/null\n"
-            "echo 'bootstrap/tests/_gate_preflight.py: OK'\n"
+            f"> tests/_gate_preflight.py 2>/dev/null\n"
+            "echo 'tests/_gate_preflight.py: OK'\n"
             "exit 0\n", encoding="utf-8")
         fake.chmod(0o755)
 
@@ -4711,13 +4713,13 @@ class TestLoaderTrustBoundary:
         hostile = (
             'echo() {\n'
             '  case "$1" in\n'
-            '    *"  bootstrap/tests/_gate_preflight.py")\n'
+            '    *"  tests/_gate_preflight.py")\n'
             f'      printf %s\\\\n "import pathlib" '
             f'"pathlib.Path({str(pwned)!r}).write_text(\'x\')" '
-            '        > "$T/bootstrap/tests/_gate_preflight.py"\n'
+            '        > "$T/tests/_gate_preflight.py"\n'
             '      set -- "$(/usr/bin/shasum -a 256 '
-            '"$T/bootstrap/tests/_gate_preflight.py" '
-            '| cut -d" " -f1)  bootstrap/tests/_gate_preflight.py"\n'
+            '"$T/tests/_gate_preflight.py" '
+            '| cut -d" " -f1)  tests/_gate_preflight.py"\n'
             '      ;;\n'
             '  esac\n'
             '  command echo "$@"\n'
@@ -4858,22 +4860,64 @@ class TestObjectFormatAwareWidth:
 
 
 @pytest.fixture(scope="session")
-def _live_report():
-    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(P._REPO),
-                          capture_output=True, text=True).stdout.strip()
-    anchor = subprocess.run(["git", "rev-parse", "HEAD~3"], cwd=str(P._REPO),
-                            capture_output=True, text=True).stdout.strip()
-    return P.range_review_report(anchor, head, branch="master",
-                                 expected_old=head)
+def _layout_anchored_clone(tmp_path_factory):
+    """A scratch clone holding a previous anchor in the current layout.
+
+    The real `refs/cairn/gate-anchor` can point at a tree from before a layout
+    move, so its manifest sits at a path the checker no longer reads and it
+    cannot serve as the previous anchor for a report over live history. This
+    builds the shape a current-layout anchor has: the commit three before HEAD,
+    plus the current protected roster bytes and a manifest whose
+    `protected_roster` entry binds them. The commit lives only in the scratch
+    clone; nothing here writes to the live repository or to any ref in it.
+    """
+    def git(*args, cwd, text=True):
+        return subprocess.run(["git", *args], cwd=str(cwd), capture_output=True,
+                              text=text, check=True).stdout
+
+    head = git("rev-parse", "HEAD", cwd=P._REPO).strip()
+    clone = tmp_path_factory.mktemp("layout-anchor") / "repo"
+    git("clone", "-q", "--no-checkout", str(P._REPO), str(clone), cwd=P._REPO)
+    git("config", "user.email", "m@example", cwd=clone)
+    git("config", "user.name", "M", cwd=clone)
+    git("config", "commit.gpgsign", "false", cwd=clone)
+    roster = git("show", f"{head}:{G._PROTECTED_ROSTER_REL}", cwd=clone,
+                 text=False)
+    git("checkout", "-q", "--detach", f"{head}~3", cwd=clone)
+    manifest = json.loads(git("show", f"{head}~3:{G._MANIFEST_REL}", cwd=clone))
+    manifest["protected_roster"] = {
+        "path": G._PROTECTED_ROSTER_REL,
+        "sha256": hashlib.sha256(roster).hexdigest()}
+    for rel, data in (
+            (G._PROTECTED_ROSTER_REL, roster),
+            (G._MANIFEST_REL, (json.dumps(manifest, indent=2, sort_keys=True)
+                               + "\n").encode("utf-8"))):
+        (clone / rel).parent.mkdir(parents=True, exist_ok=True)
+        (clone / rel).write_bytes(data)
+    git("add", "-f", G._MANIFEST_REL, G._PROTECTED_ROSTER_REL, cwd=clone)
+    git("commit", "-q", "-m", "synthetic current-layout anchor", cwd=clone)
+    anchor = git("rev-parse", "HEAD", cwd=clone).strip()
+    git("update-ref", P._ANCHOR_REF, anchor, cwd=clone)   # the clone's ref only
+    git("checkout", "-q", "--detach", head, cwd=clone)
+    return types.SimpleNamespace(repo=clone, anchor=anchor, head=head)
+
+
+@pytest.fixture(scope="session")
+def _live_report(_layout_anchored_clone):
+    c = _layout_anchored_clone
+    return P.range_review_report(c.anchor, c.head, branch="master",
+                                 expected_old=c.head, repo=c.repo)
 
 
 class TestRangeReviewReport:
 
-    def test_the_digest_is_deterministic(self, _live_report):
+    def test_the_digest_is_deterministic(self, _live_report,
+                                         _layout_anchored_clone):
         again = P.range_review_report(
             _live_report["anchor"], _live_report["candidate_head"],
             branch=_live_report["branch"],
-            expected_old=_live_report["expected_old"])
+            expected_old=_live_report["expected_old"],
+            repo=_layout_anchored_clone.repo)
         assert P.range_report_digest(again) == P.range_report_digest(_live_report)
 
     def test_every_path_is_in_exactly_one_class(self, _live_report):
@@ -4954,11 +4998,13 @@ class TestReportAgreesWithManifestPolicy:
     wrong facts.
     """
 
-    def test_the_classifier_consumes_the_manifest_source(self, _live_report):
+    def test_the_classifier_consumes_the_manifest_source(
+            self, _live_report, _layout_anchored_clone):
+        repo = _layout_anchored_clone.repo
         roster = P.resolve_protected_roster(
             _live_report["anchor"], _live_report["candidate_head"],
-            transition=None, repo=P._REPO)
-        frozen = set(G._frozen_files(P._REPO, roster))
+            transition=None, repo=repo)
+        frozen = set(G._frozen_files(repo, roster))
         cascade = set(G.CASCADE_MUTABLE)
         phase = set(G.PHASE_SPLIT_TARGETS)
         for entry in _live_report["paths"]:
@@ -5020,25 +5066,24 @@ class TestCheckpointBindsTheReport:
             manifest_sha256="c" * 64, authority_hashes={}, scope={})
         assert "(not bound)" in msg
 
-    def test_rederivation_refuses_a_stale_confirmation(self):
-        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(P._REPO),
-                              capture_output=True, text=True).stdout.strip()
-        anchor = subprocess.run(["git", "rev-parse", "HEAD~3"], cwd=str(P._REPO),
-                                capture_output=True, text=True).stdout.strip()
+    def test_rederivation_refuses_a_stale_confirmation(
+            self, _layout_anchored_clone):
+        c = _layout_anchored_clone
         with pytest.raises(P.RangeReportDrift) as exc:
-            P.rederive_and_bind(anchor, head, branch="master",
-                                expected_old=head, confirmed_digest="0" * 64)
+            P.rederive_and_bind(c.anchor, c.head, branch="master",
+                                expected_old=c.head, confirmed_digest="0" * 64,
+                                repo=c.repo)
         assert "confirmation is void" in str(exc.value)
 
-    def test_rederivation_accepts_the_matching_digest(self):
-        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(P._REPO),
-                              capture_output=True, text=True).stdout.strip()
-        anchor = subprocess.run(["git", "rev-parse", "HEAD~3"], cwd=str(P._REPO),
-                                capture_output=True, text=True).stdout.strip()
+    def test_rederivation_accepts_the_matching_digest(
+            self, _layout_anchored_clone):
+        c = _layout_anchored_clone
         good = P.range_report_digest(P.range_review_report(
-            anchor, head, branch="master", expected_old=head))
-        fresh = P.rederive_and_bind(anchor, head, branch="master",
-                                    expected_old=head, confirmed_digest=good)
+            c.anchor, c.head, branch="master", expected_old=c.head,
+            repo=c.repo))
+        fresh = P.rederive_and_bind(c.anchor, c.head, branch="master",
+                                    expected_old=c.head, confirmed_digest=good,
+                                    repo=c.repo)
         assert P.range_report_digest(fresh) == good
 
     def test_a_draft_missing_a_binding_field_refuses_before_construction(self):
@@ -5368,7 +5413,7 @@ class TestAtomicPublication:
 def test_reviewed_transition_admits_a_new_protected_test(tmp_path, monkeypatch):
     """A signed prior roster changes only through a reviewed transition."""
     repo, anchor, _, _ = _ceremony_repo(tmp_path)
-    rel = "bootstrap/tests/test_smoke.py"
+    rel = "tests/test_smoke.py"
     roster_path = repo / P.G._PROTECTED_ROSTER_REL
     roster = json.loads(roster_path.read_text(encoding="utf-8"))
     assert rel not in roster["protected_python_paths"]
@@ -5390,7 +5435,7 @@ def test_reviewed_transition_admits_a_new_protected_test(tmp_path, monkeypatch):
 def test_ordinary_test_edit_uses_steady_state_ceremony(tmp_path, monkeypatch):
     """An ordinary test edit leaves the roster unchanged and needs no transition."""
     repo, anchor, _, _ = _ceremony_repo(tmp_path)
-    rel = "bootstrap/tests/test_smoke.py"
+    rel = "tests/test_smoke.py"
     before = P.resolve_protected_roster(anchor, anchor, transition=None, repo=repo)
     assert rel not in before["protected_python_paths"]
     _write(repo, rel, "def test_smoke():\n    assert 1 + 1 == 2\n")
