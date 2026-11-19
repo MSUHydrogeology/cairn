@@ -2,7 +2,7 @@
 
 **Author**: Codex Sol (Implementation)
 **Source proposal**: dev/proposals/archive/2026-11-19-codex-source-provenance-bytes.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-19
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/conventions.md, dev/rules/working-agreements.md
@@ -145,7 +145,7 @@ C1 and C2 hold. The clean tagged, changed-byte, unavailable and invalid-path che
 
 Python 3.13.13 on Mac and 3.13.18 on native Windows: 12 provenance tests passed on `c07569cd` on each host. Reran three affected checks on each host on the correction: Mac 3 passed in 4.31 seconds and Windows 3 passed in 5.51 seconds. Focused Bandit and prose checks passed. A clean tagged test copy of `c07569cd` on Mac read 51,639,730 bytes across 1,097 tracked files in 1.89 seconds and produced no warning.
 
-**Benefit versus cost**: worth it -- the warning detects a byte mismatch even when Git reports clean. The tagged clean path took 1.89 seconds on the measured tree; ongoing cost is one bounded read and three public warning cases added to an existing suite. Revisit if release size approaches the read cap.
+**Benefit versus cost**: worth it -- the warning detects a byte mismatch even when Git reports clean. The tagged clean path took 1.89 seconds on the measured tree; ongoing cost is one bounded read and focused public warning cases in the existing suite. Revisit if release size approaches the read cap.
 
 Remaining: apply the reviewed AST correction for the changed warning and added helper as part of the grouped re-anchor. Home: the v0.8 trust-operation wait in dev/PLANNING.md. The AST gate remains unpassed.
 

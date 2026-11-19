@@ -69,6 +69,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 - **Changed: Useful module offers.** Guidance now explains unselected modules and known costs, asks whether to adopt them, and offers them when a task needs them. Missing descriptions defer the offer; existing automatic core and skills additions continue. ([plan](dev/plans/archive/2026-11-18-module-offers.md))
 
+- **Security: Check installer source bytes.** Before treating a tagged checkout as clean, the installer compares its tracked files with the commit. It warns if the bytes differ or cannot be verified. ([plan](dev/plans/archive/2026-11-19-source-provenance-bytes.md))
+
 ### Minor changes
 
 - **Added** — Gitleaks `8.30.1` builds for `darwin/arm64` and `windows/arm64` are admitted in `portable-security-sweeps`, enabling full-mode secret sweeps (allowing clean sweeps to return CLEAN exit 0 rather than reduced-mode INCOMPLETE exit 5) when the binary matches its recorded SHA-256 checksum ([evidence ledger](dev/measurement/gitleaks-version-support.md); [plan](dev/plans/archive/2026-11-18-release-secrets-scanning.md)).

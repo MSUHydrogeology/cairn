@@ -47,7 +47,7 @@ Both Gitleaks `8.30.1` build admissions (`darwin/arm64` `GL-2026-11-18-darwin-ar
 
 - **Windows Git Bash release routes.** Verified the current ordinary route against public v0.7.0 and the stronger bootstrap against a disposable signed fixture at `fd1e68ea`. In native Windows Git Bash the candidate scaffold installed and verified 64 recorded files. The fixture target commit `068937cc` includes the installed files and lockfile; the synthetic release tuple read back with source version `0.7.0` and matching commit prefix. Repeat official v0.8 tag and publication verification when those artifacts exist. The fixture provides local execution evidence only.
 - **Layout closeout.** `2fdc2c2c` restores relocated dispatcher paths and checks the linked lockfile refusal without changing the engine's upgrade behavior. The 23 focused dispatcher cases and two lockfile cases passed. Independent review records live with the [layout plan](plans/archive/2026-11-17-repository-layout.md).
-- **Installer source provenance warning.** The Maintainer asked for a fix. The [plan](plans/2026-11-19-source-provenance-bytes.md) covers checking the bytes against the tagged commit when Git would otherwise report clean.
+- **Installer source provenance warning.** The [archived repair](plans/archive/2026-11-19-source-provenance-bytes.md) passed focused Mac and Windows checks and independent reviews. The existing trust-operation wait includes the changed AST fingerprints.
 
 ### Group 5 completion — 2026-11-18
 
