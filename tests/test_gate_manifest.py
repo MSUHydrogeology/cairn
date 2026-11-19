@@ -65,11 +65,11 @@ def test_produce_has_the_expected_shape(produced):
 #: Gate files that did not exist when the roster was approved: a roster must not
 #: let any of them out of the frozen set.
 _FUTURE_NON_TEST_FILES = (
-    "bootstrap/tests/helpers.py",
-    "bootstrap/tests/fixtures/new_fixture.py",
-    "scripts/new_script.py",
+    "tests/helpers.py",
+    "tests/fixtures/new_fixture.py",
+    "release/new_script.py",
     "templates/modules/new_module.py",
-    "bootstrap/new_engine.py",
+    "install/new_engine.py",
 )
 
 
@@ -78,13 +78,13 @@ def _candidate_repo(tmp_path: Path) -> Path:
     files, a planted roster that protects nothing, and what `produce` needs to
     collect and pin it."""
     repo = tmp_path / "candidate"
-    tests = repo / "bootstrap" / "tests"
+    tests = repo / "tests"
     (tests / "fixtures").mkdir(parents=True)
     (tests / "__init__.py").write_text("", encoding="utf-8")
     shutil.copy(Path(G.__file__), tests / "_gate_manifest.py")
-    shutil.copy(_REPO / "bootstrap/tests/fixtures/scaffold_ast_baseline.json",
+    shutil.copy(_REPO / "tests/fixtures/scaffold_ast_baseline.json",
                 tests / "fixtures" / "scaffold_ast_baseline.json")
-    for rel in ("bootstrap/tests/test_protected.py", "bootstrap/tests/test_ordinary.py"):
+    for rel in ("tests/test_protected.py", "tests/test_ordinary.py"):
         (repo / rel).write_text("def test_x(): pass\n", encoding="utf-8")
     for rel in _FUTURE_NON_TEST_FILES:
         path = repo / rel
@@ -97,7 +97,7 @@ def _candidate_repo(tmp_path: Path) -> Path:
 
 @pytest.mark.parametrize("roster", [
     None,
-    {"protected_python_paths": ["bootstrap/tests/test_protected.py"]},
+    {"protected_python_paths": ["tests/test_protected.py"]},
 ], ids=["no-roster-though-the-tree-plants-one", "roster-names-one-test-file"])
 def test_produce_freezes_future_non_test_files_and_a_roster_narrows_only_test_files(
         tmp_path, roster):
@@ -105,34 +105,34 @@ def test_produce_freezes_future_non_test_files_and_a_roster_narrows_only_test_fi
     carries.  With one, only test files leave the frozen set; every other gate
     file, including one added later, stays in it."""
     frozen = set(G.produce(_candidate_repo(tmp_path), roster)["frozen_files"])
-    required = {"bootstrap/tests/test_protected.py", *_FUTURE_NON_TEST_FILES}
+    required = {"tests/test_protected.py", *_FUTURE_NON_TEST_FILES}
     if roster is None:
-        required.add("bootstrap/tests/test_ordinary.py")
+        required.add("tests/test_ordinary.py")
     assert required <= frozen
-    assert ("bootstrap/tests/test_ordinary.py" in frozen) == (roster is None)
+    assert ("tests/test_ordinary.py" in frozen) == (roster is None)
 
 
 def test_frozen_set_boundary(produced):
     frozen = produced["frozen_files"]
     # known gate files are pinned
-    assert "bootstrap/tests/test_ast_attest.py" in frozen
-    assert "bootstrap/tests/test_intents_tool.py" in frozen
-    assert "bootstrap/tests/test_agreement_retired.py" not in frozen
-    assert "bootstrap/tests/fixtures/protected_test_roster.json" in frozen
-    assert "scripts/check_cairn.py" in frozen
-    assert "bootstrap/tests/_ast_attest.py" in frozen
-    assert "bootstrap/tests/_gate_manifest.py" in frozen  # self-pinned
+    assert "tests/test_ast_attest.py" in frozen
+    assert "tests/test_intents_tool.py" in frozen
+    assert "tests/test_agreement_retired.py" not in frozen
+    assert "tests/fixtures/protected_test_roster.json" in frozen
+    assert "tests/check_cairn.py" in frozen
+    assert "tests/_ast_attest.py" in frozen
+    assert "tests/_gate_manifest.py" in frozen  # self-pinned
     # top-level gate-defining engine modules MUST be frozen (Security review BLOCKER):
     # security_check.py is the single source of the Bandit allowlist + scan targets.
-    assert "bootstrap/security_check.py" in frozen
-    assert "bootstrap/verify_integrity.py" in frozen
-    assert "bootstrap/check_module_body_coverage.py" in frozen
+    assert "release/security_check.py" in frozen
+    assert "install/verify_integrity.py" in frozen
+    assert "install/check_module_body_coverage.py" in frozen
     # cascade-mutable files + the manifest artifact are NOT frozen-hashed
-    assert "bootstrap/tests/fixtures/scaffold_ast_baseline.json" not in frozen
-    assert "bootstrap/_scaffold/config.py" not in frozen
+    assert "tests/fixtures/scaffold_ast_baseline.json" not in frozen
+    assert "install/_scaffold/config.py" not in frozen
     # the differential oracle's frozen-engine fixture is RETIRED (git-ref baseline)
     assert not any("scaffold_frozen" in f for f in frozen)
-    assert "bootstrap/tests/fixtures/frozen_engine/scaffold_frozen.py" not in G.CASCADE_MUTABLE
+    assert "tests/fixtures/frozen_engine/scaffold_frozen.py" not in G.CASCADE_MUTABLE
     assert G._MANIFEST_REL not in frozen
     # shipped scanner / security-gate implementations ARE frozen (Codex confirmation Finding 2)
     assert "templates/modules/team-gated/content_scan.py" in frozen
@@ -161,7 +161,7 @@ def test_verify_refuses_present_null_roster(produced, tmp_path, capsys):
 def test_verify_holds_on_frozen_file_modification(produced, tmp_path, capsys):
     tampered = copy.deepcopy(produced)
     # pretend a pinned gate file was edited (wrong sha)
-    tampered["frozen_files"]["bootstrap/tests/test_ast_attest.py"] = "0" * 64
+    tampered["frozen_files"]["tests/test_ast_attest.py"] = "0" * 64
     mp = _write_manifest(tmp_path, tampered)
     assert G.verify(mp, anchor_ref=None, repo=_REPO) == 1
     assert "FROZEN-MODIFIED" in capsys.readouterr().err
@@ -172,7 +172,7 @@ def test_verify_holds_on_dropped_node(produced, tmp_path, capsys, monkeypatch):
     tampered = copy.deepcopy(produced)
     # Drop an actual node owned by a protected file.
     victim = next(n for n in tampered["collection"]["node_ids"]
-                  if n.startswith("bootstrap/tests/test_ast_attest.py::"))
+                  if n.startswith("tests/test_ast_attest.py::"))
     mp = _write_manifest(tmp_path, tampered)
     ids = set(produced["collection"]["node_ids"]) - {victim}
     marked = produced["collection"]["skip_xfail_marked"]
@@ -196,7 +196,7 @@ def test_verify_holds_on_new_skip_marker(produced, tmp_path, capsys, monkeypatch
     pinned_marked = set(produced["collection"]["skip_xfail_marked"])
     # simulate the run adding a skip/xfail marker to a currently-UNMARKED test
     fresh = next(i for i in ids if i not in pinned_marked
-                 and i.startswith("bootstrap/tests/test_ast_attest.py::"))
+                 and i.startswith("tests/test_ast_attest.py::"))
     monkeypatch.setattr(G, "_collect", lambda repo=_REPO: (sorted(ids), [fresh], 0))
     assert G.verify(mp, anchor_ref=None, repo=_REPO) == 1
     assert "SKIP-XFAIL-NEW" in capsys.readouterr().err
@@ -205,43 +205,43 @@ def test_verify_holds_on_new_skip_marker(produced, tmp_path, capsys, monkeypatch
 def test_verify_allows_added_test(produced, tmp_path, capsys, monkeypatch):
     mp = _write_manifest(tmp_path, produced)
     ids = produced["collection"]["node_ids"]
-    extra = "bootstrap/tests/test_newly_added.py::test_extra"
+    extra = "tests/test_newly_added.py::test_extra"
     # a superset of pinned (nothing dropped) + one new node, no new markers
     monkeypatch.setattr(G, "_collect", lambda repo=_REPO: (sorted(ids + [extra]), [], 0))
     assert G.verify(mp, anchor_ref=None, repo=_REPO) == 0
     output = capsys.readouterr().err
     assert "COLLECTION-ADDED" in output
-    assert "UNPROTECTED-NEW: bootstrap/tests/test_newly_added.py" not in output
+    assert "UNPROTECTED-NEW: tests/test_newly_added.py" not in output
 
 
 def test_node_added_to_existing_ordinary_file_is_not_unprotected_new(
         produced, tmp_path, capsys, monkeypatch):
     mp = _write_manifest(tmp_path, produced)
     ids = produced["collection"]["node_ids"]
-    extra = "bootstrap/tests/test_agreement_retired.py::test_new_node"
+    extra = "tests/test_agreement_retired.py::test_new_node"
     monkeypatch.setattr(G, "_collect", lambda repo=_REPO: (sorted(ids + [extra]), [], 0))
     G.verify(mp, anchor_ref=None, repo=_REPO)
     output = capsys.readouterr().err
     assert f"COLLECTION-ADDED: {extra}" in output
-    assert "UNPROTECTED-NEW: bootstrap/tests/test_agreement_retired.py" not in output
+    assert "UNPROTECTED-NEW: tests/test_agreement_retired.py" not in output
 
 
 def test_ordinary_file_and_node_deltas_are_notes(produced, tmp_path, capsys, monkeypatch):
     tampered = copy.deepcopy(produced)
-    ordinary = "bootstrap/tests/test_agreement_retired.py"
+    ordinary = "tests/test_agreement_retired.py"
     tampered["ordinary_test_files"][ordinary] = "0" * 64
-    removed_file = "bootstrap/tests/test_removed_ordinary.py"
+    removed_file = "tests/test_removed_ordinary.py"
     tampered["ordinary_test_files"][removed_file] = "3" * 64
     mp = _write_manifest(tmp_path, tampered)
     original = G._ordinary_test_files(_REPO, produced["protected_roster"])
     monkeypatch.setattr(G, "_ordinary_test_files", lambda repo, roster: {
         **{k: v for k, v in original.items() if k != ordinary},
         ordinary: "1" * 64,
-        "bootstrap/tests/test_new_ordinary.py": "2" * 64,
+        "tests/test_new_ordinary.py": "2" * 64,
     })
     ids = set(produced["collection"]["node_ids"])
     removed = next(n for n in ids if n.startswith(ordinary + "::"))
-    extra = "bootstrap/tests/test_new_ordinary.py::test_new"
+    extra = "tests/test_new_ordinary.py::test_new"
     markers = set(produced["collection"]["skip_xfail_marked"])
     ordinary_marker = next(n for n in ids if n.startswith(ordinary + "::") and n not in markers)
     monkeypatch.setattr(G, "_collect", lambda repo=_REPO: (
@@ -249,7 +249,7 @@ def test_ordinary_file_and_node_deltas_are_notes(produced, tmp_path, capsys, mon
     assert G.verify(mp, anchor_ref=None, repo=_REPO) == 0
     output = capsys.readouterr().err
     assert f"UNPROTECTED-CHANGED: {ordinary}" in output
-    assert "UNPROTECTED-NEW: bootstrap/tests/test_new_ordinary.py" in output
+    assert "UNPROTECTED-NEW: tests/test_new_ordinary.py" in output
     assert f"UNPROTECTED-REMOVED: {removed_file}" in output
     assert "COLLECTION-ORDINARY-DROPPED" in output
     assert "SKIP-XFAIL-ORDINARY" in output
@@ -302,7 +302,7 @@ def test_trusted_verifier_detects_tamper_in_separate_target_tree(produced, tmp_p
     # clean target, anchor matches -> OK
     assert G.verify(man, anchor_ref=sha, repo=target, require_anchor=True, do_collect=False) == 0
     # tamper a frozen gate file in the target tree -> trusted code HOLDs
-    victim = target / "bootstrap/security_check.py"
+    victim = target / "release/security_check.py"
     victim.write_text(victim.read_text(encoding="utf-8") + "\n# tamper\n", encoding="utf-8")
     assert G.verify(man, anchor_ref=sha, repo=target, require_anchor=True, do_collect=False) == 1
 
@@ -453,7 +453,7 @@ class TestV1V2Differential:
 
     def test_deletion_holds_under_both(self, produced, tmp_path):
         target, man, sha = _target_tree(tmp_path, produced)
-        (target / "bootstrap/security_check.py").unlink()
+        (target / "release/security_check.py").unlink()
         assert _verdict(_as_v1(produced), target, man, sha) == 1
         assert _verdict(produced, target, man, sha) == 1
 
@@ -465,13 +465,13 @@ class TestV1V2Differential:
         subprocess.run(["git", "add", "-A"], cwd=target, check=True,
                        capture_output=True)
         subprocess.run(["git", "update-index", "--chmod=+x",
-                        "bootstrap/security_check.py"], cwd=target, check=True,
+                        "release/security_check.py"], cwd=target, check=True,
                        capture_output=True)
         subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t",
                         "commit", "-q", "-m", "chmod"], cwd=target, check=True,
                        capture_output=True)
         tree_mode = subprocess.run(
-            ["git", "ls-tree", "HEAD", "--", "bootstrap/security_check.py"],
+            ["git", "ls-tree", "HEAD", "--", "release/security_check.py"],
             cwd=target, check=True, capture_output=True, text=True).stdout
         assert tree_mode.startswith("100755 blob ")
         # v1 compares content only, so the executable bit is invisible to it.
@@ -497,13 +497,13 @@ class TestV1V2Differential:
         subprocess.run(["git", "add", "-A"], cwd=target, check=True,
                        capture_output=True)
         subprocess.run(["git", "update-index", "--chmod=+x",
-                        "bootstrap/security_check.py"], cwd=target, check=True,
+                        "release/security_check.py"], cwd=target, check=True,
                        capture_output=True)
         subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t",
                         "commit", "-q", "-m", "chmod"], cwd=target, check=True,
                        capture_output=True)
         tree_mode = subprocess.run(
-            ["git", "ls-tree", "HEAD", "--", "bootstrap/security_check.py"],
+            ["git", "ls-tree", "HEAD", "--", "release/security_check.py"],
             cwd=target, check=True, capture_output=True, text=True).stdout
         assert tree_mode.startswith("100755 blob ")
         assert _verdict(produced, target, man, sha) == 1, "precondition"
@@ -526,8 +526,8 @@ class TestV1V2Differential:
 def test_ordinary_changes_are_individually_reported_without_hold(
         produced, tmp_path, monkeypatch, change, expected):
     """Each ordinary change remains visible without blocking verification."""
-    ordinary = "bootstrap/tests/test_agreement_retired.py"
-    other = "bootstrap/tests/test_new_ordinary_matrix.py"
+    ordinary = "tests/test_agreement_retired.py"
+    other = "tests/test_new_ordinary_matrix.py"
     node = next(n for n in produced["collection"]["node_ids"]
                 if n.startswith(ordinary + "::")
                 and n not in produced["collection"]["skip_xfail_marked"])
@@ -569,7 +569,7 @@ def test_protected_changes_individually_hold(
         produced, tmp_path, monkeypatch, change, expected):
     """A protected byte change, node loss or new marker blocks verification."""
     manifest = copy.deepcopy(produced)
-    protected = "bootstrap/tests/test_ast_attest.py"
+    protected = "tests/test_ast_attest.py"
     ids = set(produced["collection"]["node_ids"])
     marks = set(produced["collection"]["skip_xfail_marked"])
     node = next(n for n in ids if n.startswith(protected + "::") and n not in marks)

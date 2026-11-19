@@ -33,8 +33,8 @@ from tests import _gate_transition as G
 from tests import _gate_preflight as P
 
 REQUIRED = ["solo-greenfield", "upgrade_apply"]
-SENSITIVE_REL = "bootstrap/tests/_oracle.py"
-REPO = Path(__file__).resolve().parents[2]
+SENSITIVE_REL = "tests/_oracle.py"
+REPO = Path(__file__).resolve().parents[1]
 DESIGNATED = R._DESIGNATED_REF
 AUTHZ_REF = R._AUTHORIZATION_REF
 
@@ -112,7 +112,7 @@ def _author_A(repo, parent, manifest, trusted_act, *, extra=None):
 
 def _two_stage_repo(tmp_path):
     repo = tmp_path / "trusted"
-    (repo / "bootstrap" / "tests" / "fixtures").mkdir(parents=True)
+    (repo / "tests" / "fixtures").mkdir(parents=True)
     _git(repo, "init", "-q", "-b", "main")
     _git(repo, "config", "user.email", "t@t")
     _git(repo, "config", "user.name", "t")
@@ -124,7 +124,7 @@ def _two_stage_repo(tmp_path):
     _git(repo, "update-ref", DESIGNATED, P)
 
     trusted_act = A.Activation(baseline_sha=P, trusted_ref="refs/heads/main",
-                               nonce="act-nonce", scope=["bootstrap/tests/"],
+                               nonce="act-nonce", scope=["tests/"],
                                required_scenarios=list(REQUIRED))
     (repo / SENSITIVE_REL).write_text("ENGINE = 1\n")
     (repo / R._ACTIVATION_REL).parent.mkdir(parents=True, exist_ok=True)
@@ -220,12 +220,12 @@ def test_untrusted_authority_code_refuses(tmp_path):
     """If P's trusted manifest pins a different hash for a verifier module than the
     executing code, Stage B refuses (the running verifier is not trusted)."""
     repo = tmp_path / "repo"
-    (repo / "bootstrap" / "tests" / "fixtures").mkdir(parents=True)
+    (repo / "tests" / "fixtures").mkdir(parents=True)
     _git(repo, "init", "-q", "-b", "main")
     _git(repo, "config", "user.email", "t@t")
     _git(repo, "config", "user.name", "t")
     frozen = _trusted_frozen_files()
-    frozen["bootstrap/tests/_gate_transition.py"] = "0" * 64        # wrong pin
+    frozen["tests/_gate_transition.py"] = "0" * 64        # wrong pin
     (repo / R._MANIFEST_REL).write_text(json.dumps({"frozen_files": frozen}) + "\n")
     P = _commit_all(repo, "P")
     ok, holds = R._verify_executing_authority_code(repo, P)
@@ -234,7 +234,7 @@ def test_untrusted_authority_code_refuses(tmp_path):
 
 def test_executing_authority_code_pin_passes_for_real_modules(tmp_path):
     repo = tmp_path / "repo2"
-    (repo / "bootstrap" / "tests" / "fixtures").mkdir(parents=True)
+    (repo / "tests" / "fixtures").mkdir(parents=True)
     _git(repo, "init", "-q", "-b", "main")
     _git(repo, "config", "user.email", "t@t")
     _git(repo, "config", "user.name", "t")
@@ -257,7 +257,7 @@ def test_legacy_data_only_promotion_never_executes_unpinned_preflight(tmp_path, 
 
 def test_authority_pin_reads_v2_frozen_entry_digest(tmp_path):
     repo = tmp_path / "v2-pin"
-    (repo / "bootstrap/tests/fixtures").mkdir(parents=True)
+    (repo / "tests/fixtures").mkdir(parents=True)
     _git(repo, "init", "-q", "-b", "main")
     _git(repo, "config", "user.email", "t@t")
     _git(repo, "config", "user.name", "t")
@@ -267,10 +267,10 @@ def test_authority_pin_reads_v2_frozen_entry_digest(tmp_path):
         for rel, path in R._authority_code_files()
     }
     preflight_source = Path(R.__file__).with_name("_gate_preflight.py").read_bytes()
-    frozen["bootstrap/tests/_gate_preflight.py"] = {
+    frozen["tests/_gate_preflight.py"] = {
         "sha256": hashlib.sha256(preflight_source).hexdigest(),
         "mode": "100644", "oid": "0" * 40}
-    (repo / "bootstrap/tests/_gate_preflight.py").write_bytes(preflight_source)
+    (repo / "tests/_gate_preflight.py").write_bytes(preflight_source)
     (repo / R._MANIFEST_REL).write_text(json.dumps({"schema": "cairn-gate-manifest/v2",
                                                       "frozen_files": frozen}) + "\n")
     P = _commit_all(repo, "P v2 manifest")
@@ -281,7 +281,7 @@ def test_authority_pin_reads_v2_frozen_entry_digest(tmp_path):
 
     # A candidate working copy with different source cannot influence the
     # loader; the loader reads P's object and refuses a bad P manifest pin.
-    frozen["bootstrap/tests/_gate_preflight.py"]["sha256"] = "0" * 64
+    frozen["tests/_gate_preflight.py"]["sha256"] = "0" * 64
     (repo / R._MANIFEST_REL).write_text(json.dumps({"frozen_files": frozen}) + "\n")
     bad_pin = _commit_all(repo, "P with a wrong preflight pin")
     with pytest.raises(RuntimeError, match="does not authenticate preflight"):
@@ -305,7 +305,7 @@ def test_rostered_stage_b_executes_only_preflight_bytes_pinned_by_p(tmp_path):
     _git(repo, "update-ref", DESIGNATED, P_sha)
 
     act = A.Activation(baseline_sha=P_sha, trusted_ref="refs/heads/main",
-                       nonce="rostered-stage-b", scope=["bootstrap/tests/"],
+                       nonce="rostered-stage-b", scope=["tests/"],
                        required_scenarios=list(REQUIRED))
     (repo / R._ACTIVATION_REL).parent.mkdir(parents=True, exist_ok=True)
     (repo / R._ACTIVATION_REL).write_text(_activation_yaml(act), encoding="utf-8")
@@ -313,7 +313,7 @@ def test_rostered_stage_b_executes_only_preflight_bytes_pinned_by_p(tmp_path):
     oracle_path.write_text(oracle_path.read_text(encoding="utf-8")
                            + "\n# reviewed candidate change\n", encoding="utf-8")
     marker = tmp_path / "candidate-preflight-executed"
-    preflight_path = repo / "bootstrap/tests/_gate_preflight.py"
+    preflight_path = repo / "tests/_gate_preflight.py"
     C = _commit_all(repo, "C changes a protected oracle")
     prospective = R.M.produce(repo, roster)
     prospective.pop("object_format")
@@ -407,12 +407,12 @@ def test_pretransition_manifest_refuses_until_supervised_bootstrap(tmp_path):
     supervised Phase-0 bootstrap (gate-manifest pre-pin) establishes the trust root.
     After the pre-pin (manifest regenerated to include the modules) it passes."""
     repo = tmp_path / "pretrans"
-    (repo / "bootstrap" / "tests" / "fixtures").mkdir(parents=True)
+    (repo / "tests" / "fixtures").mkdir(parents=True)
     _git(repo, "init", "-q", "-b", "main")
     _git(repo, "config", "user.email", "t@t")
     _git(repo, "config", "user.name", "t")
     # pre-transition shape: pins some unrelated test file, NOT the Stage-B modules.
-    pre = {"frozen_files": {"bootstrap/tests/test_upgrade.py": "0" * 64}}
+    pre = {"frozen_files": {"tests/test_upgrade.py": "0" * 64}}
     (repo / R._MANIFEST_REL).write_text(json.dumps(pre) + "\n")
     P_old = _commit_all(repo, "P (pre-transition; Stage-B modules unpinned)")
     ok, holds = R._verify_executing_authority_code(repo, P_old)

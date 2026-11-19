@@ -24,12 +24,12 @@ from tests import _oracle_activation as A
 
 # --------------------------------------------------------------------- roster
 def test_roster_membership():
-    assert A.is_sensitive("bootstrap/_scaffold/upgrade.py")
-    assert A.is_sensitive("bootstrap/scaffold.py")
-    assert A.is_sensitive("bootstrap/tests/_oracle.py")
-    assert A.is_sensitive("bootstrap/tests/_gate_preflight.py")
+    assert A.is_sensitive("install/_scaffold/upgrade.py")
+    assert A.is_sensitive("install/scaffold.py")
+    assert A.is_sensitive("tests/_oracle.py")
+    assert A.is_sensitive("tests/_gate_preflight.py")
     assert not A.is_sensitive("docs/whatever.md")
-    assert not A.is_sensitive("bootstrap/tests/test_upgrade.py")
+    assert not A.is_sensitive("tests/test_upgrade.py")
 
 
 # ------------------------------------------------------------------- parsing
@@ -39,8 +39,8 @@ baseline_sha: 1111111111111111111111111111111111111111
 trusted_ref: refs/heads/master
 nonce: abc-123
 scope:
-  - bootstrap/_scaffold/
-  - bootstrap/tests/_oracle.py
+  - install/_scaffold/
+  - tests/_oracle.py
 required_scenarios:
   - solo-greenfield
   - upgrade_apply
@@ -52,7 +52,7 @@ def test_parse_activation_roundtrip():
     assert act.baseline_sha == "1" * 40
     assert act.trusted_ref == "refs/heads/master"
     assert act.nonce == "abc-123"
-    assert act.scope == ["bootstrap/_scaffold/", "bootstrap/tests/_oracle.py"]
+    assert act.scope == ["install/_scaffold/", "tests/_oracle.py"]
     assert act.required_scenarios == ["solo-greenfield", "upgrade_apply"]
 
 
@@ -73,7 +73,7 @@ def test_nonsensitive_change_is_ok_without_activation():
 
 
 def test_sensitive_change_holds_by_default():
-    ok, holds = A.acceptance_check(["bootstrap/_scaffold/upgrade.py"], None, None)
+    ok, holds = A.acceptance_check(["install/_scaffold/upgrade.py"], None, None)
     assert not ok
     assert "HOLD-by-default" in holds[0]
 
@@ -81,52 +81,52 @@ def test_sensitive_change_holds_by_default():
 def test_self_labelling_refused_without_trusted_expectation():
     """An activation the evaluated branch wrote, with no external anchor, cannot
     authorize a sensitive change."""
-    act = _act(["bootstrap/_scaffold/"])
-    ok, holds = A.acceptance_check(["bootstrap/_scaffold/upgrade.py"], act, None)
+    act = _act(["install/_scaffold/"])
+    ok, holds = A.acceptance_check(["install/_scaffold/upgrade.py"], act, None)
     assert not ok and "HOLD-by-default" in holds[0]
 
 
 def test_nonce_mismatch_refused():
-    evaluated = _act(["bootstrap/_scaffold/"], nonce="forged")
-    trusted = _act(["bootstrap/_scaffold/"], nonce="real")
-    ok, holds = A.acceptance_check(["bootstrap/_scaffold/upgrade.py"], evaluated, trusted)
+    evaluated = _act(["install/_scaffold/"], nonce="forged")
+    trusted = _act(["install/_scaffold/"], nonce="real")
+    ok, holds = A.acceptance_check(["install/_scaffold/upgrade.py"], evaluated, trusted)
     assert not ok and "self-labelling" in holds[0]
 
 
 def test_authorized_covered_change_ok():
-    act = _act(["bootstrap/_scaffold/"])
-    ok, holds = A.acceptance_check(["bootstrap/_scaffold/upgrade.py"], act, act)
+    act = _act(["install/_scaffold/"])
+    ok, holds = A.acceptance_check(["install/_scaffold/upgrade.py"], act, act)
     assert ok and holds == []
 
 
 def test_scope_narrowing_holds():
     """The evaluated artifact narrows scope below the trusted expectation — exact
     equality refuses it as a field mismatch (no weakening of authority)."""
-    trusted = _act(["bootstrap/_scaffold/", "bootstrap/scaffold.py"])
-    evaluated = _act(["bootstrap/_scaffold/"])            # narrowed: drops scaffold.py
-    ok, holds = A.acceptance_check(["bootstrap/scaffold.py"], evaluated, trusted)
+    trusted = _act(["install/_scaffold/", "install/scaffold.py"])
+    evaluated = _act(["install/_scaffold/"])            # narrowed: drops scaffold.py
+    ok, holds = A.acceptance_check(["install/scaffold.py"], evaluated, trusted)
     assert not ok and "self-labelling" in holds[0] and "scope" in holds[0]
 
 
 def test_trusted_ref_redirect_refused():
     """An evaluated artifact that redirects trusted_ref + empties the
     required scenarios must REFUSE (it weakens authority)."""
-    trusted = _act(["bootstrap/_scaffold/"], trusted_ref="TRUSTED", scenarios=("upgrade_apply",))
-    evaluated = _act(["bootstrap/_scaffold/"], trusted_ref="ATTACKER", scenarios=())
-    ok, holds = A.acceptance_check(["bootstrap/_scaffold/upgrade.py"], evaluated, trusted)
+    trusted = _act(["install/_scaffold/"], trusted_ref="TRUSTED", scenarios=("upgrade_apply",))
+    evaluated = _act(["install/_scaffold/"], trusted_ref="ATTACKER", scenarios=())
+    ok, holds = A.acceptance_check(["install/_scaffold/upgrade.py"], evaluated, trusted)
     assert not ok and "self-labelling" in holds[0]
 
 
 def test_required_scenarios_must_match():
-    trusted = _act(["bootstrap/_scaffold/"], scenarios=("a", "b"))
-    evaluated = _act(["bootstrap/_scaffold/"], scenarios=("a",))      # dropped one
-    ok, holds = A.acceptance_check(["bootstrap/_scaffold/upgrade.py"], evaluated, trusted)
+    trusted = _act(["install/_scaffold/"], scenarios=("a", "b"))
+    evaluated = _act(["install/_scaffold/"], scenarios=("a",))      # dropped one
+    ok, holds = A.acceptance_check(["install/_scaffold/upgrade.py"], evaluated, trusted)
     assert not ok and "required_scenarios" in holds[0]
 
 
 def test_empty_required_scenarios_holds():
-    act = _act(["bootstrap/_scaffold/"], scenarios=())
-    ok, holds = A.acceptance_check(["bootstrap/_scaffold/upgrade.py"], act, act)
+    act = _act(["install/_scaffold/"], scenarios=())
+    ok, holds = A.acceptance_check(["install/_scaffold/upgrade.py"], act, act)
     assert not ok and "no required scenarios" in holds[0]
 
 
@@ -136,31 +136,31 @@ def test_unknown_field_rejected():
 
 
 def test_uncovered_sensitive_change_holds():
-    act = _act(["bootstrap/_scaffold/"])                  # authorizes only _scaffold/
+    act = _act(["install/_scaffold/"])                  # authorizes only _scaffold/
     ok, holds = A.acceptance_check(
-        ["bootstrap/_scaffold/upgrade.py", "bootstrap/security_check.py"], act, act)
+        ["install/_scaffold/upgrade.py", "release/security_check.py"], act, act)
     assert not ok and any("security_check.py" in h for h in holds)
 
 
 def test_deletion_of_activation_holds():
     """Trusted expectation says a refactor is active, but the evaluated artifact
     was deleted → HOLD (the evaluated branch cannot self-deactivate)."""
-    trusted = _act(["bootstrap/_scaffold/"])
-    ok, holds = A.acceptance_check(["bootstrap/_scaffold/upgrade.py"], None, trusted)
+    trusted = _act(["install/_scaffold/"])
+    ok, holds = A.acceptance_check(["install/_scaffold/upgrade.py"], None, trusted)
     assert not ok and "absent/deleted" in holds[0]
 
 
 def test_reviewed_exemption_clears_its_paths():
-    ex = A.Exemption(paths=["bootstrap/_scaffold/upgrade.py"], reason="bugfix", expired=False)
+    ex = A.Exemption(paths=["install/_scaffold/upgrade.py"], reason="bugfix", expired=False)
     ok, holds = A.acceptance_check(
-        ["bootstrap/_scaffold/upgrade.py"], None, None, exemptions=[ex])
+        ["install/_scaffold/upgrade.py"], None, None, exemptions=[ex])
     assert ok and holds == []
 
 
 def test_expired_exemption_does_not_clear():
-    ex = A.Exemption(paths=["bootstrap/_scaffold/upgrade.py"], reason="bugfix", expired=True)
+    ex = A.Exemption(paths=["install/_scaffold/upgrade.py"], reason="bugfix", expired=True)
     ok, holds = A.acceptance_check(
-        ["bootstrap/_scaffold/upgrade.py"], None, None, exemptions=[ex])
+        ["install/_scaffold/upgrade.py"], None, None, exemptions=[ex])
     assert not ok
 
 
@@ -198,21 +198,21 @@ def _repo_with_change(tmp_path, change_path, activation_yaml=None):
 def test_acceptance_command_holds_uncovered_sensitive_edit(tmp_path):
     """END-TO-END: an uncovered sensitive edit makes the ACTUAL acceptance
     command fail — there is no live activation artifact."""
-    repo, prior = _repo_with_change(tmp_path, "bootstrap/_scaffold/foo.py")
+    repo, prior = _repo_with_change(tmp_path, "install/_scaffold/foo.py")
     ok, holds, changed = A.run_acceptance(
         repo, prior, "HEAD", trusted_expectation=None,
         evaluated_activation_path=repo / "dev" / ".cairn" / "active-refactor.yml")
-    assert "bootstrap/_scaffold/foo.py" in changed
+    assert "install/_scaffold/foo.py" in changed
     assert not ok and "HOLD-by-default" in holds[0]
 
 
 def test_acceptance_command_ok_when_authorized(tmp_path):
     trusted = A.Activation(baseline_sha="s", trusted_ref="t", nonce="n",
-                           scope=["bootstrap/_scaffold/"], required_scenarios=["solo-greenfield"])
+                           scope=["install/_scaffold/"], required_scenarios=["solo-greenfield"])
     yaml = ("baseline_sha: s\ntrusted_ref: t\nnonce: n\n"
-            "scope:\n  - bootstrap/_scaffold/\n"
+            "scope:\n  - install/_scaffold/\n"
             "required_scenarios:\n  - solo-greenfield\n")
-    repo, prior = _repo_with_change(tmp_path, "bootstrap/_scaffold/foo.py", activation_yaml=yaml)
+    repo, prior = _repo_with_change(tmp_path, "install/_scaffold/foo.py", activation_yaml=yaml)
     ok, holds, changed = A.run_acceptance(
         repo, prior, "HEAD", trusted_expectation=trusted,
         evaluated_activation_path=repo / "dev" / ".cairn" / "active-refactor.yml")

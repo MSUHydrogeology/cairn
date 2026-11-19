@@ -35,7 +35,7 @@ from tests import _gate_preflight as P  # noqa: E402
 
 def test_release_scan_covers_every_python_member_of_the_authority_closure() -> None:
     """The closure decides what a ceremony blesses and runs, yet lives under
-    ``bootstrap/tests/``, which the scan globs skip on purpose. So the release
+    ``tests/``, which the scan globs skip on purpose. So the release
     scan names its Python members itself, and this node compares that list with
     the checker's own declared closure: a member added there and not scanned
     fails here. Two spellings on purpose -- the scan module cannot import test
@@ -45,9 +45,14 @@ def test_release_scan_covers_every_python_member_of_the_authority_closure() -> N
     scanned = set(security_check.scan_targets())
     missing = sorted(closure_py - scanned)
     assert not missing, f"closure members the release scan skips: {missing}"
-    # and nothing else under bootstrap/tests/ rides along (attack fixtures)
-    extra = sorted(t for t in scanned
-                   if t.startswith("bootstrap/tests/") and t not in closure_py)
+    # and nothing else under tests/ rides along (attack fixtures; top-level
+    # non-test executables moved from scripts/ and tools/ are scanned)
+    extra = sorted(
+        t for t in scanned
+        if t.startswith("tests/") and t not in closure_py
+        and (Path(t).parent != Path("tests")
+             or Path(t).name.startswith(("test_", "_", "conftest")))
+    )
     assert not extra, extra
 
 
@@ -143,8 +148,8 @@ def _hits(report: dict, path: str | None = None) -> list[tuple]:
 #: Typed by hand, not read from the checker: the files the driver runs beside
 #: the closure. If the checker's own list drifted, a shared derivation would
 #: drift with it.
-_DRIVER_PATHS = ("scripts/repin.py", "scripts/reanchor_ceremony.py",
-                 "bootstrap/tests/conftest.py")
+_DRIVER_PATHS = ("release/repin.py", "release/reanchor_ceremony.py",
+                 "tests/conftest.py")
 
 
 def _decides_paths() -> list[str]:
@@ -156,18 +161,18 @@ class TestReportRolesAndSchema:
     def test_the_schema_is_the_second_version_and_every_path_has_a_role(
             self, tmp_path):
         repo, a, h = _make_range(
-            tmp_path, {"README.md": "x\n", "bootstrap/tests/_oracle.py": "a = 1\n",
-                       "scripts/other.py": "a = 1\n"},
-            {"bootstrap/tests/_oracle.py": "a = 2\n", "scripts/other.py": "a = 2\n",
+            tmp_path, {"README.md": "x\n", "tests/_oracle.py": "a = 1\n",
+                       "release/other.py": "a = 1\n"},
+            {"tests/_oracle.py": "a = 2\n", "release/other.py": "a = 2\n",
              "docs/note.md": "n\n"})
         rep = _report(repo, a, h)
         assert rep["schema"] == "cairn-range-review/v2"
         by_path = {e["display"]: e for e in rep["paths"]}
-        assert by_path["bootstrap/tests/_oracle.py"]["role"] == "decides"
-        assert by_path["scripts/other.py"]["role"] == "pinned"
+        assert by_path["tests/_oracle.py"]["role"] == "decides"
+        assert by_path["release/other.py"]["role"] == "pinned"
         assert by_path["docs/note.md"]["role"] == "other"
         assert by_path["docs/note.md"]["change"] == "added"
-        assert by_path["scripts/other.py"]["change"] == "modified"
+        assert by_path["release/other.py"]["change"] == "modified"
         assert sum(rep["role_counts"].values()) == len(rep["paths"])
 
     def test_every_deciding_path_is_labelled_decides(self, tmp_path):
@@ -187,10 +192,10 @@ class TestLineScan:
     @pytest.mark.parametrize("pattern", sorted(_PLANTED))
     def test_a_planted_line_is_reported_under_its_pattern(self, tmp_path, pattern):
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n"},
-            {"bootstrap/tests/_oracle.py": "a = 1\n" + _PLANTED[pattern] + "\n"})
+            tmp_path, {"tests/_oracle.py": "a = 1\n"},
+            {"tests/_oracle.py": "a = 1\n" + _PLANTED[pattern] + "\n"})
         rep = _report(repo, a, h)
-        assert _hits(rep) == [("bootstrap/tests/_oracle.py", 2, pattern)], rep["scan"]
+        assert _hits(rep) == [("tests/_oracle.py", 2, pattern)], rep["scan"]
         assert rep["scan"]["counts"][pattern] == 1
 
     def test_a_range_with_no_planted_line_reports_zero_for_every_pattern(
@@ -198,15 +203,15 @@ class TestLineScan:
         """The control: zeros are listed, so an absent pattern is not mistaken
         for one the scan never had."""
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n"},
-            {"bootstrap/tests/_oracle.py": "a = 1\nb = 2\n"})
+            tmp_path, {"tests/_oracle.py": "a = 1\n"},
+            {"tests/_oracle.py": "a = 1\nb = 2\n"})
         scan = _report(repo, a, h)["scan"]
         assert scan["hits"] == []
         assert scan["counts"] == {name: 0 for name in
                                   [n for n, _ in P.SCAN_PATTERNS] + ["compiled-file"]}
         assert scan["patterns"] == [n for n, _ in P.SCAN_PATTERNS] + ["compiled-file"], (
             "the page prints one line per name here, so a name left out prints no zero")
-        assert scan["scanned"] == ["bootstrap/tests/_oracle.py"]
+        assert scan["scanned"] == ["tests/_oracle.py"]
 
     @pytest.mark.parametrize("line", [
         'if [ -n "$x" ]; then rm -rf "$HOME"; fi',
@@ -221,8 +226,8 @@ class TestLineScan:
     ])
     def test_a_shell_command_that_changes_files_or_keys_is_a_hit(self, tmp_path, line):
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/reanchor.sh": "echo hi\n"},
-            {"bootstrap/reanchor.sh": "echo hi\n" + line + "\n"})
+            tmp_path, {"release/reanchor.sh": "echo hi\n"},
+            {"release/reanchor.sh": "echo hi\n" + line + "\n"})
         assert [x[2] for x in _hits(_report(repo, a, h))] == ["shell-command"], line
 
     @pytest.mark.parametrize("line", [
@@ -237,22 +242,22 @@ class TestLineScan:
     ])
     def test_prose_and_other_languages_do_not_make_a_shell_command_hit(self, tmp_path, line):
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/reanchor.sh": "echo hi\n"},
-            {"bootstrap/reanchor.sh": "echo hi\n" + line + "\n"})
+            tmp_path, {"release/reanchor.sh": "echo hi\n"},
+            {"release/reanchor.sh": "echo hi\n" + line + "\n"})
         assert _hits(_report(repo, a, h)) == [], line
 
     @pytest.mark.parametrize("path,line,pattern", [
-        ("bootstrap/reanchor.sh", "git update-ref refs/cairn/gate-anchor $new", "shell-command"),
-        ("bootstrap/reanchor.sh", "git -C \"$repo\" replace $old $new", "shell-command"),
-        ("bootstrap/reanchor.sh", "x && git config core.hooksPath /tmp/h", "shell-command"),
-        ("bootstrap/tests/_oracle.py", "from os import system as s", "process-start"),
-        ("bootstrap/tests/_oracle.py", "from os import path, popen", "process-start"),
-        ("bootstrap/reanchor.sh", "sh -c \"$payload\"", "process-start"),
-        ("bootstrap/reanchor.sh", "/usr/bin/env python3 -E -s -c 'import x'", "process-start"),
-        ("bootstrap/reanchor.sh", "  /bin/bash -c \"$x\"", "process-start"),
-        ("bootstrap/reanchor.sh", "source ./helper.sh", "dynamic-code"),
-        ("bootstrap/reanchor.sh", ". \"$dir/helper.sh\"", "dynamic-code"),
-        ("bootstrap/tests/conftest.py", "pytest_plugins = [\"planted\"]", "dynamic-code"),
+        ("release/reanchor.sh", "git update-ref refs/cairn/gate-anchor $new", "shell-command"),
+        ("release/reanchor.sh", "git -C \"$repo\" replace $old $new", "shell-command"),
+        ("release/reanchor.sh", "x && git config core.hooksPath /tmp/h", "shell-command"),
+        ("tests/_oracle.py", "from os import system as s", "process-start"),
+        ("tests/_oracle.py", "from os import path, popen", "process-start"),
+        ("release/reanchor.sh", "sh -c \"$payload\"", "process-start"),
+        ("release/reanchor.sh", "/usr/bin/env python3 -E -s -c 'import x'", "process-start"),
+        ("release/reanchor.sh", "  /bin/bash -c \"$x\"", "process-start"),
+        ("release/reanchor.sh", "source ./helper.sh", "dynamic-code"),
+        ("release/reanchor.sh", ". \"$dir/helper.sh\"", "dynamic-code"),
+        ("tests/conftest.py", "pytest_plugins = [\"planted\"]", "dynamic-code"),
     ])
     def test_a_line_that_starts_code_by_another_spelling_is_a_hit(
             self, tmp_path, path, line, pattern):
@@ -274,8 +279,8 @@ class TestLineScan:
     ])
     def test_prose_and_ordinary_lines_do_not_hit_the_other_spellings(self, tmp_path, line):
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/reanchor.sh": "echo hi\n"},
-            {"bootstrap/reanchor.sh": "echo hi\n" + line + "\n"})
+            tmp_path, {"release/reanchor.sh": "echo hi\n"},
+            {"release/reanchor.sh": "echo hi\n" + line + "\n"})
         assert _hits(_report(repo, a, h)) == [], line
 
     def test_every_deciding_path_is_scanned(self, tmp_path):
@@ -291,12 +296,12 @@ class TestLineScan:
             self, tmp_path):
         old = "import subprocess\nx = 1\n"
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": old},
-            {"bootstrap/tests/_oracle.py": "y = 0\nimport subprocess\nx = 1\n"})
+            tmp_path, {"tests/_oracle.py": old},
+            {"tests/_oracle.py": "y = 0\nimport subprocess\nx = 1\n"})
         assert _hits(_report(repo, a, h)) == []
         repo2, a2, h2 = _make_range(
-            tmp_path / "second", {"bootstrap/tests/_oracle.py": old},
-            {"bootstrap/tests/_oracle.py": old + "import subprocess\n"})
+            tmp_path / "second", {"tests/_oracle.py": old},
+            {"tests/_oracle.py": old + "import subprocess\n"})
         assert [x[2] for x in _hits(_report(repo2, a2, h2))] == ["process-start"]
 
     def test_scope_covers_the_roster_and_new_files_and_lists_the_rest(
@@ -304,19 +309,19 @@ class TestLineScan:
         line = "import subprocess\n"
         repo, a, h = _make_range(
             tmp_path,
-            {"bootstrap/security_check.py": "a = 1\n",       # sensitive roster
-             "bootstrap/tests/test_other.py": "a = 1\n",     # an ordinary test
+            {"release/security_check.py": "a = 1\n",       # sensitive roster
+             "tests/test_other.py": "a = 1\n",     # an ordinary test
              "docs/guide.md": "a\n"},
-            {"bootstrap/security_check.py": "a = 1\n" + line,
-             "bootstrap/tests/test_other.py": "a = 1\n" + line,
+            {"release/security_check.py": "a = 1\n" + line,
+             "tests/test_other.py": "a = 1\n" + line,
              "docs/guide.md": "a\n" + line,
-             "scripts/new_tool.py": line,                    # new, outside tests
-             "bootstrap/tests/test_new.py": line})           # new, but a test
+             "release/new_tool.py": line,                    # new, outside tests
+             "tests/test_new.py": line})           # new, but a test
         rep = _report(repo, a, h)
         assert {p for p, _l, _n in _hits(rep)} == {
-            "bootstrap/security_check.py", "scripts/new_tool.py"}
+            "release/security_check.py", "release/new_tool.py"}
         assert rep["scan"]["scanned"] == [
-            "bootstrap/security_check.py", "scripts/new_tool.py"]
+            "release/new_tool.py", "release/security_check.py"]
         # the rest is counted by class, never silently dropped
         assert sum(rep["scan"]["not_line_scanned"].values()) == 3, rep["scan"]
 
@@ -326,27 +331,27 @@ class TestLineScan:
         planted line is still found."""
         repo, a, h = _make_range(
             tmp_path,
-            {"bootstrap/tests/_oracle.py": "a = 1\n", ".gitattributes": ""},
-            {"bootstrap/tests/_oracle.py": "a = 1\nimport subprocess\n",
-             ".gitattributes": "bootstrap/tests/_oracle.py -diff\n"})
+            {"tests/_oracle.py": "a = 1\n", ".gitattributes": ""},
+            {"tests/_oracle.py": "a = 1\nimport subprocess\n",
+             ".gitattributes": "tests/_oracle.py -diff\n"})
         # the instrument can see the hazard: git itself reports no lines
-        shown = _fx(repo, "diff", "-U0", a, h, "--", "bootstrap/tests/_oracle.py")
+        shown = _fx(repo, "diff", "-U0", a, h, "--", "tests/_oracle.py")
         assert "Binary files" in shown and "import subprocess" not in shown
         assert _hits(_report(repo, a, h)) == [
-            ("bootstrap/tests/_oracle.py", 2, "process-start")]
+            ("tests/_oracle.py", 2, "process-start")]
 
     def test_every_hit_is_kept_and_none_is_truncated(self, tmp_path):
         body = "".join(f"import subprocess  # {i}\n" for i in range(300))
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n"},
-            {"bootstrap/tests/_oracle.py": "a = 1\n" + body})
+            tmp_path, {"tests/_oracle.py": "a = 1\n"},
+            {"tests/_oracle.py": "a = 1\n" + body})
         assert len(_report(repo, a, h)["scan"]["hits"]) == 300
 
     def test_hit_text_is_escaped_like_a_path(self, tmp_path):
         evil = "import subprocess  # \x1b[31mé \\ end\n"
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n"},
-            {"bootstrap/tests/_oracle.py": "a = 1\n" + evil})
+            tmp_path, {"tests/_oracle.py": "a = 1\n"},
+            {"tests/_oracle.py": "a = 1\n" + evil})
         text = _report(repo, a, h)["scan"]["hits"][0]["text"]
         assert text == P._display_path(evil.rstrip("\n").encode())
         assert "\x1b" not in text and "é" not in text
@@ -360,43 +365,43 @@ class TestLineScan:
 
         repo, a, h = _make_range(
             tmp_path,
-            {"bootstrap/tests/_oracle.py": "a = 1\n",
-             "bootstrap/tests/_oracle_trust.py": "a = 1\n",
-             "bootstrap/tests/_gate_transition.py": "a = 1\n",
-             "bootstrap/security_check.py": "a = 1\n"},
-            {"bootstrap/tests/_oracle.py": b"a = 1\n\x00\nimport subprocess\n",
-             "bootstrap/tests/_oracle_trust.py": big,
-             "bootstrap/tests/_gate_transition.py": b"\xff\xfe invalid utf8\n",
-             "bootstrap/security_check.py": "a = 1\n" + planted})
-        os.chmod(repo / "bootstrap/security_check.py", 0o755)
-        link = repo / "scripts" / "link.py"
-        link.parent.mkdir(parents=True)
-        os.symlink("bootstrap/security_check.py", link)
+            {"tests/_oracle.py": "a = 1\n",
+             "tests/_oracle_trust.py": "a = 1\n",
+             "tests/_gate_transition.py": "a = 1\n",
+             "release/security_check.py": "a = 1\n"},
+            {"tests/_oracle.py": b"a = 1\n\x00\nimport subprocess\n",
+             "tests/_oracle_trust.py": big,
+             "tests/_gate_transition.py": b"\xff\xfe invalid utf8\n",
+             "release/security_check.py": "a = 1\n" + planted})
+        os.chmod(repo / "release/security_check.py", 0o755)
+        link = repo / "release" / "link.py"
+        link.parent.mkdir(parents=True, exist_ok=True)
+        os.symlink("release/security_check.py", link)
         _fx(repo, "add", "-A")
         _fx(repo, "commit", "-q", "-m", "specials")
         sub = _fx(repo, "rev-parse", "HEAD")
         _fx(repo, "update-index", "--add", "--cacheinfo",
-            f"160000,{sub},scripts/gitlink")
+            f"160000,{sub},release/gitlink")
         _fx(repo, "commit", "-q", "-m", "gitlink")
         head = _fx(repo, "rev-parse", "HEAD")
         rep = _report(repo, a, head)
         listed = {(x["path"], x["reason"]) for x in rep["scan"]["listed"]}
-        assert ("bootstrap/tests/_oracle.py", "unreadable") in listed
-        assert ("bootstrap/tests/_gate_transition.py", "unreadable") in listed
-        assert ("bootstrap/tests/_oracle_trust.py", "oversized") in listed
-        assert ("bootstrap/security_check.py", "mode 100755") in listed
-        assert ("scripts/link.py", "mode 120000") in listed
-        assert ("scripts/gitlink", "mode 160000") in listed
+        assert ("tests/_oracle.py", "unreadable") in listed
+        assert ("tests/_gate_transition.py", "unreadable") in listed
+        assert ("tests/_oracle_trust.py", "oversized") in listed
+        assert ("release/security_check.py", "mode 100755") in listed
+        assert ("release/link.py", "mode 120000") in listed
+        assert ("release/gitlink", "mode 160000") in listed
         # the one readable file is still scanned
-        assert _hits(rep) == [("bootstrap/security_check.py", 2, "process-start")]
+        assert _hits(rep) == [("release/security_check.py", 2, "process-start")]
 
     def test_a_deleted_deciding_path_is_listed_as_nothing_added(self, tmp_path):
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n"},
-            {"bootstrap/tests/_oracle.py": None})
+            tmp_path, {"tests/_oracle.py": "a = 1\n"},
+            {"tests/_oracle.py": None})
         rep = _report(repo, a, h)
         assert rep["scan"]["listed"] == [
-            {"path": "bootstrap/tests/_oracle.py",
+            {"path": "tests/_oracle.py",
              "reason": "deleted, nothing added"}]
 
 
@@ -404,11 +409,11 @@ class TestTrackedCompiledFiles:
     """Python loads a compiled file in place of its source, so a reader of the source is not
     reading what runs.  The scan reports every tracked one, whether or not the range touched it."""
 
-    _PYC = "bootstrap/tests/__pycache__/_oracle.cpython-313.pyc"
+    _PYC = "tests/__pycache__/_oracle.cpython-313.pyc"
 
     def test_a_compiled_file_added_in_the_range_is_a_hit(self, tmp_path):
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n"},
+            tmp_path, {"tests/_oracle.py": "a = 1\n"},
             {self._PYC: b"\x00compiled"})
         rep = _report(repo, a, h)
         assert _hits(rep) == [(self._PYC, 0, "compiled-file")]
@@ -416,7 +421,7 @@ class TestTrackedCompiledFiles:
 
     def test_a_compiled_file_the_range_did_not_touch_is_still_a_hit(self, tmp_path):
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n", self._PYC: b"\x00compiled"},
+            tmp_path, {"tests/_oracle.py": "a = 1\n", self._PYC: b"\x00compiled"},
             {"README.md": "x\n"})
         assert _hits(_report(repo, a, h)) == [(self._PYC, 0, "compiled-file")]
 
@@ -426,7 +431,7 @@ class TestTrackedCompiledFiles:
         where they would start; listing the file for the reader to explain is not enough."""
         import io
         repo, _a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n"}, {self._PYC: b"\x00compiled"})
+            tmp_path, {"tests/_oracle.py": "a = 1\n"}, {self._PYC: b"\x00compiled"})
 
         real_run = P.subprocess.run
 
@@ -442,7 +447,7 @@ class TestTrackedCompiledFiles:
         """The control: the same stage on a tree with no compiled file is not stopped there."""
         import io
         repo, _a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n"}, {"README.md": "x\n"})
+            tmp_path, {"tests/_oracle.py": "a = 1\n"}, {"README.md": "x\n"})
         with pytest.raises(P.PreflightError, match="manifest producer failed"):
             P.gather_evidence(h, repo=repo, out=io.StringIO())
 
@@ -457,7 +462,7 @@ class TestTrackedCompiledFiles:
         """A hand ceremony reads the tree through `raw_tree`, which does not refuse a compiled file
         (`repin` does, for an ordinary one); the report is what tells the reader it is there."""
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n"}, {self._PYC: b"\x00compiled"})
+            tmp_path, {"tests/_oracle.py": "a = 1\n"}, {self._PYC: b"\x00compiled"})
         with P.raw_tree(h, repo=repo) as tree:
             assert (tree / self._PYC).read_bytes() == b"\x00compiled"
         assert (self._PYC, 0, "compiled-file") in _hits(_report(repo, a, h))
@@ -474,11 +479,11 @@ class TestTheLineComparisonIsBounded:
     def test_a_file_past_the_limit_is_listed_and_every_new_line_is_scanned(self, tmp_path):
         filler = "x = 1\n" * (P._DIFF_MAX_LINES // 2 + 10)
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": filler},
-            {"bootstrap/tests/_oracle.py": filler + "import subprocess\n"})
+            tmp_path, {"tests/_oracle.py": filler},
+            {"tests/_oracle.py": filler + "import subprocess\n"})
         rep = _report(repo, a, h)
-        assert _hits(rep) == [("bootstrap/tests/_oracle.py", P._DIFF_MAX_LINES // 2 + 11, "process-start")]
-        assert {"path": "bootstrap/tests/_oracle.py",
+        assert _hits(rep) == [("tests/_oracle.py", P._DIFF_MAX_LINES // 2 + 11, "process-start")]
+        assert {"path": "tests/_oracle.py",
                 "reason": "too many lines to compare; every line scanned as added"} in rep["scan"]["listed"]
 
     def test_a_file_past_the_limit_cannot_hide_a_planted_line_among_moved_ones(self, tmp_path):
@@ -486,24 +491,24 @@ class TestTheLineComparisonIsBounded:
         too: more noise, never less."""
         filler = "x = 1\n" * (P._DIFF_MAX_LINES // 2 + 10)
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": "import subprocess\n" + filler},
-            {"bootstrap/tests/_oracle.py": "import subprocess\n" + filler + "y = 2\n"})
+            tmp_path, {"tests/_oracle.py": "import subprocess\n" + filler},
+            {"tests/_oracle.py": "import subprocess\n" + filler + "y = 2\n"})
         assert [x[2] for x in _hits(_report(repo, a, h))] == ["process-start"]
 
     def test_a_large_near_identical_file_is_scanned_in_seconds(self, tmp_path):
         import time
         filler = "x = 1\n" * 60000
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": filler},
-            {"bootstrap/tests/_oracle.py": filler + "z = 3\n"})
+            tmp_path, {"tests/_oracle.py": filler},
+            {"tests/_oracle.py": filler + "z = 3\n"})
         began = time.monotonic()
         _report(repo, a, h)
         assert time.monotonic() - began < 20
 
     def test_a_file_under_the_limit_is_still_compared_line_by_line_and_not_listed(self, tmp_path):
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": "import subprocess\nx = 1\n"},
-            {"bootstrap/tests/_oracle.py": "import subprocess\nx = 1\ny = 2\n"})
+            tmp_path, {"tests/_oracle.py": "import subprocess\nx = 1\n"},
+            {"tests/_oracle.py": "import subprocess\nx = 1\ny = 2\n"})
         rep = _report(repo, a, h)
         assert _hits(rep) == [] and rep["scan"]["listed"] == []
 
@@ -514,14 +519,14 @@ class TestAnchoredScanDigest:
     checker hides a hit, and the anchor's copy has to be the one that is run."""
 
     def _closure_files(self) -> dict:
-        return {f"bootstrap/tests/{n}": (CAIRN_ROOT / "tests" / n)
+        return {f"tests/{n}": (CAIRN_ROOT / "tests" / n)
                 .read_bytes() for n in _CLOSURE_PY}
 
     def _extract(self, repo: Path, commit: str, dest: Path) -> Path:
         dest.mkdir()
         for n in _CLOSURE_PY:
             blob = subprocess.run(
-                ["git", "-C", str(repo), "show", f"{commit}:bootstrap/tests/{n}"],
+                ["git", "-C", str(repo), "show", f"{commit}:tests/{n}"],
                 capture_output=True, check=True).stdout
             (dest / n).write_bytes(blob)
         return dest / "_gate_preflight.py"
@@ -541,13 +546,13 @@ class TestAnchoredScanDigest:
     def _candidate(self, tmp_path, *, hide: bool):
         base = self._closure_files()
         cand = dict(base)
-        cand["scripts/repin.py"] = "import subprocess\n"   # the planted line
+        cand["release/repin.py"] = "import subprocess\n"   # the planted line
         if hide:
             guard = b'if __name__ == "__main__":'
-            src = base["bootstrap/tests/_gate_preflight.py"]
+            src = base["tests/_gate_preflight.py"]
             assert src.count(guard) == 1
             # rebind before main() runs, so the candidate's scan finds nothing
-            cand["bootstrap/tests/_gate_preflight.py"] = src.replace(
+            cand["tests/_gate_preflight.py"] = src.replace(
                 guard, b"SCAN_PATTERNS = ()\n" + guard)
         return _make_range(tmp_path, base, cand)
 
@@ -584,7 +589,7 @@ class TestAnchoredScanDigest:
         repo, a, h = self._candidate(tmp_path / "same", hide=False)
         assert _report(repo, a, h)["scan_checker"] == "anchor"
         files = self._closure_files()
-        files["bootstrap/tests/_gate_preflight.py"] += b"\n# an older copy\n"
+        files["tests/_gate_preflight.py"] += b"\n# an older copy\n"
         repo2, a2, h2 = _make_range(tmp_path / "other", files,
                                     {"README.md": "x\n"})
         assert _report(repo2, a2, h2)["scan_checker"] == "candidate"
@@ -625,8 +630,8 @@ class TestStageTwoReDerivation:
 
     def test_a_report_with_hits_rederives_to_the_same_digest(self, tmp_path):
         repo, a, h = _make_range(
-            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n"},
-            {"bootstrap/tests/_oracle.py": "a = 1\nimport subprocess\n"})
+            tmp_path, {"tests/_oracle.py": "a = 1\n"},
+            {"tests/_oracle.py": "a = 1\nimport subprocess\n"})
         first = _report(repo, a, h)
         digest = P.range_report_digest(first)
         again = P.rederive_and_bind(
