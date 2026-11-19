@@ -104,3 +104,22 @@ Accept both findings. Scope now requires source-root equality and precise object
 **Coverage.** Read commit `c07569cd`, the reviewed plan and guide. The commit reports 12 focused Mac cases passed; I did not rerun them, measure release-sized cost, run Windows checks or perform Security Review. Those C2 checks remain outstanding.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Security code review — Sol (High) — 2026-11-19
+
+**Obligation**: Internal Security Review
+**Verdict**: REVISE
+
+**Should this happen as framed?** Yes. At `c07569cd`, the validated commit ID binds tag lookup and tree listing. The complete listing is checked before content reads, file identity is checked around each bounded read, and final HEAD must match before the installer can be silent. See `install/_scaffold/install.py:2159-2216` and `dev/tools/git_read.py:241-303`.
+
+**Best alternative.** Match the existing Git blob hash calculation in `install/_scaffold/upgrade.py:3194-3205`. Git dictates the hash format. Signed provenance stays separate.
+
+**What would show it wrong?** A nested source, invalid tree entry, or unproved content comparison that stays silent would fail C1. A clean tagged checkout with a legal trailing space in its macOS root name should also stay silent.
+
+**Blocking.** Bandit B324 reports the default SHA-1 constructor as high severity. The release scan includes the scaffold and blocks high findings. Use `usedforsecurity=False` for the advisory Git object comparison and verify focused lint. See `install/_scaffold/install.py:2208` and `release/security_check.py:1425-1430`.
+
+**Blocking.** The root parser strips path whitespace as well as Git's line terminator, so it may compare the wrong root. Preserve path whitespace and remove only the terminator. See `install/_scaffold/install.py:2168-2171`.
+
+**Coverage.** Read the committed diff, reviewed plan, checked reader, and installed B324 implementation. Git documents HFS+ administrative-name equivalence. This pass establishes casefold checks and Windows resolved-spelling checks by inspection. HFS+ alias behavior, native tests, lint results, and release-sized cost were not exercised in this pass.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
