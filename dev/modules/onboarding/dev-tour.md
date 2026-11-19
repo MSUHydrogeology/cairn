@@ -66,8 +66,13 @@ that matters moves into a proposal, a strategy note or the roadmap.
 | `agent_collaboration.md` | The roles and the review loop. |
 | `PLANNING.md` | The roadmap board: queued and active work. |
 | `modules/` | One file per installed optional module. |
-| `upstream/` | Drafts of bug reports for outside tools your project depends on. |
+| `upstream/` | Drafts for dependency reports and Cairn fold-back; its README explains the separate channels. |
 | `rules/` | Detail for your project's own agent rules, routed from `RULES.md`. |
+
+The module inventory describes the modules selected for this project. When a
+later task exposes a need, follow `dev/agent_collaboration.md` > "Offering optional
+modules" to check an accessible verified Cairn source and ask before adopting
+an unselected module. If no usable description is available, defer the offer.
 
 ### `dev/.cairn/` -- install state, not for editing by hand
 
@@ -75,9 +80,8 @@ This folder holds what the installer needs to update your copy of
 Cairn later: the lockfile, base copies of installed files, your
 profile, and local settings. It is not a log of ideas.
 
-If you find an improvement that would help other teams too, file it as
-an issue on Cairn's own tracker. The template is
-`.github/ISSUE_TEMPLATE/foldback.md` in the Cairn repository.
+If you find an improvement that would help other teams too, draft a Cairn
+fold-back using `dev/upstream/foldback.md` and follow its publication protocol.
 
 ## The three lanes
 
@@ -121,6 +125,5 @@ code review.
 * Try the typo fix above on a real change in your tree.
 * When you coordinate two or more agents, read *docs/methodology/coordination.md*;
   it covers the work-intent mechanism that prevents collisions.
-* When you have an improvement for Cairn itself, the template
-  `.github/ISSUE_TEMPLATE/foldback.md` in the Cairn repository walks
-  you through filing it.
+* When you have an improvement for Cairn itself, use
+  `dev/upstream/foldback.md` to draft it and follow the publication protocol.

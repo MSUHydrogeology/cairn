@@ -80,7 +80,7 @@ SHIPPED_MODEL = "templates/modules/team-gated/model-selection.md"
 OWN_MODEL = "dev/modules/model-selection.md"
 SHIPPED_SKILL = "templates/skills/session-start/SKILL.md"
 OWN_SKILL = ".agents/skills/session-start/SKILL.md"
-FIDELITY = "bootstrap/fidelity-check.md"
+FIDELITY = "install/fidelity-check.md"
 
 def test_the_model_selection_pair_is_byte_identical() -> None:
     """The installed copy is a verbatim copy of the shipped module."""
@@ -113,9 +113,9 @@ def test_the_fidelity_sample_roster_agrees_with_the_loop_document() -> None:
 # --------------------------------------------------------------------------
 
 FIGURE = "docs/assets/dual-review-independence.svg"
-DOCS_ONBOARDING = "docs/agent-team-onboarding.md"
+DOCS_ONBOARDING = "templates/onboarding/agent-team-onboarding.md"
 INSTALLED_ONBOARDING = "dev/modules/onboarding/agent-team-onboarding.md"
-DOCS_TOUR = "docs/dev-tour.md"
+DOCS_TOUR = "templates/onboarding/dev-tour.md"
 INSTALLED_TOUR = "dev/modules/onboarding/dev-tour.md"
 
 #: Pin the contract, not its location, repetition count, or exact prose.
@@ -141,8 +141,13 @@ def test_the_figure_parses_and_keeps_its_embed_geometry() -> None:
     assert root.get("viewBox") == "0 0 640 260"
     assert root.get("width") is None and root.get("height") is None
 
-@pytest.mark.parametrize("page,copy", [(DOCS_ONBOARDING, INSTALLED_ONBOARDING),
-                                       (DOCS_TOUR, INSTALLED_TOUR)])
+# The ids keep the pages' former docs/ names so the protected test ids stay stable.
+@pytest.mark.parametrize("page,copy", [
+    pytest.param(DOCS_ONBOARDING, INSTALLED_ONBOARDING,
+                 id="docs/agent-team-onboarding.md-" + INSTALLED_ONBOARDING),
+    pytest.param(DOCS_TOUR, INSTALLED_TOUR,
+                 id="docs/dev-tour.md-" + INSTALLED_TOUR),
+])
 def test_an_installed_onboarding_copy_equals_its_page(page: str, copy: str) -> None:
     """Both pages reach every install that selects a preset, byte for byte."""
     assert _text(page) == _text(copy), (

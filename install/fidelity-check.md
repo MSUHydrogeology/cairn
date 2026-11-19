@@ -165,6 +165,7 @@ roles:
   - Reviewer
   - Security Review
   - User Agent
+  - Operator
 
 # Customization-slot status
 #   "filled"   — the slot has project-specific content
