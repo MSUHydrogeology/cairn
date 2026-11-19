@@ -304,6 +304,25 @@ Two techniques that earned their place in past runs:
 **Maintainer-performed and mechanical.** The sweep does not perform the cut; it
 produces the confidence the cut rests on.
 
+**Order of the cut.** The records name one exact commit, so any commit added
+after them starts the records over. The Maintainer may have an agent prepare
+steps 1 to 3; the key, the join, every push and the publication stay with the
+Maintainer.
+
+1. Finish every content commit on the development branch, the version bump and
+   changelog below included.
+2. Merge that commit into `master` with `git merge --ff-only`, so the tagged
+   commit is on the protected branch. Do not push yet.
+3. From `master` at that commit, freeze the history, take the Mac and Windows
+   records and join them (see "Strict release-security evidence").
+4. Push `master`. Then create the signed tag on the gate commit and push the tag.
+5. Publish the GitHub Release and run the publication check.
+6. After Zenodo mints the version DOI, record it.
+
+A re-anchor adds its own signed commit to the branch, so run it after the tag,
+never between the records and the tag. It is a separate ceremony and does not
+gate a cut: it changes the trust record, not the files that ship.
+
 * `CITATION.cff` — bump `version` and `date-released`.
 * `.zenodo.json` — check that its title, description, creators and keywords
   still match `CITATION.cff`. It carries no version number. Its `license`
