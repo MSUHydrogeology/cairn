@@ -27,7 +27,7 @@ Promises:
 - An install refuses a file whose destination collides with another module's destination.
 
 Run from the Cairn repo root:
-    python -m pytest bootstrap/tests/test_security_capability_install.py
+    python -m pytest tests/test_security_capability_install.py
 """
 from __future__ import annotations
 
@@ -269,22 +269,24 @@ def test_manifest_carries_exactly_the_fourteen_destinations() -> None:
     d73d436 prediction against a manifest total that keeps moving as
     sibling scopes land; the durable invariant is that the manifest
     contains exactly one row per `_MODULE_MAPPINGS` destination for each
-    capability group. Re-measured here at 7 destinations per group x 2
-    groups = 14, matching the landed verification record's own
-    re-measurement (`python bootstrap/scaffold.py --manifest`: 114 rows,
-    +14 over the pre-scope 100)."""
+    capability group. First measured at 7 destinations per group x 2
+    groups = 14 (`python bootstrap/scaffold.py --manifest`: 114 rows, +14
+    over the pre-scope 100). Re-measured on 2026-11-19 at 8 per group x 2
+    groups = 16 (`python install/scaffold.py --manifest`: 121 rows): the
+    release-boundary guidance change gave each group's engine package a
+    README row. The test keeps its first name so its node id stays stable."""
     rows = s.install_manifest(modules=None)
     by_dst = {dst for _src, dst, _verbatim in rows}
     expected = set(_ALL_CAPABILITY_DESTINATIONS)
     assert expected <= by_dst, f"missing from manifest: {expected - by_dst}"
-    assert len(expected) == 14, (
-        f"re-measured: expected 14 destinations (7 per capability group), "
+    assert len(expected) == 16, (
+        f"re-measured: expected 16 destinations (8 per capability group), "
         f"found {len(expected)} -- if a group's shape changed, update this "
-        f"comment, not the number"
+        f"count and the docstring above"
     )
 
 
-# Declared exception (internal hook): patches bootstrap._scaffold.install._MODULE_MAPPINGS to add a colliding destination; no public spec can add one.
+# Declared exception (internal hook): patches install._scaffold.install._MODULE_MAPPINGS to add a colliding destination; no public spec can add one.
 def test_hazard_a_colliding_destination_is_refused_by_install_manifest(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -293,7 +295,7 @@ def test_hazard_a_colliding_destination_is_refused_by_install_manifest(
     groups sit inside the EXISTING duplicate-destination refusal
     (`duplicate_destinations`, called from `install_manifest`), not a
     special case that only happens to hold today. Patches
-    `bootstrap._scaffold.install._MODULE_MAPPINGS` specifically: `install.py`
+    `install._scaffold.install._MODULE_MAPPINGS` specifically: `install.py`
     holds its own `from .config import _MODULE_MAPPINGS` binding, distinct
     from the facade's re-export, so a patch there is where
     `install_manifest` actually reads it."""
@@ -369,7 +371,7 @@ def test_hazard_an_illegal_living_state_opt_out_still_refuses(
     """F-3: hand-edit an installed lockfile to set `living_state: true` on
     a runner record; `verify_integrity` must report the illegal opt-out and
     fail closed. This is existing engine behaviour
-    (`bootstrap/verify_integrity.py`'s `_LIVING_STATE_DSTS` membership
+    (`install/verify_integrity.py`'s `_LIVING_STATE_DSTS` membership
     check) exercised against the two new capability groups' records; the
     record is planted by this test, not produced by any code this row
     lands."""
@@ -395,23 +397,24 @@ def _expected_lockfile_keys() -> dict[str, frozenset[str]]:
     """Per-destination expected key set -- NOT one global set.
 
     Measured against the current tree (`write_install_lockfile`,
-    `bootstrap/_scaffold/install.py`, the per-record dict-literal block just
+    `install/_scaffold/install.py`, the per-record dict-literal block just
     before `file_records.append(rec)`): every record carries `{src, dst,
     verbatim, hash}`; a VERBATIM destination (the facade + the four engine
-    members, ten of the fourteen) additionally carries `base_hash` alone
+    members, ten of the sixteen) additionally carries `base_hash` alone
     (the `else` arm of the `if not verbatim` branch); a SUBSTITUTED
-    destination (the two doctrine `.md` files + the two policy stubs, four
-    of the fourteen) additionally carries BOTH `base_cache` and `base_hash`.
+    destination (the two doctrine `.md` files + the two engine READMEs + the
+    two policy stubs, six of the sixteen) additionally carries BOTH
+    `base_cache` and `base_hash`.
 
     **Coupling to the policy destinations -- LANDED.** That row added the two
     `dev/.cairn/*-policy.json` destinations
     (`dev/.cairn/api-access-policy.json`,
     `dev/.cairn/web-hosting-policy.json`) to `_LIVING_STATE_DSTS`, so
     `write_install_lockfile`'s `if dst_rel in _LIVING_STATE_DSTS` branch
-    (`bootstrap/_scaffold/install.py`) now adds a `living_state: true` key
+    (`install/_scaffold/install.py`) now adds a `living_state: true` key
     to EXACTLY those two records and no others. This map is per-destination
     for exactly that reason: it extended those two entries in place and the
-    other twelve are untouched.
+    other fourteen are untouched.
     """
     expected: dict[str, frozenset[str]] = {}
     for name in _CAPABILITY_MODULES:
@@ -463,7 +466,7 @@ def test_f5a_the_lockfile_record_key_set_is_exact_per_destination(
 # Where the vocabulary IS satisfied: the closed-vocabulary refusal that
 # NAMES the unrecognized key lives in the DISPATCHER's lockfile-record
 # reader (owned and tested by `security-verification-activation`),
-# not in `bootstrap/verify_integrity.py`. Closing the `verify_integrity`
+# not in `install/verify_integrity.py`. Closing the `verify_integrity`
 # half is a change to that file, which is outside this plan's declared
 # symbol delta and outside its Proposed paths -- it does not land here or
 # in this test file; it is routed as a lasting truth at archive. No test
@@ -611,7 +614,7 @@ def test_f2_1_a_filled_policy_stays_ok_and_only_the_policy_does(
     living-state; the policy row covers only the two adopter-filled files.
 
     Deletion mutant (F2-1's own, run by hand): add an engine destination to
-    `_LIVING_STATE_DSTS` in `bootstrap/_scaffold/lockfile.py`; the hazard
+    `_LIVING_STATE_DSTS` in `install/_scaffold/lockfile.py`; the hazard
     half below goes red because the tampered member then verifies OK.
     """
     rc, target = _install(
@@ -646,11 +649,11 @@ def test_f2_2_the_record_carries_the_flag_and_only_for_the_set(
 
     Also closes the desync this file's literal `_POLICY_DESTINATIONS`
     accepts: the two paths are asserted against the engine's own
-    authoritative set, so a rename in `bootstrap/_scaffold/lockfile.py`
+    authoritative set, so a rename in `install/_scaffold/lockfile.py`
     without a rename here is caught rather than silently passing.
 
     Deletion mutant (run by hand): drop the `_LIVING_STATE_DSTS` membership
-    test in `bootstrap/verify_integrity.py`; the illegal-opt-out row
+    test in `install/verify_integrity.py`; the illegal-opt-out row
     (`test_hazard_an_illegal_living_state_opt_out_still_refuses`) goes red,
     proving F-3 and F2-2 are independently discriminating.
     """
@@ -671,7 +674,7 @@ def test_f2_2_the_record_carries_the_flag_and_only_for_the_set(
         )
         assert dst in s._LIVING_STATE_DSTS, (
             f"{dst} is not in the engine's _LIVING_STATE_DSTS -- this file "
-            f"and bootstrap/_scaffold/lockfile.py have desynchronized"
+            f"and install/_scaffold/lockfile.py have desynchronized"
         )
 
     # No other destination in either capability group carries the flag.
