@@ -80,7 +80,7 @@
     },
     {
       "dst": "dev/modules/claim-check.md",
-      "hash": "sha256:97c15590205ce3f9e7307470454aa45f6be5b3751e90a5a22827e42c2c92b826",
+      "hash": "sha256:28188209b87bd31e71d8120a8e885207da829aa1b6f57cdb39da5681f3ed8b96",
       "src": "modules/default-on/claim-check.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -546,7 +546,7 @@
       "base_cache": "dev/.cairn/base/dev/.cairn/scanner-check-allow.json",
       "base_hash": "sha256:2ecdb6835ec4488ee09720308c9bb915fac7128cfbccbb6e280262f62c8633b3",
       "dst": "dev/.cairn/scanner-check-allow.json",
-      "hash": "sha256:f8e40122dff9ec45ba0a1ed5b5b93e9f5fd477d23194a4d18d5c23c6c7df76bf",
+      "hash": "sha256:523f29776383073869fc742d78f85964bcbe21b3a301b3b9929c026a23a0507f",
       "src": "modules/default-on/scanner-check-allow.json",
       "verbatim": false
     },
