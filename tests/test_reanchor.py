@@ -1669,7 +1669,7 @@ class TestTheArtifactIsAClosureMemberByConstruction:
         that is not the ceremony artifact, and the two constraints alone would
         be satisfied. The launcher starts one file and will not start another.
         """
-        other = "bootstrap/tests/_oracle.py"
+        other = "tests/_oracle.py"
         _instantiate(ceremony, _compose_packet(
             ceremony, artifact_rel=other,
             artifact_sha=_sha256_file(ceremony["repo"] / other)))
@@ -1908,7 +1908,7 @@ def _use_the_real_artifact(state, *, also=None):
     any other candidate file in *also*), and re-issue the packet and launcher
     over it."""
     repo = state["repo"]
-    (repo / "bootstrap/reanchor.sh").write_bytes(_ARTIFACT.read_bytes())
+    (repo / "release/reanchor.sh").write_bytes(_ARTIFACT.read_bytes())
     for rel, text in (also or {}).items():
         (repo / rel).write_text(text)
     for args in (["add", "-A"],
@@ -1963,7 +1963,7 @@ class TestTheReadingCommandsRunThroughTheLauncher:
             capture_output=True, text=True, check=True).stdout
         _use_the_real_artifact(ceremony, also={
             "dev/.cairn/allowed_signers": roster,
-            "bootstrap/tests/_gate_preflight.py":
+            "tests/_gate_preflight.py":
                 _RECORDING_CHECKER.replace("@RECORD@", str(record))})
         if steady:
             subprocess.run(["git", "-C", str(repo), "update-ref",
@@ -2123,14 +2123,14 @@ class TestTheAnchorsOwnScanRunsBeforeAnyCandidateByte:
         marker = ceremony["dir"] / "filter-ran"
         info = repo / ".git/info"
         info.mkdir(exist_ok=True)
-        (info / "attributes").write_text("bootstrap/** filter=evil\n")
+        (info / "attributes").write_text("tests/** filter=evil\n")
         _git_out(repo, "config", "filter.evil.smudge",
                  f"sh -c 'echo ran > {marker}; echo print\\(1\\)'")
         _git_out(repo, "config", "filter.evil.clean", "cat")
         self._scan(ceremony)
         archive = subprocess.run(
             ["git", "-C", str(repo), "archive", "refs/cairn/gate-anchor",
-             "bootstrap"], capture_output=True, check=True).stdout
+             "tests"], capture_output=True, check=True).stdout
         assert marker.exists(), (
             "the control: `git archive` does run the filter on this repository")
         marker.unlink()
@@ -2181,10 +2181,10 @@ class TestTheAnchorsOwnScanRunsBeforeAnyCandidateByte:
         assert not marker.exists(), "a .pth file ran before the anchor's checker"
 
     @pytest.mark.parametrize("name,kind", [
-        ("bootstrap/tests/has space.py", "file"),
-        ("bootstrap/tests/quo\"te.py", "file"),
-        ("bootstrap/tests/dots..py", "file"),
-        ("bootstrap/tests/linked.py", "symlink")])
+        ("tests/has space.py", "file"),
+        ("tests/quo\"te.py", "file"),
+        ("tests/dots..py", "file"),
+        ("tests/linked.py", "symlink")])
     def test_an_entry_that_is_not_a_plain_regular_file_refuses(
             self, ceremony, name, kind):
         repo = ceremony["repo"]
@@ -2735,10 +2735,10 @@ class TestLazyFetchCannotRunAnUnlistedTransportHelper:
         after the ceremony key is loaded.
 
         Run through the checker's own command line: `scan-digest` sizes the
-        blobs a range adds under `scripts/`, and the one this checkout adds is
+        blobs a range adds under `dev/tools/`, and the one this checkout adds is
         a promisor-deferred object whose remote is the hostile helper."""
         marker = tmp_path / "HELPER-RAN"
-        work = self._promisor_checkout(tmp_path, marker, name="scripts/payload.sh")
+        work = self._promisor_checkout(tmp_path, marker, name="dev/tools/payload.sh")
         # An anchor commit that carries a (roster-less) gate manifest, built
         # without reading the deferred blob.
         git = shutil.which("git")
@@ -2754,7 +2754,7 @@ class TestLazyFetchCannotRunAnUnlistedTransportHelper:
 
         manifest = local("hash-object", "-w", "--stdin", input="{}\n")
         local("update-index", "--add", "--cacheinfo",
-              f"100644,{manifest},bootstrap/tests/fixtures/gate_manifest.json")
+              f"100644,{manifest},tests/fixtures/gate_manifest.json")
         anchor = local("commit-tree", local("write-tree"), "-m", "anchor")
         assert not marker.exists(), "building the anchor already ran the helper"
 
