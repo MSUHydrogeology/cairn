@@ -1,6 +1,42 @@
 {
+  "Assign:CODE_MAP_V070_BLOB": [
+    "1959184431cb0aa8"
+  ],
+  "Assign:CODE_MAP_V070_COMMIT": [
+    "e4e2204e99f16678"
+  ],
+  "Assign:JOURNAL": [
+    "bffe20a196af363a"
+  ],
+  "Assign:LAYOUT_INSTALLS": [
+    "1247ea5cbc498679"
+  ],
+  "Assign:ONBOARDING_GUIDES": [
+    "e8271b9d5b3bc9cd"
+  ],
+  "Assign:RECEIPT": [
+    "67ac547117040994"
+  ],
   "Assign:RECOGNIZED_PROFILE_KEYS": [
     "f3d84dec9c52eb45"
+  ],
+  "Assign:RECORDED_WRAPPER_POLICY": [
+    "412bf9736f80879d"
+  ],
+  "Assign:SELF_HOST_UNLISTED": [
+    "9a85686742a357d0"
+  ],
+  "Assign:SKILL_FANOUT_ROOTS": [
+    "d1978f2339e2bfc1"
+  ],
+  "Assign:SOURCE_FILE_MOVES": [
+    "7ac4cedcae62e2d4"
+  ],
+  "Assign:SOURCE_PREFIX_MOVES": [
+    "8fe5fcca3efecf56"
+  ],
+  "Assign:VENDOR_WRAPPER_ALIASES": [
+    "1f7181d2c9421dc9"
   ],
   "Assign:_ADOPTABLE_BLOCKED_KINDS": [
     "b77cd1b7b08d3fe7"
@@ -9,10 +45,13 @@
     "73d516963d39118a"
   ],
   "Assign:_CANONICAL": [
-    "dc872acc5f39cc99"
+    "74d90d233e81988e"
   ],
   "Assign:_CAPABILITY_NOTICE_MODULES": [
-    "6dd42988714849e8"
+    "0d146aadccc2203d"
+  ],
+  "Assign:_CONFIGS": [
+    "1176a642f664006e"
   ],
   "Assign:_EDIT_CHECK_GROUP_SIZE": [
     "a60f5b4a66592efa"
@@ -39,10 +78,13 @@
     "96957555990a8280"
   ],
   "Assign:_GIT_READ_SHA256": [
-    "0cf7f44512ecf526"
+    "75bfe4935c7f8c8e"
   ],
   "Assign:_GIT_TIMEOUT_SECONDS": [
     "bda9be000b9ce526"
+  ],
+  "Assign:_HEX": [
+    "6f55452e1784220e"
   ],
   "Assign:_IF_RE": [
     "36d695ac37c412f9"
@@ -53,14 +95,26 @@
   "Assign:_INVENTORY_SRC": [
     "f3316539c10db25f"
   ],
+  "Assign:_KEPT_EXISTING_DSTS": [
+    "c7f1929340c967d7"
+  ],
+  "Assign:_LAYOUT_MOVES": [
+    "8a2e5c85dfff892d"
+  ],
+  "Assign:_LAYOUT_NEW_ROWS": [
+    "36341bac60e1833f"
+  ],
   "Assign:_LEGACY_SEED_MODULES": [
     "acf24bbee166b7a2"
   ],
   "Assign:_MODULE_DISCOVERY": [
-    "391e5fc3c5bfc4f2"
+    "105bc625592d450b"
   ],
   "Assign:_MODULE_REQUIRED_TOKENS": [
     "a72b4e9c40b9610c"
+  ],
+  "Assign:_OID": [
+    "5f54297576785b41"
   ],
   "Assign:_PROFILE_CONTROL_RE": [
     "2edba3555711a8a4"
@@ -102,7 +156,10 @@
     "6bd09aa48027fc97"
   ],
   "ClassDef:EngineFinder": [
-    "91ed5661f8da0a11"
+    "fc376c74c056688d"
+  ],
+  "ClassDef:FileState": [
+    "797c0b0fc628d1aa"
   ],
   "ClassDef:ModuleDiscoveryConflict": [
     "41c6d9d43969ab4e"
@@ -111,7 +168,16 @@
     "bf03503efab39e2c"
   ],
   "ClassDef:ScaffoldLoaderError": [
-    "a2605986b981e98c"
+    "3d74cc9f9e5c3d6d"
+  ],
+  "ClassDef:SourceBlob": [
+    "85355f148488de28"
+  ],
+  "ClassDef:SourceRevision": [
+    "c11486054d324e4d"
+  ],
+  "ClassDef:Transaction": [
+    "d45bf6ae7b5843f2"
   ],
   "ClassDef:UpstreamSource": [
     "08b0953fb82ce770"
@@ -141,16 +207,22 @@
     "53565ee93f61a900"
   ],
   "FunctionDef:_cairn_provenance": [
-    "cefba38144462d79"
+    "3f862d2ffba0cca5"
   ],
   "FunctionDef:_cannot_tell_refusal": [
     "1e0191ace71a2024"
+  ],
+  "FunctionDef:_capped_names": [
+    "a6075cbe48849ba3"
   ],
   "FunctionDef:_check_lockfile_paths": [
     "0930b85f799f58cb"
   ],
   "FunctionDef:_classify_retired_records": [
     "9b8e9d762a0350d7"
+  ],
+  "FunctionDef:_clear_ordinary_stage": [
+    "73f6737c37c12bf4"
   ],
   "FunctionDef:_cmd_adopt_collisions": [
     "f61b86e456c66f7d"
@@ -179,14 +251,29 @@
   "FunctionDef:_display_name": [
     "0ca64d081a9d50c1"
   ],
+  "FunctionDef:_drop_publisher": [
+    "9e748043b0490696"
+  ],
   "FunctionDef:_edit_check_prelude": [
     "e18a54cda9db57ff"
   ],
   "FunctionDef:_embedded_axes": [
     "6b6be0f9021d22be"
   ],
+  "FunctionDef:_encode": [
+    "1ed16228447b489f"
+  ],
   "FunctionDef:_finalize_hash_names": [
     "20f72097bbc1a61a"
+  ],
+  "FunctionDef:_flushed_temp": [
+    "2fed816da2bfc7aa"
+  ],
+  "FunctionDef:_folders": [
+    "82bef4c7b1427a20"
+  ],
+  "FunctionDef:_git": [
+    "0ab313157dd80166"
   ],
   "FunctionDef:_git_config_bool": [
     "d2943cc75b803322"
@@ -206,14 +293,62 @@
   "FunctionDef:_has_forbidden_path_character": [
     "15d08d37c11ddb62"
   ],
+  "FunctionDef:_identity": [
+    "07878052b50ed3c1"
+  ],
+  "FunctionDef:_index_crlf_count": [
+    "f2f4d82948fde68b"
+  ],
   "FunctionDef:_is_link_or_reparse": [
     "a3055b3ba07754ad"
+  ],
+  "FunctionDef:_layout_blob": [
+    "52b876af12fa37ba"
+  ],
+  "FunctionDef:_layout_command": [
+    "30410dcffa0f2e20"
+  ],
+  "FunctionDef:_layout_config_path": [
+    "b0936029dd12b28c"
+  ],
+  "FunctionDef:_layout_decode_lock": [
+    "0a7978de5f9ddf90"
+  ],
+  "FunctionDef:_layout_digest": [
+    "2b6214e5e23360de"
+  ],
+  "FunctionDef:_layout_guard": [
+    "5dc9381ed7e31b50"
+  ],
+  "FunctionDef:_layout_merge": [
+    "e2c9f2c6218c7b57"
+  ],
+  "FunctionDef:_layout_plan": [
+    "64ad17fe639ba5d0"
+  ],
+  "FunctionDef:_layout_recorded_source": [
+    "ced481d1bd75af6f"
+  ],
+  "FunctionDef:_layout_render": [
+    "d33503692a8e62b4"
+  ],
+  "FunctionDef:_layout_target": [
+    "911e0d4a20f1474a"
+  ],
+  "FunctionDef:_layout_tools_profile": [
+    "43daece3148d0e2a"
+  ],
+  "FunctionDef:_legacy_layout_paths": [
+    "07f290a543bacb7d"
   ],
   "FunctionDef:_legacy_module_seed_ids": [
     "e232e44863919e59"
   ],
   "FunctionDef:_linked_vendor_wrapper_names": [
     "3d52bc49a7ca3e1d"
+  ],
+  "FunctionDef:_local_mode": [
+    "fbdff3e79f205c91"
   ],
   "FunctionDef:_lock_record_identity": [
     "da7702148b6aa48e"
@@ -230,14 +365,26 @@
   "FunctionDef:_parse_collision_auth": [
     "86f293fad30fd98c"
   ],
+  "FunctionDef:_payload": [
+    "35f44ddb2656009d"
+  ],
+  "FunctionDef:_payload_name": [
+    "7af8061ef7bb86c4"
+  ],
   "FunctionDef:_prepare_module_discovery": [
     "b3e6831c357551fb"
   ],
   "FunctionDef:_print_adopt_command": [
     "0359d3ca4d4c8a79"
   ],
+  "FunctionDef:_private_ready": [
+    "b80571d1944c135f"
+  ],
   "FunctionDef:_read_git_pointer": [
     "af7038dd7d037d51"
+  ],
+  "FunctionDef:_read_private": [
+    "085f45fa358ba1a1"
   ],
   "FunctionDef:_read_regular_bytes": [
     "fea7c9399cf2c67f"
@@ -261,7 +408,7 @@
     "9242114fae01b4ce"
   ],
   "FunctionDef:_remove_unchanged_file": [
-    "22a08cd7892c649f"
+    "0b466562a0f91c4e"
   ],
   "FunctionDef:_render_module_inventory": [
     "1a84d2a3cd128151"
@@ -270,10 +417,13 @@
     "c86d79b3dfcf3916"
   ],
   "FunctionDef:_render_review_inventory": [
-    "a10269f4159633b8"
+    "c58cb1f6cb8bd946"
   ],
   "FunctionDef:_rendered_onboarding_overlay": [
     "ec0bc82f0a3b324a"
+  ],
+  "FunctionDef:_replace": [
+    "8e1bb364180b2846"
   ],
   "FunctionDef:_resolve_commit_oid": [
     "08b5a74e782cb6d3"
@@ -287,8 +437,14 @@
   "FunctionDef:_stage_exclusive": [
     "a4ae528b29ebf978"
   ],
+  "FunctionDef:_stage_private": [
+    "89e3e609e688bbfd"
+  ],
   "FunctionDef:_substitute_module_inventory": [
     "60c7172b94b5ec55"
+  ],
+  "FunctionDef:_sync_dir": [
+    "6891e0067708b0b0"
   ],
   "FunctionDef:_well_formed_sha256": [
     "5b36245110f35037"
@@ -314,14 +470,29 @@
   "FunctionDef:install": [
     "5d2af1b105a77a61"
   ],
+  "FunctionDef:installer_rows": [
+    "ef3eb3763c323486"
+  ],
+  "FunctionDef:load_receipt": [
+    "b166abfe88ace051"
+  ],
   "FunctionDef:missing_required_tokens": [
     "dbc099d6b68d437f"
   ],
   "FunctionDef:model_selection_notice_lines": [
-    "408fc1dace0ddf4e"
+    "59e8cb620f0bf9b3"
   ],
   "FunctionDef:module_merge_directives": [
     "dc44c50f0289d5b6"
+  ],
+  "FunctionDef:pending": [
+    "b15e5227a271e43a"
+  ],
+  "FunctionDef:read_state": [
+    "4c61371a3e6f067e"
+  ],
+  "FunctionDef:resolve_revision": [
+    "49475bade15c07bc"
   ],
   "FunctionDef:resolve_slot_merge": [
     "d8f87188c146a75e"
