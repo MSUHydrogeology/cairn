@@ -262,3 +262,9 @@ copies now require the Human Maintainer to confirm that a Cairn issue contains
 no private coordinate leaks before approving it. The copies match; claim, link,
 snippet, neutrality and Cairn prose checks passed under Python 3.13.13. No
 additional review pass or real filing was run. Elapsed: unknown; tokens: unknown.
+
+## Maintainer cap disposition (scribed by Hydrogen) -- 2026-11-19
+
+> "Let's do all the fixes in #1, #2, and #3. Then we can tackle #4 one at a time"
+
+This disposition explicitly accepts post-archive repair commit `7ac42956` (which restored the Maintainer coordinate-leak confirmation in `dev/upstream/foldback.md` and `templates/core/dev/upstream/foldback.md`) at the 2-pass Security Review cap (`036b2de5`) without requiring a 3rd Security Review pass.
