@@ -11,11 +11,12 @@ Notable changes to Cairn, newest first. The format follows
 **Adding an entry.** Each change adds one entry under `## Unreleased`, in the
 same commit or the next.
 
-- **Group it.** Put it under **Major changes** if an adopter would notice a
-  difference in how Cairn behaves or must act on it: a new capability, a change
-  to how they work or what the tools do, a security fix, or a removal. Fixing a
-  bug is minor, even when an adopter notices the fix, unless it is a security
-  fix. Everything else goes under **Minor changes**,
+- **Group it.** Put it under **Major changes** if it adds a feature, fixes a
+  major problem, or improves an existing feature in a major way. A security
+  change is major only if it fixes a problem people actually had; that a
+  vulnerability existed says nothing about its size. A change only to how
+  agents coordinate among themselves, such as claim checks, is minor.
+  Everything else goes under **Minor changes**,
   including changes to Cairn's own release and ceremony tools, which adopters
   do not run.
 - **Type it first.** Start with one of **Added**, **Changed**,
@@ -38,14 +39,13 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ## 0.8.0 — 2026-11-19
 
+The main change: everything Cairn installs in a project now lives in one `dev/` folder, apart from a few root files such as `AGENTS.md` and `RULES.md`.
+
 ### Major changes
 
-- **Added: Windows relay mediation, Gitleaks 8.30.1 redaction validation and private sweep triage.** The `portable-security-sweeps` runner validates Gitleaks 8.30.1 redacted output (`Secret == "REDACTED"` and `"REDACTED" in Match`), discards raw `Match` context wholesale, rejects zero-exit findings contradiction as degraded (`20`), writes sanitized finding locations to an explicit owner-only `--triage-record`, detects shallow linked worktrees through Git's common directory, and compiles a private Windows Job C# Git relay when admitted ([plan](dev/plans/archive/2026-11-18-release-secrets-scanning.md)).
 - **Added: Release boundary guidance.** Projects can inspect tracked release references with an advisory report and use an ignored scratch folder for temporary work. Existing project tests may stay in place or live in the development tree. ([implementation](https://github.com/MSUHydrogeology/cairn/commit/d06c0fc4979f0d88217dc2d28f6c321cd00b75e4))
 
 - **Added: Complete Pulse at goodnight.** Session end now includes the complete existing Pulse with fresh current-project usage when available; incomplete or unavailable reports remain explicit. Setup is offered only for attended sessions with consent. ([archived rollout plan](dev/plans/archive/2026-11-17-full-pulse-rollout.md); [accepted proposal](dev/proposals/archive/2026-11-17-terra-meter-adopter-rollout.md))
-
-- **Added: Rule against committing secrets.** `AGENTS.md` now tells every agent never to commit a credential, key, token or private data, and to stop and tell the person if one is committed, because Git history keeps it. ([proposal](dev/proposals/archive/2026-11-16-claude-never-commit-secrets.md))
 
 - **Added: Help for growing rules.** When a project's Markdown rules exceed 5,000 words, an attended session-start can offer guidance on organizing them and remember the answer with permission. Rules are changed only after file-by-file approval. ([proposal](dev/proposals/archive/2026-11-16-claude-staged-modules-and-triggers.md))
 
@@ -59,22 +59,20 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 - **Added: Runnable worked examples.** Two small projects now show a light change, a planned scientific change, a disposable install and upgrade, and a handoff. Their sample records are illustrative. ([plan](dev/plans/archive/2026-11-18-worked-examples.md))
 
-- **Changed: Commit-time claim check warns by default.** If you installed the optional commit check (`python dev/tools/intent.py install-precommit`), it now warns and lets the commit through when another session holds a claim on the same file. To keep refusing, add `"enforce": "block"` to `dev/.cairn/intent-config.json` (older installs: `dev/intent-config.json`); no hook reinstall is needed. ([proposal](dev/proposals/archive/2026-11-16-claude-claims-check-warn-only.md))
-
-- **Changed: Security review trigger.** A Security Review is required when a change alters what a named high-risk surface does or accepts, or adds a place where outside input enters the system; merely touching the surface does not trigger one. Prose-only shipped templates receive a release-wide read on the exact candidate, while code, installer structure and functional configuration retain their protections; the development checkout therefore carries that exposure until release. ([heavy-tier plan](dev/plans/archive/2026-11-16-heavy-tier-trigger.md); [template-scan plan](dev/plans/archive/2026-11-17-template-scan-and-risk-list.md))
+- **Changed: Fewer needless security reviews.** A Security Review is required when a change alters what a named high-risk surface does or accepts, or adds a place where outside input enters the system; merely touching the surface does not trigger one. Prose-only shipped templates receive a release-wide read on the exact candidate, while code, installer structure and functional configuration retain their protections; the development checkout therefore carries that exposure until release. ([heavy-tier plan](dev/plans/archive/2026-11-16-heavy-tier-trigger.md); [template-scan plan](dev/plans/archive/2026-11-17-template-scan-and-risk-list.md))
 
 - **Changed: Shorter working guidance.** Authoring templates, testing guidance and collaboration rules are shorter; plans name applicable rules and give unfinished work an explicit home. Before upgrading, move project rules you added to these templates or guides into `RULES.md` or `dev/rules/`; choosing Cairn's replacement during a merge can otherwise lose those additions. ([proposal](dev/proposals/archive/2026-11-16-claude-template-trim-and-rules.md))
 
 - **Changed: Scientific evidence without needless runs.** Projects can verify structural changes by comparing the affected stage's output, keep an accepted reference run, and test external-output readers against real tool output. Named required runs stay required; only the Maintainer accepts new references or changes pass bands. ([proposal](dev/proposals/archive/2026-11-16-claude-scientific-run-evidence.md))
 
-- **Changed: One tools folder.** Cairn's installer now lives under `install/`, and upgrades move its adopted tools into `dev/tools` while preserving local changes and project-owned files. Update your own commands that name the old tool paths; the agreed root entry files remain outside `dev/`. ([proposal](dev/proposals/archive/2026-11-09-claude-repository-layout.md))
+- **Changed: Everything Cairn installs now lives in `dev/`.** Cairn's files in a project, once spread across `scripts/`, `tools/` and `dev/`, now go into `dev/` (111 of 121, up from 43 of 98), with the tools in `dev/tools/`; only root files such as `AGENTS.md`, `RULES.md` and `VENDOR.md` stay outside. Upgrading moves the old files into place and keeps local changes; commands that name the old `scripts/` or `tools/` paths need updating. ([proposal](dev/proposals/archive/2026-11-09-claude-repository-layout.md))
 
 - **Changed: Useful module offers.** Guidance now explains unselected modules and known costs, asks whether to adopt them, and offers them when a task needs them. Missing descriptions defer the offer; existing automatic core and skills additions continue. ([plan](dev/plans/archive/2026-11-18-module-offers.md))
 
-- **Security: Check installer source bytes.** Before treating a tagged checkout as clean, the installer compares its tracked files with the commit. It warns if the bytes differ or cannot be verified. ([plan](dev/plans/archive/2026-11-19-source-provenance-bytes.md))
-
 ### Minor changes
 
+- **Added** — The secret-scanning sweep checks that Gitleaks 8.30.1 hides the secrets it reports, discards the raw matched text, can write finding locations to a private file for triage, and on Windows runs Git through a small private relay it builds itself. ([plan](dev/plans/archive/2026-11-18-release-secrets-scanning.md))
+- **Added** — `AGENTS.md` now tells every agent never to commit a credential, key, token or private data, and to stop and tell the person if one is committed, because Git history keeps it. ([proposal](dev/proposals/archive/2026-11-16-claude-never-commit-secrets.md))
 - **Added** — Gitleaks `8.30.1` builds for `darwin/arm64` and `windows/arm64` are admitted in `portable-security-sweeps`, enabling full-mode secret sweeps (allowing clean sweeps to return CLEAN exit 0 rather than reduced-mode INCOMPLETE exit 5) when the binary matches its recorded SHA-256 checksum ([evidence ledger](dev/measurement/gitleaks-version-support.md); [plan](dev/plans/archive/2026-11-18-release-secrets-scanning.md)).
 - **Added** — Cairn's strict release checker now supports frozen-history secrets-scanning plumbing (`--freeze-history`, `--record --history-roots`, `--join --history-roots`) and updated `release/RELEASE_PROCESS.md` instructions ([plan](dev/plans/archive/2026-11-18-release-secrets-scanning.md)).
 - **Changed** — Reconciled Cairn's native release-test roster (`63` Windows-only, `362` POSIX-only setup skips), repaired three POSIX `fchmod` markers, split portable vs FIFO board checks, fixed the relocated test-root path in `tests/test_security_marker.py`, and retired two redundant doc-discovery helper guards under Decision `8ac332b4` while preserving the public CLI witness and `tests/test_intents_tool.py` claims fence. ([plan](dev/plans/archive/2026-11-18-release-roster-and-guards.md))
@@ -84,6 +82,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Changed** — In Cairn's own repository, not shipped to adopters: the checks that each tool refuses a hostile `git` hidden in a repository now also run on Windows, through a small compiled `git.exe` stand-in the test builds itself. ([proposal](dev/proposals/archive/2026-11-16-claude-windows-safe-git-route-checks.md))
 - **Changed** — The strict release check now skips 16 test files for Cairn-only signing and gate tools, and its output names them as not certified. Ordinary checks and full certifying runs still include every test; expected runtime savings have not been measured. ([archived plan](dev/plans/archive/2026-11-16-release-tests-shipped-only.md); [accepted proposal](dev/proposals/archive/2026-11-16-claude-release-tests-shipped-only.md))
 - **Changed** — In Cairn's own repository, not shipped to adopters: the release test-report check now allows a skipped test only when Cairn's native-only list names that exact test for the other platform. Every required file still needs a passing test, and the Mac and Windows join still requires each platform-only test to pass on its own platform. ([proposal](dev/proposals/2026-11-19-codex-native-release-membership.md))
+- **Changed** — If you installed the optional commit check (`python dev/tools/intent.py install-precommit`), it now warns and lets the commit through when another session holds a claim on the same file. To keep refusing, add `"enforce": "block"` to `dev/.cairn/intent-config.json` (older installs: `dev/intent-config.json`); no hook reinstall is needed. ([proposal](dev/proposals/archive/2026-11-16-claude-claims-check-warn-only.md))
 - **Fixed** — The hook installers (`install-hook`, `install-precommit` and their uninstall) now find the hooks folder with the same safe Git lookup Cairn's other tools use, so a `git` program planted in a repository can no longer run; they still follow your `core.hooksPath`. They refuse to write a hook file that is a symbolic link. `link_check` and `sync_doc_snippets` print a clear message and exit 2, instead of a traceback, when they cannot read the tracked-file list. ([proposal](dev/proposals/archive/2026-11-16-claude-intent-hook-safe-git.md))
 - **Fixed** — The usage meter now accepts a project remote in the SSH form `git@host:team/project.git`, which its own setup guide shows. Before, any configuration naming such a remote was refused, so the meter could not be turned on for those projects. It now also works in a repository that uses Git worktrees, and it skips old claim records that name an agent instead of a session tag, which had stopped the check on Cairn's own repository. It reads session logs forward from saved cursors, bounds retained usage events and reports incomplete scans without publishing stale usage. ([measurement guide](dev/measurement/README.md), [proposal](dev/proposals/archive/2026-11-16-claude-meter-worktree-config.md), [archived runtime plan](dev/plans/archive/2026-11-16-meter-reads-only-new-bytes.md))
 - **Fixed** — On Windows, session end accepts the meter’s normal line ending, and claim-ledger append and pruning preserve the original bytes instead of reporting a false concurrent change. ([repair record](dev/measurement/archive/windows-existing-failures-2026-11-16.md))
@@ -94,6 +93,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Fixed** — New installs add a root `.gitattributes` so text files keep the same line endings on every machine, which stops a Windows checkout from silently differing from the repository; an existing `.gitattributes` is never replaced, even with `--force`. If your repository already stores Windows (CRLF) text, the installer counts those files and points to the steps in `install/BOOTSTRAP.md`, II-2b. ([plan](dev/plans/archive/2026-11-16-git-attributes-file.md))
 - **Fixed** — The installer's closing hints now name the tools under `dev/tools/`, not the old `tools/` folder. ([commit](https://github.com/MSUHydrogeology/cairn/commit/e8eabc8063d183a157d17f828fa2379001bcc2d0))
 - **Fixed** — On Windows, when the installer cannot finish writing a file it staged, it now closes that temporary file before removing it, so the cleanup completes instead of stopping with a file-in-use error. ([commit](https://github.com/MSUHydrogeology/cairn/commit/12124ee2c44d441957fa83fd9104da37a1fc7f79))
+- **Security** — Before treating a tagged checkout as clean, the installer compares its tracked files with the commit. It warns if the bytes differ or cannot be verified. ([plan](dev/plans/archive/2026-11-19-source-provenance-bytes.md))
 
 ## 0.7.0 — 2026-11-13
 
