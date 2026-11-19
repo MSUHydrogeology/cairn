@@ -1916,7 +1916,7 @@ def test_every_tool_pins_the_digest_of_the_helper_it_runs() -> None:
         r'(?m)^(_GIT_READ_SHA256|_GIT_SHA256|SAFE_GIT_SOURCE_SHA256) = "([0-9a-f]{64})"')
     stale: list[str] = []
     found = 0
-    for top in ("scripts", "tools", "templates", "bootstrap/_scaffold"):
+    for top in ("dev/tools", "tests", "templates", "install/_scaffold"):
         for path in sorted((ROOT / top).rglob("*.py")):
             if "__pycache__" in path.parts:
                 continue
@@ -1928,7 +1928,7 @@ def test_every_tool_pins_the_digest_of_the_helper_it_runs() -> None:
     assert found >= 23, found
     report_pin = re.compile(r'(?m)^_REPORT_SHA256 = "([0-9a-f]{64})"')
     for replacer, report in (
-            ("scripts/exact_replace.py", "scripts/prose_diff.py"),
+            ("dev/tools/exact_replace.py", "dev/tools/prose_diff.py"),
             ("templates/modules/team-gated/exact_replace.py",
              "templates/modules/team-gated/prose_diff.py")):
         pins = report_pin.findall((ROOT / replacer).read_text(encoding="utf-8"))
