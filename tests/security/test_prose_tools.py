@@ -73,8 +73,9 @@ def _repo(tmp_path: Path) -> tuple[Path, str]:
     return repo, _git(repo, "rev-parse", "HEAD")
 
 
-def _run(repo: Path, script: str, *args: str, timeout: float = 20) -> subprocess.CompletedProcess:
-    return subprocess.run([sys.executable, str(repo / "scripts" / script), *args],
+def _run(repo: Path, script: str, *args: str, timeout: float = 20,
+         folder: str = "scripts") -> subprocess.CompletedProcess:
+    return subprocess.run([sys.executable, str(repo / folder / script), *args],
                           cwd=repo, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                           text=True, timeout=timeout)
 
@@ -728,7 +729,7 @@ def test_fresh_scaffold_install_runs_both_public_prose_clis_with_real_lock(
     lock = json.loads("\n".join(line for line in lock_text.splitlines()
                                if not line.lstrip().startswith("#")))
     records = {row["dst"]: row for row in lock["files"]}
-    for destination in ("tools/git_read.py", "scripts/prose_diff.py"):
+    for destination in ("dev/tools/git_read.py", "dev/tools/prose_diff.py"):
         data = (repo / destination).read_bytes()
         assert records[destination]["verbatim"] is True
         assert records[destination]["hash"] == "sha256:" + hashlib.sha256(data).hexdigest()
@@ -750,14 +751,14 @@ def test_fresh_scaffold_install_runs_both_public_prose_clis_with_real_lock(
     old.write_bytes(old_line)
     new.write_bytes(new_line)
     replaced = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old),
-                    "--new-file", str(new))
+                    "--new-file", str(new), folder="dev/tools")
     assert replaced.returncode == 0, replaced.stdout + replaced.stderr
     assert "CHANGED AGENTS.md" in replaced.stdout
     assert rule.read_bytes() == new_line + b"".join(remaining_lines)
     _git(repo, "add", "AGENTS.md")
     _git(repo, "commit", "-m", "edit through installed replacer")
 
-    report = _run(repo, "prose_diff.py", installed_revision, "HEAD")
+    report = _run(repo, "prose_diff.py", installed_revision, "HEAD", folder="dev/tools")
     assert report.returncode == 0, report.stderr
     assert "CHANGED AGENTS.md" in report.stdout
     assert "CLI fixture" in report.stdout
