@@ -9,6 +9,22 @@
     "Absent or unreadable config = no exemptions, which is the strict direction."
   ],
   "exemptions": {
+    "dev/ceremony-record.md": {
+      "paths": [
+        "bootstrap/tests/test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package",
+        "bootstrap/tests/test_ast_attest.py::test_ast_gate_passes_over_the_full_scaffold_module_set"
+      ]
+    },
+    "dev/measurement/ceremony-scripts-2026-10-28/second-ceremony/reader-handoff.md": {
+      "paths": [
+        "bootstrap/reanchor.sh"
+      ]
+    },
+    "dev/measurement/ceremony-scripts-2026-10-28/second-ceremony/reader-handoff-2.md": {
+      "paths": [
+        "bootstrap/reanchor.sh"
+      ]
+    },
     "CHANGELOG.md": {
       "paths": [
         "dev/NEXT_SESSION.md",
@@ -55,7 +71,7 @@
         "docs/style.md"
       ]
     },
-    "bootstrap/UPGRADE.md": {
+    "install/UPGRADE.md": {
       "paths": [
         "dev/reflections/next-session.md",
         "dev/NEXT_SESSION.md",
@@ -65,8 +81,9 @@
         "dev/.cairn/onboarding-activated.jsonl"
       ]
     },
-    "bootstrap/REANCHOR_RUNBOOK.md": {
+    "release/REANCHOR_RUNBOOK.md": {
       "paths": [
+        "bootstrap/tests/",
         "dev/.cairn/trusted-activation.yml",
         "dev/.cairn/promotion-authorization.yml",
         "dev/ceremony-record.md"
@@ -88,6 +105,9 @@
     },
     "dev/measurement/queued-issue-drafts.md": {
       "paths": [
+        "bootstrap/tests/_gate_preflight.py",
+        "bootstrap/_scaffold/SECURITY_MUTATIONS.md",
+        "bootstrap/AST_BASELINE_RUNBOOK.md",
         "scripts/transition_lint.py",
         "templates/modules/default-on/_lifecycle_metrics/",
         "templates/modules/default-on/lifecycle_metrics.py"
@@ -95,6 +115,11 @@
     },
     "docs/methodology/consolidation-review.md": {
       "paths": [
+        "bootstrap/fidelity-check.md",
+        "bootstrap/tests/",
+        "bootstrap/_scaffold/_guard.py",
+        "docs/agent-team-onboarding.md",
+        "bootstrap/tests/fixtures/skills/README.md",
         "templates/modules/default-on/_onboarding/",
         "doctrine/consolidation-review.md",
         "doctrine/lifecycle-contract.md",

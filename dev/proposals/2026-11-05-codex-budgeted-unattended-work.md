@@ -74,7 +74,7 @@ assist only the current move and must inherit its stop boundary; they may not
 start another move or an independent drain. Ordinary attended drain is unchanged.
 
 Read settings once from Git's administration folder; refuse links and tracked
-files. That folder is candidate-controlled under `bootstrap/SAFETY.md` rule 10,
+files. That folder is candidate-controlled under `install/SAFETY.md` rule 10,
 so freezing it does not prove authorship. Require an invocation-supplied expected
 digest of the exact settings bytes the trusted caller has reviewed and approved,
 including each full command argument vector and its declared host executables.

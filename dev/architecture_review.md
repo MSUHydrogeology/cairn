@@ -14,11 +14,11 @@ explains the method; adopter templates carry its operative instructions.
 
 | Contract | Owner | Limits and preserving checks |
 |---|---|---|
-| Session regular-file reads | `tools/session.py::_read_regular_bytes`, with its installed twin | Leaf identity/regular-file checks, not a byte cap or universal ancestor guard; `bootstrap/tests/test_session_writes_contained.py`. |
-| Engine reads and destination writes | `bootstrap/_scaffold/security.py` | Engine-specific regular reads and guarded replacement; `bootstrap/tests/test_security_leaf.py` and `bootstrap/_scaffold/SECURITY_MUTATIONS.md`. |
-| Bounded descriptor-relative source reads | `tools/code_map.py::_read_at`, with its installed twin | Specialized caps and descriptor traversal; the Windows-native handle walk has passed ordinary and Security Reviews; mapped and wide verification for the delivered filesystem/rubric slices is recorded in the architecture plan. Final plan closeout remains open; `bootstrap/tests/security/test_code_map.py`. |
-| Terminal text | `tools/session.py::encode_display`, with its installed twin | One escape policy; wrappers may elide after encoding. `bootstrap/tests/test_session_kernel.py` and the real board output checks own this contract. |
-| Git in trust ceremonies | `bootstrap/tests/_gate_manifest.py::_git` and the ceremony's pinned readers | Ceremony-specific authority, not a general-purpose helper. Follow the runbook and its gate tests. |
+| Session regular-file reads | `dev/tools/session.py::_read_regular_bytes`, with its installed twin | Leaf identity/regular-file checks, not a byte cap or universal ancestor guard; `tests/test_session_writes_contained.py`. |
+| Engine reads and destination writes | `install/_scaffold/security.py` | Engine-specific regular reads and guarded replacement; `tests/test_security_leaf.py` and `install/_scaffold/SECURITY_MUTATIONS.md`. |
+| Bounded descriptor-relative source reads | `dev/tools/code_map.py::_read_at`, with its installed twin | Specialized caps and descriptor traversal; the Windows-native handle walk has passed ordinary and Security Reviews; mapped and wide verification for the delivered filesystem/rubric slices is recorded in the architecture plan. Final plan closeout remains open; `tests/security/test_code_map.py`. |
+| Terminal text | `dev/tools/session.py::encode_display`, with its installed twin | One escape policy; wrappers may elide after encoding. `tests/test_session_kernel.py` and the real board output checks own this contract. |
+| Git in trust ceremonies | `tests/_gate_manifest.py::_git` and the ceremony's pinned readers | Ceremony-specific authority, not a general-purpose helper. Follow the runbook and its gate tests. |
 | General untrusted-repository Git reads | Board item 2d: implemented; capped Security obligation closed by Maintainer acceptance (`f1d1ab73`) | Final verification and Python 3.12 evidence remain open in `dev/plans/2026-11-06-safe-git-reads.md`. Existing gauge/session Git calls are not a safe replacement. |
 
 The engine leaf, session kernel and standalone collector have different import
@@ -26,7 +26,7 @@ and resource constraints. Do not merge their readers on name similarity.
 Verbatim shipped copies are intentional; their owning tests check fidelity.
 ASCII JSON or builtin `ascii()` output is not a competing terminal escape table.
 The narrow public owner-home guard in
-`bootstrap/tests/security/test_code_map.py::test_public_map_keeps_critical_helpers_in_their_declared_homes`
+`tests/security/test_code_map.py::test_public_map_keeps_critical_helpers_in_their_declared_homes`
 uses the release CLI with zero comparisons and checks the complete function
 inventory. It requires one `encode_display` in each session home and one
 `_read_regular_bytes` in each session home and the scaffold security module.
@@ -81,8 +81,8 @@ narrow observation does not measure total release growth or editing activity.
 | Priority | Candidate and disposition | Preserving checks |
 |---|---|---|
 | 1 | Immutable test preparation rebuilt during global shuffling is a verified reuse opportunity, now being corrected in the existing suite plan. Keep mutable case state separate. | Existing ceremony refusal/digest/environment checks, reanchor key/ref isolation and upgrade collision snapshot control. |
-| 2 | Session and scaffold containment helpers score 0.8063, but their standalone delivery and exception contracts differ. Keep their named homes; similarity alone does not justify a shared import. | `bootstrap/tests/test_session_writes_contained.py` and `bootstrap/tests/test_security_leaf.py`. |
-| 3 | GitHub and GitLab label creators score 0.8481 but call different service interfaces. Keep the separately installed scripts rather than adding a common shipped dependency for similar request assembly. | `bootstrap/tests/test_issue_capture_bootstrap.py` exercises both scripts and delivery. |
+| 2 | Session and scaffold containment helpers score 0.8063, but their standalone delivery and exception contracts differ. Keep their named homes; similarity alone does not justify a shared import. | `tests/test_session_writes_contained.py` and `tests/test_security_leaf.py`. |
+| 3 | GitHub and GitLab label creators score 0.8481 but call different service interfaces. Keep the separately installed scripts rather than adding a common shipped dependency for similar request assembly. | `tests/test_issue_capture_bootstrap.py` exercises both scripts and delivery. |
 
 The score-1.0 `dump` pair includes a historical ceremony-script snapshot;
 retain that record rather than edit it to reduce apparent duplication.
@@ -92,7 +92,7 @@ The independent four-view comparison and broader endpoint growth join are
 queued for v0.8. The shared Git reader is implemented and its plan is archived
 (`dev/plans/archive/2026-11-06-safe-git-reads.md`); Python 3.12 support is
 archived too (`dev/plans/archive/2026-11-12-python312-support.md`). Their
-per-route checks (`bootstrap/tests/security/test_git_read_routes.py`) and
+per-route checks (`tests/security/test_git_read_routes.py`) and
 Windows reruns (`dev/measurement/windows-native-rerun-2026-11-13.md`) were done
 before the 0.7.0 release; the route checks skip on Windows, so route-level
 Windows evidence is still missing. The architecture plan is archived

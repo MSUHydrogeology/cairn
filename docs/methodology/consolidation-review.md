@@ -70,6 +70,7 @@ trail**: commit bodies summarize totals, this log carries the
 per-finding rationale (the gate will surface false-positives + noise
 between true findings; without the log, the next reader cannot tell
 which the prior pass dispositioned as which).
+Historical paths in the table resolve in the [pre-layout tree](https://github.com/MSUHydrogeology/cairn/tree/5f3ab8b2c74e5c8277674ab163a6852b744f02cb).
 
 <!-- vendor-ok-begin: dispositions log -- the "Token / Candidate" column legitimately quotes the tokens that the gate surfaced; not a vendor leak in framework doctrine but a literal audit of what was reviewed and how -->
 | Date | Sub-gate | File:line | Token / Candidate | Disposition | Rationale |

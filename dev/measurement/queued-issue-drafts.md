@@ -326,7 +326,7 @@ Two related follow-ups on adopter-facing documentation:
 - Give the scaffold a context-aware `--quickstart` mode: no such CLI flag
   currently exists in `bootstrap/scaffold.py` — the only related surface
   today is a static "Next steps for a real adoption" print block in
-  `bootstrap/_scaffold/install.py`. The ask is a mode richer than that
+  `install/_scaffold/install.py`. The ask is a mode richer than that
   reframe, one that prints a trimmed next-step tailored to the
   trivial/throwaway-repo adoption path. Paired with this: extend the
   existing `verify:` count-guard drift mechanism (confirmed live at
@@ -379,7 +379,7 @@ record.
 unification"). Verified still open — but it already has a full entry in
 `dev/strategy/2026-08-05-codex-security-strategy.md`'s Live residual
 register, with three tracked sub-findings: a name-keyed census that's blind
-to `_OPTIONAL_TEMPLATES` in `bootstrap/_scaffold/config.py` (a delivery
+to `_OPTIONAL_TEMPLATES` in `install/_scaffold/config.py` (a delivery
 registry that never reaches the install manifest); an unguarded
 union-vs-replacement monotonicity claim in `scan_targets()`; and Bandit
 allowlist liveness, owned by a separately tracked item. Filing a duplicate
