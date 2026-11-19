@@ -43,7 +43,7 @@ def _flat(text: str) -> str:
 # The two prose pointers: where a reader is told the day-one list exists.
 # --------------------------------------------------------------------------
 
-BOOTSTRAP = "bootstrap/BOOTSTRAP.md"
+BOOTSTRAP = "install/BOOTSTRAP.md"
 SKILL_TEMPLATE = "templates/skills/session-start/SKILL.md"
 SKILL_COPY = ".agents/skills/session-start/SKILL.md"
 
@@ -241,7 +241,7 @@ OLD_HELPER_DSTS = ("scripts/onboarding_activate.py",) + tuple(
     f"scripts/_onboarding/{name}.py" for name in (
         "__init__", "activation", "cli", "prompts", "security", "shared",
         "slotparse", "triggers"))
-UPGRADE_GUIDE = "bootstrap/UPGRADE.md"
+UPGRADE_GUIDE = "install/UPGRADE.md"
 
 
 def _sha(data: bytes) -> str:
@@ -257,10 +257,10 @@ def _old_helper_project(target: Path) -> dict[str, bytes]:
     the planner read it as removed upstream.
     """
     assert _install(target, PROFILES[0]) == 0
-    template = next(r for r in s.read_lockfile(ROOT)["files"]
-                    if r["dst"] == "scripts/claim_check.py")
     lock = s.read_lockfile(target)
     assert lock is not None
+    template = next(r for r in lock["files"]
+                    if r["dst"] == "dev/tools/claim_check.py")
     contents: dict[str, bytes] = {}
     for dst in OLD_HELPER_DSTS:
         data = f"# retired helper file {dst}\n".encode()
@@ -349,8 +349,10 @@ class TestAnEditedOldHelperFailsTheIntegrityCheck:
 PROFILE_FILES = tuple(f"templates/onboarding/{p}.md" for p in PROFILES)
 #: What each profile seeds. A growing list is a first-contact cost, so the
 #: counts are pinned and a change to one is a decision, not an accident.
-SEEDED_TASKS = {"solo-greenfield": 6, "collaborative-team": 10,
-                "high-rigor-legacy": 11}
+#: Each preset gained one task (the style-guide seed) by the accepted
+#: dev/plans/archive/2026-11-18-style-guides.md, C2.
+SEEDED_TASKS = {"solo-greenfield": 7, "collaborative-team": 11,
+                "high-rigor-legacy": 12}
 SLOT_OPEN = "<!-- cairn:slot onboarding-tasks -->"
 SLOT_END = "<!-- cairn:end onboarding-tasks -->"
 MULTI_TYPE = "concurrent-multi-type"

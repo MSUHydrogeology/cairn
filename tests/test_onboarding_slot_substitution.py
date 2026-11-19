@@ -271,7 +271,12 @@ class TestNoPresetPath:
         # No preset source file installed.
         onboarding_dir = tmp_path / "dev" / "modules" / "onboarding"
         assert onboarding_dir.is_dir()
-        installed = list(onboarding_dir.glob("*.md"))
+        # The core install ships the folder's own README.md for every
+        # install; only a preset source document would be a leak.
+        installed = [
+            path for path in onboarding_dir.glob("*.md")
+            if path.name != "README.md"
+        ]
         assert installed == [], (
             f"unexpected onboarding files installed: {installed}"
         )
