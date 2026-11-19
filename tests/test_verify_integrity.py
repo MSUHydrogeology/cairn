@@ -1,7 +1,7 @@
 """Tests for the lockfile-backed install-integrity check (security-hardening
 Chunk 12).
 
-``bootstrap/verify_integrity.py`` recomputes each lockfile-recorded file's
+``install/verify_integrity.py`` recomputes each lockfile-recorded file's
 SHA-256 against the on-disk tree and **fails closed** on any mismatch /
 missing file / absent lockfile -- detecting a post-install modification of a
 shipped file without trusting the file to vouch for itself.
@@ -235,7 +235,7 @@ def _facade_entry(
 
 def test_forked_facade_with_dormant_engine_warns(tmp_path, capsys) -> None:
     target = tmp_path / "repo"
-    rec = _facade_entry(target, "tools/intent.py", forked=True, engine=True)
+    rec = _facade_entry(target, "dev/tools/intent.py", forked=True, engine=True)
     _write_lock(target, [rec])
     assert verify_integrity.verify(target) == 0  # advisory only, never fails
     err = capsys.readouterr().err
@@ -246,7 +246,7 @@ def test_forked_facade_with_dormant_engine_warns(tmp_path, capsys) -> None:
 
 def test_forked_facade_acknowledged_is_silent_at_verify(tmp_path, capsys) -> None:
     target = tmp_path / "repo"
-    rec = _facade_entry(target, "tools/intent.py", forked=True, engine=True,
+    rec = _facade_entry(target, "dev/tools/intent.py", forked=True, engine=True,
                         acknowledged=True)
     _write_lock(target, [rec])
     assert verify_integrity.verify(target) == 0
@@ -1368,7 +1368,7 @@ def test_a_placeholder_reworded_by_an_upgrade_reads_as_filled(
     """A recorded limit, not a guarantee: after an upgrade rewords a
     placeholder, the base copy holds the new wording while the slot in the
     file still holds the old, so the note cannot tell it from a fill.
-    ``bootstrap/UPGRADE.md`` records this gap."""
+    ``install/UPGRADE.md`` records this gap."""
     _slot_tree(tmp_path, _slot("goals", "New placeholder wording."),
                _slot("goals", "Old placeholder wording."))
     _, err = _run_note(tmp_path, capsys)
@@ -1622,7 +1622,7 @@ def _r_hint(target: Path) -> None:
 
 
 def _r_advisory(target: Path) -> None:
-    rec = _facade_entry(target, "tools/intent.py", forked=True, engine=True)
+    rec = _facade_entry(target, "dev/tools/intent.py", forked=True, engine=True)
     _write_lock(target, [rec])
     _edit_lock(target, lambda lock: lock.__setitem__(
         "cairn_version", "9.9.9" + _EVIL))
@@ -1762,11 +1762,11 @@ def test_a_line_break_in_the_lockfile_cannot_forge_a_line_of_the_advisory(
     break written out: otherwise a crafted lockfile can add a whole
     `verify_integrity: OK` line, or a `--finalize` hint, above the real report."""
     forged = ("9.9.9\nverify_integrity: OK -- 47 recorded file(s) match "
-              "dev/.cairn/cairn-lock.yml.\nThen record it: python bootstrap/"
-              "scaffold.py upgrade --target <repo> --finalize scripts/evil.py")
+              "dev/.cairn/cairn-lock.yml.\nThen record it: python install/"
+              "scaffold.py upgrade --target <repo> --finalize dev/tools/evil.py")
     target = tmp_path / "repo"
     target.mkdir()
-    rec = _facade_entry(target, "tools/intent.py", forked=True, engine=True)
+    rec = _facade_entry(target, "dev/tools/intent.py", forked=True, engine=True)
     _write_lock(target, [rec])
     _edit_lock(target, lambda lock: lock.__setitem__("cairn_version", forged))
     proc = _run_verify(target)
