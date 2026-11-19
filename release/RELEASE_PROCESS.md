@@ -187,8 +187,8 @@ from `tests/test_security_marker.py`. Verify the reviewed family pin
 through that file's `test_the_manifest_still_names_exactly_the_reviewed_set`
 test as part of the selected run. The comparator rejects missing or stale
 reports, malformed or ambiguous identities, missing source files, missing
-executed cases, and skipped or failed required cases. Preserve the report for
-inspection; its path is in pytest's output. Do not reuse an old report path.
+executed cases, and skipped or failed required cases (one listed skip excepted,
+below). Preserve the report for inspection; its path is in pytest's output. Do not reuse an old report path.
 The first block above names neither strict variable, so it runs every test,
 including the files the strict run leaves out.
 
@@ -197,6 +197,22 @@ command provenance or semantic adequacy. It does not authenticate forged XML.
 The separate `release/security_check.py` run and all existing safety, security
 and release checks remain required at their own triggers. A goodnight smoke
 result does not replace any of them.
+
+Cairn's own run, which passes no `--required-files`, allows one kind of skip.
+A skipped case in a required file is accepted only when it is a genuine
+`pytest.skip` and the `NATIVE_ONLY_NODE_IDS` list in
+`tests/security_manifest.py` names that exact test (file, class and case, with
+its parameter label) for the other platform than the one that produced the
+report. The comparator reads that list as literals without importing the file,
+and refuses a list that is malformed, bound more than once or does not match
+`NATIVE_ONLY_POLICY_ID`. A listed skip is never the passing case a required
+file needs, so every required file still needs one passing case. A skip of a
+test that belongs on this platform, an unlisted skip, any failure or error and
+any skip under an adopter-supplied `--required-files` list stay refused. Each
+refusal ends with a bracketed identifier such as `[skip-unlisted]`. This
+exception only says the skip was expected on this host. The separate Mac and
+Windows records that `release/security_check.py` joins (next section) remain
+the proof that each platform-only test ran and passed on its own host.
 
 ## Strict release-security evidence
 

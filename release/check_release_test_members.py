@@ -4,25 +4,54 @@
 
 This checks file presence and reported outcomes, not node completeness, command
 provenance or semantic adequacy. It never runs tests or grants release authority.
+
+In Cairn's own run (no ``--required-files``) one skip is allowed in a required
+file: a genuine ``pytest.skip`` whose exact test the project manifest's
+native-only list (``NATIVE_ONLY_NODE_IDS``, bound to ``NATIVE_ONLY_POLICY_ID``)
+names for the other platform than the one that produced the report. The list is
+read as literals, never imported, and every static binding of its two names
+must be unique. A listed skip is never the passing case a required file needs.
+Whether each platform-only test then ran and passed on its own host is proved
+only by the separate native records that ``release/security_check.py`` joins.
+An adopter-owned list stays strict and never reads the manifest.
 """
 from __future__ import annotations
 
 import argparse
 import ast
 from collections import defaultdict
+import hashlib
 import json
+import os
 from pathlib import Path, PurePosixPath
 import re
 import stat
 import sys
 import time
+from typing import NamedTuple
 import xml.etree.ElementTree as ET
 
 MAX_REPORT_BYTES = 32 * 1024 * 1024
 
 
 class CheckError(Exception):
-    """The report cannot establish the required file-level result."""
+    """The report cannot establish the required file-level result.
+
+    ``code`` is a stable identifier printed after the message; callers and tests
+    tell refusals apart by it, never by wording.
+    """
+
+    def __init__(self, message: str, code: str = "refused") -> None:
+        super().__init__(message)
+        self.code = code
+
+
+class NativeSkips(NamedTuple):
+    """Native-only test IDs: those whose skip is expected on this host, and those
+    that belong on this host and so must never skip here."""
+
+    other_platform: frozenset[str]
+    this_platform: frozenset[str]
 
 
 def _file(root: Path, raw: str) -> str:
@@ -80,6 +109,99 @@ def required_files(root: Path, configured: Path | None) -> set[str]:
     return set(resolved)
 
 
+def _host_tag() -> str:
+    """The native-only list's tag for the host that produced the report."""
+    return "nt" if os.name == "nt" else "posix"
+
+
+def _binds(node: ast.AST, name: str) -> bool:
+    """Whether *node* can bind *name* anywhere in the module (conservative)."""
+    if isinstance(node, ast.Name):
+        return node.id == name and isinstance(node.ctx, (ast.Store, ast.Del))
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef,
+                         ast.ExceptHandler, ast.MatchAs, ast.MatchStar)):
+        return getattr(node, "name", None) == name
+    if isinstance(node, ast.MatchMapping):
+        return node.rest == name
+    if isinstance(node, (ast.Global, ast.Nonlocal)):
+        return name in node.names
+    if isinstance(node, (ast.Import, ast.ImportFrom)):
+        return any(alias.name == "*" or (alias.asname or alias.name.split(".")[0]) == name
+                   for alias in node.names)
+    return False
+
+
+def _policy_literal(tree: ast.Module, name: str) -> object:
+    statements = [node for node in tree.body
+                  if (isinstance(node, ast.AnnAssign) and node.value is not None
+                      and isinstance(node.target, ast.Name) and node.target.id == name)
+                  or (isinstance(node, ast.Assign) and len(node.targets) == 1
+                      and isinstance(node.targets[0], ast.Name) and node.targets[0].id == name)]
+    if len(statements) != 1:
+        raise CheckError("native-only policy is absent or not one plain module-level "
+                         "assignment: " + name, "policy-malformed")
+    try:
+        return ast.literal_eval(statements[0].value)
+    except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError) as exc:
+        raise CheckError("native-only policy is not a literal: " + name,
+                         "policy-malformed") from exc
+
+
+def other_platform_skips(root: Path, host: str) -> NativeSkips:
+    """Read the project's native-only list as literals and return its test IDs.
+
+    The manifest is parsed, never imported. The list must be bound exactly once,
+    well formed, without duplicates, and match its recorded SHA-256 identity
+    (computed as ``tests/security_manifest.py`` computes it).
+    """
+    names = ("NATIVE_ONLY_NODE_IDS", "NATIVE_ONLY_POLICY_ID")
+    try:
+        tree = ast.parse((root / "tests/security_manifest.py").read_text(encoding="utf-8"))
+    except (OSError, SyntaxError, ValueError) as exc:
+        raise CheckError("could not read the native-only policy", "policy-malformed") from exc
+    for name in names:
+        if sum(_binds(node, name) for node in ast.walk(tree)) > 1:
+            raise CheckError("native-only policy is bound more than once: " + name,
+                             "policy-bindings-competing")
+    rows, declared = (_policy_literal(tree, name) for name in names)
+    if type(rows) is not tuple or type(declared) is not str:
+        raise CheckError("native-only policy has the wrong type", "policy-malformed")
+    grouped: dict[str, set[str]] = {"nt": set(), "posix": set()}
+    seen: set[str] = set()
+    canonical: list[str] = []
+    for entry in rows:
+        if type(entry) is not tuple or len(entry) != 2:
+            raise CheckError("malformed native-only policy entry", "policy-malformed")
+        tag, nodeid = entry
+        if type(tag) is not str or tag not in grouped:
+            raise CheckError("unknown native-only host", "policy-malformed")
+        if (type(nodeid) is not str or not nodeid or not nodeid.isascii()
+                or "\n" in nodeid or "\r" in nodeid or nodeid in seen):
+            raise CheckError("duplicate or malformed native-only node ID", "policy-malformed")
+        path, _, case = nodeid.partition("::")
+        if (not case or not path.endswith(".py") or "\\" in path
+                or PurePosixPath(path).is_absolute() or ".." in PurePosixPath(path).parts
+                or PurePosixPath(path).as_posix() != path):
+            raise CheckError("native-only node ID has no canonical file and case",
+                             "policy-malformed")
+        seen.add(nodeid)
+        grouped[tag].add(nodeid)
+        canonical.append(f"{tag}\t{nodeid}\n")
+    identity = "sha256:" + hashlib.sha256("".join(canonical).encode("ascii")).hexdigest()
+    if identity != declared:
+        raise CheckError("native-only policy identity mismatch", "policy-digest-mismatch")
+    other = "posix" if host == "nt" else "nt"
+    return NativeSkips(frozenset(grouped[other]), frozenset(grouped[host]))
+
+
+def _native_node(filename: str, classname: str, name: str) -> str:
+    """The pytest node ID for a report identity: file, any classes, then the case
+    name with its parameter label kept as pytest wrote it."""
+    module = ".".join(PurePosixPath(filename).with_suffix("").parts)
+    classes = classname[len(module):].split(".")[1:]
+    return "::".join([filename, *classes, name])
+
+
 def _report(path: Path, started_ns: int) -> ET.Element:
     now = time.time_ns()
     if started_ns <= 0 or started_ns > now:
@@ -115,7 +237,13 @@ def _report(path: Path, started_ns: int) -> ET.Element:
     return document
 
 
-def compare(root: Path, report: Path, started_ns: int, required: set[str]) -> int:
+def compare(root: Path, report: Path, started_ns: int, required: set[str],
+            native: NativeSkips | None = None) -> tuple[int, int]:
+    """Return (reported cases, listed other-platform skips accepted).
+
+    ``native`` is given only for Cairn's own run; without it any skipped or failed
+    case in a required file is refused.
+    """
     suite = _report(report, started_ns)
     modules: dict[str, set[str]] = defaultdict(set)
     for path in root.rglob("*.py"):
@@ -124,6 +252,8 @@ def compare(root: Path, report: Path, started_ns: int, required: set[str]) -> in
     counts = {"tests": 0, "failures": 0, "errors": 0, "skipped": 0}
     seen: set[tuple[str, str]] = set()
     successes: set[str] = set()
+    nodes: set[str] = set()
+    listed = 0
     for case in suite:
         if case.tag in {"properties", "system-out", "system-err"}:
             continue
@@ -146,11 +276,17 @@ def compare(root: Path, report: Path, started_ns: int, required: set[str]) -> in
                 "failure", "error", "skipped", "properties", "system-out", "system-err"
         } for child in case):
             raise CheckError("test case has ambiguous outcomes")
+        node = _native_node(filename, classname, name) if native is not None else ""
+        if native is not None:
+            if node in nodes:
+                raise CheckError("two report cases translate to one native test: " + node,
+                                 "identity-ambiguous")
+            nodes.add(node)
         counts["tests"] += 1
         if outcomes:
             counts[{"failure": "failures", "error": "errors", "skipped": "skipped"}[outcomes[0]]] += 1
             if filename in required:
-                raise CheckError("a required file has a skipped or failed case: " + filename)
+                listed += _refuse_unless_listed(outcomes[0], case, filename, native, node)
         else:
             successes.add(filename)
     for key, actual in counts.items():
@@ -159,8 +295,29 @@ def compare(root: Path, report: Path, started_ns: int, required: set[str]) -> in
             raise CheckError("suite counts are absent or disagree with reported cases")
     missing = required - successes
     if missing:
-        raise CheckError("required files without successful executed cases: " + ", ".join(sorted(missing)))
-    return counts["tests"]
+        raise CheckError("required files without successful executed cases: "
+                         + ", ".join(sorted(missing)), "required-file-no-pass")
+    return counts["tests"], listed
+
+
+def _refuse_unless_listed(outcome: str, case: ET.Element, filename: str,
+                          native: NativeSkips | None, node: str) -> int:
+    """Refuse a non-passing case in a required file, except a listed skip (returns 1)."""
+    if outcome != "skipped":
+        raise CheckError("a required file has a failed case: " + filename, "required-case-failed")
+    if native is None:
+        raise CheckError("a required file has a skipped case: " + filename, "required-case-skipped")
+    if node in native.this_platform:
+        raise CheckError("a test that belongs on this platform was skipped: " + node,
+                         "skip-same-platform")
+    if node not in native.other_platform:
+        raise CheckError("a required file has a skip the native list does not name: " + node,
+                         "skip-unlisted")
+    skipped = case.find("skipped")
+    if skipped is None or skipped.get("type") != "pytest.skip":
+        raise CheckError("a listed test was not skipped by pytest.skip: " + node,
+                         "skip-not-genuine")
+    return 1
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -175,11 +332,15 @@ def main(argv: list[str] | None = None) -> int:
     try:
         root = args.root.resolve(strict=True)
         required = required_files(root, args.required_files)
-        count = compare(root, args.report, args.started_ns, required)
+        native = (other_platform_skips(root, _host_tag())
+                  if args.required_files is None else None)
+        count, listed = compare(root, args.report, args.started_ns, required, native)
     except (CheckError, OSError, RuntimeError) as exc:
-        print("release membership: FAIL: " + str(exc), file=sys.stderr)
+        print(f"release membership: FAIL: {exc} [{getattr(exc, 'code', 'refused')}]",
+              file=sys.stderr)
         return 1
-    print(f"release membership: PASS: {len(required)} required files; {count} reported cases. "
+    extra = f" (listed other-platform skips accepted: {listed})" if listed else ""
+    print(f"release membership: PASS: {len(required)} required files; {count} reported cases{extra}. "
           "File-level outcomes only; no node, provenance or adequacy proof.")
     return 0
 
