@@ -65,3 +65,24 @@ Reviewed commit: dba989c6618f60636febda9a2414ea101a13f79f
 **Coverage.** Read the committed plan, accepted proposal, existing warning, checked reader and public warning cases. The permanent cases target public behavior. No tests, reproduction, Windows execution or security review were performed; path-safety and race details remain outside this pass.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Plan review -- Sol (Security Reviewer, High) -- 2026-11-19
+
+Reviewed commit: dba989c6618f60636febda9a2414ea101a13f79f
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, once pre-read validation is explicit. A pinned revision, bounded listing and identity-checked reads deliver the advisory comparison. See Scope and `templates/skills/_lib/git_read.py:241-303`.
+2. **Best alternative.** Reuse the verified reader for the fixed operations and local reads. This preserves the existing Git restrictions and releases no new authority. See `install/_scaffold/lockfile.py:51-69` and `templates/skills/_lib/git_read.py:46-57`.
+3. **What would show it wrong?** A malformed blob ID or administrative path alias reaches a file read, or a clean tagged checkout warns. Extend a focused public warning case in `tests/test_manifest.py::TestProvenanceWarning`.
+
+**Blocking.** Require every blob ID to be lowercase hex of the pinned width. Explicitly reject filesystem aliases for Git administration paths, including Windows short names and equivalent names on case-insensitive filesystems. The checked reader checks links and identity, so the caller must complete these checks first. See Scope and `templates/skills/_lib/git_read.py:209-299`.
+
+**Coverage.** Read the committed plan, accepted proposal, installer warning and verified reader. No tests, vulnerability reproduction or platform checks were run.
+
+**Elapsed**: unknown. **Tokens**: unknown.
