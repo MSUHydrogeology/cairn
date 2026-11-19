@@ -1113,11 +1113,13 @@ def test_a_dangling_link_a_folder_and_a_linked_parent_are_blocked_not_gone(
 
     def dangling(copy: Path) -> str:
         _add_script(copy, write=False)
+        (copy / "scripts").mkdir(exist_ok=True)  # an older install's folder
         (copy / SCRIPT).symlink_to(copy / "dev" / "nowhere")
         return SCRIPT
 
     def folder(copy: Path) -> str:
         _add_script(copy, write=False)
+        (copy / "scripts").mkdir(exist_ok=True)  # an older install's folder
         (copy / SCRIPT).mkdir()
         return SCRIPT
 
@@ -1125,6 +1127,7 @@ def test_a_dangling_link_a_folder_and_a_linked_parent_are_blocked_not_gone(
         dst = "scripts/_onboarding/cli.py"
         _add_script(copy, dst, write=False)
         (copy / "dev" / "real-folder").mkdir()
+        (copy / "scripts").mkdir(exist_ok=True)  # an older install's folder
         (copy / "scripts" / "_onboarding").symlink_to(copy / "dev" / "real-folder")
         return dst
 
@@ -1784,6 +1787,7 @@ def test_a_name_that_is_taken_after_the_decision_keeps_its_record(
 
     def decide_then_a_file_appears(*args: object, **kwargs: object) -> list:
         decided = real(*args, **kwargs)
+        (project / SCRIPT).parent.mkdir(exist_ok=True)
         (project / SCRIPT).write_bytes(b"new work\n")
         return decided
 
@@ -1818,11 +1822,13 @@ def test_a_blocked_name_still_refuses_bare_finalize_with_exit_1(
 
     def dangling(copy: Path) -> str:
         _add_script(copy, write=False)
+        (copy / "scripts").mkdir(exist_ok=True)  # an older install's folder
         (copy / SCRIPT).symlink_to(copy / "dev" / "nowhere")
         return SCRIPT
 
     def folder(copy: Path) -> str:
         _add_script(copy, write=False)
+        (copy / "scripts").mkdir(exist_ok=True)  # an older install's folder
         (copy / SCRIPT).mkdir()
         return SCRIPT
 
@@ -1915,7 +1921,7 @@ def test_the_upgrade_guide_and_the_printed_line_name_the_same_flag(
     code, out, _err = _upgrade(capsys, project, "--plan")
     assert code == 0, out
     printed = [line.strip() for line in out.splitlines()
-               if line.strip().startswith("python bootstrap/scaffold.py upgrade")
+               if line.strip().startswith("python install/scaffold.py upgrade")
                and "--remove-retired" in line]
     assert len(printed) == 1, out
     guide = (ROOT / "install" / "UPGRADE.md").read_text(encoding="utf-8")
@@ -2003,7 +2009,7 @@ def test_a_gone_record_is_kept_when_a_folder_is_swapped_for_a_link_inside_the_gu
 ) -> None:
     dst = "scripts/_onboarding/cli.py"
     _add_script(project, dst, write=False)
-    (project / "scripts" / "_onboarding").mkdir()
+    (project / "scripts" / "_onboarding").mkdir(parents=True)
     (project / "scripts" / "_onboarding" / "keep.txt").write_text("mine", encoding="utf-8")
     outside = tmp_path / "outside"
     outside.mkdir()
