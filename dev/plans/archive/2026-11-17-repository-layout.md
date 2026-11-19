@@ -964,3 +964,19 @@ forward gate re-anchor ceremony; this pass does not replace it.
 **Evidence and limits.** Read commit `2fdc2c2c`, C2 and C3, the affected public tests and installer mapping. The commit reports 23 focused dispatcher cases passed on Python 3.12.9 and two hardlink cases passed on Python 3.13.13; I did not rerun them. I did not review earlier layout changes or perform Security Review.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Post-archive layout repair: Security Review — Sol (High) — 2026-11-19
+
+**Obligation**: Internal Security Review, post-archive, one pass
+
+**Verdict: ACCEPT. Findings: none.** The repair aligns the tests and installer command with the relocated dispatcher and preserves the refusal required by C2.
+
+**Should this happen as framed?** Yes. In `tests/test_security_verification.py:1719-1795` the positive control observes the real helper. Moving the shared parent changes the dispatcher's resolved root. The linked-parent case now requires the missing-lock refusal, no child launch, and neither execution marker. `tests/test_upgrade_module_additions.py:155-187` checks that apply refuses the linked lock with both names and bytes intact, and retains the independent finalize replacement case.
+
+**Best alternative.** Keep the earlier diagnostic and successful-apply expectations. They would require changes to the current refusal paths. The only production edit here corrects the printed command to match `install/_scaffold/config.py:1428-1429`.
+
+**What would show it wrong?** The focused public cases would fail if a linked parent permits a child launch, apply modifies either linked name, or the installer names the wrong dispatcher path.
+
+**Evidence and limits.** Reviewed the three paths in `2fdc2c2c` against C2 and C3, the corresponding production branches, and ordinary review `4a68df22`. The fix commit reports 23 dispatcher cases passed on Python 3.12.9 and two hard-link cases passed on Python 3.13.13. I ran no tests and did not review prior layout fixes. The renamed apply case belongs in the grouped re-anchor inventory.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
