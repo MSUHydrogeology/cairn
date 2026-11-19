@@ -503,7 +503,7 @@ class TestPublicCli:
         bootstrap anchors this checker, so this asserts a *reasoned* exit, not a
         pass."""
         r = subprocess.run(
-            [sys.executable, str(_REPO / "bootstrap/tests/_gate_preflight.py"),
+            [sys.executable, str(_REPO / "tests/_gate_preflight.py"),
              "check"],
             capture_output=True, text=True, check=False, cwd=str(_REPO))
         assert r.returncode in (0, 1, 2), r.stderr[-2000:]
@@ -518,9 +518,11 @@ class TestPublicCli:
     def test_no_flag_can_turn_a_refusal_into_a_pass(self):
         """There is deliberately no suppression switch."""
         r = subprocess.run(
-            [sys.executable, str(_REPO / "bootstrap/tests/_gate_preflight.py"),
+            [sys.executable, str(_REPO / "tests/_gate_preflight.py"),
              "check", "--help"],
             capture_output=True, text=True, check=False, cwd=str(_REPO))
+        assert r.returncode == 0, r.stderr
+        assert r.stdout.strip()
         lowered = r.stdout.lower()
         for banned in ("--force", "--allow", "--skip", "--ignore", "--no-verify"):
             assert banned not in lowered, f"suppression flag present: {banned}"
@@ -1012,16 +1014,16 @@ _CLOSURE_SRC = {rel: (_REPO / rel) for rel in P.declared_authority_closure()}
 def _extract_anchored(repo: Path, dest: Path) -> Path:
     """The runbook's own extraction, run as the literal shell pipeline.
 
-    `git archive <anchor> bootstrap/tests | tar -x -C "$T"` -- byte-for-byte the
+    `git archive <anchor> tests | tar -x -C "$T"` -- byte-for-byte the
     recorded ceremony's first step, so a change to the runbook's shape that this
     no longer matches shows up as a test edit rather than passing unnoticed.
     """
     dest.mkdir(parents=True, exist_ok=True)
     subprocess.run(
         f"git -C {shlex.quote(str(repo))} archive {P._ANCHOR_REF} "
-        f"bootstrap/tests | tar -x -C {shlex.quote(str(dest))}",
+        f"tests | tar -x -C {shlex.quote(str(dest))}",
         shell=True, check=True)
-    return dest / "bootstrap/tests/_gate_preflight.py"
+    return dest / "tests/_gate_preflight.py"
 
 
 @pytest.fixture(autouse=True)
@@ -1085,7 +1087,7 @@ def _ceremony_repo(tmp_path: Path, *, rosterless: bool = False):
     # it refuses without: a non-empty pytest collection, and the AST baseline
     # keys it pins. That is what makes a true three-command integration test
     # possible.
-    _write(repo, "bootstrap/tests/test_smoke.py",
+    _write(repo, "tests/test_smoke.py",
            "def test_smoke():\n    assert True\n")
     _write(repo, "tests/fixtures/scaffold_ast_baseline.json",
            json.dumps({f"Assign:{sym}": {"digest": f"d{i}"}
@@ -1206,7 +1208,7 @@ class TestApplyTakesNoArtifact:
 
     def test_preview_record_is_labelled_as_a_record(self):
         r = subprocess.run(
-            [sys.executable, str(_REPO / "bootstrap/tests/_gate_preflight.py"),
+            [sys.executable, str(_REPO / "tests/_gate_preflight.py"),
              "check", "--help"], capture_output=True, text=True, check=False)
         assert "not an input to" in r.stdout.replace("\n", " ")
 
@@ -1499,7 +1501,7 @@ class TestPublicPathCli:
 
     def _cli(self, *args, cwd=None):
         return subprocess.run(
-            [sys.executable, str(_REPO / "bootstrap/tests/_gate_preflight.py"),
+            [sys.executable, str(_REPO / "tests/_gate_preflight.py"),
              *args], capture_output=True, text=True, check=False,
             cwd=str(cwd) if cwd else None)
 
@@ -2076,8 +2078,8 @@ class TestThreeCommandIntegration:
 _LOADED_MODULES = tuple(sorted(P.declared_authority_closure()))
 
 
-_LAUNCHER_TEMPLATE_PATH = _REPO / "bootstrap/reanchor-launcher.template.sh"
-_ARTIFACT_PATH = _REPO / "bootstrap/reanchor.sh"
+_LAUNCHER_TEMPLATE_PATH = _REPO / "release/reanchor-launcher.template.sh"
+_ARTIFACT_PATH = _REPO / "release/reanchor.sh"
 
 
 def _launcher_text() -> str:
@@ -2214,7 +2216,7 @@ def _launcher_pair(repo: Path, oid: str, *, packet: str | None = None,
     text = packet if packet is not None else _packet_text(repo, oid)
     packet_path = repo.parent / "authorization-packet.txt"
     packet_path.write_text(text, encoding="utf-8")
-    template = (_REPO / "bootstrap/reanchor-launcher.template.sh").read_text(
+    template = (_REPO / "release/reanchor-launcher.template.sh").read_text(
         encoding="utf-8")
     assert template.count("@PACKET_SHA256@") == 1, (
         "the launcher template must carry exactly one slot")
@@ -2688,7 +2690,7 @@ class TestKeyLoadPhaseSentinel:
         must sit behind `refuse_if_sealed`.
         """
         import ast
-        src = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
+        src = (P._REPO / "tests/_gate_preflight.py").read_text(
             encoding="utf-8")
         tree = ast.parse(src)
 
@@ -3159,7 +3161,7 @@ class TestRosterContinuityIsAHardRefusal:
         with pytest.raises(P.PreflightError) as exc:
             with P.anchored_roster(anchor, repo=repo):
                 pass
-        runbook = (P._REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
+        runbook = (P._REPO / "release/REANCHOR_RUNBOOK.md").read_text(
             encoding="utf-8")
         assert "Phase 0 transition mode" in str(exc.value)
         assert "## Phase 0 transition mode" in runbook or \
@@ -5180,7 +5182,7 @@ class TestCeremonyReflogs:
         def run_check():
             return subprocess.run(
                 [sys.executable,
-                 str(_REPO / "bootstrap/tests/_gate_preflight.py"),
+                 str(_REPO / "tests/_gate_preflight.py"),
                  "check", "--repo", str(repo)],
                 capture_output=True, text=True, check=False)
 
