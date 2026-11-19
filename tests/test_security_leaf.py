@@ -219,10 +219,10 @@ def test_public_seed_gitignore_normalizes_read_errors(
     opened: set[int] = set()
 
     def open_file(path, flags, *args, **kwargs):
-        if Path(path) == gitignore and flags & os.O_ACCMODE == os.O_RDONLY and failure == "open":
+        if Path(path) == gitignore and (flags & (os.O_WRONLY | os.O_RDWR)) == 0 and failure == "open":
             raise OSError("injected read open failure")
         fd = real_open(path, flags, *args, **kwargs)
-        if Path(path) == gitignore and flags & os.O_ACCMODE == os.O_RDONLY:
+        if Path(path) == gitignore and (flags & (os.O_WRONLY | os.O_RDWR)) == 0:
             opened.add(fd)
         return fd
 

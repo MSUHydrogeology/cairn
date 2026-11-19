@@ -2281,7 +2281,7 @@ def _init_frozen_pipeline_repo(tmp_path: Path, name: str = "repo") -> tuple[Path
     stub = (
         "import json, os, sys\n"
         "from pathlib import Path\n"
-        "rec = json.loads(os.environ['CAIRN_TEST_BOUND_RECORD'])\n"
+        "rec = json.loads(Path(os.environ['CAIRN_TEST_BOUND_RECORD_FILE']).read_text(encoding='utf-8'))\n"
         "rec['nonce'] = os.environ['CAIRN_NATIVE_RUN_NONCE']\n"
         "rec['head'] = sys.argv[2]\n"
         "rec['python'] = list(sys.version_info[:3])\n"
@@ -2352,9 +2352,11 @@ def test_frozen_history_end_to_end_cross_host_and_projection_tamper(
     _setup_git("branch", "host2-local-only", cwd=clone)
 
     monkeypatch.setattr(security_check, "_load_portable_sweeps_runner", _patched_loader)
-    monkeypatch.setenv("CAIRN_TEST_BOUND_RECORD", json.dumps(
+    bound_rec_file = tmp_path / "bound-record.json"
+    bound_rec_file.write_text(json.dumps(
         _synthetic_local_record(sys.platform, head, "0" * 64)
-    ))
+    ), encoding="utf-8")
+    monkeypatch.setenv("CAIRN_TEST_BOUND_RECORD_FILE", str(bound_rec_file))
 
     mac_rec_path = tmp_path / "mac.json"
     assert security_check.main(
@@ -2378,9 +2380,6 @@ def test_frozen_history_end_to_end_cross_host_and_projection_tamper(
     win_rec_path = tmp_path / "win-raw.json"
     # _run_local_record checks record["platform"] == sys.platform; write host2's record
     # on host1's platform first, then re-label as the counterpart host for the join check.
-    monkeypatch.setenv("CAIRN_TEST_BOUND_RECORD", json.dumps(
-        _synthetic_local_record(sys.platform, head, "0" * 64)
-    ))
     assert security_check.main(
         ["--record", str(win_rec_path), "--history-roots", str(manifest_path)]
     ) == 5, capsys.readouterr().err
@@ -2458,9 +2457,11 @@ def test_frozen_history_refuses_finding_on_detached_wt_and_shallow_worktree(
         return mod
 
     monkeypatch.setattr(security_check, "_load_portable_sweeps_runner", _finding_loader)
-    monkeypatch.setenv("CAIRN_TEST_BOUND_RECORD", json.dumps(
+    bound_rec_file = tmp_path / "bound-record.json"
+    bound_rec_file.write_text(json.dumps(
         _synthetic_local_record(sys.platform, head, "0" * 64)
-    ))
+    ), encoding="utf-8")
+    monkeypatch.setenv("CAIRN_TEST_BOUND_RECORD_FILE", str(bound_rec_file))
     rec_path = tmp_path / "blocked.json"
     assert security_check.main(
         ["--record", str(rec_path), "--history-roots", str(manifest_path)]

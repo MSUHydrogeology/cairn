@@ -43,6 +43,10 @@ def _read_regular_bytes(path: Path, *, single_link: bool = False) -> bytes | Non
         mode = os.fstat(fd)
         if not stat.S_ISREG(mode.st_mode) or (single_link and mode.st_nlink != 1):
             raise ScaffoldSecurityError("refusing to read a non-regular file")
+        linfo = path.stat(follow_symlinks=False)
+        if (not stat.S_ISREG(linfo.st_mode)
+                or (linfo.st_dev, linfo.st_ino) != (mode.st_dev, mode.st_ino)):
+            raise ScaffoldSecurityError("refusing to read a non-regular file")
         with os.fdopen(fd, "rb", closefd=False) as stream:
             return stream.read()
     except OSError as exc:
