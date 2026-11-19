@@ -2197,10 +2197,10 @@ def _packet_text(repo: Path, oid: str, *, rows=None) -> str:
         members.append((hashlib.sha256(blob).hexdigest(), rel))
     if rows is not None:
         members = rows
-    artifact = dict((rel, sha) for sha, rel in members)["bootstrap/reanchor.sh"]
+    artifact = dict((rel, sha) for sha, rel in members)["release/reanchor.sh"]
     lines = ["schema cairn-authorization-packet/v1",
              "provenance builder and reader, test fixture",
-             "artifact bootstrap/reanchor.sh",
+             "artifact release/reanchor.sh",
              f"artifact_sha256 {artifact}"]
     lines += [f"member {sha} {rel}" for sha, rel in members]
     return "\n".join(lines) + "\n"
