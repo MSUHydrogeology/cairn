@@ -72,3 +72,23 @@ The warning stays silent on a changed or unreadable tracked source, or appears o
 **Coverage.** Read the proposal at `19d1f674`, current warning and reader code, and provenance test names. No exploit reproduction, tests, or Security Review were performed; concurrent-change and path-safety details remain for the planned Security Review and implementation plan.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Security proposal review — Sol (High) — 2026-11-19
+
+```text
+Reviewed commit: 19d1f674736b92127503a76b20c5ac5377c4df12
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Direct byte comparison strengthens the advisory warning with one bounded pass over tracked files. The reader already allows `ls-tree`, disables object replacement and lazy fetch, and checks path and file identity around a bounded read. Reuse leaves the helper and release authority intact. Evidence: `dev/tools/git_read.py:241-296`, `dev/tools/git_read.py:519-520`.
+2. **Best alternative.** Check Git attributes as well as status. That still relies on Git's classification of working bytes. The existing upgrade comparison provides a local reference for blob hashing. Evidence: `install/_scaffold/install.py:2158-2213`, `install/_scaffold/upgrade.py:3194-3205`.
+3. **What would show it wrong?** Public tests should warn on differing bytes or incomplete evidence and stay silent for a clean tagged checkout. The plan should require matching the Git worktree root to the installer source root, validating all paths before reads, and checking final HEAD against the original commit. Measure elapsed time once at release size. Evidence: `tests/test_manifest.py`, proposed verification plan.
+
+**Coverage.** Read the proposal, installer warning, Git runner, and checked byte reader. No tests, performance measurements, or implementation review.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
