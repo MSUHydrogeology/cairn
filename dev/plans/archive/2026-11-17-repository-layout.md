@@ -996,3 +996,43 @@ forward gate re-anchor ceremony; this pass does not replace it.
 **Evidence and limits.** Read the diffs in `9934faff`, `f4b4f0c1`, and `03b70494`, their affected fixture contexts and current launcher, manifest and installer mappings. The partial certification log at `78585290` reports four failures and two errors in the stopped run; `9934faff` reports focused passing cases, but does not identify every node. I ran no tests, did not assess other layout repairs or perform Security Review, and did not establish the results of all nodes touched by these commits.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Post-archive fixture repair Security Review — Sol (High) — 2026-11-19
+
+**Obligation**: Internal Security Review, post-archive, one pass
+
+**Verdict**: REVISE. Two sets of protected checks still miss their current inputs.
+
+**Should this happen as framed?** Yes. The independently listed closure matches
+the launcher at `release/reanchor-launcher.template.sh:53-65`. The revised
+transition package changes a declared member and still checks both refs after
+each refusal in `tests/test_gate_preflight.py:3377-3459`.
+
+**Best alternative.** Repair the current fixture routes below. Keep genuine
+pre-layout inputs such as those read at `release/repin.py:84-96`.
+
+**What would show it wrong?** The focused checker help, ceremony collection,
+real-artifact and anchor scan cases must reach the intended command, observe
+their positive controls and distinguish the intended refusals.
+
+**B1 — Preflight.** `tests/test_gate_preflight.py:501-526` invokes a missing
+checkout path. The suppression test can pass on empty output. Use the live
+checker and assert successful help before checking flags. The current synthetic
+ceremony also builds its closure in `tests/`, but its archive helper and smoke
+node remain in bootstrap/tests/ (`:1012-1097`). The end-to-end checker is
+absent from that archive, and the producer collects only `tests/`
+(`tests/_gate_manifest.py:513-545`). Restore those inputs and current-layout
+consumers so the protected cases reach their checks.
+
+**B2 — Launcher.** The anchor scan reads only `tests/`
+(`release/reanchor-launcher.template.sh:710-735`). The filter control and four
+unsafe-entry cases still target `bootstrap/` (`tests/test_reanchor.py:2119-2207`).
+Relocate them along with the real-artifact and recording-checker paths
+(`:1906-1967`). The checker transport witness also needs the current manifest
+and a path within a scanned root (`:2731-2767`, `tests/_gate_preflight.py:1346-1347`).
+
+**Evidence and limits.** Static review of `78585290..03b70494`, including the
+launcher, driver, manifest and installer mappings. No tests or reproductions
+run. Prior layout work and full certification were outside this pass.
+
+**Elapsed**: unknown. **Tokens**: unknown.
