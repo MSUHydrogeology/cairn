@@ -78,10 +78,11 @@ document, not a subtlety you are missing.
   bootstrap from a tagged release checkout, not from a feature branch or
   an unreviewed fork. The scaffold prints a **provenance warning** when
   it is run from a `--cairn-root` whose git `HEAD` is not a tagged commit
-  or has uncommitted changes; pass `--allow-dev` to silence it when
-  developing Cairn itself. The warning is advisory — it never blocks an
-  install — and it degrades silently when git is unavailable or the
-  source is not a checkout.
+  or has uncommitted changes. Before treating a tagged checkout as clean,
+  it also compares tracked file bytes with the commit; unavailable evidence
+  produces a warning. Pass `--allow-dev` to silence it when developing Cairn
+  itself. The warning is advisory — it never blocks an install. A plain
+  source export remains silent.
 
 ## Choosing an adopter verification route
 

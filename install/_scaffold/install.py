@@ -20,11 +20,12 @@ file's real path is confirmed within the Cairn root before it executes.
 """
 from __future__ import annotations
 
+import hashlib
 import re
 import os
 import stat
 import sys
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, Callable
 
 from .config import (
@@ -2155,12 +2156,72 @@ def format_manifest(modules: list[str] | None = None) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _provenance_bytes_match(git_read: Any, root: Path, oid: str) -> bool | None:
+    """Compare validated tracked blobs; None means evidence is unavailable."""
+    def read_git(args: tuple[str, ...], limit: int) -> bytes:
+        result = git_read.run_git(str(root), args, timeout=10, output_limit=limit)
+        if result.state != "completed" or result.returncode != 0:
+            raise ValueError("Git read unavailable")
+        return result.stdout
+
+    try:
+        canonical = root.resolve(strict=True)
+        top = read_git(("rev-parse", "--show-toplevel"), 4096).decode("utf-8").strip()
+        if not os.path.isabs(top) or Path(top).resolve(strict=True) != canonical:
+            return None
+        listing = read_git(("ls-tree", "-r", "-z", "--full-tree", oid), 8 << 20)
+        if not listing or not listing.endswith(b"\0"):
+            return None
+        entries = []
+        names = set()
+        for row in listing[:-1].split(b"\0"):
+            metadata, raw_name = row.split(b"\t", 1)
+            mode, kind, blob = metadata.split(b" ")
+            name = raw_name.decode("utf-8", "strict")
+            parts = name.split("/")
+            if (mode not in (b"100644", b"100755") or kind != b"blob"
+                    or not re.fullmatch(rb"[0-9a-f]{%d}" % len(oid), blob)
+                    or any(part in ("", ".", "..") or part.casefold() == ".git"
+                           for part in parts)
+                    or "\\" in name or PureWindowsPath(name).drive):
+                return None
+            if os.name == "nt" and any(
+                    part.endswith((" ", ".")) or ":" in part
+                    or PureWindowsPath(part).is_reserved() for part in parts):
+                return None
+            key = name.casefold() if os.name == "nt" else name
+            if key in names:
+                return None
+            names.add(key)
+            entries.append((parts, blob.decode("ascii")))
+
+        paths = [(canonical.joinpath(*parts), blob) for parts, blob in entries]
+        if os.name == "nt":
+            for path, _ in paths:
+                if os.path.normcase(str(path.resolve(strict=True))) != os.path.normcase(str(path)):
+                    return None
+        remaining = 128 << 20
+        matches = True
+        for path, blob in paths:
+            data, _, _ = git_read._checked_bytes(str(path), min(16 << 20, remaining))
+            remaining -= len(data)
+            digest = hashlib.sha1() if len(oid) == 40 else hashlib.sha256()
+            digest.update(f"blob {len(data)}\0".encode("ascii"))
+            digest.update(data)
+            matches &= digest.hexdigest() == blob
+        if read_git(("rev-parse", "--verify", "HEAD"), 4096).strip() != oid.encode("ascii"):
+            return None
+        return matches
+    except (OSError, RuntimeError, UnicodeError, ValueError):
+        return None
+
+
 def git_provenance_warning(cairn_root: Path) -> str | None:
     """Layer-1 provenance nudge: return a warning when *cairn_root* is a
     git checkout whose ``HEAD`` is **not a tagged release commit** or has
-    **uncommitted changes**; return ``None`` when it is a clean tagged
-    release, or when git is unavailable / the path is not a checkout
-    (degrade silently -- the warning never blocks an install).
+    **uncommitted changes**; return ``None`` for a clean tagged release
+    or a plain source export. Unavailable Git evidence warns; the warning
+    never blocks an install.
 
     Read-only, fixed-argument ``git`` via ``subprocess`` (no shell, no
     input interpolation).  ``git`` is local VCS, not a network call, so
@@ -2188,9 +2249,16 @@ def git_provenance_warning(cairn_root: Path) -> str | None:
             or inside.stdout.strip() != b"true"):
         return unavailable
 
+    head = git_read.run_git(
+        str(cairn_root), ("rev-parse", "--verify", "HEAD"), timeout=10,
+        output_limit=4096)
+    if (head.state != "completed" or head.returncode != 0
+            or not re.fullmatch(rb"(?:[0-9a-f]{40}|[0-9a-f]{64})\n?", head.stdout)):
+        return unavailable
+    oid = head.stdout.strip().decode("ascii")
     issues: list[str] = []
     tagged = git_read.run_git(
-        str(cairn_root), ("describe", "--exact-match", "--tags", "HEAD"),
+        str(cairn_root), ("describe", "--exact-match", "--tags", oid),
         timeout=10, output_limit=4096)
     if tagged.state != "completed" or tagged.returncode != 0:
         if tagged.state == "completed" and tagged.returncode != 0:
@@ -2205,6 +2273,12 @@ def git_provenance_warning(cairn_root: Path) -> str | None:
     elif dirty.stdout.strip():
         issues.append("its source tree has uncommitted changes")
     if not issues:
+        match = _provenance_bytes_match(git_read, cairn_root, oid)
+        if match is None:
+            return unavailable
+        if not match:
+            return ("provenance: tracked source bytes differ from the tagged commit; "
+                    "see install/PROVENANCE.md.")
         return None
     return (
         f"provenance: scaffolding from a Cairn source where "

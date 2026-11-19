@@ -217,6 +217,58 @@ class TestProvenanceWarning:
         _git(tmp_path, "tag", "v9.9.9")
         assert git_provenance_warning(tmp_path) is None
 
+    def test_changed_bytes_warn_even_if_status_reports_clean(self, tmp_path, monkeypatch):
+        from install._scaffold import install as install_impl
+
+        self._checkout(tmp_path)
+        _git(tmp_path, "tag", "v9.9.9")
+        (tmp_path / "f.txt").write_text("edited content\n")
+        helper = install_impl._git_read_helper()
+        original = helper.run_git
+
+        def clean_status(target, args, **kwargs):
+            if args == ("status", "--porcelain"):
+                return types.SimpleNamespace(state="completed", returncode=0, stdout=b"")
+            return original(target, args, **kwargs)
+
+        monkeypatch.setattr(helper, "run_git", clean_status)
+        monkeypatch.setattr(install_impl, "_git_read_helper", lambda: helper)
+        assert "tracked source bytes differ" in git_provenance_warning(tmp_path)
+
+    def test_nested_checkout_source_warns_unavailable(self, tmp_path):
+        self._checkout(tmp_path)
+        _git(tmp_path, "tag", "v9.9.9")
+        nested = tmp_path / "nested"
+        nested.mkdir()
+        assert "Git verification is unavailable" in git_provenance_warning(nested)
+
+    @pytest.mark.parametrize("name", [b"../escape", b".GiT/config", b"bad\\name"])
+    def test_invalid_listing_refuses_before_content_read(self, tmp_path, monkeypatch, name):
+        from install._scaffold import install as install_impl
+
+        self._checkout(tmp_path)
+        _git(tmp_path, "tag", "v9.9.9")
+        helper = install_impl._git_read_helper()
+        original = helper.run_git
+
+        seen = []
+
+        def refuse_read(*args):
+            pytest.fail("invalid listing reached a content read")
+
+        def invalid_listing(target, args, **kwargs):
+            if args[0] == "ls-tree":
+                seen.append(True)
+                monkeypatch.setattr(helper, "_checked_bytes", refuse_read)
+                return types.SimpleNamespace(state="completed", returncode=0,
+                    stdout=b"100644 blob " + b"a" * 40 + b"\t" + name + b"\0")
+            return original(target, args, **kwargs)
+
+        monkeypatch.setattr(helper, "run_git", invalid_listing)
+        monkeypatch.setattr(install_impl, "_git_read_helper", lambda: helper)
+        assert "Git verification is unavailable" in git_provenance_warning(tmp_path)
+        assert seen
+
     def test_allow_dev_silences_warning_in_main(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
