@@ -20,7 +20,7 @@ The Maintainer asked for this repair for v0.8 (`52505f38`). Both proposal review
 
 Change `git_provenance_warning` in `install/_scaffold/install.py`, `install/PROVENANCE.md` and the existing public warning cases in `tests/test_manifest.py`. Reuse fixed operations through `_git_read_helper` and its `_checked_bytes` file reader. Leave the verified Git helper and install safety and signature gates unchanged.
 
-Resolve `HEAD` via `rev-parse --verify HEAD` to a validated 40- or 64-character lowercase hex ID. Use it in the exact-match `describe` call. Preserve the existing status warning. On the otherwise silent path, require `rev-parse --show-toplevel` to identify the canonical source root and repeat `rev-parse --verify HEAD` after comparison. Enumerate blobs with `ls-tree -r -z --full-tree <oid>`, capped at 8 MiB. Require a complete, nonempty, NUL-terminated listing. Parse all entries before opening files, accepting only supported regular modes, blob kind, the selected ID width and unique root-relative paths. Reject empty components, dot components, parent traversal, absolute or drive-relative names, backslashes, and Git administration names. On Windows also reject names Windows aliases or treats as devices, alternate streams or reserved paths, and normalized duplicate names.
+Resolve `HEAD` via `rev-parse --verify HEAD` to a validated 40- or 64-character lowercase hex ID. Use it in the exact-match `describe` call. Preserve the existing status warning. On the otherwise silent path, canonicalize the absolute output of `rev-parse --show-toplevel` and require exact equality with canonical `cairn_root`; mismatch warns unavailable and repeat `rev-parse --verify HEAD` after comparison. Enumerate blobs with `ls-tree -r -z --full-tree <oid>`, capped at 8 MiB. Require a complete, nonempty, NUL-terminated listing. Parse all entries before opening files, accepting only supported regular modes, blob kind, lowercase hexadecimal at the selected ID width, and unique root-relative paths. Reject empty components, dot components, parent traversal, absolute or drive-relative names, backslashes, and Git administration names regardless of case. On Windows reject reserved names, device and stream syntax, trailing spaces or periods, and case-equivalent duplicates. Require strict real-path spelling to equal the validated path under Windows case normalization before any content read, so short-name aliases or redirected components cannot substitute another location. Keep the existing guarded read as a separate identity check.
 
 Read each validated path using `_checked_bytes` with the smaller of 16 MiB and the remaining 128 MiB allowance. Compute the Git blob ID over its length header and bytes using the commit's hash format. A definite mismatch warns of changes; failed listing, read, validation or revision check warns evidence is unavailable. Warn without naming file contents or an untrusted path. Plain exports and `--allow-dev` keep their behavior.
 
@@ -33,7 +33,7 @@ Read each validated path using `_checked_bytes` with the smaller of 16 MiB and t
 
 ## Acceptance criteria
 
-**C1.** Clean tagged source remains silent. Changed tracked bytes warn even if status reports clean, and an unavailable comparison warns. Existing dirty, untagged, export and development-override cases retain their outcomes. Invalid names fail before any file read. No new Git helper route, tool, or config.
+**C1.** Clean tagged source remains silent. Changed tracked bytes warn even if status reports clean, and an unavailable comparison warns. Existing dirty, untagged, export and development-override cases retain their outcomes. Nested sources warn unavailable because the enclosing Git root differs. Invalid names fail before any file content read. No new Git helper route, tool, or config.
 
 **C2.** Run only the focused provenance cases on canonical Mac Python and native Windows Python. Record one elapsed check against a clean release-sized checkout, including byte count and runtime. Apply scoped prose gates, inspect expected AST drift and obtain ordinary and Security code reviews. The Maintainer's grouped re-anchor and final release checks remain separate.
 
@@ -86,3 +86,7 @@ Reviewed commit: dba989c6618f60636febda9a2414ea101a13f79f
 **Coverage.** Read the committed plan, accepted proposal, installer warning and verified reader. No tests, vulnerability reproduction or platform checks were run.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Response -- Codex Sol (author) -- 2026-11-19
+
+Accept both findings. Scope now requires source-root equality and precise object ID and Windows path validation. C1 names the nested source check. **Disposition**: ready-to-implement. Elapsed: unknown. Tokens: unknown.
