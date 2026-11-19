@@ -30,6 +30,10 @@ made). Without a `forge:`, copy the tree for your forge in by hand.
 Either way, extend `labels.yml` with project-specific routing (e.g. a
 `domain::<area>` set). See `cairn/docs/templates.md` > "issue-capture — forge-specific reference starters".
 
+For the matching forge, `dev/tools/bootstrap_github_labels.py` or
+`dev/tools/bootstrap_gitlab_labels.py` applies the label manifest. Use
+`--help` for options, including a dry run, before accessing the tracker.
+
 ## Template content
 
 ### Issue structures (tracker-agnostic)
@@ -48,9 +52,8 @@ tracker they run:
   User Agent's most common output; cheap to file, valuable in
   aggregate.
 
-Labels are the project's classification axes (area, severity, kind)
-— **labels-as-axes**, mapped to the tracker's label system by the
-adopter.
+The adopter maps project categories such as area, severity, and kind to the
+issue tracker's labels.
 
 ### Capture vs. fix inline
 

@@ -90,6 +90,81 @@ verbatim-install pattern). Two stdlib-only scripts land in the target's
   directive-bearing Markdown file is ever rewritten — never the source —
   and absolute / `..`-escaping source paths are refused).
 
+### Link exceptions
+
+For a deliberate missing target, an adopter may create
+`dev/.cairn/scanner-check-allow.json` with arrays `links` and
+`internal_refs`. Cairn's own editable settings file may also contain the
+optional `review_ids` array described below. Selecting `documentation-plan` installs this as an editable
+seed with only the module's root-copy example exception; other adopters can
+create the file when they need it. Each entry has string fields `source`,
+`target`, and `reason`: an exact root-relative Markdown source, the checker's
+exact target key, and a nonempty explanation. For `links`, the target is the
+path token as written. For `internal_refs`, it is the exact normalized path
+after leading `./` or `../` segments and any anchor are removed. The source
+must end in `.md`; wildcards, parent traversal in an internal-reference
+target, directory-wide entries, duplicate pairs, and blank reasons are
+rejected. The entire file is rejected when its JSON contains duplicate keys,
+unknown fields, wrong types, or an unreadable value. A rejected file grants
+no configured exceptions and also disables legacy file-level comments. The
+`links` array covers only a missing target, never a bad anchor or a path that
+exists outside the repository.
+
+`internal_refs` is for Cairn's own template check, not an adopter-wide link
+escape hatch. Its exact targets must be under `docs/methodology/` or the
+retired `doctrine/` spelling. <!-- cairn-internal-ref: docs/methodology/ doctrine/ reason=This guide names these directory tokens to describe the accepted internal-reference namespaces. --> The documentation-plan seed leaves this array
+empty. Inline `cairn-internal-ref:` annotations remain supported. Existing
+adopter `cairn-internal-ref-allow:` comments keep their historical file-wide,
+prefix-matching behavior when the settings file is absent or valid; a valid
+file adds exact configured pairs without changing that legacy behavior.
+
+```json
+{
+  "links": [
+    {"source": "docs/guide.md", "target": "other-project.md", "reason": "Published separately"}
+  ],
+  "internal_refs": []
+}
+```
+
+An absent config keeps existing `link-check-allow` comments working. With a
+valid config, both configured entries and legacy comments apply; migrate a
+comment by adding its exact targets with reasons, checking the result, and
+then removing the comment. An unreadable or invalid config reports a
+diagnostic and disables both configured and legacy exceptions. Missing
+source files are reported as stale; entries not exercised in a selected
+source are reported as unused. Existing sources that were not selected for
+that run are not assessed. For old internal-reference comments, keep the
+historical prefix and empty-reason behavior when migrating adopters; new
+configuration remains exact and requires reasons.
+
+### Cairn's review-ID advisory
+
+When Cairn runs `scripts/check_cairn.py`, it also looks for explicit,
+temporary finding references in tracked Markdown under `docs/` and
+`templates/modules/`, in `CHANGELOG.md`, and in Python files under
+`templates/modules/`. It recognizes `R`, `F`, and `N` tokens with one or two
+digits (optionally followed by a round suffix), plus observed `CR` and `SR`
+forms including `SR-C1` and `SR-5`. Tokens must appear inside square-bracketed
+or parenthesized text, including a mixed reference such as `(Imp #5 / SR-5)`,
+or after `finding <ID>` or `review <ID>`. Bare identifiers such as `R1`,
+`N1.r2`, `(II3)`, lint code `(F401)`, and ordinary gate or method numbers are
+not warnings. This is a narrow
+lexical check; it does not interpret prose and may miss other spellings.
+Warnings name the source and line and do not change `check_cairn.py`'s exit
+status.
+
+The optional `review_ids` settings are used only by Cairn's own self-check;
+adopter `link_check.py` does not scan these IDs. An exception needs the exact
+source, recognized ID, a one-line literal `context` containing that ID once,
+and a nonempty reason. The context must occur once in the source and cover the
+specific occurrence, so a later stray occurrence elsewhere still warns.
+Cairn keeps narrow exceptions for the numbered teaching examples in
+`docs/methodology/proposals.md` and `docs/methodology/plans.md`, and for the
+single historical `(R5)` explanation in `CHANGELOG.md`. The team-gated
+security runner retains three parenthesized criterion labels in its hash-pinned
+source; each exception names only its exact line and reason.
+
 **The claim half is *not* shipped here.** The default-on `claim-check`
 module already installs `claim_check.py` (broken repo paths,
 out-of-bounds citations) into the target's `scripts/`. The doc-drift gate
@@ -123,3 +198,9 @@ enhancement; it is intentionally **not** in the default install set.
 See Cairn's own [cairn/docs/further-reading.md] >
 "Reproducible, ethical, collaborative practice" for the reproducibility
 craft Cairn points at rather than re-teaching.
+
+## Advisory release boundary
+
+From a development checkout, run `python dev/tools/link_check.py --release-boundary dev/scratch/release-scope.json` before release. The UTF-8 JSON scope is an object with `kept` and `development` arrays of repository-relative POSIX file paths or directory prefixes ending in `/`; no globs or parent paths. `dev/` is development and root `AGENTS.md` must be kept. Review classifications before use. Optional `--root` selects the checkout; other scanner options cannot be combined. Windows reads require a supported 64-bit local NTFS checkout. The report examines tracked working-tree paths and literal local Markdown links and `dev/` path tokens, reports folder README/list and scratch findings, and identifies exempt `AGENTS.md` pointers. Findings alone exit 0; incomplete selection or unreadable input exits 2. Tracked generated cache descendants may produce folder findings; do not change cached raw templates to silence them. Untracked files, indirect dependencies and actual release contents are outside its coverage; it neither packages nor approves a release.
+
+Project tests may stay in existing locations or live under the development test folder (dev/tests/). Configure the project's test runner to select both when desired; use repository-root-relative fixture paths and qualified `dev.tools` or `dev.tests` imports rather than ambiguous bare `tools` or `tests`.

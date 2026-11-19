@@ -1,3 +1,4 @@
+<!-- claim-check-allow: dev/.cairn/claim-check-allow.json, scripts/check_cairn.py, dev/.cairn/measurements.json -->
 <!-- ^ Adopter-safety: this module doc cites Cairn's own `scripts/check_cairn.py`
      (which exists in Cairn but not in an adopter tree). The directive travels
      with the rendered copy so every installed adopter passes its own claim
@@ -17,6 +18,25 @@ line citation — an author checks it rather than asserting it from
 memory. The checker does the mechanically-checkable subset: it scans
 a Markdown proposal / plan / doc and hard-flags broken repository
 paths and out-of-bounds line citations.
+
+For coordination files, `python dev/tools/verify_stems.py` checks that cited
+proposal and plan stems resolve to work items; use `--help` for scan options.
+
+## Checking registered counts
+
+The registry starts empty. Edit `dev/.cairn/measurements.json` as project data
+and review definition changes in Git. For example, register a file count as
+`{"docs-files":{"kind":"invariant","fn":"count_files","target":"docs"}}`,
+then write the number followed by `<!-- verify: docs-files -->` on the same
+line. A snapshot uses `{"kind":"snapshot","value":3,"as_of":"2026-01-01"}`
+and its date must appear before the verified number on that line, for example
+`as of 2026-01-01: 3 <!-- verify: snapshot -->`. Invariants use `count_lines`,
+`count_files`, `count_defs` or `git_commits_in_range`; optional `root` selects
+a project-relative directory. History needs Git 2.45 or later and a revision
+range. Run `python dev/tools/verify_counts.py <file> ...`. The command checks
+markers in the named files. Malformed markers fail. With no markers, it reports
+zero checks. An absent contained root is reported as skipped with exit 3;
+failures exit 1. Registry paths and measured targets cannot escape their roots.
 
 ## What the checker covers — and the costlier kind it cannot
 

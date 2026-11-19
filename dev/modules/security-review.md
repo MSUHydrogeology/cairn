@@ -80,16 +80,15 @@ changes; it does not mean run the full suite.
 Existing Foundations may question an unsupported declaration before Decision.
 After acceptance, changing a required review follows Maintainer authority and
 plan fences; a reviewer cannot waive it.
-
-Security Review normally stops after two passes. A further pass is
-authorized only for its specific unresolved security question or newly changed
-material, why prior passes and evidence cannot resolve it, its expected value,
-the named artifact and scope, and explicit Maintainer authorization for that
-pass. Another pass needs new authorization. Without the reason
-and authorization, the cap stands; only unresolved blockers or unmet accepted
-criteria/checks go to the Maintainer for named disposition. A pass does not
-clear an obligation or check automatically. This is not a routine request to
-justify Security Review.
+The proposal's `heavy` tier adds this pass to the usual review. Security Review
+normally stops after two passes. Each further pass requires a specific
+unresolved security question or newly changed material, why prior passes and
+evidence cannot resolve it, expected value, the named artifact and scope, and
+explicit Maintainer authorization for that pass; another pass needs new
+authorization. Without these, the ordinary cap stands. At the cap, only
+unresolved blockers or unmet accepted criteria/checks go to the Maintainer for
+named disposition. A pass never clears an obligation or check automatically.
+This is not a routine request to justify Security Review.
 
 **Automate what a tool can check.** Where the language ecosystem
 offers a static-analysis scanner for these boundary classes, wire a
@@ -203,11 +202,13 @@ model — and these are real, landed controls the module's
 "automate what a tool can check" guidance now points at concretely:
 
 * **Layer 1 — release provenance.**
-  `cairn/install/PROVENANCE.md`: named releases, **signed,
-  name-bound release tags** verified against a key fingerprint the
-  adopter compared out of band, a derived install manifest
-  (`scaffold.py --manifest`), and "scaffold from releases, not
-  arbitrary branches" (with a tool-side provenance warning).
+  `cairn/install/PROVENANCE.md`: named releases, an ordinary stable-release
+  route that trusts the fixed official distribution channel and records the
+  exact selected commit, plus an optional route that verifies a signed,
+  name-bound tag against independently checked fingerprints. The guide also
+  covers the derived install manifest (`scaffold.py --manifest`) and
+  "scaffold from releases, not arbitrary branches" (with a tool-side
+  provenance warning).
 * **Layer 4 — executable hardening.**
   The scaffold engine — the thin launcher + facade `cairn/install/scaffold.py`
   over a private `_scaffold/` engine package under `cairn/install/` (loaded

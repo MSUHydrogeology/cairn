@@ -3,11 +3,11 @@
 # AST baseline re-anchor runbook
 
 **Scope, stated first because the two are easy to confuse.** This runbook governs
-the **AST attestation baseline** — `bootstrap/tests/fixtures/scaffold_ast_baseline.json`,
-enforced by `bootstrap/tests/test_ast_attest.py` over the engine package
-`bootstrap/_scaffold/`.
+the **AST attestation baseline** — `tests/fixtures/scaffold_ast_baseline.json`,
+enforced by `tests/test_ast_attest.py` over the engine package
+`install/_scaffold/`.
 
-It is **not** `bootstrap/REANCHOR_RUNBOOK.md`. That runbook governs the
+It is **not** `release/REANCHOR_RUNBOOK.md`. That runbook governs the
 differential-oracle **gate anchor** (`refs/cairn/gate-anchor`) and says nothing
 about this baseline. Two different trust artifacts, two different ceremonies; a
 step from one does not transfer to the other.
@@ -15,7 +15,7 @@ step from one does not transfer to the other.
 ## When this fires
 
 `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package`
-fails after a `bootstrap/_scaffold/` change. **The baseline does not auto-update.**
+fails after a `install/_scaffold/` change. **The baseline does not auto-update.**
 The failure text is `AST baseline not accounted for across the engine package`.
 
 ## Who may perform it
@@ -30,7 +30,7 @@ Per `AGENTS.md` > *Operational pitfalls*:
   that an implementing agent does not perform** (precedent `c3d5bd9`).
 
 For a separately authorized forward baseline, the Maintainer may use the
-scripted path in `bootstrap/REANCHOR_RUNBOOK.md` > *Preparing the forward
+scripted path in `release/REANCHOR_RUNBOOK.md` > *Preparing the forward
 baseline*. That path preserves the baseline membership, reviews current symbol
 bodies and proposed fingerprints, and records that historical AST review is
 not certified. It does not widen this runbook's self-service allowlist or
@@ -48,10 +48,10 @@ file.** Derive it against the committed baseline, at the commit you are repairin
 ```
 PYTHONDONTWRITEBYTECODE=1 python - <<'PY'
 import json, pathlib, sys
-sys.path.insert(0, 'bootstrap/tests'); import _ast_attest as A
+sys.path.insert(0, 'tests'); import _ast_attest as A
 baseline = json.loads(pathlib.Path(
-    'bootstrap/tests/fixtures/scaffold_ast_baseline.json').read_text())
-modules = sorted(pathlib.Path('bootstrap/_scaffold').glob('*.py'))
+    'tests/fixtures/scaffold_ast_baseline.json').read_text())
+modules = sorted(pathlib.Path('install/_scaffold').glob('*.py'))
 merged, _ = A._merge_current(modules)
 problems, changed, missing, dup, new = A._classify(baseline, merged)
 print(f"CHANGED {len(changed)}  MISSING {len(missing)}  "
@@ -72,14 +72,14 @@ PY
   Either is a review item in its own right, never a re-anchor.
 
 Then **trace every CHANGED and every logic-bearing NEW symbol to the commit that
-introduced it** (`git log --oneline -1 -S'<symbol>' -- bootstrap/_scaffold/`). A
+introduced it** (`git log --oneline -1 -S'<symbol>' -- install/_scaffold/`). A
 symbol that traces to a landed, reviewed proposal is accounted for. One that
 traces to nothing is the reason this ceremony exists.
 
 ## Step 2 — regenerate the known-new manifest
 
 `update-symbol` refuses unless every NEW symbol is declared in
-`bootstrap/tests/fixtures/scaffold_ast_known_new.json`, a
+`tests/fixtures/scaffold_ast_known_new.json`, a
 `{"<Kind>:<name>": ["<digest>", …]}` map enforced as a **complete-set match on
 digest and multiplicity**. That refusal is the guard that stops a re-anchor
 silently absorbing unreviewed additions. **No subcommand generates this file** —
@@ -111,11 +111,11 @@ writing:
 ## Step 3 — dry-run, and confirm the preconditions
 
 ```
-python bootstrap/tests/_ast_attest.py update-symbol <SYMBOL> \
-  --baseline bootstrap/tests/fixtures/scaffold_ast_baseline.json \
+python tests/_ast_attest.py update-symbol <SYMBOL> \
+  --baseline tests/fixtures/scaffold_ast_baseline.json \
   --expect-old <CURRENT-BASELINE-DIGEST> \
-  --known-new bootstrap/tests/fixtures/scaffold_ast_known_new.json \
-  --dry-run bootstrap/_scaffold/*.py
+  --known-new tests/fixtures/scaffold_ast_known_new.json \
+  --dry-run install/_scaffold/*.py
 ```
 
 The tool enforces all of these and refuses on any one:
@@ -138,12 +138,12 @@ than the one that was reviewed.
 Apply by dropping `--dry-run`. Then:
 
 ```
-python bootstrap/tests/_ast_attest.py verify \
-  bootstrap/tests/fixtures/scaffold_ast_baseline.json \
-  --known-new bootstrap/tests/fixtures/scaffold_ast_known_new.json \
-  bootstrap/_scaffold/*.py
+python tests/_ast_attest.py verify \
+  tests/fixtures/scaffold_ast_baseline.json \
+  --known-new tests/fixtures/scaffold_ast_known_new.json \
+  install/_scaffold/*.py
 PYTHONDONTWRITEBYTECODE=1 CAIRN_FULL_SUITE=1 \
-  python -m pytest bootstrap/tests -q
+  python -m pytest tests -q
 ```
 
 `verify` must end `AST attestation OK — N baselined symbol(s) accounted for,
@@ -155,8 +155,8 @@ Commit **both** fixtures, with explicit paths (the git index is shared with
 concurrent sessions, so a bare `git commit` can take their staged work):
 
 ```
-git commit bootstrap/tests/fixtures/scaffold_ast_baseline.json \
-           bootstrap/tests/fixtures/scaffold_ast_known_new.json \
+git commit tests/fixtures/scaffold_ast_baseline.json \
+           tests/fixtures/scaffold_ast_known_new.json \
   -m "ast-attest: re-anchor <SYMBOL> and refresh the known-new manifest"
 ```
 

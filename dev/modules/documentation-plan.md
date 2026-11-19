@@ -61,6 +61,21 @@ mechanical enforcement. Programmatic placement-rule enforcement in
 procedure stabilizes through use before mechanical enforcement
 becomes the right next step).
 
+## Style guide
+
+When the project begins writing code, or when an existing project adopts
+Cairn, describe its actual practices in a human-facing style guide. Use your
+installed `docs/DOCUMENTATION_PLAN.md` to choose its descriptive home. Keep
+a short, actionable agent version in project-owned rules and route it from
+`RULES.md`; if that router is absent, use the project-conventions section of
+`AGENTS.md` until it exists. Record existing practice before inventing rules;
+a team should agree on conventions together.
+
+Start the human guide with a note to keep the two versions aligned. Optional
+preferences can drift; report discrepancies and propose correction. Binding
+agent rules and higher-level security, dependency and license duties govern
+decisions. The human guide explains them and grants no exceptions.
+
 ## What this module is NOT
 
 A one-size-fits-all tier vocabulary. The four-layer vision is the
@@ -180,3 +195,10 @@ Cairn's own self-hosted instance of this procedure lives at
 `cairn/docs/DOCUMENTATION_PLAN.md` (Cairn IS its own first
 adopter; dogfooding the module on the Cairn tree validates the
 discipline before it ships to other adopters).
+
+## Estimate always-loaded text
+
+Run `python dev/tools/token_budget.py` to estimate common always-loaded files
+at the installed project root, or name files explicitly. The text and `--json`
+output label the characters-divided-by-four result as an approximation.
+`--cap N` warns when the estimate exceeds N; add `--strict` to fail instead.

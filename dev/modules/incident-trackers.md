@@ -40,6 +40,9 @@ ships:
 * The **canonical 7-column semantic-field schema** the template
   carries — the contract Goal 7's eventual cross-adopter harvest
   reads against.
+* A tracked empty home at `dev/measurement/archive/` for records adopters
+  later close. The home is installed only while this module is selected; no
+  Cairn project measurement records are copied into adopter repositories.
 * The **goodnight migration sub-step** wiring the tracker into the
   standing session-routines (see `Merged into:` block below).
 
@@ -63,15 +66,16 @@ Reflection = direct`, `Resolved By = pending`, and a `Recurrence-Window Match
 goodnight, not computed in the fail-safe commit hot path).
 
 * **Impact tagging** mirrors the enforce decision (it bakes in the
-  `coordination-tiers` enforce default): a **blocked** cross-claim →
+  configured `coordination-tiers` enforce mode): a **blocked** cross-claim →
   `prevented`; a **knowingly-overridden** one (`enforce=confirm` acknowledged)
   → `occurred`. A *no-token* committer's overlap is **not** recorded — ownership
   is unprovable, and tagging it would over-count the gate.
-* **Scope (a conscious decision):** under the shipped `block` default the
-  auto-writer records `prevented` (the common case) and `occurred` (only a
-  confirm-ack override). It does **not** auto-record an incident in plain
-  `enforce=warn` mode or under an `ALLOW_UNCLAIMED` / `solo_mode` bypass — the
-  adopter has opted out of enforcement there, so those overlaps are surfaced as
+* **Scope (a conscious decision):** when an adopter has opted in to
+  `"enforce": "block"` the auto-writer records `prevented` (the common case)
+  and `occurred` (only a confirm-ack override). It does **not** auto-record an
+  incident in plain `enforce=warn` mode (the shipped default) or under an
+  `ALLOW_UNCLAIMED` / `solo_mode` bypass — enforcement is not active there, so
+  those overlaps are surfaced as
   warnings but left to the goodnight migration, not auto-counted. This is a
   strict improvement over the all-hand-migration baseline (no regression for
   warn-mode adopters), with a known follow-up to also auto-record `occurred`
@@ -135,6 +139,16 @@ is unparseable is reported and not silently defaulted (the gate cannot
 be evaluated until the adopter sets it). The tool **only suggests** —
 the decision to open a proposal stays human. The full handoff runs it
 read-only; run it any time with `python dev/tools/evolution_infer.py`.
+
+**Same-file sweeps require human confirmation.** Record one `same-file-sweep`
+row per confirmed commit, with all affected paths together. Use `Date` for the
+occurrence date and `Discovery Date` for the date it was confirmed. A claim or
+diff alone does not establish authorship; keep uncertain reports outside the
+Incidents table and never count them as `occurred`. Keep the minimal
+confirmation reference local and screen committed summaries for private or
+unrelated text. The gate counts entered rows only: it cannot detect unreported
+incidents or verify confirmation evidence, so its suggestions do not show that
+reporting is complete.
 
 ## Forking the template
 

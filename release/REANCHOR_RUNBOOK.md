@@ -415,7 +415,7 @@ them:**
 
 1. **The ceremony is run on a checkout the Maintainer does not solely control.**
 2. **An adopter takes this mechanism** (it is Cairn-internal today; nothing under
-   `bootstrap/tests/` is installed).
+   `tests/` is installed).
 
 On either, revisit the posture before blessing. The named upgrade paths are OS
 containment for the evidence stage, external anchoring via `_gate_manifest.py
