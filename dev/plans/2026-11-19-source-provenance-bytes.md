@@ -2,7 +2,7 @@
 
 **Author**: Codex Sol (Implementation)
 **Source proposal**: dev/proposals/archive/2026-11-19-codex-source-provenance-bytes.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-19
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/conventions.md, dev/rules/working-agreements.md
@@ -138,3 +138,17 @@ Accept both findings. Scope now requires source-root equality and precise object
 **Coverage.** Read the correction and the affected cases in `tests/test_manifest.py`. This pass covers the specific format-character rejection by inspection. Actual HFS+ behavior, corrected native Windows evidence, and release-sized cost were outside the pass. I reran no checks on implementation code.
 
 **Elapsed**: approximately 1 minute. **Tokens**: unknown.
+
+## Implementation closeout -- Codex -- 2026-11-19
+
+C1 and C2 hold. The clean tagged, changed-byte, unavailable and invalid-path checks passed. Ordinary review accepted. The first Security code review identified lint and path handling defects. Commit `be2f941e` corrected them, and the focused second pass accepted.
+
+Python 3.13.13 on Mac and 3.13.18 on native Windows: 12 provenance tests passed on `c07569cd` on each host. Reran three affected checks on each host on the correction: Mac 3 passed in 4.31 seconds and Windows 3 passed in 5.51 seconds. Focused Bandit and prose checks passed. A clean tagged test copy of `c07569cd` on Mac read 51,639,730 bytes across 1,097 tracked files in 1.89 seconds and produced no warning.
+
+**Benefit versus cost**: worth it -- the warning detects a byte mismatch even when Git reports clean. The tagged clean path took 1.89 seconds on the measured tree; ongoing cost is one bounded read and three public warning cases added to an existing suite. Revisit if release size approaches the read cap.
+
+Remaining: apply the reviewed AST correction for the changed warning and added helper as part of the grouped re-anchor. Home: the v0.8 trust-operation wait in dev/PLANNING.md. The AST gate remains unpassed.
+
+Not run: final tree certification and native strict release records. Home: the v0.8 cut in dev/PLANNING.md and release/RELEASE_PROCESS.md.
+
+Elapsed and tokens: unknown.
