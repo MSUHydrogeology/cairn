@@ -23,7 +23,7 @@ Promises:
 
 Also covers:
 
-* Install path -- the script lands verbatim at ``scripts/verify_stems.py``
+* Install path -- the script lands verbatim at ``dev/tools/verify_stems.py``
   when the ``claim-check`` module is selected.
 * Zero-match (typo / missing file) → issue reported.
 * Ignore directive (``verify-stems-ignore``).
@@ -32,7 +32,7 @@ Also covers:
 
 Run from the cairn repo root::
 
-    python -m pytest bootstrap/tests/integration/test_verify_stems.py
+    python -m pytest tests/integration/test_verify_stems.py
 """
 from __future__ import annotations
 
@@ -106,8 +106,8 @@ class TestInstallPath:
 
     def test_verify_stems_installed_verbatim(self, tmp_path: Path) -> None:
         assert _scaffold(tmp_path, ["claim-check"]) == 0
-        installed = tmp_path / "scripts" / "verify_stems.py"
-        assert installed.is_file(), "scripts/verify_stems.py was not installed"
+        installed = tmp_path / "dev" / "tools" / "verify_stems.py"
+        assert installed.is_file(), "dev/tools/verify_stems.py was not installed"
         assert installed.read_bytes() == VERIFY_STEMS_SRC.read_bytes(), (
             "installed verify_stems.py differs from the template -- not verbatim"
         )

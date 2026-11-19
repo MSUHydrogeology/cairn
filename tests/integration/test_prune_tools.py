@@ -23,7 +23,7 @@ This module covers:
 
 Run from the cairn repo root::
 
-    python -m pytest bootstrap/tests/integration/test_prune_tools.py
+    python -m pytest tests/integration/test_prune_tools.py
 """
 from __future__ import annotations
 
@@ -81,8 +81,8 @@ class TestInstallPaths:
 
     def test_prune_reflections_installed_verbatim(self, tmp_path: Path) -> None:
         assert _scaffold(tmp_path, ["reflections"]) == 0
-        installed = tmp_path / "tools" / "prune_reflections.py"
-        assert installed.is_file(), "tools/prune_reflections.py not installed"
+        installed = tmp_path / "dev" / "tools" / "prune_reflections.py"
+        assert installed.is_file(), "dev/tools/prune_reflections.py not installed"
         src = _DEFAULT_ON / "prune_reflections.py"
         assert installed.read_bytes() == src.read_bytes(), (
             "Installed prune_reflections.py differs from template"
@@ -90,8 +90,8 @@ class TestInstallPaths:
 
     def test_prune_intents_installed_verbatim(self, tmp_path: Path) -> None:
         assert _scaffold(tmp_path, ["coordination-tiers"]) == 0
-        installed = tmp_path / "tools" / "prune_intents.py"
-        assert installed.is_file(), "tools/prune_intents.py not installed"
+        installed = tmp_path / "dev" / "tools" / "prune_intents.py"
+        assert installed.is_file(), "dev/tools/prune_intents.py not installed"
         src = _TEAM_GATED / "prune_intents.py"
         assert installed.read_bytes() == src.read_bytes(), (
             "Installed prune_intents.py differs from template"
@@ -368,7 +368,7 @@ def test_prune_and_claim_cli_choose_same_log_in_real_worktree(
                  ["worktree", "add", "-qb", "linked", str(linked)]):
         subprocess.run(["git", *args], cwd=main, env=env, check=True,
                        capture_output=True, text=True)
-    tools = linked / "tools"
+    tools = linked / "dev" / "tools"
     root = linked
     if alias:
         root = tmp_path / "linked-alias"
@@ -385,7 +385,7 @@ def test_prune_and_claim_cli_choose_same_log_in_real_worktree(
     untouched_before = untouched.read_bytes()
     if live:
         claim = subprocess.run(
-            [sys.executable, str(root / "tools" / "intent.py"), "claim",
+            [sys.executable, str(root / "dev" / "tools" / "intent.py"), "claim",
              "--files", "x", "--action", "origin check"],
             cwd=linked, env=env, capture_output=True, text=True,
         )
@@ -394,7 +394,7 @@ def test_prune_and_claim_cli_choose_same_log_in_real_worktree(
         assert json.loads(target.read_text(encoding="utf-8").splitlines()[-1])["event"] == "claim"
     target_before = target.read_bytes()
     result = subprocess.run(
-        [sys.executable, str(root / "tools" / "prune_intents.py")],
+        [sys.executable, str(root / "dev" / "tools" / "prune_intents.py")],
         cwd=linked, env=env, capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stderr
@@ -421,7 +421,7 @@ assert alias.INTENTS_LOG_PATH == Path(sys.argv[4])
 '''
         imported = subprocess.run(
             [sys.executable, "-c", code, str(tools / "prune_intents.py"),
-             str(root / "tools" / "prune_intents.py"), str(logs[0]), str(logs[1])],
+             str(root / "dev" / "tools" / "prune_intents.py"), str(logs[0]), str(logs[1])],
             cwd=linked, env=env, capture_output=True, text=True,
         )
         assert imported.returncode == 0, imported.stderr

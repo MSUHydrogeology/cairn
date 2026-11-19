@@ -11,7 +11,7 @@ Promises:
 Covers:
 
 * registration: the tool installs verbatim under the ``incident-trackers``
-  module to ``tools/evolution_infer.py``;
+  module to ``dev/tools/evolution_infer.py``;
 * gate eval: ``>=threshold`` ``occurred`` rows of one event-class within the
   rolling window -> a suggestion; ``prevented`` / out-of-window rows excluded;
 * fail-closed: an Incidents table with no parseable rolling window -> the gate
@@ -20,7 +20,7 @@ Covers:
 
 Run from the cairn repo root::
 
-    python -m pytest bootstrap/tests/integration/test_evolution_infer.py
+    python -m pytest tests/integration/test_evolution_infer.py
 """
 from __future__ import annotations
 
@@ -130,7 +130,7 @@ class TestRegistration:
              "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
         )
         assert rc == 0
-        installed = tmp_path / "tools" / "evolution_infer.py"
+        installed = tmp_path / "dev" / "tools" / "evolution_infer.py"
         assert installed.is_file()
         assert installed.read_bytes() == TOOL_SRC.read_bytes()
 
@@ -148,7 +148,7 @@ class TestRegistration:
         tracker = tmp_path / "dev" / "measurement" / "collision_log.md"
         tracker.parent.mkdir(parents=True, exist_ok=True)
         tracker.write_text(_sweep_tracker([]))
-        installed = tmp_path / "tools" / "evolution_infer.py"
+        installed = tmp_path / "dev" / "tools" / "evolution_infer.py"
         result = subprocess.run(
             [sys.executable, str(installed), "--root", str(tmp_path)],
             check=False, capture_output=True, text=True,

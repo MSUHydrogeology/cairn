@@ -11,7 +11,7 @@ The malicious fixture is a .txt file so check_cairn's '*.md' tree-walk
 never scans it.
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/
+    python -m pytest tests/
 
 Promises:
 - The scanner flags instruction overrides, exfiltration verbs near a destination, and non-allowlisted URLs in executed templates.
@@ -117,10 +117,10 @@ class TestSourceCarriesNoRawInvisibles:
     def test_no_format_control_character_in_shipped_python(self) -> None:
         # A Unicode "format" character (category Cf: zero-width space, bidi
         # controls, soft hyphen) is invisible in an editor. None may sit in
-        # the shipped or installed Python. bootstrap/tests is left out on
+        # the shipped or installed Python. tests/ is left out on
         # purpose: this module holds such characters as fixtures.
         hits = []
-        for top in ("scripts", "tools", "templates"):
+        for top in ("dev/tools", "install", "release", "templates"):
             for path in sorted((CAIRN_ROOT / top).rglob("*.py")):
                 text = path.read_text(encoding="utf-8", errors="replace")
                 for number, line in enumerate(text.split("\n"), 1):
@@ -154,11 +154,11 @@ class TestHomoglyphExpandedScripts:
 
 def test_content_security_module_installs_scanner_verbatim(tmp_path: Path) -> None:
     """The content-security module ships content_scan.py verbatim to an
-    adopter's scripts/ + its doctrine doc, single-sourced from the same file
+    adopter's dev/tools/ + its doctrine doc, single-sourced from the same file
     Cairn's own check_cairn composes."""
     from install.scaffold import _MODULE_MAPPINGS, main
     dsts = {s.dst: s for s in _MODULE_MAPPINGS["content-security"]}
-    assert dsts["scripts/content_scan.py"].verbatim is True
+    assert dsts["dev/tools/content_scan.py"].verbatim is True
     assert "dev/modules/content-security.md" in dsts
     cfg = tmp_path / "profile.yml"
     cfg.write_text(
@@ -166,7 +166,7 @@ def test_content_security_module_installs_scanner_verbatim(tmp_path: Path) -> No
     rc = main(["--config", str(cfg), "--target", str(tmp_path),
                "--cairn-root", str(CAIRN_ROOT), "--allow-dev"])
     assert rc == 0
-    installed = tmp_path / "scripts" / "content_scan.py"
+    installed = tmp_path / "dev" / "tools" / "content_scan.py"
     assert installed.is_file(), "scanner not installed"
     assert installed.read_bytes() == CONTENT_SCAN_SRC.read_bytes(), "not verbatim"
     fixture = tmp_path / "fixture.md"
@@ -180,7 +180,7 @@ def test_content_security_module_installs_scanner_verbatim(tmp_path: Path) -> No
     assert "imperative-override" in result.stdout + result.stderr
     for name in ("prose_diff.py", "exact_replace.py", "prose_roots.txt"):
         source = CAIRN_ROOT / "templates" / "modules" / "team-gated" / name
-        destination = tmp_path / "scripts" / name
+        destination = tmp_path / "dev" / "tools" / name
         assert destination.is_file(), f"{name} not installed"
         assert destination.read_bytes() == source.read_bytes(), f"{name} not installed verbatim"
     assert (tmp_path / "dev" / "modules" / "content-security.md").is_file()

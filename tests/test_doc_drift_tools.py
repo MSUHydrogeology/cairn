@@ -8,7 +8,7 @@ module already installs ``claim_check.py`` and the doc-drift gate composes
 with it.
 
 Promises:
-- The two doc-drift scripts install verbatim into scripts/ when the doc-drift module is selected.
+- The two doc-drift scripts install verbatim into dev/tools/ when the doc-drift module is selected.
 - Tracked-Markdown discovery finds every tracked file, including one named with a wildcard, and ignores a hostile PATH git.
 - A broken relative link, anchor or escaping link fails link_check; external links are ignored by default.
 - Archived sources are excluded from default scans, but a live document's link into an archive is still validated.
@@ -19,7 +19,7 @@ Promises:
 
 Covered:
 
-* **install-path** -- both scripts land verbatim in ``scripts/`` under the
+* **install-path** -- both scripts land verbatim in ``dev/tools/`` under the
   module (1:many); the ``_MODULE_MAPPINGS`` entry is right.
 * **link_check behavioral fixtures** -- relative file links,
   same-file / cross-file anchors, missing file, missing anchor, and the
@@ -30,7 +30,7 @@ Covered:
   missing region a crisp error).
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/
+    python -m pytest tests/
 """
 
 from __future__ import annotations
@@ -187,6 +187,43 @@ def _run_bound_cli(caller: Path, cwd: Path, marker: Path, *, cached=False):
     )
 
 
+def _run_bound_cli_with_parent_swapped_at_leaf(
+        caller: Path, cwd: Path, marker: Path, helper: Path, tools: Path,
+        linked_tools: Path, mutation_marker: Path):
+    """Run the CLI, replacing the helper's directory with a link at its leaf.
+
+    Only the test driver is patched: root resolution has completed, so the
+    swap lands between the directory check and the final identity check.
+    """
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith("GIT_") and key != "PYTHONPATH"}
+    env["CAIRN_TEST_HELPER_MARKER"] = str(marker)
+    driver = f"""
+import os, runpy, sys
+_real_lstat = os.lstat
+_triggered = False
+def _mutating_lstat(path, *args, **kwargs):
+    global _triggered
+    if not _triggered and os.fspath(path) == {str(helper.resolve())!r}:
+        _triggered = True
+        os.rename({str(tools)!r}, {str(linked_tools)!r})
+        os.symlink({str(linked_tools)!r}, {str(tools)!r}, target_is_directory=True)
+        with open({str(mutation_marker)!r}, 'w', encoding='utf-8') as flag:
+            flag.write('mutation-ran')
+    return _real_lstat(path, *args, **kwargs)
+os.lstat = _mutating_lstat
+try:
+    sys.argv = [{str(caller)!r}, '--help']
+    runpy.run_path({str(caller)!r}, run_name='__main__')
+finally:
+    os.lstat = _real_lstat
+"""
+    return subprocess.run(
+        [sys.executable, "-c", driver], cwd=cwd, env=env,
+        text=True, capture_output=True, timeout=30,
+    )
+
+
 def _marked_helper() -> bytes:
     helper = (CAIRN_ROOT / "dev" / "tools" / "git_read.py").read_bytes()
     return helper + (
@@ -208,7 +245,7 @@ class TestInstallPath:
     def test_tools_installed_verbatim(self, tmp_path: Path) -> None:
         assert _scaffold(tmp_path, ["doc-drift-prevention"]) == 0
         for name in ("link_check.py", "sync_doc_snippets.py"):
-            installed = tmp_path / "scripts" / name
+            installed = tmp_path / "dev" / "tools" / name
             assert installed.is_file(), f"{name} not installed"
             assert installed.read_bytes() == (_TEAM_GATED / name).read_bytes(), (
                 f"{name} differs from template -- not verbatim"
@@ -248,6 +285,7 @@ class TestGitReadPhysicalBindings:
         marker = tmp_path / "helper-marker"
         outside = tmp_path / "outside"
         outside.mkdir()
+        postcapture = False
         if mutation == "missing":
             helper.unlink()
         elif mutation == "tampered":
@@ -262,6 +300,13 @@ class TestGitReadPhysicalBindings:
                 helper.symlink_to(external)
             except (OSError, NotImplementedError):
                 pytest.skip("symlinks unavailable")
+        elif mutation == "parent-link" and helper.parent == caller.parent:
+            # The caller shares the helper's directory and resolves its own
+            # location before it derives the helper path, so linking that
+            # directory before launch only relocates the caller as well. Link
+            # it after the root is resolved, at the helper leaf instead.
+            tools = helper.parent
+            postcapture = True
         elif mutation == "parent-link":
             tools = helper.parent
             external_tools = outside / "tools"
@@ -292,9 +337,17 @@ class TestGitReadPhysicalBindings:
             f"Path({str(tmp_path / 'cwd-marker')!r}).write_text('decoy')\n",
             encoding="utf-8",
         )
-        result = _run_bound_cli(
-            caller, cwd, marker, cached=(mutation == "cached-module"),
-        )
+        if postcapture:
+            mutation_marker = tmp_path / "parent-mutation-ran"
+            result = _run_bound_cli_with_parent_swapped_at_leaf(
+                caller, cwd, marker, helper, tools, outside / "tools",
+                mutation_marker,
+            )
+            assert mutation_marker.read_text(encoding="utf-8") == "mutation-ran"
+        else:
+            result = _run_bound_cli(
+                caller, cwd, marker, cached=(mutation == "cached-module"),
+            )
         if mutation != "cached-module":
             assert result.returncode != 0, result.stdout
             assert "git-read-binding-failed" in result.stderr, result.stderr

@@ -22,7 +22,7 @@ Promises:
 
 Run from the cairn repo root::
 
-    python -m pytest bootstrap/tests/test_model_selection_stub.py
+    python -m pytest tests/test_model_selection_stub.py
 """
 from __future__ import annotations
 
@@ -111,7 +111,7 @@ class TestInstallPath:
 
     def test_checker_installed_on_scaffold(self, tmp_path: Path) -> None:
         assert _scaffold(tmp_path) == 0
-        checker = tmp_path / "scripts" / "check_model_selection.py"
+        checker = tmp_path / "dev" / "tools" / "check_model_selection.py"
         assert checker.is_file(), "check_model_selection.py not installed"
         assert checker.read_bytes() == _CHECKER_SRC.read_bytes(), (
             "Installed check_model_selection.py differs from template"
@@ -221,7 +221,7 @@ class TestFidelityCheck:
             "    task_family: strategy\n"
             "    source: benchmark\n"
         )
-        installed = tmp_path / "scripts" / "check_model_selection.py"
+        installed = tmp_path / "dev" / "tools" / "check_model_selection.py"
         result = subprocess.run(
             [sys.executable, str(installed), "--mapping", str(mapping)],
             cwd=tmp_path, text=True, capture_output=True, check=False,
