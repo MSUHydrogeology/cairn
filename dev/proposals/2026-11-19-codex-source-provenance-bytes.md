@@ -1,7 +1,7 @@
 # Check installer source bytes before calling a checkout clean
 
 **Author**: Codex Sol
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -92,3 +92,14 @@ Reviewed commit: 19d1f674736b92127503a76b20c5ac5377c4df12
 **Coverage.** Read the proposal, installer warning, Git runner, and checked byte reader. No tests, performance measurements, or implementation review.
 
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+## Decision -- Maintainer (scribed by Codex) -- 2026-11-19
+
+**Tier**: heavy
+**Accepted.** Maintainer chat, 2026-11-19:
+
+> Go ahead and pick up where Antigravity left off. Finish the Windows release checks and reviews, fix the Git provenance issue, and clear the remaining blockers. Keep tests focused until final certification. I would like to get this release cut. Work with agents at the lowest possible tier, and use the fewest possible tokens
+
+This records the explicit direction to implement the provenance fix for v0.8. The reviewed byte-comparison approach is the implementation choice.
+
+**Elapsed**: unknown. **Tokens**: unknown.
