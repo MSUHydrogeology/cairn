@@ -90,3 +90,17 @@ Reviewed commit: dba989c6618f60636febda9a2414ea101a13f79f
 ## Response -- Codex Sol (author) -- 2026-11-19
 
 Accept both findings. Scope now requires source-root equality and precise object ID and Windows path validation. C1 names the nested source check. **Disposition**: ready-to-implement. Elapsed: unknown. Tokens: unknown.
+
+## Ordinary code review -- Terra (Reviewer, Medium) -- 2026-11-19
+
+**Verdict: ACCEPT. Findings: none.** The repair checks tagged source bytes before silence and keeps the warning advisory.
+
+**Should this happen as framed?** Yes. `c07569cd` binds the tag and listing to a validated commit ID, requires the Git root to match the source root, and rechecks HEAD. Existing dirty, untagged, export and override paths remain; the guide reflects the warning.
+
+**Best alternative.** Reusing the checked reader and Git blob hashing avoids a new Git helper route. Reads are bounded by the planned per-file and total limits; release-sized cost remains to be measured under C2.
+
+**What would show it wrong?** Silence for concealed changed bytes or unavailable evidence, or a warning for clean committed bytes, would falsify the repair. The focused public cases exercise those outcomes and nested-root refusal.
+
+**Coverage.** Read commit `c07569cd`, the reviewed plan and guide. The commit reports 12 focused Mac cases passed; I did not rerun them, measure release-sized cost, run Windows checks or perform Security Review. Those C2 checks remain outstanding.
+
+**Elapsed**: unknown. **Tokens**: unknown.
