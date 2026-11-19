@@ -28,7 +28,7 @@ Promises:
 - A crafted agent cannot escape the reflections folder.
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/test_skills_security.py
+    python -m pytest tests/test_skills_security.py
 """
 from __future__ import annotations
 
@@ -91,7 +91,7 @@ def test_installed_artifacts_pass_content_scan(tmp_path: Path):
     for rel in (
         ".agents/skills/session-start/SKILL.md",
         ".agents/skills/session-end/SKILL.md",
-        "tools/session.py",
+        "dev/tools/session.py",
     ):
         assert content_scan.scan_file(target / rel) == [], rel
 
@@ -263,7 +263,7 @@ def test_installed_artifacts_match_lockfile_hash(tmp_path: Path):
     skill_dsts = {
         ".agents/skills/session-start/SKILL.md",
         ".agents/skills/session-end/SKILL.md",
-        "tools/session.py",
+        "dev/tools/session.py",
     }
     for rec in lock["files"]:
         if rec["dst"] not in skill_dsts:
@@ -279,7 +279,7 @@ def test_tracked_artifacts_have_no_local_path_or_token_leak(tmp_path: Path):
     for rel in (
         ".agents/skills/session-start/SKILL.md",
         ".agents/skills/session-end/SKILL.md",
-        "tools/session.py",
+        "dev/tools/session.py",
     ):
         text = (target / rel).read_text(encoding="utf-8")
         assert "/Users/" not in text and "/home/" not in text, rel
