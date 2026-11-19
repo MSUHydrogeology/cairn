@@ -1,4 +1,4 @@
-"""Contract tests for `bootstrap/reanchor.sh`, the re-anchor ceremony artifact.
+"""Contract tests for `release/reanchor.sh`, the re-anchor ceremony artifact.
 
 The artifact exists because the ceremony was previously performed by pasting
 recorded shell blocks and filling placeholders by hand, which in practice meant
@@ -16,7 +16,7 @@ Promises:
 - Transition mode takes both transition inputs or neither; a changed closure member or packet refuses before candidate code runs.
 - The anchor's own checker runs over the resolved range; the candidate's checker never runs, and no replace entry or environment variable can substitute it.
 - The checker's own git reads never run a transport helper named by a checkout's promisor remote.
-Sources: bootstrap/reanchor.sh `usage()` (lines 891-915) and the header comments (lines 1-30).
+Sources: release/reanchor.sh `usage()` (lines 891-915) and the header comments (lines 1-30).
 
 So every node here drives the artifact **through its public command surface**,
 
@@ -140,7 +140,7 @@ def _fresh_bed(tmp_path):
     roster = checkout / "dev" / ".cairn" / "allowed_signers"
     roster.parent.mkdir(parents=True, exist_ok=True)
     roster.write_text(f"reanchor-test {pub[0]} {pub[1]}\n", encoding="utf-8")
-    manifest = checkout / "bootstrap/tests/fixtures/gate_manifest.json"
+    manifest = checkout / "tests/fixtures/gate_manifest.json"
     manifest.parent.mkdir(parents=True, exist_ok=True)
     manifest.write_text("{}\n", encoding="utf-8")
     subprocess.run(["git", "-C", str(checkout), "add", "-A"], check=True,
@@ -694,11 +694,12 @@ def staged(bed, tmp_path):
     """
     root = tmp_path / "extracted"
     (root / "tests").mkdir(parents=True)
-    shutil.copy2(_ARTIFACT, root / "reanchor.sh")
+    (root / "release").mkdir()
+    shutil.copy2(_ARTIFACT, root / "release" / "reanchor.sh")
     record = tmp_path / "invocation.json"
     (root / "tests" / "_gate_preflight.py").write_text(
         _RECORDING_CHECKER.replace("@RECORD@", str(record)))
-    return {"artifact": root / "reanchor.sh", "record": record}
+    return {"artifact": root / "release" / "reanchor.sh", "record": record}
 
 
 def _run_staged(staged, *args, env=None, record=True):
@@ -804,10 +805,10 @@ class TestStage1RunsTheCheckerWithTheRecordedValues:
         placed -- and the alternative, searching for one, is how a verified
         artifact ends up driving an unverified checker."""
         lonely = tmp_path / "lonely"
-        lonely.mkdir()
-        shutil.copy2(_ARTIFACT, lonely / "reanchor.sh")
+        (lonely / "release").mkdir(parents=True)
+        shutil.copy2(_ARTIFACT, lonely / "release" / "reanchor.sh")
         r = subprocess.run(
-            ["/bin/sh", str(lonely / "reanchor.sh"), "stage1",
+            ["/bin/sh", str(lonely / "release" / "reanchor.sh"), "stage1",
              *_values_args(_write_values(bed))],
             capture_output=True, text=True, check=False)
         _assert_refused(r, "not beside this artifact")
@@ -875,7 +876,7 @@ class TestTheArtifactStartsEveryPythonWithoutSite:
                 "schema": "cairn-authorization-package/v1",
                 "range_report": TestShowReport._minimal_report()}))
             r, _inv = _run_staged(staged, command, values)
-            assert r.returncode == 0 and "bootstrap/tests/frozen_0.py" in r.stdout
+            assert r.returncode == 0 and "tests/frozen_0.py" in r.stdout
         else:
             if command == "stage2":
                 Path(bed["values"]["package"]).write_text('{"schema": "x"}\n')
@@ -992,7 +993,7 @@ class TestShowReport:
         """A report of the current schema, written by hand so a single field can
         be damaged; the real one is exercised through `_real_package`."""
         paths = []
-        for cls, stem, role in (("frozen", "bootstrap/tests/frozen_%d.py", "pinned"),
+        for cls, stem, role in (("frozen", "tests/frozen_%d.py", "pinned"),
                                 ("outside-coverage", "docs/note_%d.md", "other")):
             for i in range(paths_per_class):
                 paths.append({"bytes_b64": "", "display": stem % i,
@@ -1048,8 +1049,8 @@ class TestShowReport:
                 check=True, capture_output=True, text=True).stdout.strip()
 
         anchor = git("rev-parse", "HEAD")
-        (checkout / "bootstrap/tests").mkdir(parents=True, exist_ok=True)
-        (checkout / "bootstrap/tests/_oracle.py").write_text(
+        (checkout / "tests").mkdir(parents=True, exist_ok=True)
+        (checkout / "tests/_oracle.py").write_text(
             "a = 1\n" + ("import subprocess\n" if plant else ""))
         (checkout / "scripts").mkdir()
         (checkout / "scripts/tool.sh").write_text("echo hi\n")
@@ -1076,7 +1077,7 @@ class TestShowReport:
         r = _run("show-report", self._package(bed))
         assert r.returncode == 0, r.stderr
         for expected in ("a" * 40, "b" * 40, "master", "d" * 64,
-                         "bootstrap/tests/frozen_0.py", "docs/note_0.md"):
+                         "tests/frozen_0.py", "docs/note_0.md"):
             assert expected in r.stdout, f"{expected!r} missing:\n{r.stdout}"
 
     def test_the_counts_are_rendered(self, bed):
@@ -1091,7 +1092,7 @@ class TestShowReport:
         assert r.returncode == 0, r.stderr
         assert "NOT SHOWN" not in r.stdout
         for i in (0, 39, 40, 119):
-            assert f"bootstrap/tests/frozen_{i}.py" in r.stdout
+            assert f"tests/frozen_{i}.py" in r.stdout
             assert f"docs/note_{i}.md" in r.stdout
 
     def test_roles_modes_and_changes_are_shown_for_every_path(self, bed):
@@ -1100,14 +1101,14 @@ class TestShowReport:
         assert r.returncode == 0, r.stderr
         assert "decides (2):" in r.stdout   # the oracle module and the roster
         decides_line = next(l for l in r.stdout.splitlines()
-                            if l.endswith("bootstrap/tests/_oracle.py"))
+                            if l.endswith("tests/_oracle.py"))
         assert "added" in decides_line
         tool_line = next(l for l in r.stdout.splitlines()
                          if l.endswith("scripts/tool.sh"))
         assert "100755" in tool_line
 
     def test_every_scan_hit_is_shown_with_its_pattern_and_none_is_cut(self, bed):
-        hits = [{"path": "bootstrap/tests/_oracle.py", "line": i,
+        hits = [{"path": "tests/_oracle.py", "line": i,
                  "pattern": "process-start", "text": f"import subprocess  # {i}"}
                 for i in range(1, 151)]
         report = self._minimal_report()
@@ -1116,7 +1117,7 @@ class TestShowReport:
         assert r.returncode == 0, r.stderr
         assert "every scan hit (150)" in r.stdout
         for i in (1, 41, 150):
-            assert (f"bootstrap/tests/_oracle.py:{i} [process-start] "
+            assert (f"tests/_oracle.py:{i} [process-start] "
                     f"import subprocess  # {i}") in r.stdout
 
     def test_listed_blobs_and_unscanned_classes_are_named(self, bed):
@@ -1214,14 +1215,14 @@ class TestShowReport:
         """A report with every kind of field filled in, so that each place the page could print
         candidate text holds some."""
         report = TestShowReport._minimal_report()
-        report["paths"].append({"bytes_b64": "", "display": "bootstrap/tests/_oracle.py",
+        report["paths"].append({"bytes_b64": "", "display": "tests/_oracle.py",
                                 "class": "frozen", "role": "decides", "change": "added",
                                 "mode": "100755", "scanned": True})
         report["role_counts"]["decides"] = 1
         report["counts"]["frozen"] += 1
         report["scan"] = dict(
-            report["scan"], scanned=["bootstrap/tests/_oracle.py"],
-            hits=[{"path": "bootstrap/tests/_oracle.py", "line": 7, "pattern": "nosec", "text": "x  # nosec"}],
+            report["scan"], scanned=["tests/_oracle.py"],
+            hits=[{"path": "tests/_oracle.py", "line": 7, "pattern": "nosec", "text": "x  # nosec"}],
             listed=[{"path": "scripts/link.py", "reason": "mode 120000"}])
         report["signers"] = {"anchor": ["me@x ssh-ed25519 SHA256:AAA", "old@x ssh-ed25519 SHA256:OLD"],
                              "candidate": ["me@x ssh-ed25519 SHA256:AAA", "new@x ssh-ed25519 SHA256:NEW"]}
@@ -1655,7 +1656,7 @@ class TestTheArtifactIsAClosureMemberByConstruction:
 
     def test_an_artifact_path_matching_no_row_refuses(self, ceremony):
         _instantiate(ceremony, _compose_packet(
-            ceremony, artifact_rel="bootstrap/not_a_member.sh"))
+            ceremony, artifact_rel="release/not_a_member.sh"))
         r = _launch(ceremony)
         _assert_no_candidate_code_ran(ceremony, r, "matches 0 closure rows")
 
@@ -1839,7 +1840,7 @@ class TestHostileValuesStartNoProgram:
 
 
 class TestTheLauncherStartsSixProgramsAndNoMore:
-    """`bootstrap/SAFETY.md` fixes the programs that run before the first
+    """`install/SAFETY.md` fixes the programs that run before the first
     candidate byte at six: env, git, shasum, mktemp, mkdir, cat. The values file
     now names eight, and the launcher is its only reader, so the two it reads
     for the artifact alone -- python and sort -- must never start here."""
@@ -1996,14 +1997,17 @@ class TestTheReadingCommandsRunThroughTheLauncher:
             "range_report": TestShowReport._minimal_report()}))
         r = _launch(ceremony, mode=("--show-report",))
         assert r.returncode == 0, r.stderr
-        assert "bootstrap/tests/frozen_0.py" in r.stdout
+        assert "tests/frozen_0.py" in r.stdout
 
     @pytest.mark.parametrize("mode", ["--validate", "--show-report",
                                       "--hash-package"])
     def test_a_packet_that_does_not_match_refuses_before_the_artifact(
             self, ceremony, mode):
         rows = [(_sha256_file(ceremony["repo"] / rel), rel) for rel in CLOSURE]
-        rows[2] = ("a" * 64, rows[2][1])
+        # The artifact's own row, found by name: its stated digest and its row
+        # must agree for the launcher to reach the comparison against the blob.
+        at = CLOSURE.index("release/reanchor.sh")
+        rows[at] = ("a" * 64, rows[at][1])
         _instantiate(ceremony, _compose_packet(
             ceremony, rows=rows, artifact_sha="a" * 64))
         r = _launch(ceremony, mode=(mode,))
@@ -2538,11 +2542,11 @@ class TestTheMaintainerCanPerformTheWholeCeremony:
                 capture_output=True, check=True).stdout
             members.append((hashlib.sha256(blob).hexdigest(), rel))
         artifact_sha = dict((rel, sha) for sha, rel in members)[
-            "bootstrap/reanchor.sh"]
+            "release/reanchor.sh"]
         packet_text = "\n".join(
             ["schema cairn-authorization-packet/v1",
              "provenance builder and reader, end-to-end node",
-             "artifact bootstrap/reanchor.sh",
+             "artifact release/reanchor.sh",
              f"artifact_sha256 {artifact_sha}"]
             + [f"member {sha} {rel}" for sha, rel in members]) + "\n"
 
