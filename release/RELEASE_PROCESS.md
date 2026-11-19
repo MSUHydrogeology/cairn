@@ -317,7 +317,8 @@ Maintainer.
    records and join them (see "Strict release-security evidence").
 4. Push `master`. Then create the signed tag on the gate commit and push the tag.
 5. Publish the GitHub Release and run the publication check.
-6. After Zenodo mints the version DOI, record it.
+6. Ask the Maintainer for the version DOI Zenodo mints for the published
+   Release, and record it (last bullet below).
 
 A re-anchor adds its own signed commit to the branch, so run it after the tag,
 never between the records and the tag. It is a separate ceremony and does not
@@ -361,8 +362,9 @@ gate a cut: it changes the trust record, not the files that ship.
   annotated tag peels to the supplied gate commit. This checks publication
   state and remote tag identity; opening source links checks availability.
   Neither verifies the contents of GitHub's cached source archives.
-* **After Zenodo mints the version DOI** for the new release, record it in the
-  version-DOI comment at the foot of `CITATION.cff`. The `doi:` field and the
+* **After Zenodo mints the version DOI** for the new release, ask the
+  Maintainer for it. Record it in the version-DOI comment at the foot of `CITATION.cff`, on the next development
+  branch, since the tagged commit cannot change. The `doi:` field and the
   README badge hold the concept DOI, which covers all versions and does not
   change.
 
