@@ -2,9 +2,9 @@
 
 **Author**: Claude Sonnet 5.5 (Cairn Developer); principles drafted by a Claude Opus 5.5 advisor agent
 **Date**: 2026-11-16
-**Status**: draft
+**Status**: archived
 **Type**: design-exploration
-**Surfaces this would feed**: the template-trim plan ([`dev/plans/archive/2026-11-16-template-trim-and-rules.md`](../plans/archive/2026-11-16-template-trim-and-rules.md)); the "Designing" section of [`dev/rules/working-agreements.md`](../rules/working-agreements.md)
+**Surfaces this would feed**: the template-trim plan ([`dev/plans/archive/2026-11-16-template-trim-and-rules.md`](../../plans/archive/2026-11-16-template-trim-and-rules.md)); the "Designing" section of [`dev/rules/working-agreements.md`](../../rules/working-agreements.md)
 
 ## Summary
 

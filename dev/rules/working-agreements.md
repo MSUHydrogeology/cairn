@@ -15,7 +15,7 @@ How agents work on Cairn. Routed from `RULES.md`. These were notes kept in one t
 
 - Before suggesting additions to a planned item, read its whole row or note and say which of your ideas it already covers. State the purpose in one sentence and get it confirmed before designing around it.
 - Decide whether a file ships or is Cairn-only by who uses it: read its docstring, origin commit and users, then check the install list. Check for an earlier retirement before recommending that something ship.
-- Keep rules and specifications short: state the rule, not every case. A reviewer flags a missing rule or a real defect, not missing detail, and a revision adds only what a finding requires. (2026-11-16: "This isn't building a fighter jet--it's scientific software.")
+- Keep rules and specifications short (2026-11-16: "This isn't building a fighter jet--it's scientific software."; `dev/strategy/archive/2026-11-16-claude-principles-for-combining-rules.md`): keep rules that prevent real harm (80/20); state the rule, not every case; one home (the file every adopter gets), one short pointer; never restate what a tool enforces; one short example, no history; keep Maintainer-only actions, stop conditions and data/integrity refusals exact (wording may merge); cut rather than waive or defer; swap an old rule out at budget; reviewers flag a missing rule or real defect, revisions add only what a finding requires, and detail requests tighten the rule plus a pointer.
 
 ## Records
 
