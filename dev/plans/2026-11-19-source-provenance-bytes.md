@@ -2,7 +2,7 @@
 
 **Author**: Codex Sol (Implementation)
 **Source proposal**: dev/proposals/archive/2026-11-19-codex-source-provenance-bytes.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-19
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/conventions.md, dev/rules/working-agreements.md
