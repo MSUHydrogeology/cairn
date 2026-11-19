@@ -1,5 +1,5 @@
 """
-Unit tests for bootstrap/scaffold.py.
+Unit tests for install/scaffold.py.
 
 Promises:
 - ``find_unfilled_tokens`` reports real remaining tokens while leaving the
@@ -14,7 +14,7 @@ Promises:
 - A module name echoed in a warning has its control and invisible characters escaped.
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/
+    python -m pytest tests/test_scaffold.py
 """
 
 from __future__ import annotations
@@ -27,7 +27,9 @@ import pytest
 
 # Allow tests to import scaffold without installing a package
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from tests._repo_root import repository_root
+
+sys.path.insert(0, str(repository_root(Path(__file__))))
 
 from install.scaffold import (  # noqa: E402
     KNOWN_TOKENS,
@@ -306,7 +308,7 @@ class TestCreateDevTree:
 class TestInstallCore:
     def test_installs_agents_md(self, tmp_path: Path) -> None:
         """install_core writes AGENTS.md to the target root."""
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         templates_root = cairn_root / "templates"
         if not templates_root.exists():
             pytest.skip("Cairn templates not available")
@@ -328,7 +330,7 @@ class TestInstallCore:
 
 
     def test_normal_install_preserves_existing_changelog_bytes(self, tmp_path: Path) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         history = b"# Project history\r\n\r\nLocal bytes stay as written.\r\n"
         changelog = tmp_path / "CHANGELOG.md"
         changelog.write_bytes(history)
@@ -346,7 +348,7 @@ class TestInstallCore:
 
     def test_token_substitution_in_dev_readme(self, tmp_path: Path) -> None:
         """dev/README.md has {{project_name}} substituted."""
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         templates_root = cairn_root / "templates"
         if not templates_root.exists():
             pytest.skip("Cairn templates not available")
@@ -361,7 +363,7 @@ class TestInstallCore:
 
 class TestInstallModules:
     def test_installs_selected_module(self, tmp_path: Path) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         templates_root = cairn_root / "templates"
         if not templates_root.exists():
             pytest.skip("Cairn templates not available")
@@ -381,7 +383,7 @@ class TestInstallModules:
     def test_unknown_module_skipped(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         templates_root = cairn_root / "templates"
         if not templates_root.exists():
             pytest.skip("Cairn templates not available")
@@ -406,7 +408,7 @@ class TestNewTeamGatedModules:
     def test_new_module_installs_when_selected(
         self, tmp_path: Path, module_name: str
     ) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         templates_root = cairn_root / "templates"
         if not templates_root.exists():
             pytest.skip("Cairn templates not available")
@@ -427,7 +429,7 @@ class TestNewTeamGatedModules:
         every team-gated module, including the two new ones. The
         generated tree must *contain* both, not leave them as files
         that exist but are never installed."""
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         if not (cairn_root / "templates").exists():
             pytest.skip("Cairn templates not available")
         cfg = tmp_path / "profile.yml"
@@ -472,7 +474,7 @@ class TestArchitectureReviewModule:
 
 
     def test_installs_both_files_when_selected(self, tmp_path: Path) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         templates_root = cairn_root / "templates"
         if not templates_root.exists():
             pytest.skip("Cairn templates not available")
@@ -482,11 +484,11 @@ class TestArchitectureReviewModule:
         )
         installed_files = [r[0] for r in results]
         for rel in ("dev/modules/architecture-review.md",
-                    "dev/architecture_review.md", "tools/code_map.py"):
+                    "dev/architecture_review.md", "dev/tools/code_map.py"):
             expected = tmp_path / rel
             assert expected in installed_files, f"{rel} not installed"
             assert expected.exists()
-        assert (tmp_path / "tools/code_map.py").read_bytes() == (
+        assert (tmp_path / "dev/tools/code_map.py").read_bytes() == (
             templates_root / "modules/team-gated/code_map.py").read_bytes()
 
 
@@ -500,7 +502,7 @@ class TestModelSelectionWired:
     def test_model_selection_installs_when_selected(
         self, tmp_path: Path
     ) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         templates_root = cairn_root / "templates"
         if not templates_root.exists():
             pytest.skip("Cairn templates not available")
@@ -519,7 +521,7 @@ class TestModelSelectionWired:
         """The bug's signature: listing model-selection printed an
         `unknown module` warning and skipped it. After wiring, it must
         not."""
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         templates_root = cairn_root / "templates"
         if not templates_root.exists():
             pytest.skip("Cairn templates not available")
@@ -531,7 +533,7 @@ class TestModelSelectionWired:
     def test_unknown_module_warning_escapes_invisible_and_backslash_names(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
     ) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         supplied = "unknown-" + "\u202e" + r"-literal\u202e"
         install_modules(cairn_root / "templates", tmp_path, {}, [supplied])
         output = capsys.readouterr().err
@@ -601,7 +603,7 @@ class TestOptionalContributing:
     def test_small_multi_install_writes_contributing(
         self, tmp_path: Path
     ) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         templates_root = cairn_root / "templates"
         if not (templates_root / "optional" / "CONTRIBUTING.md").exists():
             pytest.skip("optional CONTRIBUTING.md template not available")
@@ -618,7 +620,7 @@ class TestOptionalContributing:
     def test_solo_install_writes_no_contributing(
         self, tmp_path: Path
     ) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         templates_root = cairn_root / "templates"
         create_dev_tree(tmp_path)
         sel = select_optional_templates({"human_team": "solo"})
@@ -668,7 +670,7 @@ class TestRulesMdStarter:
         assert rules.read_bytes() == original
 
     def test_force_overwrites_existing_rules(self, tmp_path: Path) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         rules = tmp_path / "RULES.md"
         rules.write_text("local rules\n", encoding="utf-8")
         cfg = tmp_path / "profile.yml"
@@ -686,7 +688,7 @@ class TestRulesMdStarter:
 
 class TestVendorWrapper:
     def test_vendor_md_installs_by_default(self, tmp_path: Path) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         templates_root = cairn_root / "templates"
         if not (templates_root / "core" / "VENDOR.md").exists():
             pytest.skip("VENDOR.md template not available")
@@ -701,7 +703,7 @@ class TestVendorWrapper:
 
 class TestCLI:
     def test_dry_run_exits_zero(self, tmp_path: Path) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         cfg = tmp_path / "profile.yml"
         cfg.write_text("project_name: DryRunTest\ntest_command: pytest\nmodules:\n  - reflections\n")
         config_before = cfg.read_bytes()
@@ -747,7 +749,7 @@ class TestCLI:
         """When the profile YAML omits `modules:`, the scaffold installs
         the default-on set (BOOTSTRAP Act I-5 step 2 doctrine) and
         warns explicitly."""
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         if not (cairn_root / "templates").exists():
             pytest.skip("Cairn templates not available")
         cfg = tmp_path / "profile.yml"
@@ -779,7 +781,7 @@ class TestCLI:
         """Re-running the scaffold against an already-installed target
         preserves the existing files (so an adopter's filled block slots
         survive a second run)."""
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         if not (cairn_root / "templates").exists():
             pytest.skip("Cairn templates not available")
         cfg = tmp_path / "profile.yml"
@@ -823,7 +825,7 @@ class TestCLI:
         self, tmp_path: Path
     ) -> None:
         """--force opts into overwriting existing target files."""
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         if not (cairn_root / "templates").exists():
             pytest.skip("Cairn templates not available")
         cfg = tmp_path / "profile.yml"
@@ -862,7 +864,7 @@ class TestCLI:
     ) -> None:
         """An explicit `modules: []` means "install no modules" (opt-out
         of even the default-on set)."""
-        cairn_root = Path(__file__).resolve().parent.parent.parent
+        cairn_root = repository_root(Path(__file__))
         if not (cairn_root / "templates").exists():
             pytest.skip("Cairn templates not available")
         cfg = tmp_path / "profile.yml"

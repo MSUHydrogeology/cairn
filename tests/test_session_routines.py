@@ -474,8 +474,7 @@ def _intent_repo(tmp_path: Path) -> Path:
     root = tmp_path.resolve()
     _init_repo(root)
     _commit(root, "initial commit")
-    cairn_root = Path(__file__).resolve().parent.parent.parent
-    src = cairn_root / "templates" / "modules" / "team-gated"
+    src = CAIRN_ROOT / "templates" / "modules" / "team-gated"
     tools = root / "tools"
     tools.mkdir(exist_ok=True)
     (tools / "intent.py").write_bytes((src / "intent.py").read_bytes())

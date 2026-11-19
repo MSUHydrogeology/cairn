@@ -40,7 +40,9 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from tests._repo_root import repository_root
+
+sys.path.insert(0, str(repository_root(Path(__file__))))
 
 from install.scaffold import (  # noqa: E402
     DuplicateSlotError,
@@ -111,7 +113,7 @@ def test_rerunning_an_install_merges_only_empty_slots_and_gives_each_conflict_it
     second merge slot, since the shipped module declares only one."""
     from install import scaffold
 
-    cairn_root = Path(__file__).resolve().parent.parent.parent
+    cairn_root = repository_root(Path(__file__))
     root = tmp_path / "cairn-root"
     shutil.copytree(
         cairn_root / "templates", root / "templates",
@@ -155,7 +157,7 @@ def test_rerunning_an_install_merges_only_empty_slots_and_gives_each_conflict_it
 
     assert install() == 0
     merged = agents.read_bytes()
-    assert b"scripts/run_security_verification.py" in merged
+    assert b"dev/tools/run_security_verification.py" in merged
     assert b"Second contributed slot text." in merged
     assert side_files() == []
 
