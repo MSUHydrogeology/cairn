@@ -274,3 +274,17 @@ Dispositions: `accept` (26 retained guards + 2 verified retirements under `8ac33
 **Evidence and limits.** Read the five-file diff `645bec2f..fd1e68ea`, the affected tests and existing plan reviews. Native Windows task-9520 reports 206 passed and 5 POSIX-only skips in 304.43 seconds; Mac step 9511 reports 211 passed in 63.82 seconds, both Python 3.13. These are reported results, not runs by this reviewer. The cross-host join test synthesizes the counterpart record; it is not a real two-host release join. I did not rerun tests, review old guards, or conduct Security Review.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Post-archive Windows fixes: Security Review — Sol (High) — 2026-11-19
+
+**Verdict: ACCEPT. Findings: none.** The fixes preserve guarded reads, owned-file cleanup, and scan coverage on both supported hosts.
+
+**Should this happen as framed?** Yes. `install/_scaffold/security.py:29-55` checks the opened regular file against the no-follow identity at its name before reading. A concurrent writer can change the checked name, so matching identity matters on Windows, where the open lacks `O_NOFOLLOW`. Lines 84–107 check the staged identity before closing the descriptor, close it before cleanup, and recheck ownership before unlinking. `release/security_check.py:1407-1429` keeps the same file selection and normalizes its path separators.
+
+**Best alternative.** A Windows-specific open and cleanup path could address the native errors. The shared identity checks preserve one guard and one behavior across both hosts.
+
+**What would show it wrong?** A failure in the existing swapped-link witness, the public staging-write failure check, or the scan-inventory checks would falsify this pass. The staging check requires the original destination bytes and an empty temporary-file selection after the exception.
+
+**Evidence and limits.** Reviewed `645bec2f..fd1e68ea` and the ordinary review `e0ebe601`. Read the Python 3.13 logs for `tests/test_security_leaf.py`, `tests/test_security_lint.py`, and `tests/test_security_check.py`. Windows task-9520 had 206 passes and five POSIX-only skips (device files, permission bits, two descriptor-mode cases, and the staging hard-link swap). Mac step 9511 had 211 passes. The cross-host fixture uses a stub record producer and relabels the counterpart. Actual strict two-host records and join, candidate scans, and the grouped re-anchor remain release operations. I read no historical roster guards and ran no tests.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
