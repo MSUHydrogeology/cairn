@@ -58,3 +58,17 @@ The warning stays silent on a changed or unreadable tracked source, or appears o
 ## Assurance path
 
 **Assurance path**: high-assurance. Ordinary and Security Review at each applicable stage because the installer changes how it classifies source. Verify the expected installer AST change and carry it into the grouped Maintainer release re-anchor. No signing, admission or release operation is part of this plan.
+
+## Ordinary proposal review -- Terra (Reviewer, Medium) -- 2026-11-19
+
+**Verdict: ACCEPT. Findings: none.** The proposal closes a gap in an advisory warning by comparing checked-out bytes with a single tagged commit, while retaining export and development behavior.
+
+**Should this happen as framed?** Yes. `git_provenance_warning` currently returns silence after a clean status and exact tag; the proposed bounded comparison addresses changed bytes that status can conceal. The existing reader has bounded, identity-checked reads; incomplete evidence warns rather than blocks installation.
+
+**Best alternative.** Checking attributes alone would add a Git query while leaving other conversion mechanisms to account for. Direct byte comparison is a smaller sound scope for the warning; the existing upgrade blob comparison also provides an implementation reference.
+
+**What would show it wrong?** A public warning test that stays silent for concealed changes or unavailable evidence, or warns on a clean tagged checkout of committed bytes, would falsify the proposal. Native Mac and Windows controls and one release-sized cost check are proportionate to this scope.
+
+**Coverage.** Read the proposal at `19d1f674`, current warning and reader code, and provenance test names. No exploit reproduction, tests, or Security Review were performed; concurrent-change and path-safety details remain for the planned Security Review and implementation plan.
+
+**Elapsed**: unknown. **Tokens**: unknown.
