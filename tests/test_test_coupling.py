@@ -17,14 +17,14 @@ import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from install.scaffold import main as scaffold_main  # noqa: E402
-
-
-TOOL = Path(__file__).resolve().parents[2] / "scripts" / "test_coupling.py"
 from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
+sys.path.insert(0, str(CAIRN_ROOT))
+from install.scaffold import main as scaffold_main  # noqa: E402
+
+
+TOOL = CAIRN_ROOT / "dev" / "tools" / "test_coupling.py"
 
 
 def _project(tmp_path: Path, test_source: str = '"""Tests.\n\nPromises:\n- returns a value\n"""\n') -> Path:
