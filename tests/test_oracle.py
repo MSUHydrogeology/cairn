@@ -140,7 +140,7 @@ def test_oracle_teeth_target_engine_diverges(tmp_path):
     sentinel into every install) while the trusted baseline is unchanged — the
     trusted-checkout invocation must report a diff."""
     target = _copy_target(tmp_path / "target")
-    launcher = target / "bootstrap" / "scaffold.py"
+    launcher = target / "install" / "scaffold.py"
     inject = (
         "\nimport sys as _sys\nfrom pathlib import Path as _P\n"
         "_orig_main = _engine.main\n"
@@ -171,7 +171,7 @@ def test_oracle_reports_a_target_engine_that_only_rewrites_existing_files(tmp_pa
     installed file, and a per-file hash in the lockfile) is reported as differing
     in those files; the lockfile normalization does not hide a content change."""
     target = _copy_target(tmp_path / "target")
-    launcher = target / "bootstrap" / "scaffold.py"
+    launcher = target / "install" / "scaffold.py"
     inject = (
         "\nimport sys as _sys\nfrom pathlib import Path as _P\n"
         "_orig_main = _engine.main\n"
@@ -205,7 +205,7 @@ def test_oracle_reports_a_target_engine_that_only_rewrites_existing_files(tmp_pa
 def test_oracle_normalizes_only_valid_lock_provenance_in_public_workflow(tmp_path):
     """A real oracle run tolerates only the two lock provenance value changes."""
     target = _copy_target(tmp_path / "target")
-    launcher = target / "bootstrap" / "scaffold.py"
+    launcher = target / "install" / "scaffold.py"
     inject = (
         "\nimport json as _json\nimport sys as _sys\n"
         "from pathlib import Path as _P\n"
@@ -250,7 +250,7 @@ def test_oracle_rejects_identical_malformed_lock_from_both_engines(tmp_path):
     """Both engines write the same malformed lock; equality cannot hide it."""
     trusted = tmp_path / "trusted"
     O._copy_cairn(trusted, CAIRN_ROOT)
-    launcher = trusted / "bootstrap" / "scaffold.py"
+    launcher = trusted / "install" / "scaffold.py"
     inject = (
         "\nimport sys as _sys\nfrom pathlib import Path as _P\n"
         "_orig_main = _engine.main\n"
@@ -329,7 +329,7 @@ def test_oracle_cli_gate_teeth_subprocess(tmp_path):
     import json as _json
     import subprocess
     target = _copy_target(tmp_path / "target")
-    launcher = target / "bootstrap" / "scaffold.py"
+    launcher = target / "install" / "scaffold.py"
     text = launcher.read_text().replace(
         "_engine = _load_engine()",
         "_engine = _load_engine()\nimport sys as _s\nfrom pathlib import Path as _P\n"

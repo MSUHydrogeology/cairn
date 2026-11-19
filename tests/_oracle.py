@@ -294,9 +294,16 @@ def materialize_baseline(baseline_ref: str, trusted_ref: str, workdir: Path,
                                        allow_fetch=allow_fetch, trusted_remote=trusted_remote)
     tree = workdir / "_baseline_tree"
     _trust.extract_ref_tree(sha, tree, repo)
-    engine = tree / "bootstrap" / "scaffold.py"
+    # A baseline from before the repository layout move keeps its engine under
+    # `bootstrap/`; one from after it keeps the engine under `install/`, and the
+    # old path there is only a compatibility notice that cannot run an install.
+    # Take the relocated engine only when its package is present beside it.
+    engine = tree / "install" / "scaffold.py"
+    if not (engine.is_file() and (tree / "install" / "_scaffold" / "__init__.py").is_file()):
+        engine = tree / "bootstrap" / "scaffold.py"
     if not engine.is_file():
-        raise OracleError(f"baseline ref {sha[:12]} has no bootstrap/scaffold.py")
+        raise OracleError(
+            f"baseline ref {sha[:12]} has no install/scaffold.py or bootstrap/scaffold.py")
     return engine, tree
 
 
