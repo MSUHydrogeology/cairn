@@ -1126,8 +1126,7 @@ def test_the_pruner_command_exits_with_a_plain_refusal_for_a_linked_folder(tmp_p
     notes.mkdir()
     kept = _old_reflections(notes)
     project = tmp_path.resolve() / "proj"
-    (project / "tools").mkdir(parents=True)
-    (project / "dev").mkdir()
+    (project / "dev" / "tools").mkdir(parents=True)
     cfg = project / "profile.yml"
     cfg.write_text(
         "project_name: ReflectionTest\ntest_command: pytest\nmodules:\n"
@@ -1139,7 +1138,7 @@ def test_the_pruner_command_exits_with_a_plain_refusal_for_a_linked_folder(tmp_p
     ) == 0
     shutil.rmtree(project / "dev" / "reflections")
     os.symlink(notes, project / "dev" / "reflections")
-    command = [sys.executable, "tools/prune_reflections.py", "--keep", "1"]
+    command = [sys.executable, "dev/tools/prune_reflections.py", "--keep", "1"]
     done = subprocess.run(
         command, cwd=str(project),
         capture_output=True, text=True, timeout=60, env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
@@ -1150,7 +1149,7 @@ def test_the_pruner_command_exits_with_a_plain_refusal_for_a_linked_folder(tmp_p
     plain.mkdir()
     plain_kept = _old_reflections(plain)
     dry = subprocess.run(
-        [sys.executable, str(project / "tools" / "prune_reflections.py"),
+        [sys.executable, str(project / "dev" / "tools" / "prune_reflections.py"),
          "--dir", str(plain), "--keep", "1", "--dry-run"],
         cwd=project, capture_output=True, text=True, timeout=60,
     )
@@ -1162,7 +1161,7 @@ def test_the_pruner_command_exits_with_a_plain_refusal_for_a_linked_folder(tmp_p
     chosen = tmp_path.resolve() / "chosen-link"
     os.symlink(notes, chosen)
     selected = subprocess.run(
-        [sys.executable, "tools/prune_reflections.py", "--dir", str(chosen),
+        [sys.executable, "dev/tools/prune_reflections.py", "--dir", str(chosen),
          "--keep", "1"], cwd=str(project), capture_output=True, text=True,
         timeout=60, env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
     )

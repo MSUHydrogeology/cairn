@@ -106,7 +106,7 @@ def test_an_existing_different_file_is_kept_byte_for_byte(
         lock_path = target / "dev" / ".cairn" / "cairn-lock.yml"
         assert lock_path.is_file()
         destinations = {r["dst"] for r in s.read_lockfile(target)["files"]}
-        assert {"AGENTS.md", "tools/board.py"} <= destinations
+        assert {"AGENTS.md", "dev/tools/board.py"} <= destinations
         assert ".gitattributes" not in destinations
         stderr = capsys.readouterr().err
         expected = [line for line in EXPECTED_TEMPLATE.decode("utf-8").splitlines()
@@ -117,12 +117,12 @@ def test_an_existing_different_file_is_kept_byte_for_byte(
 def test_no_other_differing_file_gets_the_exemption(tmp_path: Path) -> None:
     target = tmp_path.resolve()
     target.mkdir(parents=True, exist_ok=True)
-    (target / "tools").mkdir()
-    (target / "tools" / "board.py").write_bytes(b"planted\n")
+    (target / "dev" / "tools").mkdir(parents=True)
+    (target / "dev" / "tools" / "board.py").write_bytes(b"planted\n")
     (target / "NOTICE.md").write_bytes(b"planted\n")
     (target / ".gitattributes").write_bytes(b"# mine\n")
     assert _install(target) == 0
-    assert (target / "tools" / "board.py").read_bytes() == b"planted\n"
+    assert (target / "dev" / "tools" / "board.py").read_bytes() == b"planted\n"
     assert (target / ".gitattributes").read_bytes() == b"# mine\n"
     assert not (target / "dev" / ".cairn" / "cairn-lock.yml").exists()
 

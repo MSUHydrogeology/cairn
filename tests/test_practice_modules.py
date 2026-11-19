@@ -95,7 +95,7 @@ class TestInstallPath:
             content = installed.read_text()
             assert "further-reading.md" in content
             if module == "testing-discipline":
-                installed_tool = tmp_path / "scripts" / "test_coupling.py"
+                installed_tool = tmp_path / "dev" / "tools" / "test_coupling.py"
                 source_tool = TEMPLATES_ROOT / "modules" / "team-gated" / "test_coupling.py"
                 assert installed_tool.read_bytes() == source_tool.read_bytes()
                 tests_dir = tmp_path / "tests"
@@ -133,7 +133,7 @@ class TestInstallPath:
         assert result.returncode == 0, result.stderr
         assert "[dry-run] Modules:" in result.stdout
         assert "testing-discipline" in result.stdout
-        assert not (target / "scripts" / "test_coupling.py").exists()
+        assert not (target / "dev" / "tools" / "test_coupling.py").exists()
 
     def test_skip_if_exists(self, tmp_path: Path) -> None:
         (tmp_path / "dev" / "modules").mkdir(parents=True)

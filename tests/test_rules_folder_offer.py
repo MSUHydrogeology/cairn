@@ -183,7 +183,7 @@ def test_hostile_record_never_stops_session_start(
         record.mkdir()
 
     result = subprocess.run(
-        [sys.executable, str(project / "tools" / "session.py"),
+        [sys.executable, str(project / "dev" / "tools" / "session.py"),
          "session-start"],
         cwd=project,
         capture_output=True,

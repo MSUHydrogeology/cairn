@@ -84,7 +84,7 @@ _MERGE_SLOT = "security-verification"
 #: A distinctive fragment of the merged content (from
 #: templates/modules/default-on/security-verification.md's merge block), used
 #: to prove the merge actually landed rather than silently no-op'ing.
-_MERGED_FRAGMENT = "scripts/run_security_verification.py"
+_MERGED_FRAGMENT = "dev/tools/run_security_verification.py"
 
 #: The module set the live-install fixture selects: the default-on set plus
 #: the merge-declaring module.

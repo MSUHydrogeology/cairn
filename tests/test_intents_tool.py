@@ -571,13 +571,13 @@ class TestInstallPath:
         specs = _MODULE_MAPPINGS["coordination-tiers"]
         dsts = {s.dst: s for s in specs}
         assert "dev/modules/coordination-tiers.md" in dsts
-        assert "tools/intent.py" in dsts
-        assert dsts["tools/intent.py"].verbatim is True
+        assert "dev/tools/intent.py" in dsts
+        assert dsts["dev/tools/intent.py"].verbatim is True
         assert dsts["dev/modules/coordination-tiers.md"].verbatim is False
 
     def test_tool_installed_verbatim(self, tmp_path: Path) -> None:
         assert _scaffold(tmp_path, ["coordination-tiers"]) == 0
-        installed = tmp_path / "tools" / "intent.py"
+        installed = tmp_path / "dev" / "tools" / "intent.py"
         assert installed.is_file(), "tool not installed"
         assert installed.read_bytes() == TOOL_TEMPLATE.read_bytes(), (
             "installed tool differs from template -- not verbatim"
@@ -594,7 +594,7 @@ class TestInstallPath:
 
     def test_rerun_skips_existing_tool(self, tmp_path: Path) -> None:
         assert _scaffold(tmp_path, ["coordination-tiers"]) == 0
-        installed = tmp_path / "tools" / "intent.py"
+        installed = tmp_path / "dev" / "tools" / "intent.py"
         edited = installed.read_text() + "\n# adopter edit\n"
         installed.write_text(edited)
         assert _scaffold(tmp_path, ["coordination-tiers"]) == 0
@@ -1297,7 +1297,7 @@ class TestInterpreterAndEndToEnd:
             ["--config", str(cfg), "--target", str(tmp_path),
              "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
         ) == 0
-        tool = tmp_path / "tools" / "intent.py"
+        tool = tmp_path / "dev" / "tools" / "intent.py"
         env = _clean_env(CAIRN_AGENT="e2e-agent")
         _run_tool(tool, ["install-hook"], cwd=tmp_path, env=env)
         (tmp_path / "dev" / "PLANNING.md").write_text("hello\n")
@@ -1438,7 +1438,7 @@ class TestLiteralAudit:
 
     def test_installed_tool_has_no_residue(self, tmp_path) -> None:
         assert _scaffold(tmp_path, ["coordination-tiers"]) == 0
-        text = (tmp_path / "tools" / "intent.py").read_text()
+        text = (tmp_path / "dev" / "tools" / "intent.py").read_text()
         for token in self._BANNED:
             assert token not in text
 
@@ -1593,12 +1593,12 @@ class TestPrecommitInstall:
 
     def test_status_suggests_installed_command_shape(self, tmp_path) -> None:
         """The suggested follow-up commands must be the
-        installed script shape (`python tools/intent.py ...`), not a bare
+        installed script shape (`python dev/tools/intent.py ...`), not a bare
         `intent` console command Cairn never installs."""
         tool = _git_repo(tmp_path)
         res = _run_tool(tool, ["hooks-status"], cwd=tmp_path)
-        assert "python tools/intent.py install-hook" in res.stdout
-        assert "python tools/intent.py install-precommit" in res.stdout
+        assert "python dev/tools/intent.py install-hook" in res.stdout
+        assert "python dev/tools/intent.py install-precommit" in res.stdout
         # No bare `intent <cmd>` suggestion (the non-existent entry point).
         assert "-> install post-commit: intent " not in res.stdout
         assert "-> install pre-commit:  intent " not in res.stdout

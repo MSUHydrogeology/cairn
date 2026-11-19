@@ -1,7 +1,7 @@
 """Tests for the Fold 3 issue-capture label-bootstrap helpers (GitLab + GitHub).
 
 Promises:
-- Installing the issue-capture module puts both label scripts in scripts/, byte-identical to the shipped copies.
+- Installing the issue-capture module puts both label scripts in dev/tools/, byte-identical to the shipped copies.
 - A label bootstrap script refuses to run without a credential, exits 2 and names the token variable.
 - A dry run reports the labels it would create or update and changes nothing.
 - A labels manifest that is missing or is not a list is refused with exit 2.
@@ -77,7 +77,7 @@ class TestInstallPaths:
              "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
         )
         assert rc == 0
-        installed = tmp_path / "scripts" / "bootstrap_gitlab_labels.py"
+        installed = tmp_path / "dev" / "tools" / "bootstrap_gitlab_labels.py"
         assert installed.is_file(), "bootstrap_gitlab_labels.py not installed"
         assert installed.read_bytes() == _GITLAB_SCRIPT.read_bytes(), (
             "Installed bootstrap_gitlab_labels.py differs from template"
@@ -94,7 +94,7 @@ class TestInstallPaths:
              "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
         )
         assert rc == 0
-        installed = tmp_path / "scripts" / "bootstrap_github_labels.py"
+        installed = tmp_path / "dev" / "tools" / "bootstrap_github_labels.py"
         assert installed.is_file(), "bootstrap_github_labels.py not installed"
         assert installed.read_bytes() == _GITHUB_SCRIPT.read_bytes(), (
             "Installed bootstrap_github_labels.py differs from template"
@@ -271,7 +271,7 @@ def test_label_script_without_credential_exits_2_naming_the_token_variable(
         ["--config", str(cfg), "--target", str(tmp_path),
          "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
     ) == 0
-    installed = tmp_path / "scripts" / script.name
+    installed = tmp_path / "dev" / "tools" / script.name
     assert installed.is_file()
     bindir = tmp_path / "bin"
     bindir.mkdir()

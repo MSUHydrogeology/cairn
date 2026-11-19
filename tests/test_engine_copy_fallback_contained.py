@@ -351,7 +351,7 @@ def test_a_refusal_is_fixed_words_a_project_relative_name_and_a_remedy(
     # not "re-run": an upgrade that adds the skills does not redo the fan-out when
     # run again; session-start does, and so does installing again
     assert "re-run" not in err.split("skills fan-out refused", 1)[1]
-    assert "python tools/session.py session-start` (or install again)" in err
+    assert "python dev/tools/session.py session-start` (or install again)" in err
     # where the link points is the project's data, and an absolute path is not ours to print
     refusal = err.split("skills fan-out refused", 1)[1]
     assert str(outside) not in refusal
@@ -401,7 +401,7 @@ def test_something_that_is_not_a_plain_file_is_refused_and_nothing_is_copied(
     assert code == 2, err
     assert "skills fan-out refused" in err
     assert "move or remove it" in err
-    assert "python tools/session.py session-start` (or install again)" in err
+    assert "python dev/tools/session.py session-start` (or install again)" in err
     assert "Traceback" not in err
     assert _snapshot(target / ".claude") == harness_before
     assert _snapshot(outside) == {}
@@ -666,7 +666,7 @@ def test_the_divergence_warning_names_files_escaped_and_relative_to_the_project(
 _SKILL_DSTS = {
     ".agents/skills/session-start/SKILL.md",
     ".agents/skills/session-end/SKILL.md",
-    "tools/session.py",
+    "dev/tools/session.py",
 }
 
 
@@ -690,7 +690,7 @@ def test_an_upgrade_that_adds_the_skills_warns_and_finishes_when_the_fan_out_is_
     lock["files"] = [r for r in lock["files"] if r["dst"] not in _SKILL_DSTS]
     (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
         _emit_lock_yaml(lock), encoding="utf-8")
-    for rel in (".agents", "tools/session.py", "dev/.cairn/base/.agents"):
+    for rel in (".agents", "dev/tools/session.py", "dev/.cairn/base/.agents"):
         path = target / rel
         shutil.rmtree(path) if path.is_dir() else path.unlink(missing_ok=True)
     # and a copy name that is a link to a file outside
@@ -709,7 +709,7 @@ def test_an_upgrade_that_adds_the_skills_warns_and_finishes_when_the_fan_out_is_
     assert code == 0, err
     assert "skills fan-out skipped" in err
     assert "remove that link" in err
-    assert "python tools/session.py session-start` (or install again)" in err
+    assert "python dev/tools/session.py session-start` (or install again)" in err
     assert _snapshot(outside) == outside_before
     assert copy.is_symlink(), "the link was replaced during a refused fan-out"
     recorded = {r["dst"] for r in read_lockfile(target)["files"]}
@@ -731,13 +731,14 @@ def test_upgrade_prints_a_forged_cairn_version_as_one_escaped_line(tmp_path, cap
                        encoding="utf-8")
     assert main(_argv(target, profile)) == 0
     body = b"# a fork of the launcher\n"
-    (target / "tools" / "intent.py").write_bytes(body)
-    (target / "tools" / "_intent").mkdir()
-    (target / "tools" / "_intent" / "__init__.py").write_bytes(b"")
+    (target / "dev" / "tools").mkdir(parents=True, exist_ok=True)
+    (target / "dev" / "tools" / "intent.py").write_bytes(body)
+    (target / "dev" / "tools" / "_intent").mkdir()
+    (target / "dev" / "tools" / "_intent" / "__init__.py").write_bytes(b"")
     lock = read_lockfile(target)
-    lock["files"] = [r for r in lock["files"] if r.get("dst") != "tools/intent.py"]
+    lock["files"] = [r for r in lock["files"] if r.get("dst") != "dev/tools/intent.py"]
     lock["files"].append({
-        "dst": "tools/intent.py", "verbatim": True,
+        "dst": "dev/tools/intent.py", "verbatim": True,
         "hash": "sha256:" + hashlib.sha256(body).hexdigest(),
         "base_hash": "sha256:" + "a" * 64, "src": "modules/team-gated/intent.py",
     })
