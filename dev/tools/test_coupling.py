@@ -23,6 +23,8 @@ def _default_root() -> Path:
     if (here.name == "team-gated" and here.parent.name == "modules"
             and here.parent.parent.name == "templates"):
         return here.parents[2]
+    if here.name == "tools" and here.parent.name == "dev":
+        return here.parent.parent
     return here.parent
 
 

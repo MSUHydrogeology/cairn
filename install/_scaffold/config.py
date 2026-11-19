@@ -1215,7 +1215,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # ships green (foldback #2: capture_model_selection_mapping); a
         # non-interactive / CI install leaves the FILL ME stub as the fallback.
         # The checker is installed verbatim so adopters can invoke it directly
-        # (`python scripts/check_model_selection.py`) or wire it into their CI.
+        # (`python dev/tools/check_model_selection.py`) or wire it into their CI.
         InstallSpec(
             "team-gated/model_selection_mapping_stub.yml",
             "dev/.cairn/model-selection-mapping.yml",
@@ -1546,7 +1546,7 @@ _MODULE_DISCOVERY: dict[str, tuple[str, str, str, str]] = {
     "coordination-tiers": ("Coordinate concurrent work with explicit claims.", "dev/tools/intent.py", "Read the module and inspect the intent command help.", "A first team coordination procedure."),
     "security-review": ("Identify trust boundaries that may need review.", "dev/modules/security-review.md", "Name one trust boundary and a candidate trigger for Maintainer consideration.", "A boundary and trigger proposal."),
     "issue-capture": ("Choose a route for capturing friction or gaps.", "dev/modules/issue-capture.md", "Choose how to record one gap; do not create an external issue without authorization.", "A capture route."),
-    "model-selection": ("Record the team's actual model assignments.", "dev/.cairn/model-selection-mapping.yml", "Fill the mapping and run python scripts/check_model_selection.py.", "A checked model assignment map."),
+    "model-selection": ("Record the team's actual model assignments.", "dev/.cairn/model-selection-mapping.yml", "Fill the mapping and run python dev/tools/check_model_selection.py.", "A checked model assignment map."),
     "testing-discipline": ("Report Python tests that reach into project internals or lack promise lists.", "dev/tools/test_coupling.py", "Run the advisory report and review its worst-first findings.", "A report guiding promise-test consolidation; private reach is not a deletion list."),
     "doc-drift-prevention": ("Check links and synchronized documentation snippets.", "dev/tools/link_check.py", "Run the installed link checker according to its help.", "A link report for the installed documentation."),
     "examples-gallery": ("Track useful examples and their source of truth.", "dev/modules/examples-gallery.md", "Identify one example and its owning source.", "A candidate gallery entry."),
