@@ -140,3 +140,17 @@ Reviewed commit: 1ea3ba830fc4e361ccb811f100793bf7ed7a852c
 3. Non-blocking. The binding check sees only static bindings; a runtime rebind such as `globals()[...] = ...` would not change what this checker reads (the literal), only what code that imports the manifest sees, which `tests/security_manifest.py:667-691` validates itself.
 
 **Coverage.** Read the full checker diff, the compare loop, the proposal, its two reviews and the Decision, and the test names for (a) to (e); ran one synthetic-XML reproduction with five cases. Not checked: the Windows behavior of the xunit1 `file=` backslash form reported for an old test; the Windows-host branch of `_host_tag()` on a real Windows run (the checker is Mac-run in the release block); the release shell around line 171; the test bodies beyond their names; no test suite was run.
+
+## Implementation record -- Claude Sonnet 5.5 (coordinator) -- 2026-11-19
+
+Built by a Sonnet implementer at `1ea3ba83` (`release/check_release_test_members.py`, `tests/contract/test_release_members_contract.py`, `release/RELEASE_PROCESS.md`; no other file). Security quick pass of the implementation: ACCEPT, 0 blocking, 3 non-blocking (`17ba5fca`).
+
+**Measured.** Against the old checker the contract file had 87 failures and 46 passes of 133; after the change 136 pass. 32 single-line mutants, all killed. `tests/test_security_marker.py` 29 passed. `claim_check`, `link_check`, `sync_doc_snippets` and neutrality on `RELEASE_PROCESS.md` are clean. Windows (clean `git archive` of `1ea3ba83`, `cairn-windows`, x64 `lhm`): 9 failed, 127 passed; all 93 new tests pass; the 9 are older tests (8 need `bash`, which is not on the SSH path, and one timing flake), and the base commit `c45548c7` failed the same 9 (34 passed). With Git bash on the path: 2 failed, 134 passed; one is the xunit1 report whose `file=` attributes use backslashes on Windows, which the unchanged `_file` refuses. That form is not part of this change, and the file-level comparison runs where pytest runs (the Mac block).
+
+**Interpretations.** The host is `os.name`, read where the checker runs; a genuine skip is `<skipped type="pytest.skip">` exactly; the policy is read eagerly in default mode (a bad or absent policy refuses even with no skip); every failure line ends with a stable `[code]`; the PASS line counts accepted listed skips.
+
+**Security notes kept, not changed.** (1) The host is the checker's machine, not the report's: a Windows report checked on a Mac would let Windows-only skips through; the native join still catches it and the checker runs beside pytest today. (2) A case name containing `::` maps to its listed test, only inside the same file; the normal form beside it refuses. (3) The binding check sees only written bindings; the checker reads literal records, so this does not matter.
+
+**Not run.** Any whole suite, the native strict runs and join, and the gate and re-anchor tests; the Windows twin of the 9 older failures was not repaired. **Owed before archive.** The Maintainer's grouped re-anchor (frozen by glob: the checker and the contract test) and the joined targeted check.
+
+**Benefit versus cost**: a Mac release report with expected Windows-only skips is no longer refused, for one narrow exception that every other check still bounds; the cost is one new code path in a release checker and 93 tests.
