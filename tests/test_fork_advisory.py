@@ -1,9 +1,9 @@
 """Fork-advisory semantics -- the comparison bytes come from the caller, never
 from the tree being checked (plan ``fork-advisory-semantics``).
 
-The detector under test is ``bootstrap/_scaffold/lockfile.py``'s
+The detector under test is ``install/_scaffold/lockfile.py``'s
 ``forked_facade_findings`` / ``format_forked_facade_warning`` pair plus its two
-callers (``bootstrap/verify_integrity.py`` and ``cmd_upgrade``). Before this
+callers (``install/verify_integrity.py`` and ``cmd_upgrade``). Before this
 plan its fork test was ``hash != base_hash`` -- **both operands are fields the
 tree under check writes into its own lockfile**, so a target-controlled lockfile
 could suppress (or manufacture) a finding. The invariant this module exists to
@@ -501,10 +501,10 @@ def one(case: Case, *, upstream: bool = True) -> dict[str, Any]:
 def install_forked_target(
     target: Path, *, disk_body: bytes = FORKED_BODY, **record_overrides: Any,
 ) -> dict[str, Any]:
-    """Install Cairn into *target*, then plant a forked ``tools/intent.py``
-    beside a populated ``tools/_intent/`` and record it in the lockfile.
+    """Install Cairn into *target*, then plant a forked ``dev/tools/intent.py``
+    beside a populated ``dev/tools/_intent/`` and record it in the lockfile.
 
-    ``tools/intent.py`` is in ``install_manifest(modules=None)`` -- the **full
+    ``dev/tools/intent.py`` is in ``install_manifest(modules=None)`` -- the **full
     published catalog** -- even though this install selects no modules, which is
     exactly the property ``trusted_upstream`` pins: the trusted map is not
     narrowed by anything the target says about itself.
@@ -521,15 +521,15 @@ def install_forked_target(
     assert main(["--config", str(cfg), "--target", str(target),
                  "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
     lock = read_lockfile(target)
-    _write(target / "tools" / "intent.py", disk_body)
-    _write(target / "tools" / "_intent" / "__init__.py", b"")
+    _write(target / "dev" / "tools" / "intent.py", disk_body)
+    _write(target / "dev" / "tools" / "_intent" / "__init__.py", b"")
     record: dict[str, Any] = {
-        "dst": "tools/intent.py", "verbatim": True,
+        "dst": "dev/tools/intent.py", "verbatim": True,
         "hash": _sha(disk_body), "base_hash": "sha256:" + "a" * 64,
         "src": "modules/team-gated/intent.py",
     }
     record.update(record_overrides)
-    lock["files"] = [r for r in lock["files"] if r.get("dst") != "tools/intent.py"]
+    lock["files"] = [r for r in lock["files"] if r.get("dst") != "dev/tools/intent.py"]
     lock["files"].append(record)
     (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
         _emit_lock_yaml(lock), encoding="utf-8")
@@ -537,12 +537,12 @@ def install_forked_target(
 
 
 def relock(target: Path, **record_overrides: Any) -> None:
-    """Rewrite the planted ``tools/intent.py`` record in place (no re-install)."""
+    """Rewrite the planted ``dev/tools/intent.py`` record in place (no re-install)."""
     from install.scaffold import _emit_lock_yaml, read_lockfile  # noqa: PLC0415
 
     lock = read_lockfile(target)
     for rec in lock["files"]:
-        if rec.get("dst") == "tools/intent.py":
+        if rec.get("dst") == "dev/tools/intent.py":
             for key, value in record_overrides.items():
                 if value is None:
                     rec.pop(key, None)
@@ -780,7 +780,7 @@ def test_node16_f5_parametric_no_lockfile_field_can_suppress_at_upgrade(
     install_forked_target(target)
     relock(target, **overrides)
 
-    _rc, err = upgrade_stderr(target, capsys)
+    rc, err = upgrade_stderr(target, capsys)
     if overrides == {"hash": None}:
         # Recorded rather than papered over: candidate selection is still
         # lock-derived, so a record with no `hash` is not examined at all.
@@ -788,8 +788,11 @@ def test_node16_f5_parametric_no_lockfile_field_can_suppress_at_upgrade(
     elif overrides == {"src": "../../../../etc/hostname"}:
         # The whole lockfile is now shape-checked before the advisory. This
         # hostile source is refused at that boundary, so it never reaches the
-        # advisory's engine candidate gate.
-        assert "error: upgrade refused (containment)" in err
+        # advisory's engine candidate gate. The layout transaction reads the
+        # lock ahead of the ordinary containment check, so which of the two
+        # prints the refusal is not the promise; the refused exit status and
+        # the named field are.
+        assert rc == 2, err
         assert "'src' is not a plain relative file name" in err
         assert "tools/_intent" not in err
     else:
@@ -825,7 +828,7 @@ def test_node17_a1_trusted_upstream_takes_only_a_cairn_root(tmp_path) -> None:
     assert up.templates_root == CAIRN_ROOT / "templates"
     # The catalog is not narrowed to what a given install selected: a
     # team-gated destination is present even though no module is installed.
-    assert "tools/intent.py" in up.src_for_dst
+    assert "dev/tools/intent.py" in up.src_for_dst
     assert len(up.src_for_dst) > len(
         {dst for src, dst, _v in install_manifest([])})
 
