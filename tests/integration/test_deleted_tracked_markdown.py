@@ -73,6 +73,9 @@ def _make_repo(tmp_path: Path, *, with_dangling_symlink: bool) -> Path:
 def _run(script: str, repo: Path, *extra: str) -> subprocess.CompletedProcess:
     argv = [sys.executable, "-B", str((CAIRN_TOOLS if script == "check_cairn" else INSTALLED_TOOLS) / f"{script}.py"),
             "--root", str(repo), *extra]
+    if script == "check_cairn":
+        # The repo is a fixture, not a Cairn tree; the layout check is not under test.
+        argv.append("--no-layout-check")
     return subprocess.run(argv, capture_output=True, text=True, cwd=str(repo))
 
 

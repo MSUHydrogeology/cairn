@@ -8,7 +8,7 @@ confirms a planted injection surfaces as a 'content' flag, and
 --no-content-scan / the content_scan_enabled switch turns it off.
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/
+    python -m pytest tests/
 
 Promises:
 - A template instruction file has its URLs flagged, while the same URL in docs prose is not flagged.
@@ -71,19 +71,19 @@ def _check_cairn_delivery(base: Path, *, wrong_link_pin: bool = False,
     """Copy the real composition modules and return their actual CLI root."""
     root = base / "delivery"
     files = (
-        "scripts/check_cairn.py", "scripts/measurements.py",
-        "scripts/verify_counts.py",
+        "tests/check_cairn.py", "tests/measurements.py",
+        "tests/verify_counts.py",
         "templates/modules/default-on/claim_check.py",
         "templates/modules/team-gated/content_scan.py",
         "templates/modules/team-gated/link_check.py",
-        "tools/git_read.py",
+        "dev/tools/git_read.py",
         "templates/skills/_lib/git_read.py",
     )
     for rel in files:
         dst = root / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(CAIRN_ROOT / rel, dst)
-    helper = root / "tools/git_read.py"
+    helper = root / "dev/tools/git_read.py"
     if literal_wildcard:
         source = helper.read_text(encoding="utf-8")
         old = 'result = [snapshot.resolved, "--no-pager", "-C", target, *overrides]'
@@ -109,7 +109,7 @@ def _check_cairn_delivery(base: Path, *, wrong_link_pin: bool = False,
     template_helper = root / "templates/skills/_lib/git_read.py"
     template_helper.write_bytes(helper.read_bytes())
     pin = hashlib.sha256(helper.read_bytes()).hexdigest()
-    for rel in ("scripts/measurements.py",
+    for rel in ("tests/measurements.py",
                 "templates/modules/team-gated/link_check.py"):
         path = root / rel
         source = path.read_text(encoding="utf-8")
@@ -143,8 +143,8 @@ def _run_check_cairn_cli(root: Path, base: Path):
         "CAIRN_TEST_HELPER_MARKER": str(marker),
     })
     result = subprocess.run(
-        [sys.executable, str(root / "scripts/check_cairn.py"),
-         "--root", str(root), "--no-content-scan"],
+        [sys.executable, str(root / "tests/check_cairn.py"),
+         "--root", str(root), "--no-content-scan", "--no-layout-check"],
         cwd=cwd, env=env, text=True, capture_output=True, timeout=30,
     )
     return result, marker
@@ -186,9 +186,9 @@ class TestContentComposition:
             self, tmp_path: Path) -> None:
         root = _check_cairn_delivery(tmp_path)
         cwd = tmp_path / "outside-cwd"
-        (cwd / "tools").mkdir(parents=True)
+        (cwd / "dev" / "tools").mkdir(parents=True)
         decoy_marker = tmp_path / "cwd-marker"
-        (cwd / "tools" / "git_read.py").write_text(
+        (cwd / "dev" / "tools" / "git_read.py").write_text(
             "from pathlib import Path\n"
             f"Path({str(decoy_marker)!r}).write_text('decoy')\n",
             encoding="utf-8",
@@ -202,7 +202,7 @@ class TestContentComposition:
             "GIT_CONFIG_NOSYSTEM": "1",
         })
         result = subprocess.run(
-            [sys.executable, str(root / "scripts/check_cairn.py"),
+            [sys.executable, str(root / "tests/check_cairn.py"),
              "--root", str(root), "--no-content-scan",
              str(root / "docs/broken.md")],
             cwd=cwd, env=env, text=True, capture_output=True, timeout=30,
@@ -228,7 +228,7 @@ class TestContentComposition:
             "GIT_CONFIG_NOSYSTEM": "1",
         })
         result = subprocess.run(
-            [sys.executable, str(root / "scripts/check_cairn.py"),
+            [sys.executable, str(root / "tests/check_cairn.py"),
              "--root", str(root), "--no-content-scan",
              str(root / "docs/broken.md")],
             cwd=cwd, env=env, text=True, capture_output=True, timeout=30,
@@ -261,7 +261,7 @@ class TestContentComposition:
 
         monkeypatch.setattr(reader, "run_git", observed)
         status = check_cairn.main([
-            "--root", str(tmp_path), "--no-content-scan"])
+            "--root", str(tmp_path), "--no-content-scan", "--no-layout-check"])
         captured = capsys.readouterr()
         assert status == 1
         assert "broken.md" in captured.err and "broken link target" in captured.err

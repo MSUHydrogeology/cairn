@@ -707,15 +707,20 @@ def main(argv: list[str] | None = None) -> int:
                              'archived links rot by design). Mirrors the '
                              'shipped link_check default; ignored when '
                              'explicit files are named.')
-    parser.add_argument('--layout-only', action='store_true',
-                        help='Check the tracked repository layout only.')
+    layout_mode = parser.add_mutually_exclusive_group()
+    layout_mode.add_argument('--layout-only', action='store_true',
+                             help='Check the tracked repository layout only.')
+    layout_mode.add_argument('--no-layout-check', action='store_true',
+                             help='Skip the repository layout check. For a '
+                                  '--root that is not a Cairn tree (a test '
+                                  'fixture); the default keeps the check.')
     args = parser.parse_args(argv)
 
     root = args.root.resolve() if args.root else repo_root()
     if not root.is_dir():
         print(f'check_cairn: root is not a directory: {root}', file=sys.stderr)
         return 2
-    if args.layout_only or not args.files:
+    if args.layout_only or (not args.files and not args.no_layout_check):
         try:
             layout_errors = check_layout(root)
         except (RuntimeError, OSError, ValueError) as exc:
