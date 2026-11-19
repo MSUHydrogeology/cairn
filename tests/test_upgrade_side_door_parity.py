@@ -4,7 +4,7 @@ added to the core or skills mappings.
 A file that a later Cairn version adds to the core or skills mappings can meet
 a project that already has something at its destination. `upgrade` must never
 overwrite it silently. This pins the refusals, using one tracked skills file
-(`tools/board.py`) as the occupied destination:
+(`dev/tools/board.py`) as the occupied destination:
 
 * **an occupied, unlocked destination is an adoptable collision** that blocks
   `--apply` until the operator keeps it as a tracked fork
@@ -18,17 +18,17 @@ overwrite it silently. This pins the refusals, using one tracked skills file
 * **the published manifest** refuses two rows for one destination.
 
 Promises:
-- An occupied destination for a file a new release adds blocks ``--apply``, even with ``--ack-review-only`` or ``--force``, and the adopter's bytes stay untouched. (bootstrap/UPGRADE.md:237, 256)
-- A destination the lockfile tracks under another source is a conflict that ``--adopt-collisions`` cannot clear. (bootstrap/UPGRADE.md:256)
-- A tracked file the adopter deleted is not reported as a collision. (bootstrap/UPGRADE.md:530-560)
-- ``--adopt-collisions`` keeps the adopter's file as a tracked fork, never overwrites it, and records the upstream as its base. (bootstrap/UPGRADE.md:530-560)
-- A kept fork survives a later upstream release as locally modified and is not overwritten. (bootstrap/UPGRADE.md:530-560)
-- An adopter's edit survives an upgrade: a changed verbatim script is kept, not overwritten, and a customized SKILL.md is merged with the edit kept and the upstream change folded in. (bootstrap/UPGRADE.md:513-530)
-- Removing the blocking file and re-staging accepts the upstream file on ``--apply``, which then tracks it. (bootstrap/UPGRADE.md:530-560)
-- The install manifest refuses two entries for one destination. (production code: bootstrap/_scaffold/install.py)
+- An occupied destination for a file a new release adds blocks ``--apply``, even with ``--ack-review-only`` or ``--force``, and the adopter's bytes stay untouched. (install/UPGRADE.md:237, 256)
+- A destination the lockfile tracks under another source is a conflict that ``--adopt-collisions`` cannot clear. (install/UPGRADE.md:256)
+- A tracked file the adopter deleted is not reported as a collision. (install/UPGRADE.md:530-560)
+- ``--adopt-collisions`` keeps the adopter's file as a tracked fork, never overwrites it, and records the upstream as its base. (install/UPGRADE.md:530-560)
+- A kept fork survives a later upstream release as locally modified and is not overwritten. (install/UPGRADE.md:530-560)
+- An adopter's edit survives an upgrade: a changed verbatim script is kept, not overwritten, and a customized SKILL.md is merged with the edit kept and the upstream change folded in. (install/UPGRADE.md:513-530)
+- Removing the blocking file and re-staging accepts the upstream file on ``--apply``, which then tracks it. (install/UPGRADE.md:530-560)
+- The install manifest refuses two entries for one destination. (production code: install/_scaffold/install.py)
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/test_upgrade_side_door_parity.py
+    python -m pytest tests/test_upgrade_side_door_parity.py
 """
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ from install import scaffold as s  # noqa: E402
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 
 # The occupied destination: a verbatim file the skills mapping installs.
-_TARGET = "tools/board.py"
+_TARGET = "dev/tools/board.py"
 _TARGET_SRC = "skills/_lib/board.py"
 
 
@@ -192,7 +192,7 @@ def test_keep_mine_fork_via_adopt_collisions(tmp_path: Path):
 
 
 _SKILL_MD = ".agents/skills/session-start/SKILL.md"
-_VERBATIM_CLI = "tools/session.py"
+_VERBATIM_CLI = "dev/tools/session.py"
 _SKILL_HEADER = "# Session-start (good-morning)"
 _ADOPTER_NOTE = "<!-- adopter note -->"
 
