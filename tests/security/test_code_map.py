@@ -155,8 +155,8 @@ def test_isolated_cli_ignores_planted_project_and_adjacent_modules(
 
     create_dev_tree(tmp_path)
     install_modules(ROOT / "templates", tmp_path, {}, ["architecture-review"])
-    tools = tmp_path / "tools"
-    tools.mkdir(exist_ok=True)
+    tools = tmp_path / "dev" / "tools"
+    tools.mkdir(parents=True, exist_ok=True)
     sentinels = [tmp_path / f"{name}.sentinel" for name in
                  ("ast", "json", "sitecustomize", "adjacent_ast",
                   "adjacent_json", "adjacent_sitecustomize")]
@@ -365,11 +365,11 @@ def test_installed_copy_is_identical_and_runs(tmp_path: Path) -> None:
     from install.scaffold import _MODULE_MAPPINGS, create_dev_tree, install_modules
 
     mapping = {spec.dst: spec for spec in _MODULE_MAPPINGS["architecture-review"]}
-    assert mapping["tools/code_map.py"].src == "team-gated/code_map.py"
-    assert mapping["tools/code_map.py"].verbatim is True
+    assert mapping["dev/tools/code_map.py"].src == "team-gated/code_map.py"
+    assert mapping["dev/tools/code_map.py"].verbatim is True
     create_dev_tree(tmp_path)
     install_modules(ROOT / "templates", tmp_path, {}, ["architecture-review"])
-    installed = tmp_path / "tools" / "code_map.py"
+    installed = tmp_path / "dev" / "tools" / "code_map.py"
     assert installed.read_bytes() == TEMPLATE_SCRIPT.read_bytes()
     rubric = tmp_path / "dev" / "architecture_review.md"
     frame = rubric.read_bytes()
@@ -398,7 +398,7 @@ def test_public_map_keeps_critical_helpers_in_their_declared_homes(
 ) -> None:
     inspection = tmp_path / "inspection"
     inspection.mkdir()
-    for relative_root in ("tools", "templates/skills/_lib", "bootstrap/_scaffold"):
+    for relative_root in ("dev/tools", "templates/skills/_lib", "install/_scaffold"):
         source_root = ROOT / relative_root
         for current, directories, filenames in os.walk(source_root, followlinks=False):
             current_path = Path(current)
@@ -427,11 +427,11 @@ def test_public_map_keeps_critical_helpers_in_their_declared_homes(
 
     expected = {
         "encode_display": {
-            "tools/session.py": 1, "templates/skills/_lib/session.py": 1,
+            "dev/tools/session.py": 1, "templates/skills/_lib/session.py": 1,
         },
         "_read_regular_bytes": {
-            "tools/session.py": 1, "templates/skills/_lib/session.py": 1,
-            "bootstrap/_scaffold/security.py": 1,
+            "dev/tools/session.py": 1, "templates/skills/_lib/session.py": 1,
+            "install/_scaffold/security.py": 1,
         },
     }
     locations = {name: {} for name in expected}
