@@ -1719,9 +1719,9 @@ class TestViewExample:
         render_page = ns["render_page"]
 
         repo = tmp_path / "repo"
-        (repo / "tools").mkdir(parents=True)
-        shutil.copy2(CAIRN_ROOT / "dev" / "tools" / "board.py", repo / "tools" / "board.py")
-        shutil.copy2(CAIRN_ROOT / "dev" / "tools" / "session.py", repo / "tools" / "session.py")
+        (repo / "dev" / "tools").mkdir(parents=True)
+        shutil.copy2(CAIRN_ROOT / "dev" / "tools" / "board.py", repo / "dev" / "tools" / "board.py")
+        shutil.copy2(CAIRN_ROOT / "dev" / "tools" / "session.py", repo / "dev" / "tools" / "session.py")
         _git_run(repo, "init")
 
         esc = "\x1b"
@@ -1831,7 +1831,7 @@ class TestViewExample:
         # Footer checks:
         assert head_sha in html_text
         assert "2 of 8 live rows carry an In brief line." in html_text
-        assert "python tools/board.py --maintainer" in html_text
+        assert "python dev/tools/board.py --maintainer" in html_text
         assert "Page incomplete" not in html_text
 
         # Skipped symlinks and missing roadmap reach the page footer:
@@ -1861,9 +1861,9 @@ class TestViewExample:
 
         # Failure preservation: git rev-parse fails (non-git directory) -> page untouched
         non_git = tmp_path / "non_git"
-        (non_git / "tools").mkdir(parents=True)
-        shutil.copy2(CAIRN_ROOT / "dev" / "tools" / "board.py", non_git / "tools" / "board.py")
-        shutil.copy2(CAIRN_ROOT / "dev" / "tools" / "session.py", non_git / "tools" / "session.py")
+        (non_git / "dev" / "tools").mkdir(parents=True)
+        shutil.copy2(CAIRN_ROOT / "dev" / "tools" / "board.py", non_git / "dev" / "tools" / "board.py")
+        shutil.copy2(CAIRN_ROOT / "dev" / "tools" / "session.py", non_git / "dev" / "tools" / "session.py")
         _write(non_git, "dev/plans/ok.md", "# OK\n\n**Status**: implementing\n")
         monkeypatch.chdir(non_git)
         with pytest.raises(subprocess.CalledProcessError):

@@ -474,7 +474,7 @@ _NEUTRALITY_FILE_SUFFIXES: dict[str, tuple[str, ...]] = {
     "docs": (".md",),
     "examples": (".md", ".yml", ".yaml"),
     "install": (".md",),
-    "templates": (".md", ".yml", ".yaml", ".py", ".toml", ".json", ".txt"),
+    "templates": (".md", ".yml", ".yaml", ".py", ".toml", ".json", ".txt", ""),
 }
 
 

@@ -49,7 +49,7 @@ def _load() -> ModuleType:
 lifecycle = _load()
 
 #: A C1 control, a bidi override and a printable invisible filler.
-NASTY = "\u009b‮ㅤ"
+NASTY = "\u009b\u202e\u3164"
 
 
 @pytest.fixture(autouse=True)
