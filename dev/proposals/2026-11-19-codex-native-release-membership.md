@@ -58,3 +58,11 @@ A required case can fail or skip on its own host and still pass the applicable c
 ## Assurance path
 
 **Assurance path**: high-assurance. The checker contributes release evidence. Obtain ordinary and Security Review before changing the rule.
+
+## Ordinary proposal review — Terra (Reviewer, Medium) — 2026-11-19
+
+**Verdict: ACCEPT. Findings: none.** The proposal reconciles file-level release evidence with the existing platform-specific list while retaining the separate native join.
+
+**Should this happen as framed?** Yes. The recorded Mac XML has one pass and two Windows-only skips in the same file, and the existing file checker refuses skipped required cases. **Best alternative:** retain the present refusal; it would continue rejecting that expected evidence. An unrestricted skip allowance would weaken coverage. **What would show it wrong?** A current-platform or unlisted skip passing, a listed skip counting as a file pass, or the native join accepting a case that did not execute on its own host would falsify the assurance. The plan should specify malformed-policy and ambiguous-identity tests alongside the named cases.
+
+**Evidence and limits.** Read proposal `ce02e4c9`, the recorded XML, the file checker's identity and outcome handling, the native-list validation and release join instructions. No tests were run; I did not independently review the join implementation, other platforms or security boundaries. **Elapsed**: unknown. **Tokens**: unknown.
