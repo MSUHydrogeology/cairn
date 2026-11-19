@@ -1,4 +1,3 @@
-<!-- claim-check-allow: dev/tools/verify_counts.py, dev/tools/measurements.py, dev/.cairn/measurements.json, dev/tools/token_budget.py -->
 # Templates
 
 `templates/` holds the **forkable files** that put the Cairn

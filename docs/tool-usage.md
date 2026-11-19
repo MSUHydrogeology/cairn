@@ -1,4 +1,3 @@
-<!-- claim-check-allow: dev/.cairn/measurements.json -->
 # Tool usage — worked examples
 
 Cairn ships Python tools and scripts that use only the standard library.

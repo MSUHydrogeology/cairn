@@ -21,13 +21,15 @@ from pathlib import Path
 
 import pytest
 
-REPO = Path(__file__).resolve().parents[3]
+from tests._repo_root import repository_root
+
+REPO = repository_root(Path(__file__))
 CONFIG = REPO / 'dev' / '.cairn' / 'claim-check-allow.json'
 
 
 def _claim_check():
     spec = importlib.util.spec_from_file_location(
-        'cairn_claim_check_cfg', REPO / 'scripts' / 'claim_check.py')
+        'cairn_claim_check_cfg', REPO / 'dev' / 'tools' / 'claim_check.py')
     mod = importlib.util.module_from_spec(spec)
     sys.modules['cairn_claim_check_cfg'] = mod
     spec.loader.exec_module(mod)
@@ -114,6 +116,11 @@ class TestProseCarriesNoClaimCheckDirective:
                              or parts[:2] == ('dev', 'reflections')))
             if archived:
                 continue        # historical record; enforcement was its own era
+            if parts[:1] == ('templates',) or parts[:2] == ('dev', 'modules'):
+                # A shipped module document, or Cairn's installed copy of one,
+                # carries its directive on purpose: an adopter has no copy of
+                # Cairn's config and still has to pass the claims check.
+                continue
             text = (REPO / rel).read_text(encoding='utf-8', errors='replace')
             for lineno, line in enumerate(text.split('\n'), start=1):
                 if directive.match(line):

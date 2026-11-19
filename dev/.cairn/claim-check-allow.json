@@ -362,6 +362,21 @@
         "bootstrap/tests/test_code_map.py"
       ],
       "_comment": "Historical path cited at commit 9547bf74; retain this document's immutable record while the current test lives under contract/."
+    },
+    "docs/templates.md": {
+      "paths": [
+        "dev/tools/verify_counts.py",
+        "dev/tools/measurements.py",
+        "dev/.cairn/measurements.json",
+        "dev/tools/token_budget.py"
+      ],
+      "_comment": "Adopter-side measurement tools described here are installed by the claim-check module; they do not exist in Cairn's own tree."
+    },
+    "docs/tool-usage.md": {
+      "paths": [
+        "dev/.cairn/measurements.json"
+      ],
+      "_comment": "The adopter-side measurement registry described here is installed by the claim-check module; it does not exist in Cairn's own tree."
     }
   }
 }
