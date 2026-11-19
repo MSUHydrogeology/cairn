@@ -2,7 +2,7 @@
 
 Evidence for the Maintainer's decision on Windows item 63.1 of
 `dev/plans/2026-11-16-adopter-defects-0-7-0.md` (the C8 run:
-`dev/measurement/windows-defects-run-2026-11-16.md`, item (d)). Record only: no
+`dev/measurement/archive/windows-defects-run-2026-11-16.md`, item (d)). Record only: no
 shipped code, test or document was changed. Every fix below was tried on a
 scratch copy; none is applied.
 

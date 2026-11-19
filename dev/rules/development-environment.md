@@ -71,7 +71,7 @@ the account, so that metadata explains its refusal on this VM. Native Meter
 validation uses disposable account-owned synthetic profiles; it does not
 establish that Meter runs against this account's real profile. No ownership
 or permission policy was changed. See the diagnostic follow-up in
-`dev/measurement/windows-existing-failures-2026-11-16.md`.
+`dev/measurement/archive/windows-existing-failures-2026-11-16.md`.
 
 ### Tools and packages the VM does not put on `PATH`
 

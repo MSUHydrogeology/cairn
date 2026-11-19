@@ -27,6 +27,6 @@ the run.
 
 **Readers.** The draft proposal on release tests
 (`dev/proposals/archive/2026-11-16-claude-release-tests-shipped-only.md`) takes its
-Cairn-side share from this table. [Slowest test files](slowest-test-owners-2026-11-13.md)
+Cairn-side share from this table. [Slowest test files](archive/slowest-test-owners-2026-11-13.md)
 lists the 51 files above ten seconds from the same run, and
 [suite-cost.md](suite-cost.md) gives the longer account.
