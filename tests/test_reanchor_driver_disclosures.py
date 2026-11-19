@@ -7,10 +7,10 @@ Promises:
 - An absent or unfilled launcher, or one bound to another packet or lacking the environment fix, refuses the pair.
 - The rehearsal says it executes candidate code before it loads any candidate module.
 - The driver runs no stage and refuses a run option as unknown; printed commands run the reviewed launcher, never the working-tree artifact.
-Sources: scripts/reanchor_ceremony.py module docstring (the banner and "IT RUNS NO STAGE"); scripts/reanchor_ceremony.py --help.
+Sources: release/reanchor_ceremony.py module docstring (the banner and "IT RUNS NO STAGE"); release/reanchor_ceremony.py --help.
 
 
-`scripts/reanchor_ceremony.py` does not decide anything. It prints the closure
+`release/reanchor_ceremony.py` does not decide anything. It prints the closure
 three ways, checks that the packet and the launcher are a pair, and rehearses
 the read-only checks. What it prints is the only warning an operator gets before
 spending an authorization package, so a line that quietly stopped printing, or
@@ -41,8 +41,8 @@ import pytest
 from tests._repo_root import repository_root
 
 _REPO = repository_root(Path(__file__))
-_DRIVER_PATH = _REPO / "scripts" / "reanchor_ceremony.py"
-_TEMPLATE_REL = "bootstrap/reanchor-launcher.template.sh"
+_DRIVER_PATH = _REPO / "release" / "reanchor_ceremony.py"
+_TEMPLATE_REL = "release/reanchor-launcher.template.sh"
 _SLOT = "@PACKET_SHA256@"
 _GIT = ["git", "-c", "user.email=t@t", "-c", "user.name=t",
         "-c", "commit.gpgsign=false"]
@@ -113,8 +113,8 @@ class Scratch:
         """A packet over the candidate's closure, with one deliberate fault."""
         lines = ["schema cairn-authorization-packet/v1",
                  "provenance scratch repository",
-                 "artifact bootstrap/reanchor.sh",
-                 f"artifact_sha256 {self.digest_at_candidate('bootstrap/reanchor.sh')}"]
+                 "artifact release/reanchor.sh",
+                 f"artifact_sha256 {self.digest_at_candidate('release/reanchor.sh')}"]
         for rel in self.members:
             if rel == drop:
                 continue
@@ -142,7 +142,7 @@ class Scratch:
 
 @pytest.fixture
 def scratch(tmp_path):
-    return Scratch(tmp_path, change=("bootstrap/reanchor.sh",))
+    return Scratch(tmp_path, change=("release/reanchor.sh",))
 
 
 def _printed(capsys) -> str:
@@ -157,9 +157,9 @@ class TestTheClosureTableNamesWhatDiffers:
         state = driver.compare(scratch.repo, scratch.candidate, None)
         out = _printed(capsys)
         starred = [line for line in out.splitlines() if line.startswith(" *")]
-        assert len(starred) == 1 and "bootstrap/reanchor.sh" in starred[0]
+        assert len(starred) == 1 and "release/reanchor.sh" in starred[0]
         assert f"1 of {len(scratch.members)} members changed" in out
-        assert state["changed"] == ["bootstrap/reanchor.sh"]
+        assert state["changed"] == ["release/reanchor.sh"]
 
     def test_a_changed_closure_is_announced_as_a_transition(
             self, driver, scratch, capsys):
@@ -181,7 +181,7 @@ class TestAPacketThatDisagreesWithTheCandidateRefusesThePair:
 
     def test_a_packet_with_no_row_for_a_member_is_refused(
             self, driver, scratch, capsys):
-        packet = scratch.packet(drop="bootstrap/tests/_oracle.py")
+        packet = scratch.packet(drop="tests/_oracle.py")
         state, table, ok, pair = self._pair(driver, scratch, packet, capsys)
         assert "MISSING" in table
         assert any("the packet has no row for this member" in p
@@ -191,7 +191,7 @@ class TestAPacketThatDisagreesWithTheCandidateRefusesThePair:
 
     def test_a_packet_row_that_differs_from_the_candidate_is_refused(
             self, driver, scratch, capsys):
-        packet = scratch.packet(wrong="bootstrap/tests/_oracle.py")
+        packet = scratch.packet(wrong="tests/_oracle.py")
         state, table, ok, pair = self._pair(driver, scratch, packet, capsys)
         assert "0" * 12 + " !!" in table
         assert any("packet says" in p for p in state["packet_problems"])
@@ -200,7 +200,7 @@ class TestAPacketThatDisagreesWithTheCandidateRefusesThePair:
 
     def test_a_packet_naming_a_member_the_closure_does_not_is_refused(
             self, driver, scratch, capsys):
-        packet = scratch.packet(extra=("bootstrap/tests/_smuggled.py",))
+        packet = scratch.packet(extra=("tests/_smuggled.py",))
         state, _, ok, pair = self._pair(driver, scratch, packet, capsys)
         assert any("the packet names a member the closure does not" in p
                    for p in state["packet_problems"])
@@ -279,13 +279,13 @@ class TestTheRehearsalSaysItExecutesCandidateCode:
     def test_the_banner_is_printed_before_anything_candidate_owned_loads(
             self, driver, scratch, capsys, monkeypatch, tmp_path, load_path):
         marker = tmp_path / "CANDIDATE-CODE-RAN"
-        module = scratch.repo / "bootstrap/tests/_gate_preflight.py"
+        module = scratch.repo / "tests/_gate_preflight.py"
         module.write_text(f"open({str(marker)!r}, 'w').close()\n")
         state = driver.compare(scratch.repo, scratch.candidate, None)
         capsys.readouterr()
 
         if load_path == "the real checker's directory on sys.path":
-            monkeypatch.syspath_prepend(str(_REPO / "bootstrap" / "tests"))
+            monkeypatch.syspath_prepend(str(_REPO / "tests"))
         # None makes `import _gate_preflight` raise on every path, so the
         # rehearsal stops at the import that follows the banner. It also
         # replaces any module of that name an earlier test left behind, which
