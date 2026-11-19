@@ -100,7 +100,7 @@ the stronger one. The commands in both routes are written for a POSIX shell;
 on Windows, run them in Git Bash (installed with Git for Windows), as
 [Windows: run both routes in Git Bash](#windows-run-both-routes-in-git-bash)
 below says. Both routes were run there on 2026-11-16 (record:
-[`windows-git-bash-release-route-2026-11-16.md`](../dev/measurement/windows-git-bash-release-route-2026-11-16.md));
+[`windows-git-bash-release-route-2026-11-16.md`](../dev/measurement/archive/windows-git-bash-release-route-2026-11-16.md));
 PowerShell versions are not provided. To find the newest stable tag,
 open `https://github.com/MSUHydrogeology/cairn/releases` and take the newest
 release that is not marked Pre-release; step 1 below checks it.

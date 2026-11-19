@@ -25,6 +25,7 @@ import re
 import os
 import stat
 import sys
+import unicodedata
 from pathlib import Path, PureWindowsPath
 from typing import Any, Callable
 
@@ -2166,7 +2167,7 @@ def _provenance_bytes_match(git_read: Any, root: Path, oid: str) -> bool | None:
 
     try:
         canonical = root.resolve(strict=True)
-        top = read_git(("rev-parse", "--show-toplevel"), 4096).decode("utf-8").strip()
+        top = os.fsdecode(read_git(("rev-parse", "--show-toplevel"), 4096).removesuffix(b"\n"))
         if not os.path.isabs(top) or Path(top).resolve(strict=True) != canonical:
             return None
         listing = read_git(("ls-tree", "-r", "-z", "--full-tree", oid), 8 << 20)
@@ -2174,20 +2175,24 @@ def _provenance_bytes_match(git_read: Any, root: Path, oid: str) -> bool | None:
             return None
         entries = []
         names = set()
+        is_reserved = getattr(os.path, "isreserved", None)
         for row in listing[:-1].split(b"\0"):
             metadata, raw_name = row.split(b"\t", 1)
             mode, kind, blob = metadata.split(b" ")
             name = raw_name.decode("utf-8", "strict")
             parts = name.split("/")
+            admin_parts = ["".join(c for c in part if unicodedata.category(c) != "Cf")
+                           .casefold() for part in parts]
             if (mode not in (b"100644", b"100755") or kind != b"blob"
                     or not re.fullmatch(rb"[0-9a-f]{%d}" % len(oid), blob)
-                    or any(part in ("", ".", "..") or part.casefold() == ".git"
-                           for part in parts)
+                    or any(part in ("", ".", "..") for part in parts)
+                    or ".git" in admin_parts
                     or "\\" in name or PureWindowsPath(name).drive):
                 return None
             if os.name == "nt" and any(
                     part.endswith((" ", ".")) or ":" in part
-                    or PureWindowsPath(part).is_reserved() for part in parts):
+                    or (is_reserved(part) if is_reserved else PureWindowsPath(part).is_reserved())
+                    for part in parts):
                 return None
             key = name.casefold() if os.name == "nt" else name
             if key in names:
@@ -2205,7 +2210,8 @@ def _provenance_bytes_match(git_read: Any, root: Path, oid: str) -> bool | None:
         for path, blob in paths:
             data, _, _ = git_read._checked_bytes(str(path), min(16 << 20, remaining))
             remaining -= len(data)
-            digest = hashlib.sha1() if len(oid) == 40 else hashlib.sha256()
+            # Git object identity for the advisory warning, separate from signature verification.
+            digest = hashlib.sha1(usedforsecurity=False) if len(oid) == 40 else hashlib.sha256()
             digest.update(f"blob {len(data)}\0".encode("ascii"))
             digest.update(data)
             matches &= digest.hexdigest() == blob

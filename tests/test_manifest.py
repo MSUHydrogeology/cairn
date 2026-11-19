@@ -21,6 +21,7 @@ Promises:
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import types
@@ -242,7 +243,17 @@ class TestProvenanceWarning:
         nested.mkdir()
         assert "Git verification is unavailable" in git_provenance_warning(nested)
 
-    @pytest.mark.parametrize("name", [b"../escape", b".GiT/config", b"bad\\name"])
+    @pytest.mark.skipif(os.name == "nt", reason="Windows disallows a trailing space in a directory name")
+    def test_clean_tagged_source_with_trailing_space_is_silent(self, tmp_path):
+        root = tmp_path / "source "
+        root.mkdir()
+        self._checkout(root)
+        _git(root, "tag", "v9.9.9")
+        assert git_provenance_warning(root) is None
+
+    @pytest.mark.parametrize("name", [
+        b"../escape", b".GiT/config", ".g\u200cit/config".encode(), b"bad\\name",
+    ], ids=["parent", "admin", "admin-format-character", "backslash"])
     def test_invalid_listing_refuses_before_content_read(self, tmp_path, monkeypatch, name):
         from install._scaffold import install as install_impl
 
