@@ -57,8 +57,8 @@ DISPATCHER_SRC = (
 )
 
 
-def _load_fresh(name: str):
-    spec = importlib.util.spec_from_file_location(name, DISPATCHER_SRC)
+def _load_fresh(name: str, source: Path = DISPATCHER_SRC):
+    spec = importlib.util.spec_from_file_location(name, source)
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     spec.loader.exec_module(module)
@@ -711,7 +711,7 @@ class TestUniversality:
         """The same hazard as above, with a non-empty explicit list."""
         rc, target = _scaffold(tmp_path, "modules:\n  - claim-check\n")
         assert rc == 0
-        assert (target / "scripts" / "claim_check.py").is_file()
+        assert (target / "dev" / "tools" / "claim_check.py").is_file()
         assert not (target / DOCTRINE_DST).exists()
         assert not (target / DISPATCHER_DST).exists()
 
@@ -1245,7 +1245,7 @@ def _install_observable_git_read(target: Path, marker: Path) -> None:
 
 
 def _write_target_cwd_decoy(root: Path, marker: Path) -> None:
-    tools = root / "tools"
+    tools = root / "dev" / "tools"
     tools.mkdir(parents=True, exist_ok=True)
     decoy = tools / "git_read.py"
     decoy.write_text(
@@ -1551,7 +1551,12 @@ class TestRealFacadesDrivenByTheRealDispatcher:
             )
             (target / _API_POLICY_DST).write_text(
                 json.dumps(policy), encoding="utf-8")
-            engine_paths = mod._api_engine_paths(target)
+            # The installed copy, not the shipped source: the tool prefix it
+            # binds is decided by where the file lives, and only the installed
+            # one sits under dev/tools/ where the engine package was installed.
+            installed = _load_fresh("cairn_security_verification_installed_api",
+                                    target / DISPATCHER_DST)
+            engine_paths = installed._api_engine_paths(target)
             cached = Path(importlib.util.cache_from_source(
                 str(target / engine_paths[1])))
             cached.parent.mkdir(parents=True, exist_ok=True)
@@ -1566,8 +1571,9 @@ class TestRealFacadesDrivenByTheRealDispatcher:
             with monkeypatch.context() as patch:
                 patch.setitem(sys.modules,
                               "_cairn_dispatch_bound_api_engine", object())
-                with pytest.raises(mod._Degraded):
-                    mod._load_api_local_credential_names(target, engine_paths)
+                with pytest.raises(installed._Degraded):
+                    installed._load_api_local_credential_names(
+                        target, engine_paths)
             for name, value in {
                 "CAIRN_API_P1_CREDENTIAL": MARKER_P1,
                 "CAIRN_API_P2_CREDENTIAL": MARKER_P2,
@@ -1577,9 +1583,9 @@ class TestRealFacadesDrivenByTheRealDispatcher:
             }.items():
                 monkeypatch.setenv(name, value)
 
-            selected_names = mod._load_api_local_credential_names(
+            selected_names = installed._load_api_local_credential_names(
                 target, engine_paths)
-            selected_env = mod._build_child_env(selected_names)
+            selected_env = installed._build_child_env(selected_names)
             assert set(selected_names) == {
                 "CAIRN_API_P1_CREDENTIAL", "CAIRN_API_P2_CREDENTIAL"}
             assert {name for name in selected_env
@@ -1615,7 +1621,8 @@ class TestRealFacadesDrivenByTheRealDispatcher:
         target = _g_scaffold(
             tmp_path, ["security-verification", _API_MODULE],
             target_name="g-api-engine-tamper")
-        member = target / "scripts" / "_api_access_security" / member_name
+        member = (target / "dev" / "tools" / "_api_access_security"
+                  / member_name)
         member.write_bytes(member.read_bytes() + b"\n# tampered\n")
         marker = "credential-test-marker"
         monkeypatch.setenv("CAIRN_API_P1_CREDENTIAL", marker)
