@@ -1,7 +1,7 @@
 # Reconcile release checks for platform-only tests
 
 **Author**: Codex Sol
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
