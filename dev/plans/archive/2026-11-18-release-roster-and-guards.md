@@ -260,3 +260,17 @@ Dispositions: `accept` (26 retained guards + 2 verified retirements under `8ac33
 
 **Elapsed**: unknown
 **Tokens**: unknown
+
+## Post-archive Windows fixes: ordinary code review -- Terra (Reviewer, Medium) -- 2026-11-19
+
+**Verdict: ACCEPT. Findings: none.** The fixes aim to make staging cleanup, file identity checks, scan paths, and test fixtures work on Windows while preserving the existing safeguards.
+
+**Should this happen as framed?** Yes. The staging failure closes the descriptor before removing its owned temporary file; the public write-failure test checks destination preservation and cleanup. The read guard compares the opened file with the no-follow path identity, and scan targets now use the same slash form as their independent test oracle.
+
+**Best alternative.** Keep the previous behavior and exclude Windows: that leaves the recorded Windows write failure and path mismatches unresolved.
+
+**What would show it wrong?** A Windows public staging failure that leaves the destination changed or its owned temporary file behind, a swapped link accepted as a regular file, or a scan target omitted on either host would falsify this pass.
+
+**Evidence and limits.** Read the five-file diff `645bec2f..fd1e68ea`, the affected tests and existing plan reviews. Native Windows task-9520 reports 206 passed and 5 POSIX-only skips in 304.43 seconds; Mac step 9511 reports 211 passed in 63.82 seconds, both Python 3.13. These are reported results, not runs by this reviewer. The cross-host join test synthesizes the counterpart record; it is not a real two-host release join. I did not rerun tests, review old guards, or conduct Security Review.
+
+**Elapsed**: unknown. **Tokens**: unknown.
