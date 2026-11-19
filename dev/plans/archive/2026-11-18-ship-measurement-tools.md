@@ -173,3 +173,68 @@ changed 30 source, test and guidance files (1,047 insertions, 158 deletions),
 excluding deliberation records, board, changelog and installed lock metadata;
 those are combined costs, not this feature alone. Runtime and aggregate agent
 cost are unknown. Revisit if actual usage does not justify maintaining the tools.
+
+## Security code review (targeted pass 2) -- Opus (Security Review, High) -- 2026-11-19
+
+Reviewed commit: `04490e6f` (fix for the pass-1 blocking finding in `a6fa653a`),
+read at `fe54661c`. `templates/modules/default-on/verify_counts.py` is unchanged
+between `04490e6f` and `fe54661c`.
+
+**Obligation**: Internal Security Review, targeted pass 2 (within the two-pass cap)
+**Model basis**: claude-opus-5-5-high (Argon at 0% quota until 2026-11-25, dev/.cairn/model-selection-mapping.yml high tier)
+**Verdict**: ACCEPT
+**Findings**: none blocking; N1 nonblocking.
+
+**Conclusion.** The pass-1 blocker is closed. An attempted opener that spans a
+line break is now reported as `malformed marker` and the command exits 1; it
+can no longer pass with zero checks.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. `parse_annotations` now searches the
+   whole text for `<!--\s*verify:` (`verify_counts.py:61-63`); `\s` matches a
+   newline, so a split opener is found. The strict marker pattern is then
+   matched only against that opener's own line (`:64-71`), so any marker that
+   crosses a line fails the match and is recorded as malformed (`:72-75`), which
+   `verify_text` turns into `error` and exit 1.
+2. **Best alternative.** Accepting cross-line markers as valid would widen the
+   grammar. Rejecting them keeps the accepted same-line rule and needs no new
+   syntax. The fix also keeps the scan linear: after a malformed opener the
+   search resumes past `verify:`; after a valid marker, past its `-->`. A valid
+   marker contains no second `<`, so no opener can be skipped.
+3. **What would show it wrong?** An attempted opener that yields no result, or a
+   cross-line marker that counts as valid. I probed both directly (below); none
+   occurred.
+
+**Verified evidence** (committed code at `fe54661c`):
+
+- Direct `parse_annotations` probes under Python 3.12.9: `1 <!--\nverify: lines -->`,
+  the same with `\r\n`, with a tab and a blank line, `<!-- verify:\nlines -->` and
+  `<!-- verify: lines\n-->` each return one `malformed marker`. A valid marker
+  followed on the same line by a split opener returns the valid key plus one
+  malformed record. A lone `\r` is normalized to `\n` by `read_text` (checked)
+  before parsing, so it is also rejected on the command path.
+- `tests/test_verify_counts.py::test_installed_measurement_commands` includes the
+  reported case (`"1 <!--\nverify: lines -->"`, exit 1) through the installed
+  command. It passed under Python 3.12.9 (1 passed). The whole file passed under
+  Python 3.13.13 (39 passed in 7.72 s).
+- Later edits to `tests/test_verify_counts.py` (to `fe54661c`) touch only the
+  physical-binding helpers and relocated paths. They are reviewed in the
+  repository-layout post-archive security review of the same date; they do not
+  touch the malformed-marker test.
+
+**N1 (nonblocking, outside the pass-1 finding).** The opener pattern is
+case-sensitive and requires whitespace only. `<!-- Verify: lines -->` and
+`<!---verify: lines -->` produce no result and are not reported. Neither is
+covered by the accepted Scope text, which names `verify:`. If adopters may
+mistype the case, report such near-misses as malformed in a later change.
+U+2028 and vertical tab are treated as same-line whitespace. CommonMark does
+not treat them as line endings, so the marker is checked, not lost.
+
+**Coverage.** Read `04490e6f`, the current parser and the installed-command
+test. Not rerun: the upgrade, manifest and integrity tests named in the
+implementation evidence, native Windows, signing and joined integration. Did
+not assess `measurements.py` registry containment beyond pass 1, since
+`04490e6f` does not touch it.
+
+**Elapsed**: about 6 minutes for this pass. **Tokens**: unknown.
