@@ -107,3 +107,36 @@ including parameters. No test reruns or implementation review.
 **ACCEPTED**, by the Maintainer in chat, 2026-11-19: "Accept this at light. Also, if things need to be run on Windows, go ahead."
 
 This accepts the proposal as written, at the light tier instead of the proposed heavy: no plan; the proposal is the implementation and final verification record. The checks the Security Review left for plan review (the literal reader rejects competing bindings and mismatched policy digests; the waiver matches only a genuine `pytest.skip` with the full file, class and case identity including parameters) become required tests in the implementation. The Maintainer also authorized running whatever needs a Windows host over `ssh cairn-windows` (`dev/rules/development-environment.md`). New recurring human operations: none. If the change goes wrong, `git revert` of the implementation commit restores the strict refusal.
+
+## Security Review of the implementation -- Claude Opus (Security Reviewer, High) -- 2026-11-19
+
+```
+Reviewed commit: 1ea3ba830fc4e361ccb811f100793bf7ed7a852c
+```
+
+**Tier**: Security Review
+**Findings**: raised (non-blocking only)
+**Verdict**: ACCEPT
+
+**Elapsed**: about 4 minutes (11:30:10 to 11:34 EST, from `date`)
+**Tokens**: unknown
+
+**Obligation.** Can the new waiver let a required test go unrun, or a failing or forged result pass, on the host that should run it? No, as far as this quick pass reached.
+
+**Steelman.** The change lets the Mac file-level check accept only the Windows-only skips the manifest already names, so the strict check stops refusing a correct report while the native join still proves each platform-only test ran on its own host.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes; the diff does what the accepted proposal says and no more -- `git show 1ea3ba83 --stat` (three files; `release/security_check.py` untouched, `git diff 1ea3ba83~1 1ea3ba83 --quiet -- release/security_check.py`).
+2. **Best alternative.** Keep the blanket refusal; it is safer only by refusing correct Mac reports -- `release/check_release_test_members.py:303-320` (`_refuse_unless_listed`).
+3. **What would show it wrong.** A same-host skip, an xfail, an unlisted skip or an all-skipped required file passing; each refuses in a synthetic run (scratchpad `nrm/run.py`: `skip-not-genuine`, `identity-ambiguous`, `required-file-no-pass`) and in the named contract tests -- `tests/contract/test_release_members_contract.py:458-644`.
+
+**Checks against the diff.** (a) Policy read: `ast.parse`, never import; any static binding (assign, augmented, walrus, `for`, `del`, import, `global`, class or function name) beyond one refuses; values go through `ast.literal_eval`; the digest is recomputed from the literal records -- `check_release_test_members.py:117-194`. (b) Identity: file from the resolved classname, classes from the classname suffix, case name kept whole with its parameter label; type must equal `pytest.skip` (xfail is `pytest.xfail` and refuses); two report cases mapping to one node refuse -- lines 197-202, 279-284, 316-319. (c) Host: `os.name` of the checker process only; nothing in the report is read for it -- lines 112-114, 335. (d) Waived skips never enter `successes`; an empty or all-skipped required file refuses -- lines 287-300. (e) `--required-files` sets `native` to `None`, skips the manifest read and any skip refuses -- lines 335-336, 309-310. (f) The native join is not in the diff.
+
+**Findings**
+
+1. Non-blocking. The host tag is the checker's host, not the host that produced the report. If a Windows-produced report were ever checked on a Mac, a Windows-only test skipped on Windows would be waived here. Today the checker runs right after pytest on the same host (`release/RELEASE_PROCESS.md:171`) and the native join still requires each listed test to pass on its own host, so no action is needed now.
+2. Non-blocking. A case named `TestA::test_w[x]` under the module classname maps to the same node as class `TestA`, case `test_w[x]`, and is waived. It cannot reach another file or another listed node, and pairing both forms refuses as `identity-ambiguous`; no action.
+3. Non-blocking. The binding check sees only static bindings; a runtime rebind such as `globals()[...] = ...` would not change what this checker reads (the literal), only what code that imports the manifest sees, which `tests/security_manifest.py:667-691` validates itself.
+
+**Coverage.** Read the full checker diff, the compare loop, the proposal, its two reviews and the Decision, and the test names for (a) to (e); ran one synthetic-XML reproduction with five cases. Not checked: the Windows behavior of the xunit1 `file=` backslash form reported for an old test; the Windows-host branch of `_host_tag()` on a real Windows run (the checker is Mac-run in the release block); the release shell around line 171; the test bodies beyond their names; no test suite was run.
