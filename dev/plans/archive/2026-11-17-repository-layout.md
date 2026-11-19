@@ -1036,3 +1036,13 @@ launcher, driver, manifest and installer mappings. No tests or reproductions
 run. Prior layout work and full certification were outside this pass.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Focused fixture repair follow-up — Terra (Reviewer, Medium) — 2026-11-19
+
+**Verdict: REVISE.** `0bf3a46d` corrects both B1 paths and keeps the existing assertions; its commit reports ten targeted cases passed. `093c2d84` brings the current preflight fixtures toward the relocated layout and adds a nonempty help-output control.
+
+**Should this happen as framed?** Yes: current fixtures must exercise the relocated files while historical fixtures retain their original paths. **Best alternative:** finish updating the dependent current packet fixture too. **What would show it wrong?** Its launcher cases must reach their original checks with a packet naming the actual closure artifact.
+
+**B2 (blocking).** In `tests/test_gate_preflight.py:2201`, `_packet_text` indexes the old bootstrap/reanchor.sh path in the dictionary built from `P.declared_authority_closure()`, which names `release/reanchor.sh`; it raises `KeyError` before its launcher callers exercise their checks. Its artifact line also retains the old path. Update both current-packet paths and run affected launcher cases with their assertions intact.
+
+**Evidence and limits.** Read the exact diffs in `0bf3a46d` and `093c2d84`, the affected fixture consumers and the current fixed closure. No tests were rerun; this is not a review of unrelated layout changes or a Security Review. **Elapsed**: unknown. **Tokens**: unknown.
