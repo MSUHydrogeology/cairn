@@ -13,7 +13,7 @@ Promises:
   active-surfacing row.
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/test_skills_onboarding.py
+    python -m pytest tests/test_skills_onboarding.py
 """
 from __future__ import annotations
 
@@ -63,4 +63,4 @@ def test_passive_session_start_pointer_seeded_once(tmp_path, preset, capsys):
     # The source seed ID is internal; the installed task must remain usable.
     planning = (target / "dev" / "PLANNING.md").read_text(encoding="utf-8")
     assert planning.count("/session-start") == 1
-    assert planning.count("python tools/session.py session-start") == 1
+    assert planning.count("python dev/tools/session.py session-start") == 1

@@ -9,7 +9,7 @@ Promises:
 - A re-run install prints the same calm no-action fan-out line again.
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/test_first_session_report.py
+    python -m pytest tests/test_first_session_report.py
 """
 from __future__ import annotations
 
@@ -18,11 +18,11 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from tests._repo_root import repository_root
+
+sys.path.insert(0, str(repository_root(Path(__file__))))
 
 from install.scaffold import main  # noqa: E402
-
-from tests._repo_root import repository_root
 
 CAIRN_ROOT = repository_root(Path(__file__))
 
@@ -47,7 +47,7 @@ def test_no_phantom_good_morning_and_names_the_real_invocation(
     assert rc == 0
     out = capsys.readouterr().out
     assert "/good-morning" not in out
-    assert "python tools/session.py session-start" in out
+    assert "python dev/tools/session.py session-start" in out
 
 
 def test_skipped_vendor_absent_is_a_calm_no_action_line(

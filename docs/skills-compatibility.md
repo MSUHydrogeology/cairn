@@ -1,7 +1,7 @@
 # Skills compatibility matrix
 
 <!-- GENERATED from templates/skills/_data/vendor_targets.yml by
-     bootstrap.scaffold.render_compatibility_matrix; hand edits are
+     install.scaffold.render_compatibility_matrix; hand edits are
      replaced on the next render.  Levels are CLAIMED-pending-fixture
      (II3): a target is `native-tested` only once a fixture proves
      install + invoke on it. -->
@@ -20,7 +20,7 @@
 
 A **symlink**-tier target's read-path is fanned out from the canonical
 `.agents/skills/` source at install time. It is *also* re-ensured at
-**session-start** by the session kernel (`tools/session.py
+**session-start** by the session kernel (`dev/tools/session.py
 session-start`), so an adopter established by lockfile-copy -- or whose
 symlink-tier harness was not present at install -- self-heals on first
 run instead of silently having no skills in that harness. The self-heal
