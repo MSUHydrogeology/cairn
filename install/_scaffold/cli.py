@@ -785,7 +785,7 @@ def main(argv: list[str] | None = None) -> int:
             "installed, and nothing was inspected. The scaffold ran no host\n"
             "tool and makes no claim about this repository. Run the\n"
             "dispatcher yourself to see what it reports:\n"
-            "  python scripts/run_security_verification.py local\n"
+            "  python dev/tools/run_security_verification.py local\n"
             "Its registry admits a fixed, source-owned set of capabilities.\n"
             "The content-security leg is a pattern tripwire over configured\n"
             "tracked text, not proof of safety or checkout authenticity.\n"

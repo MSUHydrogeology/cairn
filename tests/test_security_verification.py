@@ -2,8 +2,8 @@
 ``security-verification-activation``).
 
 The dispatcher (``templates/modules/default-on/run_security_verification.py``)
-ships verbatim to an adopter's ``scripts/`` directory and never imports
-Cairn's own ``bootstrap/`` engine -- loaded here the same way
+ships verbatim to an adopter's ``dev/tools/`` directory and never imports
+Cairn's own ``install/`` engine -- loaded here the same way
 ``test_content_scan.py`` loads ``content_scan.py``: by file path, independent
 of any installed package.
 
@@ -30,7 +30,7 @@ Promises:
   real results through the real dispatcher.
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/test_security_verification.py
+    python -m pytest tests/test_security_verification.py
 """
 from __future__ import annotations
 
@@ -600,7 +600,7 @@ class TestUnrecognizedKeyRefusal:
 # Chunk B -- universality.
 #
 # Everything below drives the REAL scaffold into a tmp_path target through
-# `bootstrap.scaffold.main`, never a stub of it.  The subject is what an
+# `install.scaffold.main`, never a stub of it.  The subject is what an
 # adopter receives; the oracles are the shipped template sources read
 # independently and the installed tree on disk.
 # ===========================================================================
@@ -618,14 +618,14 @@ TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 
 #: The two destinations the module's `_MODULE_MAPPINGS` group installs.
 DOCTRINE_DST = "dev/modules/security-verification.md"
-DISPATCHER_DST = "scripts/run_security_verification.py"
+DISPATCHER_DST = "dev/tools/run_security_verification.py"
 
 #: The module doctrine source and Cairn's own self-hosted twin.
 DOCTRINE_SRC = TEMPLATES_ROOT / "modules" / "default-on" / f"{MODULE}.md"
 DOCTRINE_TWIN = CAIRN_ROOT / DOCTRINE_DST
 
 #: The standing command the merge block contributes to AGENTS.md.
-STANDING_COMMAND = "python scripts/run_security_verification.py"
+STANDING_COMMAND = "python dev/tools/run_security_verification.py"
 
 
 def _profile(path: Path, body: str = "") -> Path:
@@ -1031,7 +1031,7 @@ class TestTheNonSilentInstall:
         out = captured.out + captured.err
 
         assert "NOTE (security-verification)" in out, out
-        assert "python scripts/run_security_verification.py local" in out, out
+        assert "python dev/tools/run_security_verification.py local" in out, out
 
         for word in ("CLEAN", "secure", "scanned", "verified",
                      "no vulnerabilities", "security check passed"):
@@ -1127,7 +1127,7 @@ class TestTheNonSilentInstall:
 # TestTheDeclaredCapabilitySetReplacesTheNameSuffixHeuristic drives the REAL two capability facades
 # through the REAL dispatcher: a real scaffold install, the shipped,
 # un-monkeypatched ``_REGISTRY``, and
-# ``python scripts/run_security_verification.py local`` run as an actual
+# ``python dev/tools/run_security_verification.py local`` run as an actual
 # subprocess (a real one, not a synthetic fixture child).
 #
 # This is deliberate, not decoration. The activation-side unit tests above
@@ -1146,8 +1146,8 @@ class TestTheNonSilentInstall:
 
 _API_MODULE = "api-access-security"
 _WEB_MODULE = "web-hosting-security"
-_API_RUNNER_DST = "scripts/api_access_security.py"
-_WEB_RUNNER_DST = "scripts/web_hosting_security.py"
+_API_RUNNER_DST = "dev/tools/api_access_security.py"
+_WEB_RUNNER_DST = "dev/tools/web_hosting_security.py"
 _API_POLICY_DST = "dev/.cairn/api-access-policy.json"
 _WEB_POLICY_DST = "dev/.cairn/web-hosting-policy.json"
 
@@ -1216,8 +1216,8 @@ def _install_observable_git_read(target: Path, marker: Path) -> None:
     This positive tripwire proves the test marker is observable through the
     real dispatcher before each binding mutation is applied.
     """
-    helper_rel = "tools/git_read.py"
-    runner_rel = "scripts/content_scan_runner.py"
+    helper_rel = "dev/tools/git_read.py"
+    runner_rel = "dev/tools/content_scan_runner.py"
     helper = target / helper_rel
     source = helper.read_bytes()
     source += (
@@ -1726,19 +1726,19 @@ class TestInstalledGitReadBindingThroughDispatcher:
         assert not decoy_marker.exists(), "CWD supplied the helper"
         marker.unlink()
 
-        helper = target / "tools" / "git_read.py"
+        helper = target / "dev" / "tools" / "git_read.py"
         original_helper = helper.read_bytes()
         if mutation == "missing-record":
             lock = _lockfile_object(target)
             lock["files"] = [item for item in lock["files"]
-                             if item.get("dst") != "tools/git_read.py"]
+                             if item.get("dst") != "dev/tools/git_read.py"]
             _write_lockfile_body(target, lock)
         elif mutation == "missing-leaf":
             helper.unlink()
         elif mutation == "changed-helper":
             helper.write_bytes(original_helper + b"\n# changed after pin\n")
             lock = _lockfile_object(target)
-            _record_digest(lock, "tools/git_read.py", helper.read_bytes())
+            _record_digest(lock, "dev/tools/git_read.py", helper.read_bytes())
             _write_lockfile_body(target, lock)
 
             # The dispatcher reaches the real child's importer. Its own
@@ -1747,7 +1747,7 @@ class TestInstalledGitReadBindingThroughDispatcher:
             # stderr is intentionally not forwarded into the parent report.
             direct = sp.run(
                 [sys.executable,
-                 str(target / "scripts" / "content_scan_runner.py"),
+                 str(target / "dev" / "tools" / "content_scan_runner.py"),
                  "--dispatcher"],
                 cwd=str(external_target), capture_output=True, text=True,
                 timeout=120,
@@ -1763,7 +1763,7 @@ class TestInstalledGitReadBindingThroughDispatcher:
             except OSError as exc:
                 pytest.skip(f"symlinks unavailable for fixture: {exc}")
         elif mutation == "linked-parent":
-            tools_dir = target / "tools"
+            tools_dir = target / "dev" / "tools"
             moved = tmp_path / f"moved-tools-{mutation}"
             tools_dir.rename(moved)
             try:
@@ -1785,7 +1785,12 @@ class TestInstalledGitReadBindingThroughDispatcher:
             assert "single valid JSON object" in leg["detail"]
         else:
             assert leg["child_launched"] is False
-            assert "tools/git_read.py" in leg["detail"]
+            if mutation == "linked-parent":
+                # The dispatcher now shares this parent with the helper. Its
+                # resolved root moves too, so it refuses the missing lock first.
+                assert "install lockfile unavailable" in leg["detail"]
+            else:
+                assert "dev/tools/git_read.py" in leg["detail"]
         assert not marker.exists(), "mutated helper ran its positive tripwire"
         assert not decoy_marker.exists(), "CWD supplied the helper"
 
@@ -1798,11 +1803,11 @@ class TestInstalledGitReadBindingThroughDispatcher:
 # Each builds a real install, swaps the module's runner for a script the test
 # controls, rewrites that runner's lockfile hash (so the parent's digest check
 # passes and the child is genuinely launched), and runs the shipped
-# ``scripts/run_security_verification.py local`` as a subprocess.
+# ``dev/tools/run_security_verification.py local`` as a subprocess.
 
 _HOSTILE_RUNNER_DST = {
     _WEB_MODULE: _WEB_RUNNER_DST,
-    "content-security": "scripts/content_scan_runner.py",
+    "content-security": "dev/tools/content_scan_runner.py",
 }
 _HOSTILE_EVIDENCE_MODE = {_WEB_MODULE: "loopback", "content-security": "offline"}
 _FORGED_CONTROLS = "\x1b[2Jnormal\x1b]8;;http://evil\x07link\x1b\\\rFAKE PASS"
@@ -1948,7 +1953,7 @@ class TestHostileChildAndTamperedBindingThroughTheInstalledDispatcher:
     @pytest.mark.parametrize("module_id,mutation,bound", [
         pytest.param(_WEB_MODULE, "none", _WEB_RUNNER_DST, id="control-web"),
         pytest.param("content-security", "none",
-                     "scripts/content_scan_runner.py", id="control-content"),
+                     "dev/tools/content_scan_runner.py", id="control-content"),
         pytest.param(_WEB_MODULE, "edited", _WEB_RUNNER_DST,
                      id="web-runner-edited"),
         pytest.param(_WEB_MODULE, "linked-leaf", _WEB_RUNNER_DST,
@@ -1966,20 +1971,20 @@ class TestHostileChildAndTamperedBindingThroughTheInstalledDispatcher:
         pytest.param(_WEB_MODULE, "linked-leaf", _WEB_POLICY_DST,
                      id="web-policy-linked"),
         pytest.param("content-security", "record-dropped",
-                     "scripts/content_scan.py", id="content-member-unrecorded"),
+                     "dev/tools/content_scan.py", id="content-member-unrecorded"),
         pytest.param("content-security", "edited",
-                     "scripts/content_scan_roots.txt",
+                     "dev/tools/content_scan_roots.txt",
                      id="content-member-edited"),
         pytest.param("content-security", "linked-leaf",
-                     "scripts/content_scan_residuals.txt",
+                     "dev/tools/content_scan_residuals.txt",
                      id="content-member-linked"),
-        pytest.param("content-security", "linked-parent", "tools/git_read.py",
+        pytest.param("content-security", "linked-parent", "dev/tools/git_read.py",
                      id="content-member-parent-linked"),
         pytest.param("content-security", "unrecognized-key",
-                     "scripts/content_scan_allowlist.txt",
+                     "dev/tools/content_scan_allowlist.txt",
                      id="content-member-unknown-key"),
         pytest.param("content-security", "wrong-typed-living-state",
-                     "tools/git_read.py", id="content-member-wrong-type"),
+                     "dev/tools/git_read.py", id="content-member-wrong-type"),
     ])
     def test_a_tampered_binding_degrades_before_the_runner_launches(
             self, tmp_path: Path, module_id: str, mutation: str,

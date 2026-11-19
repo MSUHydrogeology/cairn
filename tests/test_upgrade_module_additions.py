@@ -166,7 +166,8 @@ class TestLockfileWritersWriteByReplacing:
         assert victim.read_bytes() == before
         assert lock.stat().st_nlink == 1
 
-    def test_apply_does_not_write_through_a_hardlink(self, tmp_path: Path):
+    def test_apply_refuses_a_hardlinked_lock_before_writing(
+            self, tmp_path: Path, capsys: pytest.CaptureFixture[str]):
         target = tmp_path.resolve()
         _install(target)
         _make_pre_split(target)
@@ -178,9 +179,12 @@ class TestLockfileWritersWriteByReplacing:
         lock.unlink()
         os.link(victim, lock)
         before = victim.read_bytes()
-        assert s.main(base + ["--apply"]) == 0
+        capsys.readouterr()
+        assert s.main(base + ["--apply"]) == 2
+        assert "cairn-lock.yml has unexpected hard links" in capsys.readouterr().err
         assert victim.read_bytes() == before
-        assert lock.stat().st_nlink == 1
+        assert lock.read_bytes() == before
+        assert lock.samefile(victim)
 
 
 class TestLockCommitWritesThroughExclusiveTemporaries:
