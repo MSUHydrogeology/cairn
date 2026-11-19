@@ -112,6 +112,10 @@ def _run_public_git_route(
     caller = delivery / rel
     caller.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(CAIRN_ROOT / rel, caller)
+    if rel == "tests/gauge.py":
+        pulse_dst = delivery / "dev" / "tools" / "pulse.py"
+        pulse_dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(CAIRN_ROOT / "dev/tools/pulse.py", pulse_dst)
     tools = delivery / "tools"
     tools.mkdir(exist_ok=True)
     helper = tools / "git_read.py"
@@ -303,6 +307,10 @@ def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
     )
     assert count == 1, f"{rel} lacks one fixed helper pin"
     caller.write_text(source, encoding="utf-8")
+    if rel == "tests/gauge.py":
+        pulse_dst = delivery / "dev" / "tools" / "pulse.py"
+        pulse_dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(CAIRN_ROOT / "dev/tools/pulse.py", pulse_dst)
     _seed_binding_repo(delivery)
 
     outside = base / "outside"
@@ -324,7 +332,23 @@ def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
             helper.symlink_to(target)
         except (OSError, NotImplementedError):
             pytest.skip("symlinks unavailable")
-    elif mutation == "parent-link":
+    elif mutation == "caller-parent-link" and rel.startswith("tests/"):
+        linked_tests = outside / "tests"
+        linked_tests.mkdir()
+        shutil.copyfile(caller, linked_tests / caller.name)
+        outside_tools = outside / "tools"
+        outside_tools.mkdir()
+        shutil.copyfile(helper, outside_tools / "git_read.py")
+        if rel == "tests/gauge.py":
+            outside_pulse = outside / "dev" / "tools" / "pulse.py"
+            outside_pulse.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(CAIRN_ROOT / "dev/tools/pulse.py", outside_pulse)
+        shutil.rmtree(caller.parent)
+        try:
+            caller.parent.symlink_to(linked_tests, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            pytest.skip("directory symlinks unavailable")
+    elif mutation in ("parent-link", "caller-parent-link"):
         linked_tools = outside / "tools"
         linked_tools.mkdir()
         shutil.copyfile(helper, linked_tools / "git_read.py")
@@ -343,7 +367,9 @@ def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
         )
         assert count == 1
         caller.write_text(source, encoding="utf-8")
-    elif mutation not in (None, "cached-module", "parent-link-postcapture"):
+    elif mutation not in (
+        None, "cached-module", "parent-link-postcapture", "caller-parent-link",
+    ):
         raise AssertionError(f"unknown binding mutation {mutation}")
 
     cwd = outside / "cwd"
@@ -366,7 +392,7 @@ def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
         "GIT_CONFIG_GLOBAL": os.devnull,
         "GIT_CONFIG_NOSYSTEM": "1",
     })
-    if rel == "scripts/measurements.py":
+    if rel == "tests/measurements.py":
         action = (
             "import sys,importlib.util; from pathlib import Path; "
             f"spec=importlib.util.spec_from_file_location('binding_measurements',{str(caller)!r}); "
@@ -422,7 +448,7 @@ finally:
 def _assert_bound_member_positive(base: Path, rel: str) -> None:
     result, helper_marker, cwd_marker, cache_marker = _bound_member_run(base, rel)
     assert result.returncode == 0, result.stderr
-    if rel == "scripts/measurements.py":
+    if rel == "tests/measurements.py":
         assert result.stdout.strip() == "1", result.stdout
     assert helper_marker.read_text(encoding="utf-8").splitlines() == [
         "helper-ran",
@@ -433,7 +459,7 @@ def _assert_bound_member_positive(base: Path, rel: str) -> None:
 
 def _assert_linked_caller_parent_positive(base: Path, rel: str) -> None:
     result, helper_marker, cwd_marker, cache_marker = _bound_member_run(
-        base, rel, "parent-link",
+        base, rel, "caller-parent-link",
     )
     assert result.returncode == 0, result.stderr
     assert helper_marker.read_text(encoding="utf-8").splitlines() == [
@@ -812,13 +838,13 @@ class TestSeedRegistryAndMain:
 
 class TestMeasurementsPhysicalBinding:
     def test_public_api_executes_its_pinned_helper(self, tmp_path: Path) -> None:
-        _assert_bound_member_positive(tmp_path, "scripts/measurements.py")
+        _assert_bound_member_positive(tmp_path, "tests/measurements.py")
 
     @pytest.mark.parametrize("mutation", _BINDING_MUTATIONS)
     def test_public_api_refuses_each_binding_mutation(
             self, mutation: str, tmp_path: Path) -> None:
         _assert_bound_member_mutation(
-            tmp_path, "scripts/measurements.py", mutation,
+            tmp_path, "tests/measurements.py", mutation,
         )
 
 

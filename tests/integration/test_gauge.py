@@ -780,7 +780,7 @@ def _seed_gauge_route_repo(root: Path) -> None:
 # Declared exception (internal hook): Hook: internal route name _numstat bound by the shared route helper so a target-local git path can shadow Git. No public route makes the target's own .
 def test_gauge_numstat_refuses_target_local_path_git_route(tmp_path):
     clean, _safe, _unsafe = _assert_public_route_triplet(
-        tmp_path / "gauge-numstat", "tools/gauge.py", "_numstat",
+        tmp_path / "gauge-numstat", "tests/gauge.py", "_numstat",
         ("log", "--since=2026-11-01", "--numstat", "--date=short",
          "--pretty=format:C%cd", "--no-merges"),
         _gauge_route_success_driver(), _gauge_route_refusal_driver(),
@@ -793,7 +793,7 @@ def test_gauge_numstat_refuses_target_local_path_git_route(tmp_path):
 # Declared exception (internal hook): Hook: internal route name _snapshot_date bound by the shared route helper so a target-local git path can shadow Git. No public route does this.
 def test_gauge_snapshot_date_refuses_target_local_path_git_route(tmp_path):
     clean, _safe, _unsafe = _assert_public_route_triplet(
-        tmp_path / "gauge-snapshot-date", "tools/gauge.py", "_snapshot_date",
+        tmp_path / "gauge-snapshot-date", "tests/gauge.py", "_snapshot_date",
         ("log", "-1", "--date=short", "--pretty=format:%cd"),
         _gauge_route_success_driver(), _gauge_route_refusal_driver(),
         seed=_seed_gauge_route_repo)
@@ -1199,13 +1199,13 @@ def test_artifact_producer_does_not_run_git_or_import_target_modules(tmp_path):
 
 class TestGaugePhysicalBinding:
     def test_real_cli_executes_its_pinned_helper(self, tmp_path: Path) -> None:
-        _assert_bound_member_positive(tmp_path, "tools/gauge.py")
+        _assert_bound_member_positive(tmp_path, "tests/gauge.py")
 
     def test_real_cli_resolves_linked_tools_parent_with_caller_and_helper(
             self, tmp_path: Path) -> None:
-        _assert_linked_caller_parent_positive(tmp_path, "tools/gauge.py")
+        _assert_linked_caller_parent_positive(tmp_path, "tests/gauge.py")
 
     @pytest.mark.parametrize("mutation", _BINDING_MUTATIONS)
     def test_real_cli_refuses_each_binding_mutation(
             self, mutation: str, tmp_path: Path) -> None:
-        _assert_bound_member_mutation(tmp_path, "tools/gauge.py", mutation)
+        _assert_bound_member_mutation(tmp_path, "tests/gauge.py", mutation)

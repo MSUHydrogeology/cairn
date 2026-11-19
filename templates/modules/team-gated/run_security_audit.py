@@ -83,7 +83,7 @@ _HERE = Path(__file__).resolve().parent
 _REPO_ROOT = _HERE.parent.parent if _HERE.name == "tools" and _HERE.parent.name == "dev" else _HERE.parent
 _LOCKFILE = _REPO_ROOT / "dev" / ".cairn" / "cairn-lock.yml"
 _RUNNER = _HERE / "content_scan_runner.py"
-_TOOL_PREFIX = "dev/tools/" if _HERE.name == "tools" and _HERE.parent.name == "dev" else "scripts/"
+_TOOL_PREFIX = "scripts/" if _HERE.name == "scripts" else "dev/tools/"
 _GIT_READ_REL = "dev/tools/git_read.py" if _TOOL_PREFIX == "dev/tools/" else "tools/git_read.py"
 
 # Aggregate exit tiers -- a DISTINCT space (never collides with a component's

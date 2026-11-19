@@ -60,7 +60,7 @@ TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 # Default-on reference-script modules + their (verbatim src, dst).
 _SCRIPT_MODULES = {
     "claim-check": (
-        "default-on/claim_check.py", "scripts/claim_check.py",
+        "default-on/claim_check.py", "dev/tools/claim_check.py",
     ),
     # This dict allows only ONE (src, dst) per module name, so it models
     # the 1:1 case.  A module shipping several scripts belongs in
@@ -78,52 +78,52 @@ _SCRIPT_MODULES = {
 #: module it named was retired and nothing took its place.
 _MULTI_SCRIPT_MODULES: dict[str, list[tuple[str, str]]] = {
     "claim-check": [
-        ("default-on/claim_check.py", "scripts/claim_check.py"),
-        ("default-on/verify_stems.py", "scripts/verify_stems.py"),
+        ("default-on/claim_check.py", "dev/tools/claim_check.py"),
+        ("default-on/verify_stems.py", "dev/tools/verify_stems.py"),
     ],
     "coordination-tiers": [
-        ("team-gated/intent.py", "tools/intent.py"),
-        ("team-gated/_intent/__init__.py", "tools/_intent/__init__.py"),
-        ("team-gated/_intent/shared.py", "tools/_intent/shared.py"),
-        ("team-gated/_intent/record_io.py", "tools/_intent/record_io.py"),
-        ("team-gated/_intent/identity.py", "tools/_intent/identity.py"),
-        ("team-gated/_intent/conflict.py", "tools/_intent/conflict.py"),
-        ("team-gated/_intent/hooks.py", "tools/_intent/hooks.py"),
-        ("team-gated/_intent/cli.py", "tools/_intent/cli.py"),
-        ("team-gated/prune_intents.py", "tools/prune_intents.py"),
+        ("team-gated/intent.py", "dev/tools/intent.py"),
+        ("team-gated/_intent/__init__.py", "dev/tools/_intent/__init__.py"),
+        ("team-gated/_intent/shared.py", "dev/tools/_intent/shared.py"),
+        ("team-gated/_intent/record_io.py", "dev/tools/_intent/record_io.py"),
+        ("team-gated/_intent/identity.py", "dev/tools/_intent/identity.py"),
+        ("team-gated/_intent/conflict.py", "dev/tools/_intent/conflict.py"),
+        ("team-gated/_intent/hooks.py", "dev/tools/_intent/hooks.py"),
+        ("team-gated/_intent/cli.py", "dev/tools/_intent/cli.py"),
+        ("team-gated/prune_intents.py", "dev/tools/prune_intents.py"),
     ],
     "doc-drift-prevention": [
-        ("team-gated/link_check.py", "scripts/link_check.py"),
-        ("team-gated/sync_doc_snippets.py", "scripts/sync_doc_snippets.py"),
+        ("team-gated/link_check.py", "dev/tools/link_check.py"),
+        ("team-gated/sync_doc_snippets.py", "dev/tools/sync_doc_snippets.py"),
     ],
     "content-security": [
-        ("team-gated/content_scan.py", "scripts/content_scan.py"),
-        ("team-gated/content_scan_runner.py", "scripts/content_scan_runner.py"),
-        ("team-gated/prose_diff.py", "scripts/prose_diff.py"),
-        ("team-gated/exact_replace.py", "scripts/exact_replace.py"),
+        ("team-gated/content_scan.py", "dev/tools/content_scan.py"),
+        ("team-gated/content_scan_runner.py", "dev/tools/content_scan_runner.py"),
+        ("team-gated/prose_diff.py", "dev/tools/prose_diff.py"),
+        ("team-gated/exact_replace.py", "dev/tools/exact_replace.py"),
     ],
     "api-access-security": [
-        ("team-gated/api_access_security.py", "scripts/api_access_security.py"),
-        ("team-gated/_security_net/__init__.py", "scripts/_api_access_security/__init__.py"),
-        ("team-gated/_security_net/policy.py", "scripts/_api_access_security/policy.py"),
-        ("team-gated/_security_net/net.py", "scripts/_api_access_security/net.py"),
-        ("team-gated/_security_net/report.py", "scripts/_api_access_security/report.py"),
+        ("team-gated/api_access_security.py", "dev/tools/api_access_security.py"),
+        ("team-gated/_security_net/__init__.py", "dev/tools/_api_access_security/__init__.py"),
+        ("team-gated/_security_net/policy.py", "dev/tools/_api_access_security/policy.py"),
+        ("team-gated/_security_net/net.py", "dev/tools/_api_access_security/net.py"),
+        ("team-gated/_security_net/report.py", "dev/tools/_api_access_security/report.py"),
     ],
     "web-hosting-security": [
-        ("team-gated/web_hosting_security.py", "scripts/web_hosting_security.py"),
-        ("team-gated/_security_net/__init__.py", "scripts/_web_hosting_security/__init__.py"),
-        ("team-gated/_security_net/policy.py", "scripts/_web_hosting_security/policy.py"),
-        ("team-gated/_security_net/net.py", "scripts/_web_hosting_security/net.py"),
-        ("team-gated/_security_net/report.py", "scripts/_web_hosting_security/report.py"),
+        ("team-gated/web_hosting_security.py", "dev/tools/web_hosting_security.py"),
+        ("team-gated/_security_net/__init__.py", "dev/tools/_web_hosting_security/__init__.py"),
+        ("team-gated/_security_net/policy.py", "dev/tools/_web_hosting_security/policy.py"),
+        ("team-gated/_security_net/net.py", "dev/tools/_web_hosting_security/net.py"),
+        ("team-gated/_security_net/report.py", "dev/tools/_web_hosting_security/report.py"),
     ],
     "issue-capture": [
         ("team-gated/issue-capture/bootstrap_gitlab_labels.py",
-         "scripts/bootstrap_gitlab_labels.py"),
+         "dev/tools/bootstrap_gitlab_labels.py"),
         ("team-gated/issue-capture/bootstrap_github_labels.py",
-         "scripts/bootstrap_github_labels.py"),
+         "dev/tools/bootstrap_github_labels.py"),
     ],
     "architecture-review": [
-        ("team-gated/code_map.py", "tools/code_map.py"),
+        ("team-gated/code_map.py", "dev/tools/code_map.py"),
     ],
 }
 
@@ -319,7 +319,7 @@ class TestInstallPath:
     def test_rerun_skips_existing_script(self, tmp_path: Path) -> None:
         """Skip-if-exists protects an edited script on re-scaffold."""
         assert _scaffold(tmp_path, ["claim-check"]) == 0
-        installed = tmp_path / "scripts" / "claim_check.py"
+        installed = tmp_path / "dev" / "tools" / "claim_check.py"
         edited = installed.read_text() + "\n# adopter edit\n"
         installed.write_text(edited)
         assert _scaffold(tmp_path, ["claim-check"]) == 0
@@ -329,7 +329,7 @@ class TestInstallPath:
 
     def test_force_overwrites_script(self, tmp_path: Path) -> None:
         assert _scaffold(tmp_path, ["claim-check"]) == 0
-        installed = tmp_path / "scripts" / "claim_check.py"
+        installed = tmp_path / "dev" / "tools" / "claim_check.py"
         installed.write_text("# stale\n")
         cfg = tmp_path / "profile.yml"
         assert main(
@@ -350,7 +350,7 @@ class TestInstallPath:
             s.dst for s in _MODULE_MAPPINGS["claim-check"] if s.verbatim
         )
         assert defaults["claim_check_command"] == f"python {cc_dst}"
-        assert cc_dst == "scripts/claim_check.py"
+        assert cc_dst == "dev/tools/claim_check.py"
 
     def test_documentation_plan_installs_editable_scanner_seed(
         self, tmp_path: Path,
@@ -445,14 +445,14 @@ class TestGeneralizationGate:
         broken = tmp_path / "broken.md"
         broken.write_text("See `dev/does-not-exist.md` for details.\n")
         result = subprocess.run(
-            [sys.executable, str(tmp_path / "scripts" / "claim_check.py"),
+            [sys.executable, str(tmp_path / "dev" / "tools" / "claim_check.py"),
              str(broken), "--root", str(tmp_path)],
             cwd=tmp_path, text=True, capture_output=True, check=False,
         )
         assert result.returncode == 1, result.stdout + result.stderr
         assert "dev/does-not-exist.md" in result.stderr
         cc = _load_script(
-            tmp_path / "scripts" / "claim_check.py", "gen_claim_check")
+            tmp_path / "dev" / "tools" / "claim_check.py", "gen_claim_check")
         # A marker-exempt forward reference must clear.
         marked = tmp_path / "marked.md"
         marked.write_text(
@@ -479,7 +479,7 @@ class TestLineBoundsChecking:
     def _cc(self, tmp_path: Path) -> ModuleType:
         assert _scaffold(tmp_path, ["claim-check"]) == 0
         return _load_script(
-            tmp_path / "scripts" / "claim_check.py", "lb_claim_check")
+            tmp_path / "dev" / "tools" / "claim_check.py", "lb_claim_check")
 
     def test_valid_line_citation_resolves(self, tmp_path: Path) -> None:
         cc = self._cc(tmp_path)
@@ -521,7 +521,7 @@ class TestExternalPathAllowance:
     ) -> None:
         assert _scaffold(tmp_path, ["claim-check"]) == 0
         cc = _load_script(
-            tmp_path / "scripts" / "claim_check.py", "e_claim_check")
+            tmp_path / "dev" / "tools" / "claim_check.py", "e_claim_check")
         (tmp_path / "case-studies").mkdir()
         # A path whose first segment collides with a real local
         # top-level dir (dev/) but does not resolve -- an external repo's
@@ -548,7 +548,7 @@ class TestExternalPathAllowance:
         when an allowance is set for another glob."""
         assert _scaffold(tmp_path, ["claim-check"]) == 0
         cc = _load_script(
-            tmp_path / "scripts" / "claim_check.py", "e2_claim_check")
+            tmp_path / "dev" / "tools" / "claim_check.py", "e2_claim_check")
         normal = tmp_path / "normal.md"
         normal.write_text("See `dev/missing.md`.\n")
         res = cc.check_file(

@@ -956,8 +956,8 @@ def test_upgrade_to_a_ref_never_fetches_a_missing_object_through_a_source_progra
 
     done = _scaffold(lab, ["upgrade", "--plan", "--target", str(project), "--cairn-root",
                            str(source), "--to", "HEAD"])
-    assert done.returncode != 0, done.stdout + done.stderr
-    assert "could not be read" in done.stdout + done.stderr
+    assert done.returncode == 2, done.stdout + done.stderr
+    assert "could not read" in done.stdout + done.stderr
     lab.assert_no_program_ran()
 
 
@@ -990,7 +990,7 @@ def plain_acl_base(tmp_path: Path, request: pytest.FixtureRequest) -> Path:
     return base
 
 
-@pytest.mark.parametrize("meter_rel", ["tools/meter.py", "templates/skills/_lib/meter.py"])
+@pytest.mark.parametrize("meter_rel", ["dev/tools/meter.py", "templates/skills/_lib/meter.py"])
 def test_meter_project_remote_read_refuses_a_git_inside_the_project(
         plain_acl_base: Path, monkeypatch: pytest.MonkeyPatch, meter_rel: str) -> None:
     # Positive control for: the meter reading a project's remote through a project-supplied `git`, or returning a remote after an unreadable read.

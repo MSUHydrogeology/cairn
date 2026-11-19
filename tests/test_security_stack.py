@@ -314,8 +314,8 @@ def _install_audit_entry_tripwires(root: Path, helper_marker: Path,
     install records, so the real audit command proves both tripwires work
     before its physical mutation is applied.
     """
-    helper_rel = "tools/git_read.py"
-    runner_rel = "scripts/content_scan_runner.py"
+    helper_rel = "dev/tools/git_read.py"
+    runner_rel = "dev/tools/content_scan_runner.py"
     helper = root / helper_rel
     helper_bytes = helper.read_bytes() + (
         "\nimport pathlib as _audit_marker_pathlib\n"
@@ -367,7 +367,7 @@ def _write_cwd_helper_decoy(root: Path, marker: Path) -> None:
 
 def _run_installed_audit(root: Path, cwd: Path, *, cache_marker: Path | None = None):
     env = {**os.environ, "PYTHONPATH": ""}
-    script = root / "scripts" / "run_security_audit.py"
+    script = root / "dev" / "tools" / "run_security_audit.py"
     if cache_marker is None:
         argv = [sys.executable, str(script)]
     else:
@@ -839,7 +839,7 @@ class TestContentPolicyReconciliation:
         _git_commit_all(tmp_path)
         lock_before = _read_lock(tmp_path)
         by_dst_before = {r["dst"]: r for r in lock_before["files"]}
-        policy_rel = "scripts/content_scan_allowlist.txt"
+        policy_rel = "dev/tools/content_scan_allowlist.txt"
         policy_path = tmp_path / policy_rel
         old_base_hash = by_dst_before[policy_rel].get("base_hash")
         policy_path.write_text(
@@ -852,7 +852,7 @@ class TestContentPolicyReconciliation:
             + "\nLocally reviewed addition.\n", encoding="utf-8")
 
         before_finalize = subprocess.run(
-            [sys.executable, str(tmp_path / "scripts" / "run_security_verification.py"),
+            [sys.executable, str(tmp_path / "dev" / "tools" / "run_security_verification.py"),
              "local"], cwd=str(tmp_path), capture_output=True, text=True)
         before_report = json.loads(next(
             line for line in before_finalize.stdout.splitlines()
@@ -877,7 +877,7 @@ class TestContentPolicyReconciliation:
             by_dst_after[unrelated_rel]["hash"].removeprefix("sha256:")
 
         proc = subprocess.run(
-            [sys.executable, str(tmp_path / "scripts" / "run_security_verification.py"),
+            [sys.executable, str(tmp_path / "dev" / "tools" / "run_security_verification.py"),
              "local"], cwd=str(tmp_path), capture_output=True, text=True)
         report = json.loads(
             next(line for line in proc.stdout.splitlines() if line.startswith("{")))
@@ -926,7 +926,7 @@ class TestOrchestrator:
         root, lock = self._adopter(tmp_path)
         orch.integrity_preflight(root, lock)  # clean -> no raise
         # Tamper a recorded apparatus file -> fail closed.
-        (root / "scripts" / "content_scan.py").write_text("x=1\n", encoding="utf-8")
+        (root / "dev" / "tools" / "content_scan.py").write_text("x=1\n", encoding="utf-8")
         with pytest.raises(orch.AuditDegraded):
             orch.integrity_preflight(root, lock)
 
@@ -963,9 +963,9 @@ class TestOrchestrator:
 
     def test_adopted_executable_gate_detects_tamper(self, orch, tmp_path):
         root, lock = self._adopter(tmp_path)
-        # tamper a NON-apparatus adopted .py (tools/session.py) -> the source
+        # tamper a NON-apparatus adopted .py (dev/tools/session.py) -> the source
         # gate flags it (the apparatus subset is caught by the preflight).
-        adopted = root / "tools" / "session.py"
+        adopted = root / "dev" / "tools" / "session.py"
         assert adopted.is_file()
         adopted.write_text(adopted.read_text(encoding="utf-8") + "\n# x\n",
                            encoding="utf-8")
@@ -1033,15 +1033,15 @@ class TestOrchestrator:
         # runner on disk, must FAIL the preflight (not skip the missing record).
         root, lock = self._adopter(tmp_path)
         lock["files"] = [r for r in lock["files"]
-                         if r["dst"] != "scripts/content_scan_runner.py"]
-        (root / "scripts" / "content_scan_runner.py").write_text(
+                         if r["dst"] != "dev/tools/content_scan_runner.py"]
+        (root / "dev" / "tools" / "content_scan_runner.py").write_text(
             "x = 1  # tampered, unrecorded\n", encoding="utf-8")
         with pytest.raises(orch.AuditDegraded):
             orch.integrity_preflight(root, lock)
 
     def test_preflight_requires_the_git_read_helper_record(self, orch, tmp_path):
         root, lock = self._adopter(tmp_path)
-        helper = "tools/git_read.py"
+        helper = "dev/tools/git_read.py"
         assert (root / helper).is_file()
         lock["files"] = [record for record in lock["files"]
                          if record["dst"] != helper]
@@ -1058,7 +1058,7 @@ class TestOrchestrator:
         assert clean_code in (0, 1) and clean_files
 
         marker = tmp_path / "substituted-helper-executed"
-        candidate = root / "tools" / "git_read.py"
+        candidate = root / "dev" / "tools" / "git_read.py"
         candidate.write_text(
             "from pathlib import Path\n"
             f"Path({str(marker)!r}).write_text('executed')\n",
@@ -1073,7 +1073,7 @@ class TestOrchestrator:
         # The installed first importer independently enforces its embedded
         # helper pin before executing the candidate. The orchestrator also
         # rejects the helper's mismatched installed record before loading it.
-        installed_runner = root / "scripts" / "content_scan_runner.py"
+        installed_runner = root / "dev" / "tools" / "content_scan_runner.py"
         spec = importlib.util.spec_from_file_location(
             "tampered_installed_content_scan_runner", installed_runner)
         assert spec is not None and spec.loader is not None
@@ -1123,8 +1123,8 @@ class TestOrchestrator:
             helper_marker.unlink()
             injection_marker.unlink()
 
-            helper = root / "tools" / "git_read.py"
-            runner = root / "scripts" / "content_scan_runner.py"
+            helper = root / "dev" / "tools" / "git_read.py"
+            runner = root / "dev" / "tools" / "content_scan_runner.py"
             original_helper = helper.read_bytes()
             original_runner = runner.read_bytes()
 
@@ -1132,12 +1132,12 @@ class TestOrchestrator:
                 lock = _read_lock(root)
                 lock["files"] = [
                     row for row in lock["files"]
-                    if row.get("dst") != "tools/git_read.py"]
+                    if row.get("dst") != "dev/tools/git_read.py"]
                 _write_installed_lock(root, lock)
             elif mutation == "duplicate-record":
                 lock = _read_lock(root)
                 record = next(row.copy() for row in lock["files"]
-                              if row.get("dst") == "tools/git_read.py")
+                              if row.get("dst") == "dev/tools/git_read.py")
                 lock["files"].append(record)
                 _write_installed_lock(root, lock)
             elif mutation == "missing-leaf":
@@ -1157,7 +1157,7 @@ class TestOrchestrator:
                 except OSError as exc:
                     pytest.skip(f"symlinks unavailable for fixture: {exc}")
             elif mutation == "linked-parent":
-                tools_dir = root / "tools"
+                tools_dir = root / "dev" / "tools"
                 moved = tmp_path / "moved-tools"
                 tools_dir.rename(moved)
                 try:
@@ -1167,7 +1167,7 @@ class TestOrchestrator:
             elif mutation == "changed-helper-record-consistent":
                 helper.write_bytes(original_helper + b"\n# post-record change\n")
                 lock = _read_lock(root)
-                _set_installed_digest(lock, "tools/git_read.py",
+                _set_installed_digest(lock, "dev/tools/git_read.py",
                                       helper.read_bytes())
                 _write_installed_lock(root, lock)
 
@@ -1207,7 +1207,7 @@ class TestOrchestrator:
                 assert int.from_bytes(cached_bytes[12:16], "little") == (
                     runner.stat().st_size)
                 lock = _read_lock(root)
-                _set_installed_digest(lock, "scripts/content_scan_runner.py",
+                _set_installed_digest(lock, "dev/tools/content_scan_runner.py",
                                       runner.read_bytes())
                 _write_installed_lock(root, lock)
 
@@ -1256,7 +1256,7 @@ class TestOrchestrator:
         root, _ = self._adopter(tmp_path)
         env = {**__import__("os").environ, "PYTHONPATH": ""}
         r = subprocess.run(
-            [sys.executable, "scripts/run_security_audit.py"],
+            [sys.executable, "dev/tools/run_security_audit.py"],
             cwd=str(root), capture_output=True, text=True, env=env)
         # A default both-modules run reports EVERY blocking reason (Chunk C).
         # With bandit AND pip-audit present it is INCOMPLETE (5): egress is off,
@@ -1269,10 +1269,10 @@ class TestOrchestrator:
         assert r.returncode == expected, r.stdout + r.stderr
         # Tamper an apparatus file -> preflight DEGRADED (exit 20), no bandit
         # needed (the preflight short-circuits before any pass).
-        (root / "scripts" / "content_scan_runner.py").write_text(
+        (root / "dev" / "tools" / "content_scan_runner.py").write_text(
             "x=1\n", encoding="utf-8")
         r2 = subprocess.run(
-            [sys.executable, "scripts/run_security_audit.py"],
+            [sys.executable, "dev/tools/run_security_audit.py"],
             cwd=str(root), capture_output=True, text=True, env=env)
         assert r2.returncode == 20, r2.stdout + r2.stderr
 
@@ -1293,17 +1293,17 @@ class TestModuleMatrix:
         # orchestrator does NOT (it is python-security's).
         assert _install_modules(tmp_path, ["content-security"],
                                 python_package=None) == 0
-        assert (tmp_path / "scripts" / "content_scan_runner.py").is_file()
-        assert (tmp_path / "scripts" / "content_scan_roots.txt").is_file()
-        assert not (tmp_path / "scripts" / "run_security_audit.py").exists()
+        assert (tmp_path / "dev" / "tools" / "content_scan_runner.py").is_file()
+        assert (tmp_path / "dev" / "tools" / "content_scan_roots.txt").is_file()
+        assert not (tmp_path / "dev" / "tools" / "run_security_audit.py").exists()
 
     def test_python_security_alone_installs_orchestrator_not_runner(self, tmp_path):
         (tmp_path / "mypkg").mkdir()
         assert _install_modules(tmp_path, ["python-security"],
                                 python_package="mypkg") == 0
-        assert (tmp_path / "scripts" / "run_security_audit.py").is_file()
+        assert (tmp_path / "dev" / "tools" / "run_security_audit.py").is_file()
         # content-security not selected -> its runner is absent.
-        assert not (tmp_path / "scripts" / "content_scan_runner.py").exists()
+        assert not (tmp_path / "dev" / "tools" / "content_scan_runner.py").exists()
 
 
     def test_src_layout_python_package(self, tmp_path):

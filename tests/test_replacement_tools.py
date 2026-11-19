@@ -144,7 +144,7 @@ def _assert_legacy_route_output(result) -> None:
 
 def test_legacy_ls_tree_refuses_target_local_path_git_route(tmp_path):
     clean, _safe, _unsafe = _assert_public_route_triplet(
-        tmp_path / "legacy-ls-tree", "scripts/gen_legacy_code_review_passes.py",
+        tmp_path / "legacy-ls-tree", "tests/gen_legacy_code_review_passes.py",
         "_git", ("ls-tree", "--name-only", "HEAD~1:dev/plans"),
         _legacy_route_driver("ls-tree"),
         _legacy_route_driver("ls-tree", refusal=True),
@@ -154,7 +154,7 @@ def test_legacy_ls_tree_refuses_target_local_path_git_route(tmp_path):
 
 def test_legacy_show_refuses_target_local_path_git_route(tmp_path):
     clean, _safe, _unsafe = _assert_public_route_triplet(
-        tmp_path / "legacy-show", "scripts/gen_legacy_code_review_passes.py",
+        tmp_path / "legacy-show", "tests/gen_legacy_code_review_passes.py",
         "_git", ("show", "HEAD~1:dev/plans/a.md"),
         _legacy_route_driver("show"),
         _legacy_route_driver("show", refusal=True),
@@ -679,12 +679,12 @@ def test_public_pulse_attaches_multiple_explicit_sidefiles_and_leaves_ambiguous_
 class TestLegacyReviewGeneratorPhysicalBinding:
     def test_real_cli_executes_its_pinned_helper(self, tmp_path: Path) -> None:
         _assert_bound_member_positive(
-            tmp_path, "scripts/gen_legacy_code_review_passes.py",
+            tmp_path, "tests/gen_legacy_code_review_passes.py",
         )
 
     @pytest.mark.parametrize("mutation", _BINDING_MUTATIONS)
     def test_real_cli_refuses_each_binding_mutation(
             self, mutation: str, tmp_path: Path) -> None:
         _assert_bound_member_mutation(
-            tmp_path, "scripts/gen_legacy_code_review_passes.py", mutation,
+            tmp_path, "tests/gen_legacy_code_review_passes.py", mutation,
         )
