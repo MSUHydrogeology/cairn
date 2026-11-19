@@ -1087,7 +1087,7 @@ def _ceremony_repo(tmp_path: Path, *, rosterless: bool = False):
     # possible.
     _write(repo, "bootstrap/tests/test_smoke.py",
            "def test_smoke():\n    assert True\n")
-    _write(repo, "bootstrap/tests/fixtures/scaffold_ast_baseline.json",
+    _write(repo, "tests/fixtures/scaffold_ast_baseline.json",
            json.dumps({f"Assign:{sym}": {"digest": f"d{i}"}
                        for i, sym in enumerate(P.G.MAPPING_SYMBOLS_PHASES)},
                       indent=2) + "\n")
@@ -3384,7 +3384,7 @@ class TestAuthorizationPackage:
         unmutated, which is how a forged set reached a signed message.
         """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        _write(repo, "bootstrap/tests/_oracle.py", "# a reviewed change\n")
+        _write(repo, "tests/_oracle.py", "# a reviewed change\n")
         resolved = _signed_commit(repo, "reviewed authority change")
         manifest = tmp_path / "review.txt"
         manifest.write_text(_review_manifest(repo, resolved), encoding="utf-8")
