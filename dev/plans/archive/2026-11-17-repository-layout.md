@@ -980,3 +980,19 @@ forward gate re-anchor ceremony; this pass does not replace it.
 **Evidence and limits.** Reviewed the three paths in `2fdc2c2c` against C2 and C3, the corresponding production branches, and ordinary review `4a68df22`. The fix commit reports 23 dispatcher cases passed on Python 3.12.9 and two hard-link cases passed on Python 3.13.13. I ran no tests and did not review prior layout fixes. The renamed apply case belongs in the grouped re-anchor inventory.
 
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+## Post-archive fixture repair: ordinary code review — Terra (Reviewer, Medium) — 2026-11-19
+
+**Verdict: REVISE. Blocking finding: the relocated launcher fixture leaves dependent tests pointing to files it no longer creates.** The three commits aim to restore current-layout fixture paths while retaining the original checks.
+
+**Should this happen as framed?** Yes: the installed tool paths match `install/_scaffold/config.py:929-930`, the baseline path matches `tests/_gate_manifest.py:592`, and `CLOSURE` matches the fixed paths in `release/reanchor-launcher.template.sh:53-65`. The old-revision ceremony fixtures retain their historical paths.
+
+**Best alternative.** Update the remaining current-fixture consumers as well: retaining the old paths in those consumers breaks their promised checks rather than preserving historical coverage.
+
+**What would show it wrong?** The affected launcher tests should reach their existing refusal and real-artifact assertions with the relocated fixture; a missing file or a stub executed in place of the real artifact falsifies that outcome.
+
+**B1 (blocking).** `tests/test_reanchor.py:1672` hashes the old bootstrap/tests/_oracle.py path, but `ceremony` creates `tests/_oracle.py`; the test fails before checking that the launcher refuses a different real closure member. At `:1911`, `_use_the_real_artifact` writes the old bootstrap/reanchor.sh path, while the fixture creates `release/reanchor.sh`; its four callers cannot exercise the real artifact. Update those current-fixture paths and any dependent current-layout inputs, then run the affected nodes and retain their assertions. Historical revision fixtures must keep their old paths.
+
+**Evidence and limits.** Read the diffs in `9934faff`, `f4b4f0c1`, and `03b70494`, their affected fixture contexts and current launcher, manifest and installer mappings. The partial certification log at `78585290` reports four failures and two errors in the stopped run; `9934faff` reports focused passing cases, but does not identify every node. I ran no tests, did not assess other layout repairs or perform Security Review, and did not establish the results of all nodes touched by these commits.
+
+**Elapsed**: unknown. **Tokens**: unknown.
