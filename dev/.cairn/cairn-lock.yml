@@ -80,7 +80,7 @@
     },
     {
       "dst": "dev/modules/claim-check.md",
-      "hash": "sha256:86b45f5b6388f27bbb9c3e20fcf8329ac9ea070fb01efc9f5bf93648bfdf6d37",
+      "hash": "sha256:97c15590205ce3f9e7307470454aa45f6be5b3751e90a5a22827e42c2c92b826",
       "src": "modules/default-on/claim-check.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -95,21 +95,21 @@
     },
     {
       "dst": "dev/modules/coordination-tiers.md",
-      "hash": "sha256:f3240d8c2c327828e52f3eab367fd166a3ff074eef4db33fbd1701edbeccc2c7",
+      "hash": "sha256:8efc082f3a01b6d2f5076096a865cbe71e1a8fbdcba5a46545442e7ee71be032",
       "src": "modules/team-gated/coordination-tiers.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/doc-drift-prevention.md",
-      "hash": "sha256:b3697ba475b661cfdebb0fb02d66181d0501c613308d08b8ab0bc4e5dfde253f",
+      "hash": "sha256:b33a1bc9e5c5e6eb5d0c131550f1a920eb334d3050d116343edd41b81b591299",
       "src": "modules/team-gated/doc-drift-prevention.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/documentation-plan.md",
-      "hash": "sha256:354e3949041e958f94204da527e4b138ccc8009a93323903e4872b333a03a89c",
+      "hash": "sha256:a51e189ac78eea693a5ec647c285205601d99f96dc34ea0c4bcffb1748336fc7",
       "src": "modules/default-on/documentation-plan.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -123,28 +123,28 @@
     },
     {
       "dst": "dev/modules/examples-gallery.md",
-      "hash": "sha256:eaa0627fe18ab136aa6fb75aeb68086a2d42cfb0a0ecb528e3f37fa026c73e70",
+      "hash": "sha256:8e06bc091a84d89bf32266743eca635d5f963bcb7fcae99ad9ff3ad9c089867f",
       "src": "modules/team-gated/examples-gallery.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/incident-trackers.md",
-      "hash": "sha256:66a5170722249cd0371af31822c87f94527787c2a00cee5d7aa9c1461efa0545",
+      "hash": "sha256:4f1c6c41eb1a1ed7ee8b51d71ef680676f5feec3523aed15483f5e41928f55ce",
       "src": "modules/default-on/incident-trackers.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/incident_log_template.md",
-      "hash": "sha256:b45502e02abe3b0d961679d8dfb7d2b1cf914f84099289b24b07a097ec016a5c",
+      "hash": "sha256:6578da8869a2cfe6bc21d63163c77a579dd061e70bb162503b7e34ffb76f1cd8",
       "src": "modules/default-on/incident_log_template.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/issue-capture.md",
-      "hash": "sha256:d746323f480c04636d3fbfc9b18006e1cfa723966c77e6eb4951de3ee456e3f0",
+      "hash": "sha256:e2c39123ff7dd0ea67d60522a9ead3e14f26e2e6717c3ac3888d42a07341b3ef",
       "src": "modules/team-gated/issue-capture.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -166,14 +166,14 @@
     },
     {
       "dst": "dev/modules/reflections.md",
-      "hash": "sha256:e944aed858d4beb822b5d7bf8191b3f1615ec0966d7d00756b015a12b3d56ee3",
+      "hash": "sha256:8eb2c2fa0b37ad3b994b4e19a0c11b50839c34cd0ac40874adda513b285909e5",
       "src": "modules/default-on/reflections.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/security-review.md",
-      "hash": "sha256:fbe8abe5b4987b54066488d1ce07ca1e2315161507214a638436152b96980ecc",
+      "hash": "sha256:abb9a4a50ca441a31890e5d31f73c77016b37d5138a32ab3472e275cc71d46c9",
       "src": "modules/team-gated/security-review.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -202,7 +202,7 @@
     {
       "base_hash": "sha256:7ea5eb697ee1839f9d4af535ac32a0aea353dfd4563ae43baecb80d73ca44480",
       "dst": "dev/reflections/README.md",
-      "hash": "sha256:a6301c2c9fb985a7b5c7ccd8efe970e69c7caae87b55b03416960a10edb9bdbe",
+      "hash": "sha256:a9f1131115b35b7f6b5d38b0229d403f5b642bfaa578ea0107c5a9109ff8f9d3",
       "src": "modules/default-on/reflections-README.md",
       "verbatim": true
     },
