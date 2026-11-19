@@ -138,9 +138,9 @@ class TestR1Shingles:
 
 class TestR6UnusedDef:
     def test_cli_whitelists_unreferenced_argparse_callback(self, tmp_path):
-        scripts = tmp_path / "scripts"
-        scripts.mkdir()
-        callback = scripts / "claim_cli.py"
+        release = tmp_path / "release"
+        release.mkdir()
+        callback = release / "claim_cli.py"
         callback.write_text(
             "import sys\n"
             "\n"
@@ -173,12 +173,12 @@ class TestR6UnusedDef:
         ), report.stdout
 
     def test_cli_counts_cross_file_helper_reference(self, tmp_path):
-        scripts = tmp_path / "scripts"
-        scripts.mkdir()
-        (scripts / "a_consumer.py").write_text(
+        release = tmp_path / "release"
+        release.mkdir()
+        (release / "a_consumer.py").write_text(
             "import x\n\n\ndef consume():\n    return x.helper()\n"
         )
-        (scripts / "z_provider.py").write_text(
+        (release / "z_provider.py").write_text(
             "def helper():\n    return 1\n\n"
             "def unrelated_unused():\n    return 2\n"
         )
