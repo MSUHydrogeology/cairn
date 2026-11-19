@@ -27,23 +27,23 @@ What the tests hold the code to:
 * **A malformed adopter file stays an error.**  Reading names must never turn an
   unparseable adopter file into a clean merge.
 
-The tests run the real command line (`bootstrap/scaffold.py upgrade`) over a real
+The tests run the real command line (`install/scaffold.py upgrade`) over a real
 install, with a second copy of `templates/` as the new Cairn release.  Two cases
 cannot reach the code that way and call it directly: the merge function's own
 result, and the review-only line, whose text is fixed in a real run.
 
 Promises:
-- ``upgrade --plan`` and ``--stage`` print one ``[new slot]`` line per file that gains a slot, naming the slot. (bootstrap/UPGRADE.md:200-212)
-- A slot the adopter deleted or already has, and a filled slot renamed upstream, is not named as new. (bootstrap/UPGRADE.md:200-212)
-- A file new in the upgrade, a tree with no saved old template, and a file that needs a token value name no slot. (bootstrap/UPGRADE.md:200-212)
-- A new-slot line names at most ten slots of at most eighty characters and says how many more it left out. (bootstrap/UPGRADE.md:204-209)
-- Every line the upgrade prints is printable ASCII, with control and bidirectional characters shown as escapes. (bootstrap/UPGRADE.md:209)
-- A malformed adopter file is reported as an error, never as a clean merge. (bootstrap/UPGRADE.md:200-212)
-- Slot names are read from the shipped template before token values are filled in, so a token value adds no name. (bootstrap/UPGRADE.md:200-212)
+- ``upgrade --plan`` and ``--stage`` print one ``[new slot]`` line per file that gains a slot, naming the slot. (install/UPGRADE.md:200-212)
+- A slot the adopter deleted or already has, and a filled slot renamed upstream, is not named as new. (install/UPGRADE.md:200-212)
+- A file new in the upgrade, a tree with no saved old template, and a file that needs a token value name no slot. (install/UPGRADE.md:200-212)
+- A new-slot line names at most ten slots of at most eighty characters and says how many more it left out. (install/UPGRADE.md:204-209)
+- Every line the upgrade prints is printable ASCII, with control and bidirectional characters shown as escapes. (install/UPGRADE.md:209)
+- A malformed adopter file is reported as an error, never as a clean merge. (install/UPGRADE.md:200-212)
+- Slot names are read from the shipped template before token values are filled in, so a token value adds no name. (install/UPGRADE.md:200-212)
 - ``upgrade --plan`` and ``--stage`` print one ``[changed slot placeholder]`` line per file whose filled slot has a placeholder that upstream changed, after the ``[new slot]`` lines, with the same name cap and escaping; an unfilled, empty or unchanged slot prints none, and the merged text and status are unchanged.
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/test_upgrade_added_slots.py
+    python -m pytest tests/test_upgrade_added_slots.py
 """
 from __future__ import annotations
 
@@ -127,7 +127,7 @@ def copy_citation(root: Path) -> None:
 
 def copy_renderer_compatibility(root: Path) -> None:
     """Give test releases the exact metadata and renderer they claim to run."""
-    destination = root / "bootstrap" / "_scaffold"
+    destination = root / "install" / "_scaffold"
     destination.mkdir(parents=True, exist_ok=True)
     for name in ("config.py", "install.py"):
         shutil.copy2(CAIRN_ROOT / "install" / "_scaffold" / name,
