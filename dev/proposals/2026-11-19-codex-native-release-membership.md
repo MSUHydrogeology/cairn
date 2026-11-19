@@ -1,10 +1,10 @@
 # Reconcile release checks for platform-only tests
 
 **Author**: Codex Sol
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
-**Plan review**: required(Internal + Internal Security Review)
+**Plan review**: not required(no plan: light tier)
 **Opened**: 2026-11-19
 **Rules that apply**: dev/rules/certifying-runs.md, dev/rules/protected-surfaces.md, dev/rules/working-agreements.md
 **In brief**: Use the existing native test list when checking the release test report.
@@ -99,3 +99,11 @@ match only a genuine `pytest.skip` with the full file, class and case identity
 including parameters. No test reruns or implementation review.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Decision -- Maintainer (recorded from chat by Claude Sonnet 5.5, not scribed by Antigravity) -- 2026-11-19
+
+**Tier**: light
+
+**ACCEPTED**, by the Maintainer in chat, 2026-11-19: "Accept this at light. Also, if things need to be run on Windows, go ahead."
+
+This accepts the proposal as written, at the light tier instead of the proposed heavy: no plan; the proposal is the implementation and final verification record. The checks the Security Review left for plan review (the literal reader rejects competing bindings and mismatched policy digests; the waiver matches only a genuine `pytest.skip` with the full file, class and case identity including parameters) become required tests in the implementation. The Maintainer also authorized running whatever needs a Windows host over `ssh cairn-windows` (`dev/rules/development-environment.md`). New recurring human operations: none. If the change goes wrong, `git revert` of the implementation commit restores the strict refusal.
