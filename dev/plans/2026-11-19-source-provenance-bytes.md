@@ -123,3 +123,18 @@ Accept both findings. Scope now requires source-root equality and precise object
 **Coverage.** Read the committed diff, reviewed plan, checked reader, and installed B324 implementation. Git documents HFS+ administrative-name equivalence. This pass establishes casefold checks and Windows resolved-spelling checks by inspection. HFS+ alias behavior, native tests, lint results, and release-sized cost were not exercised in this pass.
 
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+## Security code review, pass 2 — Sol (High) — 2026-11-19
+
+**Obligation**: Internal Security Review
+**Verdict**: ACCEPT. Both blocking findings are resolved.
+
+**Should this happen as framed?** Yes. In `be2f941e`, the SHA-1 constructor marks its use as a Git object checksum for the advisory comparison. The root parser removes one line terminator and keeps significant whitespace. Before reading any content, the administrative-name check also compares each component with Unicode format characters removed. The Windows branch uses the standard reserved-name check where available and retains the older runtime fallback.
+
+**Best alternative.** Use the existing Git blob-checksum convention and preserve Git's path bytes up to the terminator. These changes implement that directly in `install/_scaffold/install.py`.
+
+**What would show it wrong?** A focused Bandit finding, a warning for a clean root ending in a space, or a content read for the invalid administrative name would falsify this disposition. The corrective commit reports three affected Mac cases passing on Python 3.13.13 and focused Bandit passing.
+
+**Coverage.** Read the correction and the affected cases in `tests/test_manifest.py`. This pass covers the specific format-character rejection by inspection. Actual HFS+ behavior, corrected native Windows evidence, and release-sized cost were outside the pass. I reran no checks on implementation code.
+
+**Elapsed**: approximately 1 minute. **Tokens**: unknown.
