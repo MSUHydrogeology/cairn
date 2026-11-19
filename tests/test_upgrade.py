@@ -25,7 +25,7 @@ Promises:
   explicit ``allow_secret_tokens`` list of names.
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/
+    python -m pytest tests/test_upgrade.py
 """
 
 from __future__ import annotations
@@ -221,10 +221,10 @@ class TestProfileSizedAssembly:
         template, so we inject one to exercise the strip end-to-end)."""
         croot = tmp_path / "cairn"
         shutil.copytree(TEMPLATES_ROOT, croot / "templates")
-        (croot / "bootstrap" / "_scaffold").mkdir(parents=True)
+        (croot / "install" / "_scaffold").mkdir(parents=True)
         for name in ("config.py", "install.py"):
             shutil.copy2(CAIRN_ROOT / "install" / "_scaffold" / name,
-                         croot / "bootstrap" / "_scaffold" / name)
+                         croot / "install" / "_scaffold" / name)
         cff = CAIRN_ROOT / "CITATION.cff"
         if cff.exists():
             shutil.copy2(cff, croot / "CITATION.cff")
@@ -968,7 +968,7 @@ class TestUpgradeModes:
         assert _install(tmp_path) == 0
         base = tmp_path / "dev" / ".cairn" / "base" / "AGENTS.md"
         ours = tmp_path / "AGENTS.md"
-        merged_fragment = "scripts/run_security_verification.py"
+        merged_fragment = "dev/tools/run_security_verification.py"
         assert merged_fragment in ours.read_text(), (
             "the module-merge pass did not fill the security-verification "
             "slot on a stock install -- this node's premise is gone"
@@ -1787,7 +1787,7 @@ class TestInitLock:
 
         def changed_renderer(target, args, **kwargs):
             if (args[0] == "show"
-                    and args[1].endswith(":bootstrap/_scaffold/install.py")):
+                    and args[1].endswith(":install/_scaffold/install.py")):
                 return helper.ReadResult("completed", 0, b"changed renderer")
             return real_run_git(target, args, **kwargs)
 
@@ -1811,7 +1811,7 @@ class TestInitLock:
 
         def changed_metadata(target, args, **kwargs):
             if (args[0] == "show"
-                    and args[1].endswith(":bootstrap/_scaffold/config.py")):
+                    and args[1].endswith(":install/_scaffold/config.py")):
                 return helper.ReadResult("completed", 0, b"changed metadata")
             return real_run_git(target, args, **kwargs)
 
@@ -2268,7 +2268,7 @@ class TestAdoptModule:
         rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
                      str(CAIRN_ROOT), "--adopt-module", self.TOKEN_NAME])
         assert rc == 2
-        assert not (target / "scripts/run_security_audit.py").exists()
+        assert not (target / "dev/tools/run_security_audit.py").exists()
         assert lock_path.read_bytes() == before
 
     def test_adopt_required_token_angle_placeholder_refuses_closed(
@@ -2527,8 +2527,8 @@ class TestAdoptModule:
         assert "1 already tracked under another roster entry" in out.out
         lock2 = s.read_lockfile(target)
         assert "dev/architecture_review.md" in {r["dst"] for r in lock2["files"]}
-        assert "tools/code_map.py" in {r["dst"] for r in lock2["files"]}
-        assert (target / "tools/code_map.py").read_bytes() == (
+        assert "dev/tools/code_map.py" in {r["dst"] for r in lock2["files"]}
+        assert (target / "dev/tools/code_map.py").read_bytes() == (
             CAIRN_ROOT / "templates/modules/team-gated/code_map.py").read_bytes()
         # the pre-existing record for the skipped destination is untouched
         pre = next(r for r in lock2["files"]
