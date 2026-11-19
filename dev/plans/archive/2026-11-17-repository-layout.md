@@ -806,3 +806,147 @@ nodes), signing, native certification and the full suite. A scratch
 worktree at `91b02e21` gave the baseline. It was removed afterward.
 
 **Elapsed**: about 7 minutes. **Tokens**: unknown.
+
+## Post-archive security review (v0.8 closeout #1-#3 fixes) -- Opus (Security Review, High) -- 2026-11-19
+
+Reviewed range: `6080af2d..fe54661c` (`210f94d4`, `7a027b04`, `5118dc2b`,
+`865205b7`, `2285a921`, `fe54661c`; 35 files, 609 insertions, 380 deletions).
+
+**Obligation**: Internal Security Review, post-archive, one pass
+**Model basis**: claude-opus-5-5-high (Argon at 0% quota until 2026-11-25, dev/.cairn/model-selection-mapping.yml high tier) (commit and board report completed on gemini-4-neon-high after claude-opus-5-5-high hit 429 quota exhaustion)
+**Verdict**: ACCEPT
+**Findings**: none blocking; N1-N3 nonblocking.
+
+**Conclusion.** No security check, symlink or parent-link containment check,
+fail-closed refusal or protected-test promise was weakened. The protected-test
+edits relocate paths to the current layout; the three semantic edits keep or
+tighten what they check. No file under `install/` changed, so the
+`install/_scaffold/` AST baseline is untouched. Its fixtures under
+`tests/fixtures/` are also unchanged.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. At `6080af2d` the shipped
+   `templates/skills/_lib/board.py` resolved its root one level short for a
+   `dev/tools/` install, and eight protected test files failed on stale
+   pre-layout paths. A red protected gate certifies nothing. Repairing it by
+   relocation restores the checks rather than relaxing them.
+2. **Best alternative.** Skipping or quarantining the failing nodes would have
+   been faster and would have removed coverage. Path relocation keeps every
+   assertion. The one test that needed a new fixture (`caller-parent-link`) adds
+   a case and keeps the old refusal case.
+3. **What would show it wrong?** A dropped or loosened assertion, a refusal
+   that now passes, a trust root moved to a caller-controlled location, or a
+   changed engine or baseline file. Each was checked below; none occurred.
+
+**Verified evidence** (committed objects at `fe54661c`):
+
+- **`board.py` parity.** `cmp` shows `templates/skills/_lib/board.py` equal to
+  `dev/tools/board.py`. The intent facade, intent engine and session kernel now
+  load from `Path(__file__).resolve().parent` (`board.py:507-508`, `:799`). For
+  both the `dev/tools/` and legacy `tools/` layouts that is the same physical
+  folder as before, and it still never comes from `--root`. `_repo_root()`
+  (`:791-793`) only sets the default `--root`; it guards nothing.
+- **`run_security_audit.py:86`.** `_TOOL_PREFIX` only chooses which lockfile
+  keys `integrity_preflight` requires. A missing record, symlink, non-file or
+  hash mismatch still raises `AuditDegraded` (`:187-219`). The runner bytes are
+  still hash-checked against the lockfile before execution (`:806-818`). A wrong
+  prefix therefore refuses; it cannot pass. The `scripts/` legacy branch is
+  unchanged.
+- **`tests/quality_gate.py:477`.** Adding `""` makes the neutrality walk also
+  scan extensionless files under `templates/`. Scanning widens; nothing is
+  exempted. `python tests/quality_gate.py --sub neutrality` gave `fail=0
+  info=42`.
+- **Protected and route tests.** I normalized each hunk for the layout moves
+  (`bootstrap/tests/` to `tests/`, `bootstrap/_scaffold/` to `install/_scaffold/`,
+  `bootstrap/security_check.py` to `release/security_check.py`, `scripts/` to
+  `dev/tools/` or `tests/`). After that, `test_board_json_contract.py`,
+  `test_oracle_activation.py`, `test_security_stack.py`,
+  `test_reference_scripts.py`, `test_replacement_tools.py` and
+  `integration/test_gauge.py` have no remaining changes. `test_gate_reanchor.py`
+  changes only `parents[2]` to `parents[1]`, which matches its move up one folder.
+  Every relocated target exists (`release/security_check.py`, `release/repin.py`,
+  `install/verify_integrity.py` and others).
+- **Three semantic test edits.**
+  - `tests/security/test_git_read_routes.py`: `returncode != 0` becomes
+    `returncode == 2`, which is stricter.
+  - `test_session_binding_gate_and_printing_hold.py:52`: I executed the old and
+    new `NASTY` lines. Both give U+009B, U+202E, U+3164, so the value is
+    unchanged and the raw bidi character is gone.
+  - `test_ceremony_review_report.py:48-56`: the "nothing else under `tests/`
+    rides along" check now also allows top-level non-test files directly in
+    `tests/`. I listed `release.security_check.scan_targets()`: all 23
+    top-level `tests/*.py` files are scanned, including the tools moved there
+    (`gauge.py`, `measurements.py`, `verify_counts.py` and others). The check
+    still rejects fixtures in subfolders and any `test_`, `_` or `conftest`
+    file outside the closure, so scan coverage did not shrink.
+- **`tests/test_verify_counts.py` binding fixtures.** `parent-link` stays in
+  `_BINDING_MUTATIONS`. For a `tests/` caller it still makes the helper's
+  `tools/` folder a directory link, and the refusal test still requires
+  `git-read-binding-failed` and no helper execution (`:351-361`, `:472-497`).
+  The new `caller-parent-link` mutation is used only by the positive
+  linked-caller test (`:460-469`). It links the caller's own folder to an
+  outside tree that holds the caller and a pinned helper. That was the original
+  intent when callers lived in `tools/`. `tools/` callers still take the old
+  branch unchanged. The POSIX-only skip moved from the shared route helper to a
+  `skipif` on the one PATH-wrapper test. The other two route-helper callers
+  (`test_replacement_tools.py`) wrap PATH the same way and now have no Windows
+  skip; see N3.
+- **Runbooks and rules.** `release/AST_BASELINE_RUNBOOK.md` and
+  `dev/rules/certifying-runs.md` change only paths, to targets that exist.
+  `release/REANCHOR_RUNBOOK.md` changes only line 418. Line 79 still cites
+  `bootstrap/tests/` for the signed v0.7.0 predecessor, as it should.
+- **Lockfile and self-install.** `dev/.cairn/cairn-lock.yml` changes 11 `hash`
+  values and nothing else: 10 `dev/modules/*.md` and `dev/reflections/README.md`.
+  None is code. `python install/verify_integrity.py --target .` reports `OK -- 70
+  recorded file(s)`. The installed `dev/modules/security-review.md` now matches
+  its template except the allow-comment header. Its Layer 1 provenance wording
+  is the template's existing text, not new policy.
+- **`dev/scratch/.gitignore`.** It ignores everything except `README.md` and
+  itself. That makes accidental commits of scratch data less likely and
+  protects nothing that must be tracked.
+- **Cap disposition (`2026-11-18-outward-reports.md:266-270`).** The quoted
+  words match the Maintainer's reply. In the Coordinator's closeout list
+  shown to the Maintainer, the item those words approved recommended accepting
+  `7ac42956` at the 2-pass cap. The scribed effect matches what was approved.
+
+**N1 (nonblocking, traceability).** The committed disposition quotes
+"#1, #2, and #3" but does not say what those numbers meant. The list lives only
+in the Coordinator's local session artifact, so a later reader cannot follow
+the quote to `7ac42956` from tracked files. Consider one sentence naming the
+closeout item and its recommendation.
+
+**N2 (nonblocking, coverage).** `_FUTURE_NON_TEST_FILES` in
+`tests/test_gate_manifest.py` replaced `scripts/new_script.py` with
+`release/new_script.py`. That leaves no `dev/tools/*.py` sample, even though
+`dev/tools/*.py` is a frozen gate pattern (`tests/_gate_manifest.py:431-432`,
+`:469-470`). The code promise is unchanged, but this test no longer
+exercises that root. Adding a `dev/tools/` sample would restore it.
+
+**N3 (nonblocking, Windows).** `test_legacy_ls_tree_refuses_target_local_path_git_route`
+and `test_legacy_show_refuses_target_local_path_git_route` lost the shared
+POSIX-only skip. If their PATH-wrapper route cannot run on native Windows,
+they will fail there rather than skip. Not run on Windows in this pass.
+
+**Test runs** (this pass, Python 3.12.9, `-p no:cacheprovider`):
+`test_verify_counts.py`, `integration/test_gauge.py`,
+`contract/test_test_tiers.py`, `test_board_json_contract.py`,
+`test_security_stack.py`, `test_replacement_tools.py` and
+`test_session_binding_gate_and_printing_hold.py` gave 642 passed and 1 skipped
+in 137.69 s (the single skip was `tests/test_security_stack.py:1012`, `bandit` absent in Python 3.12.9). `test_gate_manifest.py`, `test_gate_reanchor.py`,
+`test_oracle_activation.py`, `test_ceremony_review_report.py`,
+`security/test_git_read_routes.py`, `test_reference_scripts.py`,
+`test_quality_gate_neutrality.py` and `contract/test_board_closeout_warning.py`
+gave 243 passed in 164.80 s. `test_verify_counts.py` also passed under Python
+3.13.13 (39 passed).
+
+**Coverage.** Not rerun: the Stage 2 17-file batch under Python 3.13.13
+(`896 passed in 354.68s` recorded), `sync_doc_snippets`, claim and link checks
+on the reconciled module texts, native Windows, signing, the full suite and the
+forward re-anchor. I did not review the prose of the 10 reconciled
+`dev/modules/*.md` files beyond the security-review module and lockfile hashes.
+`release/security_check.py` and its unscanned `dev/tools/` twins are unchanged
+in this range and were not assessed. The protected-test edits still need the
+forward gate re-anchor ceremony; this pass does not replace it.
+
+**Elapsed**: about 9 minutes for this pass. **Tokens**: unknown.
