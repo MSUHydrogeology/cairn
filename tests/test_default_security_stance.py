@@ -25,15 +25,15 @@ from install.scaffold import expand_preset, format_profile_summary, main  # noqa
 
 PRESETS = ("solo-greenfield", "collaborative-team", "high-rigor-legacy")
 NO_PRESET_MODULE_SENTINELS = {
-    "lifecycle-metrics": "tools/lifecycle_metrics.py",
+    "lifecycle-metrics": "dev/tools/lifecycle_metrics.py",
     "reflections": "dev/reflections/README.md",
-    "claim-check": "scripts/claim_check.py",
+    "claim-check": "dev/tools/claim_check.py",
     "fold-back-ledger": "dev/.cairn/cairn_foldback.md",
-    "incident-trackers": "tools/evolution_infer.py",
+    "incident-trackers": "dev/tools/evolution_infer.py",
     "documentation-plan": "docs/DOCUMENTATION_PLAN.md",
-    "content-security": "scripts/content_scan.py",
-    "security-verification": "scripts/run_security_verification.py",
-    "python-security": "scripts/run_security_audit.py",
+    "content-security": "dev/tools/content_scan.py",
+    "security-verification": "dev/tools/run_security_verification.py",
+    "python-security": "dev/tools/run_security_audit.py",
 }
 
 
@@ -196,7 +196,7 @@ def test_a_new_default_on_module_stays_opt_in_for_an_existing_adopter(
     assert "new modules available (opt-in)" in output
     assert "content-security" in output
     assert "dev/modules/content-security.md" not in output
-    assert "scripts/content_scan.py" not in output
+    assert "dev/tools/content_scan.py" not in output
     assert not (target / "dev" / "tools" / "content_scan.py").exists()
 
 
