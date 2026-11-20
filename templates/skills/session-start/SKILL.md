@@ -24,6 +24,11 @@ when the arguments contain `--drain`.
 python dev/tools/session.py session-start
 ```
 
+If `python` is not found (on Windows the message mentions the Microsoft Store),
+run the same command with `py -3`, or with the full path of your interpreter.
+The installer saved that path as the `interpreter` entry of the
+`local-env.json` file in your project's Git folder, under `cairn`.
+
 It **reports** (read-only): commits since the last handoff (with a graceful
 fallback on a fresh repo), working-tree state, open proposals/plans, the active
 work-intents (if the coordination tool is installed), and the resolved project

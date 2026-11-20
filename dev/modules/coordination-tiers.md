@@ -293,7 +293,10 @@ sequenced alongside the goodnight routine in
 > * **Prune-intents** — after the owner completes the reflection,
 >   roadmap scrub, next-session note, custom steps and handoff
 >   commit, the user runs
->   `CAIRN_HANDOFF_OWNER=1 python dev/tools/session.py session-end --handoff`.
+>   `CAIRN_HANDOFF_OWNER=1 python dev/tools/session.py session-end --handoff`
+>   in bash or zsh, or `$env:CAIRN_HANDOFF_OWNER = '1'; python
+>   dev/tools/session.py session-end --handoff; Remove-Item
+>   Env:CAIRN_HANDOFF_OWNER` in PowerShell.
 >   It compacts completed claim/release pairs past a grace
 >   window; active claims are reported and never removed.
 >   The owner's `--prepare-handoff` run only lists current intents;

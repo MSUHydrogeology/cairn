@@ -269,7 +269,10 @@ Two invariants are load-bearing and structural, not stylistic:
 * **Single-owner full handoff.** The designated owner runs
   `--prepare-handoff`, completes the reflection, roadmap scrub, next-session
   note, custom steps and handoff commit, then gives the user
-  `CAIRN_HANDOFF_OWNER=1 python tools/session.py session-end --handoff`.
+  `CAIRN_HANDOFF_OWNER=1 python dev/tools/session.py session-end --handoff`
+  in bash or zsh, or `$env:CAIRN_HANDOFF_OWNER = '1'; python
+  dev/tools/session.py session-end --handoff; Remove-Item
+  Env:CAIRN_HANDOFF_OWNER` in PowerShell.
   The user's command may repeat non-destructive output; only its prune step
   removes eligible records. A listing of the intent log is a snapshot, not
   proof that no session is appending or will append later, so the owner and

@@ -108,10 +108,18 @@ cannot establish that there is no live appender or guarantee future quiet. If
 either condition is uncertain, state the unresolved condition beside the
 command. Do not run the prune as the agent.
 
-Give the user this exact command:
+Give the user this exact command, in the form for the shell the session uses
+(give both if you do not know). In bash or zsh:
 
 ```
 CAIRN_HANDOFF_OWNER=1 python dev/tools/session.py session-end --handoff
+```
+
+In PowerShell, which cannot set a variable in front of a command, set it for
+this one run:
+
+```
+$env:CAIRN_HANDOFF_OWNER = '1'; python dev/tools/session.py session-end --handoff; Remove-Item Env:CAIRN_HANDOFF_OWNER
 ```
 
 The command may repeat the reflection preview. Under the existing
