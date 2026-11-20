@@ -1,7 +1,7 @@
 # Plan: One round of review at each stage
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-one-round-reviews.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md
@@ -88,3 +88,31 @@ Known-positive control: run it with `-c` and `<BASE>` placed after the pattern (
 **Does any rule weaken or disappear?** Yes, openly, as the proposal says: the second Security Review pass, the second code pass for new defects, and the second read of a fix larger than a failing test. Kept: the further-pass path with Maintainer authorization and a named question, the cap path to the Maintainer, and the targeted look after a failed joined run. Code review follows (fresh, Medium).
 
 Length: the opening body runs about 1,600 words against the 1,000 target. The overrun is the commands and expected results a Low-tier implementer needs; all replacement text is in the edit list.
+
+
+## Plan review -- Claude Sonnet 5.5, Reviewer -- 2026-11-20
+
+Reviewed commit: e410191aeaab5439ff4afa36a19fc9d9315876f3
+
+**Obligation**: the required Internal plan review in the header.
+**Tier**: Internal
+**Findings**: raised (non-blocking only)
+
+The plan aims to put the accepted one-round rules into every home as exact text, so a Low-tier implementer designs nothing. It does. I applied all 28 edits in a throwaway detached worktree: every Find matched once in every target, the old-phrase sweep printed nothing, and `verify_integrity` listed the six expected files, then the finalize step advanced 6 hashes and it reported OK for 70 files. The prose gates, the neutrality gate (`fail=0`) and `git diff --check` were clean. M12, M13 and R2 matched once; R2 is a three-cell row in section 2.
+
+**Foundations**
+1. **Should this happen as framed?** Yes; the Decision set option C at standard tier and the edits carry D1 to D7 -- compare the archived proposal's D1 to D7 with `dev/plans/2026-11-20-one-round-reviews-edits.md`.
+2. **Best alternative.** None simpler: edits are single-paragraph replacements; the extra edit list is justified by size -- `wc -w` on the plan body.
+3. **What would show it wrong.** The old-phrase `git grep` sweep printing any hit after C4, or `Compare-Object` on a twin pair printing a line -- both run and clean in rehearsal.
+
+**Does any rule weaken or disappear?** Only what the Decision named. The joined-run targeted look stays (`dual-review.md` 342-343, `plans.md` 575-576).
+
+- N1 (non-blocking): the edit id `D1` (testing discipline) shares a name with the proposal's D1 (the governing paragraph), and C1's criteria and C4 use both. Rename it, for example `TD1`, if convenient.
+- N2 (non-blocking): G3 drops the guide's general "targeted look" sentence while the two methodology pages keep the joined-run one. The appendix asked for this; code review should confirm the two read as compatible.
+- N3 (non-blocking): M1 and T1 omit "a substantive plan amendment", a further-pass ground in A1. Amendment review is separate (`plans.md` 353), so no rule is lost.
+
+**Not covered** (this pass runs over the 300-word target to carry the rehearsal evidence): I did not run the test selector (needs commits), the selected tests, or the C5 commands on the real tree; I did not read every shipped document for paraphrases beyond one broader grep.
+
+**Verdict**: ACCEPT; fold N1 to N3 as the author sees fit.
+
+**Elapsed**: about 15 minutes (estimate). **Tokens**: unknown.
