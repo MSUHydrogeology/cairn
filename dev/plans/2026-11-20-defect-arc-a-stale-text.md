@@ -1,7 +1,7 @@
 # Plan: Defect arc A, stale text
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -249,3 +249,14 @@ Non-blocking: N1's "everything written for people to read or adapt" reads as a r
 **Not covered**: no legal reading; I did not check other files that cite the old folder names.
 
 **Elapsed**: about 10 minutes. **Tokens**: unknown.
+
+## Coordinator verification -- Claude Fable 5.2 (Strategy) -- 2026-11-20
+
+The implementer applied the edit list and stopped twice, as briefed: once on a check the plan had timed wrong, once on the fresh-clone check. Strategy settled both (the amended cells C2 and C4 say how), applied the scope the Maintainer added (N1 to N4, at `dbe9ba0d`, after the limited review), and ran the tests.
+
+- **The edits.** The 30 files the first 55 entries target are byte for byte what a script produces by applying those entries to the starting commit (77 applications, each Find matching once).
+- **Fresh clone.** A default clone on this Windows host fails before the prose check runs, at the starting commit too (measured): its Git converts line endings, and the pinned-helper hash then refuses. That is #95. With `core.autocrlf=false` the check prints OK for 221 files. Home for the default clone: plan B, chunk C1.
+- **Tests and the 40-file guard.** One call of the 86 selected files was refused by Cairn's guard (`tests/conftest.py`). By chunk the selector gives 1, 73, 15, 40 and 10 files. The four selections that fit ran at `02f92d37` and at `f55360c1`, and each failure was compared by test id and message. C1: 2 passed at both. C3: the same 95 failures. C4: the same 310. C5: 161 failures at the start and 160 after. The one difference is a control case of a timeout test (`tests/test_portable_security_sweeps.py`, case `control-adapter-answers`): it failed once in the loaded run at the start, and passed in four reruns alone, at the start and after. No test fails only after the change. Commits after `f55360c1` change only this plan's two files and the two licence notes, which no test names.
+- **C2's 73 files were not run.** By the guard's own rule that is a broad run, and it was not split to get under the limit. In its place: both sweeps are clean, twin files match, and a search of all 164 test files found none that holds any of the 44 changed lines. Home: the arc's joined run (`dev/PLANNING.md`, section 1, "Accepted on 2026-11-20").
+
+Machine time for one run: C3 11 minutes, C4 57, C5 27. **Elapsed**: about 3 hours, nearly all of it background test runs. **Tokens**: unknown.
