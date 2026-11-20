@@ -18,7 +18,7 @@ Three claims carry this note.
 2. **Cairn's answers are the right kind, but a person holds them in place.** A stronger model writes the plan and a cheaper one carries it out. The plan chooses the tests, not the implementer. Review is one pass. The rules every session loads are short. Outside studies support each of these; the one on review rounds is cited in the guide star. But the Maintainer sets each limit by hand, in chat, when it hurts, and the text that states the limits is scattered.
 3. **Two kinds of evidence are missing.** No one outside the Maintainer's own projects has installed Cairn. And nothing yet shows which rules change what agents do.
 
-I recommend that v0.9 set the controls, after it settles the defects: one ladder that says which tests run at each stage, a lifecycle that keeps rules in check, counts that show whether a plan written for a cheaper model is enough, and small trials that test a rule on the model that must obey it. These are also what unattended work needs before it widens. The release should become the point of removal: archived plans retire to the release tag once the proposal carries the outcome. v0.10 then harvests the next stage of guidance from the Maintainer's other projects. Nothing here is accepted work.
+I recommend that v0.9 set the controls, after it settles the defects: one ladder that says which tests run at each stage, a lifecycle that keeps rules in check, counts that show whether a plan written for a cheaper model is enough, and small trials that test a rule on the model that must obey it. These are also what unattended work needs before it widens. The release should become the point of removal: archived plans retire to the release tag once the proposal carries the outcome, and a pass that only removes runs there (idea 8). v0.10 then harvests the next stage of guidance from the Maintainer's other projects. Nothing here is accepted work.
 
 ## The question
 
@@ -31,9 +31,9 @@ I measured these on 2026-11-19 at tag v0.8.0, on a fresh Windows Server 2022 che
 - a real `solo-greenfield` install into a scratch repository, following `docs/quickstart.md`, then the integrity check, session start, the board and the security dispatcher;
 - read-only scripts over `git log` and the tracked tree: sizes, commits by kind, commits for each proposal and plan, and guidance words at each release tag.
 
-Five Sonnet subagents read Cairn's records and searched outside sources. I mark their figures "reported". For the nineteen outside studies listed at the end, I read the abstract and the excerpts a search tool returned, not the full text. Twelve are preprints.
+Five Sonnet subagents read Cairn's records and searched outside sources. I mark their figures "reported". For the twenty-eight outside studies listed at the end, I read the abstract and the excerpts a search tool returned, not the full text. Twelve are preprints.
 
-After the Maintainer's response on 2026-11-19 I read again the guide star, the collaboration guide from "Review rules" to "Verification", the plan template, the working agreements, the note of 16 November on projects that have grown, the principles for trimming rules, and the shipped rules README and testing module. Figures for LHM are that note's measurements, not mine. For idea 7, a read-only script measured the two archives, what cites them and which commits edited them.
+After the Maintainer's response on 2026-11-19 I read again the guide star, the collaboration guide from "Review rules" to "Verification", the plan template, the working agreements, the note of 16 November on projects that have grown, the principles for trimming rules, and the shipped rules README and testing module. Figures for LHM are that note's measurements, not mine. For idea 7, a read-only script measured the two archives, what cites them and which commits edited them. For idea 8 I read the commit messages and the plan record of the two cuts made in November, counted the test files that list their promises and the rule files that plans list, and searched outside studies of subtraction, rule growth and test-suite reduction.
 
 My counts from Git look backward, and I made them with a question in mind. Measurement rule 4 in the guide star warns against exactly that. Treat them as a reason to measure forward, not as a result.
 
@@ -165,7 +165,7 @@ A plan is not a standing procedure. It is the process for one task, worked out b
 
 The scientist's half rests on other studies. In one, 68 to 80% of two models' failing runs were wrong in the same way on each repeat, so agreement between runs looked healthy [3]. In another, on security repairs, passing tests and reviewer agents did not intercept the confirmed failures [7]. Of 78 novice programmers, those made to explain generated code before accepting it failed a later unaided task 39% of the time, against 77% without that step [2]. What an agent cannot supply is an expected answer from outside the code and a person who understands the result.
 
-## Seven ideas
+## Eight ideas
 
 ### 1. The plan is a loader
 
@@ -201,21 +201,21 @@ The Maintainer's comparison carries a full lifecycle. The testing module already
 | a tier, set by where it lives | an "Applies when" line and a route that says when it is read |
 | a time budget for the run | a word budget for what one kind of task reads |
 | a failing case that proves it can fail | a case where an agent without the rule goes wrong |
-| a review of the slowest at each release | a review of the longest and the never-listed at each release |
+| a review of the slowest at each release | a review of the longest, and of those no trial has tested, at each release |
 | deletion when no promise needs it | a dated line when it leaves |
 
 Four additions follow from the table.
 
 - **Admit by kind.** A rule states a fact the agent cannot infer, a limit or a decision reserved for a person, or a procedure. Facts and limits enter in the person's wording. A standing procedure must show that it changes what agents do.
 - **Budget the route, not the file.** A cap on the always-loaded files was met at Cairn and at LHM while the total grew. Budget what one kind of task must read, such as a light change or a plan chunk. The "Rules that apply" line already names the route.
-- **Count what is listed.** From now on, a rule file that no plan lists through a whole release is a candidate to merge or retire, like a test that never runs. The count comes from a header line, not from prose.
-- **Review at each release**, as the testing module asks for the slowest tests.
+- **Count by entry, not by file.** A count of the rule files a plan lists cannot tell rules apart. The 13 archived plans that carry the "Rules that apply" line each list three or four of Cairn's six rule files, and 12 list the same three. A file holds many rules. The unit is the entry, which the rules guide already gives one shape and an "Applies when" line. Until entries can be counted, the trial in step 5 of the recommendation is the test of whether a rule earns its place.
+- **Review at each release**, in the pass that idea 8 describes.
 
 Ship this with the nine trimming principles, which adopters do not yet receive.
 
 ### 4. Controls that report
 
-Each limit today is a number someone remembers: a word cap, one review pass, a ten-minute suite. A control also needs a signal that says when to tighten or loosen. v0.8 built the mechanism once: session start reads an "Offered when" line and offers the rules-folder guide when the folder passes 5,000 words. Use the same reader for correction, not only for new modules. Candidates, each a condition a tool can read from the project's own files: the suite's recorded time passes its budget; a rule file goes unlisted through a release; review commits for a plan pass the target. Add one at a time and record whether the offer was accepted, as the 16 November note advises. Correction then becomes routine and stops depending on one person noticing.
+Each limit today is a number someone remembers: a word cap, one review pass, a ten-minute suite. A control also needs a signal that says when to tighten or loosen. v0.8 built the mechanism once: session start reads an "Offered when" line and offers the rules-folder guide when the folder passes 5,000 words. Use the same reader for correction, not only for new modules. Candidates, each a condition a tool can read from the project's own files: the suite's recorded time passes its budget; the rule text one kind of task reads passes its word budget; review commits for a plan pass the target. Add one at a time and record whether the offer was accepted, as the 16 November note advises. Correction then becomes routine and stops depending on one person noticing.
 
 ### 5. Several laboratories
 
@@ -250,9 +250,50 @@ One gap comes first. Of the 26 proposals archived in the 0.8 window, the 17 that
 2. From then on the board and the changelog cite the proposal, not the plan.
 3. After a release tag, remove each archived plan that the tag holds and whose work has no open board row. The folder's README says which tag holds them.
 
-Offered to adopters, this is a step of the release module. It makes the release the point where each stock lets go: plans retire, the slowest tests are reviewed and the unlisted rules are reviewed.
+Offered to adopters, this is a step of the release module. It makes the release the point where each stock lets go: plans retire, and the pass in idea 8 takes the tests and the rules.
 
 The cost in Cairn's own tree comes once. Outside the archives, 295 citations in 37 files name the plans archive: 132 in the changelog, 59 in measurement records and 40 on the board. The shipped claim and stem checkers resolve a plan's name to its archived file. Two generators of 665 lines, named in the gate manifest, list both archives to exempt records older than today's schema; I did not read how the gate uses them. Archived proposals cite plans 186 times, and those links would dangle. The median archived plan is nearly five times today's opening budget, so the archive also holds 210 examples of the old length. I assume agents meet them when they search. I did not measure that.
+
+### 8. A consumer
+
+The Maintainer (chat, 2026-11-20): "I personally love the idea of a consumer of rules and tests, because everything else is a producer of them." Every role Cairn names produces. An implementer adds code and tests, a reviewer adds findings, and an incident adds a rule. People overlook changes that take something away unless they are cued to look for them [20]. A cue that named only removal drew more such ideas than one that named both [21], and two language models showed the bias more strongly than people did [22]. So the consumer is a separate pass whose brief has one verb. A question added to review would not do the same work.
+
+Cairn has run that pass twice by hand. The record shows what was nearly lost and how it was found. The figures come from commit messages and the plan record; I reran nothing.
+
+| | Test cut, 8 to 13 November | Rules trim, 10 November |
+|---|---|---|
+| Removed | test functions fell from 4,071 to 3,138 | guidance text for adopters fell from 8,012 to 7,238 words |
+| Dropped in error and put back | 34 tests | 10 rules, then 3 more pieces of wording |
+| How they were found | each removed name was searched for across the repository | a read-only comparison of old and new text by the low-tier model, then later reviews |
+| Also | 51 public tests replaced 202 private ones and exposed five possible product defects | |
+
+Three lessons follow.
+
+- **Check after, not before.** The plan first required a comparison of old and new tests before each set of removals. The Maintainer moved it to one run afterwards on 2026-11-10: "there should be a test AFTER the cuts."
+- **The checks that worked were cheap.** One was a search and the other a read-only comparison. The search was not a tool, and later rounds covered fewer files, so four tests were missed at first.
+- **A campaign does not hold.** The plan for the cut ran to 26,430 words and 87 commits edited it. Seven days later the tree held about 270 more test functions.
+
+**What it is.** A pass at each release, whenever a budget is passed (idea 4), and when a change that keeps behaviour breaks tests, since the testing module calls that failure a pin. Its licence has four lines.
+
+1. It removes, merges, or moves a test to a later rung of the ladder (idea 2). It adds no rule and changes no behaviour. Replacing many private tests with a few public ones is plan work, which it may propose.
+2. It never removes a failing test, and never works on files an open plan is changing.
+3. It never touches what a person has declared must stay. In Cairn that is the tests that security and release records name as guards, refusal and hostile-state tests, Maintainer-only actions and data refusals. In a science project the list would hold results: the reference runs, their pass bands and the checks against outside answers. It is the scientist's statement of what matters, and it should fit on a page. It changes only by the Maintainer's Decision, or a Security Review where one applies now.
+4. It ends in one list for the Maintainer: each item, the evidence, and what would show the removal was a mistake.
+
+The checks are mechanical or low-tier work. Judgment calls go to a higher tier, as the testing module already says.
+
+**How it knows what matters.** No one can judge a test or a rule alone, because each looks important alone. Importance is written once, one level up, in a person's words: the promise a test guards, and the decision a rule came from. 129 of Cairn's 135 test files already carry a `Promises:` line. After a sweep four checks run, and none needs judgment.
+
+- Every promise still has a passing public check, and every decision still has its sentence.
+- No document, roster or comment still names a removed item as its guard. A tool runs this search, so it covers the same files each time.
+- Nothing is gone that the list does not name.
+- One comparison on seeded faults, which are small deliberate breaks in the code, shows whether the new set misses what the old one caught.
+
+A test whose promise still stands moves to a later rung before it leaves. It still runs at release, so a wrong call costs a later warning, not a missed fault. Studies of deletion show why that matters. Reduced suites missed faults in up to 52.2% of failed builds, across 1,478 real ones in 32 projects, and the usual measures did not predict the loss [27]. Other experiments found losses that were severe in one case [26] and about 12.5% on average in another [28]. A measure cannot pick what is safe to delete. A named promise can. Each removed item leaves one dated line saying what would show the mistake, and a restore adds a line. If restores stay at zero through several releases, the pass is too timid.
+
+**What it cannot do alone.** In a model of administrative growth, pruning could not hold the total steady once creating was easy enough, and one-off cuts gave only short relief [23]. So entry needs a rule too. A new standing procedure (idea 3) is provisional until the next release review, where a person renews it or it lapses. Facts, limits and the Maintainer's decisions do not lapse. The evidence on expiry reviews is mixed. A study of fifty states found them the most effective of the review tools it compared [24]. A later study reports that renewal has often passed by inertia, and suggests that a short horizon with an explicit renewal works better [25].
+
+Two sweeps in one project are thin evidence. I found no later commit that traces a defect to a cut test, but I searched commit messages only.
 
 ## Options
 
@@ -271,12 +312,12 @@ Do these in order. Each makes the next cheaper.
 3. **Write the rule lifecycle** (idea 3) into the rules-folder guide, with the trimming principles. Apply it first to Cairn's own 18,400 words.
 4. **Count the plan's events** (idea 1): retries and moves up a tier for each chunk, and from Git the commits, review commits and Maintainer decisions for each plan. Keep the proposal and the plan, and lower the number of turns around them. The hand-filled Tokens field read "unknown" in every sampled entry, and the board already ties its retirement to the meter comparison.
 5. **Run the first rule trials.** Take four or five cases from battles already fought: the whole suite run on each chunk, a rule file rewritten wholesale, accepted scope quietly dropped, a review that will not close. Run each on the low-tier model, with the rule and without it. Declare the cases, the count and what is inconclusive before the first run. Report by case and never rank models. The first trial tests the Maintainer's own observation about tests, and the outside studies predict it will hold. A rule that changes nothing goes to the release review. The trials cost a handful of headless sessions for each case and need the Maintainer's go-ahead.
-6. **Keep the rows that harvest from adopters**: the release module, test records once LHM's measurement is in, the adopter interview, the outside trial and verification on three hosts. Put the closeout on the proposal now, since that step removes nothing, and make plan retirement (idea 7) a step of the release module.
+6. **Keep the rows that harvest from adopters**: the release module, test records once LHM's measurement is in, the adopter interview, the outside trial and verification on three hosts. Put the closeout on the proposal now, since that step removes nothing, and make plan retirement (idea 7) and the consumer's pass (idea 8) steps of the release module. Run the pass first on Cairn's own tree at the v0.9 release.
 7. **Ship one dashboard tab**, the development view, and show the counts from step 4 on it.
 
 I would place four rows after the controls, or in v0.10: the budget guard and unattended loop, roadmap draining, the four-view comparison and the new dimension axis. An unattended agent needs the ladder, the route and the stopping criteria to be mechanical first.
 
-**Suggested exit test.** The ladder and the lifecycle each have one home, and shipped guidance words fall. Plan events are counted through one release. The first-run check passes on three hosts. At least one rule trial has a recorded result. One adopter outside the Maintainer's projects completes three changes.
+**Suggested exit test.** The ladder and the lifecycle each have one home, and shipped guidance words fall. Plan events are counted through one release. The first-run check passes on three hosts. At least one rule trial has a recorded result. The consumer's pass has run once on Cairn's tree and its list is answered. One adopter outside the Maintainer's projects completes three changes.
 
 **Suggested targets, for the Maintainer to set.** A light change takes 3 commits, 1 review and at most 1 Maintainer decision. A plan takes 8 commits and 4 review commits. The certifying run takes 20 minutes. These count events, not words, as measurement rule 1 asks.
 
@@ -306,6 +347,7 @@ Cairn made five releases in the thirty days after 0.4, and each asks adopters to
 - **Rule trials are small and synthetic.** An agent in a trial is not an agent in a long session. Pair the trials with the counts from real work.
 - **The lessons come from one Maintainer's projects.** LHM, modflow_tools and Assai share one person's habits. The outside adopter is the check.
 - **A plan thinned too early.** Thin a plan's detail only when the count of retries shows the lower tier no longer needs it.
+- **A sweep loses something no one notices.** The count of restores holds only the losses someone saw. Whatever fails silently, such as a wrong number that looks right, stays on the declared list and out of the sweep.
 
 ## Open questions
 
@@ -316,10 +358,11 @@ Cairn made five releases in the thirty days after 0.4, and each asks adopters to
 5. Is Assai run under Cairn, and may its frictions be folded back?
 6. Is 1.0 declared on evidence, and is a paper its form?
 7. Do archived plans retire at each release, once the proposal carries the closeout? Are the 210 now in the tree removed in one step, or by release?
+8. Is the consumer a named role with its own licence, or a step of the release routine? Who answers its list, and what goes on a science project's declared list?
 
 ## Outside sources
 
-I read the abstract of each and the excerpts a search tool returned, not the full text. Sources 1, 2, 3, 5, 7, 8, 11, 14, 15, 16, 18 and 19 are preprints and not peer reviewed. Source 4 is a repository deposit whose review status I did not see. Source 6 is a magazine essay. Sources 9, 10, 12, 13 and 17 appeared in conference proceedings or a journal.
+I read the abstract of each and the excerpts a search tool returned, not the full text. Sources 1, 2, 3, 5, 7, 8, 11, 14, 15, 16, 18 and 19 are preprints and not peer reviewed. Source 4 is a repository deposit whose review status I did not see. Source 6 is a magazine essay. Sources 9, 10, 12, 13, 17 and 20 to 28 appeared in conference proceedings or a journal. Source 23 is a mathematical model, not a field study.
 
 1. Gloaguen et al. (2026), *Evaluating AGENTS.md: Are Repository-Level Context Files Helpful for Coding Agents?* [doi:10.48550/arxiv.2602.11988](https://doi.org/10.48550/arxiv.2602.11988)
 2. Sankaranarayanan (2026), *Mitigating "Epistemic Debt" in Generative AI-Scaffolded Novice Programming using Metacognitive Scripts.* [doi:10.48550/arxiv.2602.20206](https://doi.org/10.48550/arxiv.2602.20206)
@@ -340,3 +383,12 @@ I read the abstract of each and the excerpts a search tool returned, not the ful
 17. Lin et al. (2026), *To Run or Not to Run: Analyzing the Cost-Effectiveness of Code Execution in LLM-Based Program Repair.* Proceedings of the ACM on Software Engineering. [doi:10.1145/3832113](https://doi.org/10.1145/3832113)
 18. Hu et al. (2026), *Analyzing and Mitigating Cost-Inefficient Behaviors in Coding Agents.* [doi:10.48550/arxiv.2609.30725](https://doi.org/10.48550/arxiv.2609.30725)
 19. Alonso, Yovine and Braberman (2026), *TDAD: Test-Driven Agentic Development - Reducing Code Regressions in AI Coding Agents via Graph-Based Impact Analysis.* [doi:10.48550/arxiv.2603.17973](https://doi.org/10.48550/arxiv.2603.17973)
+20. Adams et al. (2021), *People systematically overlook subtractive changes.* Nature. [doi:10.1038/s41586-021-03380-y](https://doi.org/10.1038/s41586-021-03380-y)
+21. Fillon et al. (2025), *The Overlooking of Subtractive Changes: Replication and Extension to Stronger Cues and Social Norms.* The Journal of Creative Behavior. [doi:10.1002/jocb.1535](https://doi.org/10.1002/jocb.1535)
+22. Uhler et al. (2026), *Influence of solution efficiency and valence of instruction on additive and subtractive solution strategies in humans, GPT-4, and GPT-4o.* Communications Psychology. [doi:10.1038/s44271-026-00403-0](https://doi.org/10.1038/s44271-026-00403-0)
+23. Yang and Grenier (2026), *What leads to administrative bloat? A dynamic model of administrative cost and waste.* PNAS. [doi:10.1073/pnas.2527106123](https://doi.org/10.1073/pnas.2527106123)
+24. Sobel and Dove (2014), *Analyzing the Effectiveness of State Regulatory Review.* Public Finance Review. [doi:10.1177/1091142114557723](https://doi.org/10.1177/1091142114557723)
+25. Jones and Quandt (2025), *An iridescent sunset: An empirical analysis of sunset legislation.* Journal of Regulatory Economics. [doi:10.1007/s11149-025-09498-5](https://doi.org/10.1007/s11149-025-09498-5)
+26. Rothermel et al. (1998), *An empirical study of the effects of minimization on the fault detection capabilities of test suites.* ICSM. [doi:10.1109/icsm.1998.738487](https://doi.org/10.1109/icsm.1998.738487)
+27. Shi et al. (2018), *Evaluating test-suite reduction in real software evolution.* ISSTA. [doi:10.1145/3213846.3213875](https://doi.org/10.1145/3213846.3213875)
+28. Nömmer and Haas (2019), *An Evaluation of Test Suite Minimization Techniques.* Lecture Notes in Business Information Processing. [doi:10.1007/978-3-030-35510-4_4](https://doi.org/10.1007/978-3-030-35510-4_4)
