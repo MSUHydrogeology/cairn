@@ -1,7 +1,7 @@
 # Settle every open defect at the start of v0.9: five plans, one signing
 
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — plans B to E change the installer engine, the session reader, shipped Python tools and protected tests.
 **Plan review**: required(Internal + Internal Security Review) — for plans B, C, D and E; plan A is prose only and takes required(Internal).
@@ -27,13 +27,13 @@
    - section 3, scientific software: dimensions and governance (#19), the release module, test records;
    - section 4, monitoring: the oversight website, the four-view comparison, the real-use meter comparisons;
    - section 5, less supervision: delegating decisions, the budget guard, draining an adopter's roadmap;
-   - in section 2, the release `.zip` (#94), which he asked for in v0.9 on 2026-11-19.
+   - in section 2, the release `.zip` (#94), which he asked for in v0.9 (chat, 2026-11-19): "put a v0.9 issue to add a release .zip archive to that release, which omits Cairn's own dev folder".
 
    The three-host verification in section 2 stays, because a clean release is one checked where adopters run it. *Recommended: yes, with that one exception.* Nothing is dropped. The oversight website is what waits longest.
 2. **Defer three feature requests to v0.10?** #90 (find the repository root by a marker), #91 part 3 (a helper that archives a plan and repoints links) and #79 (a smaller entry file). Each is large and none is a defect. *Recommended: yes.* #90 would join the code-structure work.
 3. **Accept the arc as grouped?** *Recommended: yes.*
 
-**What the Maintainer does by hand.** This Decision. One signing: the re-anchor, which moves the signed checkpoint the gate trusts. And the release cut, where the strict Mac and Windows records and the secrets scans waived for 0.8 fall due. Nothing else, and no list of tests.
+**What the Maintainer does by hand.** This Decision, and the one on the separate re-anchor proposal. One signing: the re-anchor, his signed approval of the exact test files that guard Cairn's security checks, so that no agent can change them unseen. And the release cut, where the strict Mac and Windows records and the secrets scans waived for 0.8 fall due. Nothing else, and no list of tests.
 
 ## Context
 
@@ -45,19 +45,19 @@ Twelve issues are open as defects or frictions: #79, #90, #91, #93 and #95 to #1
 
 ## Proposal
 
-Each plan has at most five chunks. The five share one joined test run. Plans A, B and C touch different files and run side by side. The [appendix](2026-11-20-claude-v09-defect-arc--appendix.md) lists every item with its resolution, plan, host and protected surface.
+Each plan has at most five chunks, and shows at its plan review how its items fit them; a plan that cannot is cut in two. The five share one joined test run. Plans A, B and C touch different files and run side by side. The [appendix](2026-11-20-claude-v09-defect-arc--appendix.md) lists every item with its resolution, plan, host and protected surface.
 
 - **Plan A, stale text (prose; any host; usual review).** It corrects text that names the pre-0.8 layout (#97, #99.5), adds the layout move and the line-ending note to `install/UPGRADE.md` (#99.2, #95), gives the prune command in both shell forms (#93), says what to run when `python` is not found (#98.4), and clears the five prose-check failures (#98.5). A generated file is never hand-edited. Three methodology pages get a path corrected; an edit that would change what a rule says stops and takes a Security Review.
-- **Plan B, upgrading (installer engine; Security Review).** #95, #99.1, #99.3, #99.4, #100, #102 and #98.3. When it is done: the error on a Windows clone names the real cause, and Cairn's own repository has a root `.gitattributes`; the security verification runs after an upgrade that included the layout move; a shallow fetch gets its own message; the `claim_check_command` token follows the move; the record of a deleted vendor wrapper can be retired by a documented route, wrappers only; and the installer says what to do when the harness folder is absent. Defaults: do not widen what the security dispatcher accepts, heal trees already upgraded, and reproduce #99.4 before deciding to fix or close it.
-- **Plan C, first session and tools (shipped Python; Security Review).** #98.1, #98.2, #91 part 2, #96, and #99.6 with #101. When it is done: session start lists no README as open work; paths print with forward slashes, and the escape policy is unchanged; the intent hook's execute-bit test works on Windows; the usage meter no longer reports UNKNOWN because of record types that carry no usage; and the security audit has a severity threshold the adopter sets, with the default unchanged (any finding fails).
+- **Plan B, upgrading (installer engine; Security Review).** The installer engine is the code that installs and upgrades Cairn in a project. #95, #99.1, #99.3, #99.4, #100, #102 and #98.3. When it is done: the error on a Windows clone names the real cause, and Cairn's own repository has a root `.gitattributes`; the security verification runs after an upgrade that included the layout move; a shallow fetch gets its own message; the `claim_check_command` token follows the move; the record of a deleted vendor wrapper can be retired by a documented route, wrappers only; and the installer says what to do when the harness folder is absent. Defaults: do not widen what the security dispatcher (the script that runs the security checks) accepts, heal trees already upgraded, and reproduce #99.4 before deciding to fix or close it.
+- **Plan C, first session and tools (shipped Python; Security Review).** #98.1, #98.2, #91 part 2, #96, and #99.6 with #101. When it is done: session start lists no README as open work; paths print with forward slashes, and the escape policy is unchanged; the intent hook's execute-bit test works on Windows; the usage meter no longer reports UNKNOWN because of record types that carry no usage; and the security audit has a severity threshold the adopter sets, with the default unchanged (any finding fails) and the threshold in force printed on every audit result.
 - **Plan D, gate and Windows checks (protected tests; Security Review).** It restores the scan of new files under `tests/` (B3a). For `tests/test_fork_advisory.py` (B3b) it restores no word match: if the test must tell one refusal from another, it checks which record the refusal names. It measures the older Windows failures on the Windows host, then repairs what still fails (B2a, B2d, B2e). It chooses between accepting Windows path separators in the release-membership checker and recording that the check runs only on the Mac (B2b). It checks the published v0.8.0 tag through both documented release routes in Windows Git Bash. For the history freeze that fails on refs pointing at trees, the default is to document a freeze from a clean clone.
 - **Plan E, the documentation plan moves (installer engine and install contract; Security Review).** It moves `docs/DOCUMENTATION_PLAN.md` into `dev/`, adds the upgrade move, and updates the shipped files that name the old path. It runs after plan B, because it uses the move machinery that plan B repairs.
 
 **Closed or deferred.** #91 part 1 is closed; 0.8 delivered it. The AST baseline correction was fixed at `ed893f0d`, and the joined run confirms it. The "bootstrap" wording check is not restored, because it looked for one word in a refusal message (Maintainer, chat, 2026-11-20: "Drop it."). #90, #91 part 3 and #79 are deferred on choice 2. A full Windows suite as a release gate belongs to the roadmap row on verifying releases on three hosts.
 
-**Order.** (1) The one-round review rules (`dev/proposals/archive/2026-11-20-claude-one-round-reviews.md`) ship first. (2) Plans A, B and C. (3) Plans D and E. (4) One joined run, on the canonical runtime and on Windows. (5) The re-anchor, signed once. (6) The light proposal `2026-11-19-codex-native-release-membership.md` is archived.
+**Order.** (1) The one-round review rules (`dev/proposals/archive/2026-11-20-claude-one-round-reviews.md`) ship first. (2) Plans A, B and C. (3) Plans D and E, and the ceremony fix from the separate re-anchor proposal. (4) One joined run, on the canonical runtime and on Windows. (5) The re-anchor, signed once. (6) The light proposal `2026-11-19-codex-native-release-membership.md` is archived.
 
-**The one signing.** `dev/proposals/2026-11-19-claude-simpler-reanchor-ceremony.md` stays a separate proposal with its own review and Decision. This arc depends on it in one way: every change to a file the gate pins lands before the signing. I read that order against `release/REANCHOR_RUNBOOK.md`; I did not run the gate.
+**The one signing.** `dev/proposals/2026-11-19-claude-simpler-reanchor-ceremony.md` stays a separate proposal with its own review and Decision. This arc depends on it in two ways. Every change to a file the gate pins lands before the signing. The signing also needs that proposal accepted and implemented; its change to `release/repin.py` lands before step 4, so the joined run covers it. If it is not accepted, step 5 waits. Each plan records, for every protected file it changes, the reason the Maintainer will see at the signing. I read that order against `release/REANCHOR_RUNBOOK.md`; I did not run the gate.
 
 **How each fix is shown.** Before a fix, a check fails for the reason the issue gives: a test for code; the prose check and a search for the old names for text. After the fix it passes. A claim that cannot be reproduced is closed with the evidence.
 
@@ -91,8 +91,8 @@ Each plan names its promises and entry points and runs only the tests that name 
 
 - **S1, who supplies the check's input.** Adopter files (lockfile, threshold setting, usage logs) and the upgraded tree's Git history. The thing judged supplies them, so each plan names its reader and refuses unknown or malformed values.
 - **S2, can it fail.** Each fix starts with a test that fails on today's code. Each plan states any check that reads what it checks.
-- **S3, what runs it.** `run_security_verification.py local` and `upgrade --plan` fire the checks; each plan quotes its adopter-facing sentence.
-- **S4, which way it breaks.** Defaults land on less authority: unknown lock keys stay refused, the audit fails on any finding, an unreadable usage record keeps the meter incomplete.
+- **S3, what runs it.** `run_security_verification.py local` and `upgrade --plan` fire the checks for plan B; session start runs plan C's and the gate runs plan D's. Each plan quotes its adopter-facing sentence.
+- **S4, which way it breaks.** Defaults land on less authority: unknown lock keys stay refused, the audit fails on any finding, an unreadable usage record keeps the meter incomplete. Two items add authority: healing upgraded trees removes only the layout keys #99 names, and the retire route is run by the adopter, for wrapper files only.
 - **S5, what still gets through.** Assumed: an attacker who writes the lockfile or threshold file. An adopter who sets the threshold high still passes, which is their choice; the audit still prints every finding. Closed by enumeration, not construction.
 
 ### Independent scientific check
@@ -172,3 +172,29 @@ The arc aims to fix every adopter-reported defect while keeping the signed gate 
 5. Non-blocking. S3 misses session start and the gate, which fire plans C and D.
 
 **Not covered**: plan-level design, Windows separator handling in B2b, the retire route's mechanism, any run of code or tests.
+
+## Response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-20
+
+Strategy grouped the arc, so Strategy answers the findings. Every finding is accepted, and each blocking one is closed with the reviewer's own sentence.
+
+**Usual review**
+
+1. Plans B and D are full: accepted. Each plan shows at its plan review how its items fit five chunks, and is cut in two if they do not.
+2. Terms: accepted. The summary now says what the signing protects, and the Proposal says what the installer engine and the dispatcher are.
+3. The release `.zip`: accepted. Choice 1 quotes the Maintainer's ask of 2026-11-19.
+
+**Security Review**
+
+1. Blocking, the ceremony fix was missing from the order: accepted. "The one signing" carries the reviewer's sentence, the Order names the fix in step 3, and the summary lists the second Decision the Maintainer makes.
+2. Blocking, S4: accepted, with the reviewer's sentence.
+3. The audit threshold: accepted. Every audit result prints the threshold in force.
+4. HOLDs at the signing: accepted. Each plan records the reason for every protected file it changes.
+5. S3: accepted. It now names session start and the gate.
+
+The usual review did not read the runbook; the Security Review read its top section. Nobody has run the order of the signing.
+
+**Elapsed**: about 10 minutes (estimate). **Tokens**: unknown. The harness reported 81,979 tokens and about 1 minute for the usual review, and 91,698 tokens and about 2 minutes for the Security Review.
+
+### Withdrawn / superseded commitments
+
+None.
