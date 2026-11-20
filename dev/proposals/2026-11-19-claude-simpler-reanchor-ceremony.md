@@ -1,7 +1,7 @@
 # Let the re-anchor pass a long history, and shrink the Maintainer's part
 
 **Author**: Claude Sonnet 5.5
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it changes what the signing ceremony accepts.
 **Plan review**: required(Internal + Internal Security Review)
@@ -15,28 +15,30 @@ On 2026-11-19 the Maintainer started the v0.8 re-anchor, the signed step that mo
 
 Proposed, for v0.9, before the next re-anchor:
 
-1. In transition mode, replace the per-commit history check with a check that the three pinned files at the reviewed candidate have the digests the independent reader recorded.
+1. In transition mode, replace the per-commit history check with two things: a check that the three pinned files at the reviewed candidate have the digests the independent reader recorded, and one display of their net change before the approval prompt.
 2. Add `ceremony --check-only`, an agent-run mode that makes every check the ceremony makes before it touches the key, so setup errors show before the Maintainer starts.
 3. Put a one-page card at the top of the runbook: what to have ready, what to check, what to type.
 
-Cost: part 1 narrows what a transition ceremony checks. It examines the end state, not each step of the history. That needs a Security Review.
+Terms. The *candidate* is the exact commit to be signed. A *pinned* file is one whose content the gate fixes; here they are the install lock and the two AST (code-structure) baseline files. The *independent reader* is a fresh agent that reads the candidate and commits a record of what it saw before the signing. The reader reads the net change first and records that it did; the Maintainer's `yes` at that prompt covers it.
+
+Cost: part 1 narrows what a transition ceremony checks. It examines the end state and its net change, not each step of the history, and it applies to every future transition, not only this layout move. That needs a Security Review.
 
 ## Context
 
 Measured on 2026-11-19.
 
-- `check_stop_records` (`release/repin.py:2559`) runs without condition (line 3003). The range `e5b7fd0a..6620faa5` has 33 commits that change `dev/.cairn/cairn-lock.yml` (29, routine scoped finalizes) or the AST fixtures (4). Only `apply-reviewed-pin` writes stop records, and none exist. `--transition` cannot be combined with `--first-run`, the one switch that turns the refusal into a warning (line 3353).
+- `check_stop_records` (`release/repin.py:2559`) runs without condition (line 3003). The range `e5b7fd0a..6620faa5` has 33 commits that change `dev/.cairn/cairn-lock.yml` (29, routine scoped finalizes) or the AST fixtures (4). Only `apply-reviewed-pin` writes stop records, and none exist. `--transition` cannot be combined with `--first-run`, the one switch that turns the refusal into a warning (lines 3353-3354).
 - The layout plan left the check untouched. No test and no reader exercised a history with such commits.
 - The two earlier stops: the trusted checkout was one commit behind the reader's record, and `prepare-values` named the Maintainer's checkout, not the trusted one. Neither shows until the ceremony reads them.
 - The signing stage receives only `HOME`, `PATH`, `TERM` and `LANG` (`release/repin.py:3069`), so `SSH_ASKPASS` never reaches it and the passphrase is asked in the terminal. The runbook does not say so. Its Maintainer tasks (confirm the fingerprint, compare hashes, type the passphrase) are scattered through a long document.
 
-Not checked: whether the ordinary ceremony refuses routine lock updates the same way.
+The ordinary ceremony refuses routine lock updates the same way, because line 3003 is unconditional. Promise (d) keeps that, so an ordinary re-signing after a release with routine lock updates will still stop. This proposal does not fix that.
 
 ## Proposal
 
-**Part 1.** In transition mode only, the reader's record also lists the digest of each pinned output (the two AST fixtures and the lock) at the candidate, computed from raw Git objects. The driver compares them with the candidate's blobs and refuses on a difference, a missing line or a duplicate. It no longer walks the history for stop records. The ordinary ceremony is unchanged.
+**Part 1.** In transition mode only, the reader's record also lists the digest of each pinned output (the two AST fixtures and the lock) at the candidate, computed from raw Git objects. The driver compares them with the candidate's blobs and refuses on a difference, a missing line or a duplicate. Before the Summary 2 prompt the driver shows each pinned file's net change from the old anchor to the candidate, key by key, old paths mapped to new; that `yes` covers it, and the reader records reading that change. It no longer walks the history for stop records. The ordinary ceremony is unchanged: the driver detects a transition from changed authority files, and the operator cannot choose it (`release/repin.py:2993-2997`). The rule applies to every future transition.
 
-**Part 2.** `ceremony --check-only` runs every check before the key probe: the record and its digests, the values file's checkout equal to the trusted checkout, that checkout at the record commit, the report binding, the dispositions and both scans. It prompts for nothing, writes only inside the ceremony folder, and exits 0 only if the real run would reach its first prompt. The agent runs it; the Maintainer's command is printed only after it passes.
+**Part 2.** `ceremony --check-only` runs the checks the real run makes before the key probe: the record and its digests, the values file's checkout equal to the trusted checkout, and that checkout at the record commit. It computes the launcher digest itself and compares it with the record. It stops before `key_checks` (line 3004): it runs no `ssh-keygen` or `ssh-add` against the private key, never starts stage 1 and checks no package or report. It writes nothing the real run reads, and the real run remakes every check. It prompts for nothing and exits 0 only if the real run would reach the key probe. It runs the candidate's `reanchor.sh` validation as the agent, which is no more authority than the agent already has. The agent runs it; the Maintainer's command is printed only after it passes.
 
 **Part 3.** The runbook card lists what the agent hands over (the command, the fingerprint source, the three digests to compare, where each digest is printed), what the Maintainer checks, and what the Maintainer types (`YES` at each prompt, the passphrase in the terminal). It says not to run the launcher by hand and not to use `SSH_ASKPASS` for this ceremony, and names where the graphical prompt does apply (`dev/rules/development-environment.md`). The long reference stays below it.
 
@@ -59,15 +61,15 @@ The check exists so that an unreviewed change to a pinned file is not blessed. W
 
 ## Evidence / verification plan
 
-Test homes: `tests/test_repin.py`, `tests/test_repin_ceremony.py`, `tests/test_reanchor_driver_disclosures.py`. Entry point: `repin ceremony --transition`. Promises: (a) a history with routine lock commits and a matching end state passes; (b) a pinned file one byte off the reader's digest, or a missing digest line, refuses; (c) `--check-only` refuses a stale trusted checkout, a values file naming the wrong checkout and a wrong report digest (the three faults of 2026-11-19), and never prompts or reads the key; (d) the ordinary ceremony still refuses an unrecorded pin commit. `python tests/check_cairn.py` covers the runbook. No full suite until the cut.
+Test homes: `tests/test_repin.py`, `tests/test_repin_ceremony.py`, `tests/test_reanchor_driver_disclosures.py`. Entry point: `repin ceremony --transition`. Promises: (a) a history with routine lock commits and a matching end state passes; (b) a pinned file one byte off the reader's digest, or a missing digest line, refuses; (c) `--check-only` refuses a stale trusted checkout and a values file naming the wrong checkout (the two setup faults of 2026-11-19), never prompts, and runs no command against the key; (d) the ordinary ceremony still refuses an unrecorded pin commit; (e) a transition in which an agent commit rewrote one AST baseline key displays that change before signing. `python tests/check_cairn.py` covers the runbook. No full suite until the cut.
 
 ### Security preflight
 
 - **S1.** The digests come from the reader's committed record, written by a fresh reader from raw objects. The candidate supplies the blobs under judgment, not the digests.
-- **S2.** Change one byte of a pinned file at the candidate and the ceremony refuses; promise (b) shows it.
+- **S2.** Change one byte of a pinned file at the candidate and the ceremony refuses; promise (b) catches a change after the reader's record; new promise (e), a fixture change before it is displayed, covers the rest.
 - **S3.** `repin ceremony --transition` fires it, over exactly three paths.
 - **S4.** A missing, duplicate or malformed digest line refuses, which is less authority.
-- **S5.** An attacker who can commit to the branch commits a bad pinned file early and restores it before the candidate: no longer caught, and nothing shipped is affected. The class is closed by enumeration of three paths, not by construction.
+- **S5.** An honest agent rewrite of a pinned file is no longer stopped per commit; the net change is shown once instead.
 
 ### Independent scientific check
 
@@ -144,3 +146,28 @@ The proposal wants one deliberate approval of the final pinned files in place of
 4. Non-blocking. Check-only runs the candidate's `reanchor.sh` validate as the agent (`repin.py:2948-2957`): no new authority, but say so. S1, S3, S4 hold.
 
 **Not covered**: no runs; the launcher template and `reanchor_ceremony.py` read only where `repin.py` calls them; layout context setup (`repin.py:2480-2515`) skimmed.
+
+## Response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-20
+
+Both reviews said REVISE. Every finding is accepted. Where the two reviews gave different words for Part 2, the Security Review's govern, as it asked.
+
+**Usual review**
+
+1. Blocking, Part 2 contradicted itself: accepted, in the Security Review's form. Check-only now covers only the checks before the key probe and computes the launcher digest itself.
+2. The ordinary ceremony: accepted. Context now says it refuses routine lock updates too, and that this proposal does not fix that.
+3. Terms: accepted. The summary defines candidate, pinned file and independent reader.
+4. The three digests: accepted in part. The card names each digest and where it is printed; the plan takes the names from the driver's prompts. I could not name them from the runbook's text alone.
+
+**Security Review**
+
+1. Blocking, Part 1 removed the only sight of baseline changes: accepted, with the reviewer's sentence, its S2 clause, its S5 and the new promise (e). The net change is shown once before Summary 2, and the reader records reading it.
+2. Blocking, check-only must stop before the key checks: accepted, with the reviewer's sentences.
+3. Every future transition: accepted. Part 1 and the cost line say so.
+4. Check-only runs the candidate's validation as the agent: accepted. Part 2 says so.
+
+**Elapsed**: about 15 minutes (estimate). **Tokens**: unknown. The harness reported 84,954 tokens and about 1 minute for the usual review, and 110,363 tokens and about 3 minutes for the Security Review.
+
+### Withdrawn / superseded commitments
+
+- Check-only no longer covers the report binding, the dispositions or the two scans. They need stage 1, which runs candidate code, so an agent-run mode must not reach them. Promise (c) drops the wrong-report-digest fault for the same reason.
+- S5's earlier statement, that a bad pinned file committed early and restored later is no longer caught: replaced by the reviewer's sentence.
