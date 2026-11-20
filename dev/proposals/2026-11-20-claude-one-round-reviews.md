@@ -18,7 +18,7 @@
 **The five changes.**
 
 1. One round per stage: one usual review and, where the tier requires it, one Security Review. Security Review's normal limit drops from two passes to one.
-2. A reviewer who blocks work says what closes the finding: a failing scratch test for code, exact words for a document.
+2. A reviewer who blocks work writes what closes the finding: a failing scratch test for code, exact words for a document.
 3. Code is reviewed once, after the plan's last chunk of work.
 4. A further proposal or plan review happens only when the Maintainer adds scope, and it gets a short brief.
 5. A plan has at most five chunks. Larger work becomes several plans that share one wide test run.
@@ -55,7 +55,7 @@ The Maintainer asked for this (chat, 2026-11-20): "How about we limit plan revie
 
 The second code pass, allowed today for "new defects (code)", goes.
 
-**D2. What closes a blocking finding.** On code, the reviewer writes a failing developmental test (Cairn's scratch test, deleted before archive) in the review, with its command and two or three cases where input regimes differ. Example: a tool crashes on an empty input file, so the review holds a test that feeds it one and fails today. The implementer runs the test, fixes the code, runs it again, and records both results with commit ids. No return visit follows. If the test guards a listed promise, it joins that promise's existing test (`dev/modules/testing-discipline.md:44`). Where no test can express the finding, the reviewer names the exact lines to remove or replace, as for dead code. On a document, the reviewer gives the exact words; the author applies them or declines with a reason. A design objection means the plan was wrong and takes the amendment path, with its fresh non-author review. This replaces the "targeted look before Boundary B" (`dev/agent_collaboration.md:365`).
+**D2. What closes a blocking finding.** On code, the reviewer writes a failing developmental test (Cairn's scratch test, deleted before archive) in the review, with its command and two or three cases where input regimes differ. Example: a tool crashes on an empty input file, so the review holds a test that feeds it one and fails today. The implementer runs the test, fixes the code, runs it again, and records both results with commit ids. The implementer may decline a test as wrong, with a reason. No return visit follows. If the test guards a listed promise, it joins that promise's existing test (`dev/modules/testing-discipline.md:44`). Where no test can express the finding, the reviewer names the exact lines to remove or replace, as for dead code. On a document, the reviewer gives the exact words; the author applies them or declines with a reason. A design objection means the plan was wrong and takes the amendment path, with its fresh non-author review. This replaces the "targeted look before Boundary B" (`dev/agent_collaboration.md:365`).
 
 **D3. Code review once.** It follows the last chunk; a chunk is one row of a plan's Sequence table. A plan may name one earlier review point, at plan time, for a high-risk chunk that later chunks build on.
 
@@ -73,7 +73,7 @@ Return visits mostly confirm a fix (about 44 of 63 by my count). A test from the
 
 ## Alternatives considered
 
-The options are in the Decision summary. B is about two-thirds of C's build. C is about 30 edits in 16 files; the nearest earlier sweep (`dev/plans/archive/2026-11-16-heavy-tier-trigger.md`) took 4 review passes and 17 commits to its plan file. I expect C to remove 15 to 25% of review passes, an estimate from the counts and not a measurement. Reviews get longer, because reviewers write tests. I recommend C: B leaves out the two limits the Maintainer asked for.
+The options are in the Decision summary. B is about two-thirds of C's build. C is about 30 edits in 16 files; the nearest earlier sweep (`dev/plans/archive/2026-11-16-heavy-tier-trigger.md`) took 4 review passes and 17 commits to its plan file. I expect C to remove 15 to 25% of review passes, an estimate from the counts and not a measurement. Reviews get longer, because reviewers write tests. A cheaper variant has the reviewer only recommend a test that the implementer then writes. The Maintainer chose the reviewer (chat, 2026-11-20): "I think the reviewer should write the tests." That keeps the closing check independent of the fix. I recommend C: B leaves out the two limits the Maintainer asked for.
 
 ## Documentation / doctrine surface
 
