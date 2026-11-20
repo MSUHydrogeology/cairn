@@ -260,3 +260,38 @@ The implementer applied the edit list and stopped twice, as briefed: once on a c
 - **C2's 73 files were not run.** By the guard's own rule that is a broad run, and it was not split to get under the limit. In its place: both sweeps are clean, twin files match, and a search of all 164 test files found none that holds any of the 44 changed lines. Home: the arc's joined run (`dev/PLANNING.md`, section 1, "Accepted on 2026-11-20").
 
 Machine time for one run: C3 11 minutes, C4 57, C5 27. **Elapsed**: about 3 hours, nearly all of it background test runs. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`, usual reviewer) -- 2026-11-20
+
+```
+Reviewed commit: 142b1377321ca36bfca5497786557fd957c2766d
+Range: 02f92d37..142b1377
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised, non-blocking only
+**Verdict**: ACCEPT
+
+The change makes paths and commands that adopters read true in the 0.8 layout, by exact swaps. It does that. I applied all 59 entries (81 applications) by script to a `git archive` copy of the base commit. All 32 target files match HEAD byte for byte, and each Find matched once. The other four changed files are the changelog, the lock and this plan's two files.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes; the edits equal the list, twins carry identical text, and no added shipped text names a model or vendor -- my apply-and-compare script; `git diff 02f92d37..HEAD -- templates .agents install`.
+2. **Best alternative.** None simpler than an exact-edit list; the lock commit `508dfb55` is alone and changes seven hash lines -- `verify_integrity.py --target .` prints OK for 70 files.
+3. **What would show it wrong.** A stale folder name in the licence notes or module pages, or a test among the 42 unrun files failing -- `git grep -n -E "scripts/|bootstrap/" -- LICENSE-CC-BY.md LICENSE-CC-BY-ND.md templates/modules/*/*.md dev/modules` prints nothing.
+
+**Does any rule weaken or disappear?** No. The prune, `python` and path edits only add the PowerShell form or a path; the licences keep their three families.
+
+**Findings** (all non-blocking)
+
+1. UPGRADE.md step 1 overstates: `blocked:` has other causes (`upgrade.py:4321`, "unlisted copy requires reconciliation"), which step 2 does not fix. Replace "A line that starts `blocked:` (for example "unproved ancestry") means" with "A `blocked:` line that says "unproved ancestry" means"; add after "do step 2 first." the words "Any other `blocked:` line names its own problem; fix that first."
+2. Steps 2 and 4 say "Run that printed command exactly", but `upgrade.py:4533` prints only the flags. Say: "Run `upgrade --target <repo> --apply --migration-receipt <digest>` with that digest."
+3. The Build summary still says 55 replacements, 77 applications and 30 files; the total is 59, 81 and 32.
+4. The Known limit comes from issue #99, not from code I could confirm.
+
+**The amendments** are sound, and homed: C2's timing (R3 is a C3 entry), and the default Windows clone in plan B, chunk C1.
+
+**Tests.** The record settles C1, C3, C4 and C5. C2's 73 files were not run. Of them, 42 are in none of the four run selections, among them `test_profile_grammar`, `test_profiles_smoke`, `test_claim_check_module`, `test_security_verification` and `test_session_routines`. "No test holds a changed line" does not show those pass. The joined run is enough, if it runs the C2 selection. Bounding: ACCEPTED.
+
+**Not covered**: no tests run; the licences; UPGRADE.md was read, not run. Over target to carry exact words. Elapsed about 40 minutes; tokens unknown.
