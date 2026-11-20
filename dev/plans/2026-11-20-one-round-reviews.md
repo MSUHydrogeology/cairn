@@ -1,7 +1,7 @@
 # Plan: One round of review at each stage
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-one-round-reviews.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md
@@ -157,3 +157,29 @@ The plan is ready to implement.
 **Skipped**: no baseline test run at `76347908`; no full-suite run (not allowed).
 
 **Elapsed**: about 45 minutes of implementation plus the 16 min 41 s test run (from the pytest summary). **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (Reviewer, Medium) -- 2026-11-20
+
+Reviewed commit: fe52e1c6 (range `76347908..fe52e1c6`)
+
+**Obligation**: the usual code review the Decision set (standard tier); no Security Review pass.
+**Findings**: one blocking (open check, not a text defect), two non-blocking.
+
+The change aims to state one round per stage in every home, in identical words across shipped twins. It does. A script applied all 28 edits to the base text of each of the 18 target files and compared the result with the head text: all identical, every Find matched once, nothing added or lost. The lock commit touches only `dev/.cairn/cairn-lock.yml`, six hash lines. Shipped twin text names no model or vendor. The plan's old-phrase sweep prints nothing.
+
+**Foundations**
+1. **Should this happen as framed?** Yes; it carries D1 to D7 as exact text -- the script above against the edit list.
+2. **Best alternative.** None simpler -- exact replacement is the lightest mechanism.
+3. **What would show it wrong.** A selected test failing on head but passing at base -- the coordinator's two-tree run.
+
+**Does any rule weaken or disappear?** Only what the Decision named (second Security pass, second code pass, second read of a fix). The further-pass path, cap path and named-question rule remain.
+
+- **B1 (blocking, open check)**: "the selected tests pass" is unmet: 127 failed with no baseline. It closes when the same 23 files at base and head fail the identical set of tests and counts. A test failing only at head is a defect: fix the edited text, not the test. A difference confined to host failures (sockets, symlinks, gitleaks) at both ends settles it; record that in the plan.
+- **N1 (non-blocking)**: `dev/agent_collaboration.md` 283 says "no second read of the fix follows", while `dual-review.md` 342 and `plans.md` 576 keep a targeted look after a failed joined run. Compatible in practice (separate trigger), but the guide never says so. Optional: add "except after a failed joined integration run" at 283.
+- **N2 (non-blocking)**: implementer's mis-run test command is recorded honestly; no action.
+
+**Not covered**: no test run; no read of every methodology page beyond the edited passages and a phrase search.
+
+**Verdict**: REVISE until B1 is recorded; text is otherwise ACCEPT.
+
+**Elapsed**: about 20 minutes (estimate). **Tokens**: unknown.
