@@ -1,7 +1,7 @@
 # Plan: Defect arc D1, gate narrowings and release control
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -128,3 +128,46 @@ The cut loses no accepted item: B2a, B2d, B2e and the tag check sit in D2's list
 Add to "Verification", after "Hosts": "**Owners.** The Mac run of D1-1's nine files is the Maintainer's, taken by the Mac session that takes the re-anchor plan; D1's closeout records that run's failures by test id and message, or states it was not run. If the new node cannot run on the Windows Server machine, the closeout says so. The D2 measuring list is copied into `dev/PLANNING.md` section 1, under 'Windows', with the Maintainer's launch of a Mac session that reaches `cairn-windows` listed under 'Waiting on you'. D1 does not reach `ready-to-archive` until both edits are committed."
 
 Add to finding 3's chunk (Detail D4), at the end of the paragraph: "Before freezing, fetch `refs/cairn/gate-anchor` into the clone if the record needs it; no ref may be added after the freeze."
+
+## Plan review -- Claude Opus 5.5 (Security Review) -- 2026-11-20
+
+```
+Reviewed commit: 30dd90bb4d68c736b84842e19c67f8491f4c2c22
+```
+
+**Obligation**: the Security Review the heavy tier adds at the plan stage.
+**Tier**: Internal Security Review
+**Findings**: raised (two blocking)
+
+The plan's aim is sound: win back what the move narrowed, accept nothing new except Windows path spelling, and write down a freeze route. I read the code at each cited place; I ran nothing.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, but D1-1 only takes effect for signings after v0.9's -- `release/repin.py:175-207`, `3040-3045`.
+2. **Best alternative.** Also changing the transition's scan script; that is `release/repin.py`, the re-anchor proposal's file, not D's -- `release/repin.py:203`.
+3. **What would show it wrong.** Forward test: at the v0.9 transition, a new tests/new_tool.py holding `import subprocess` gets no hit on the page -- `tests/_gate_preflight.py` `_layout_stage`.
+
+**Findings**
+
+1. **Blocking.** At the v0.9 signing (a layout transition) the page's scan comes from the anchor's own scanner, and the signing refuses unless the report's digest equals it. That scanner does not scan new files under `tests/` or `dev/tools/`. The Build summary promises otherwise. Exact words below.
+2. **Blocking.** In an untouched clone the join cannot see the working checkout move, so it can pass while that checkout's `master` carries commits the freeze never scanned. Exact words below.
+3. I agree with the usual review's finding 1; its words stand. For its finding 3, my words govern (below).
+4. Non-blocking, agreeing with usual finding 2. Off Windows nothing changes. On Windows the field can still only cause a refusal: `compare` requires it to equal the file the classname names. My S4 words govern (below).
+5. Non-blocking, for the Maintainer. A new test module or a conftest.py under `tests/fixtures/` still runs at collection unscanned. The old test folder was excluded in the same way. Other names fail towards scanning (`*_test.py`, `Fixtures/`).
+6. Non-blocking. Spell the `..` node's `file=` with the host's separator, so on Windows it exercises the conversion.
+
+The fork-advisory assertion fails if upgrade stops refusing or names another record; `read_lockfile` does no validation (`install/_scaffold/lockfile.py:450`).
+
+**Not covered**: no run; files added since the anchor not counted (no local `refs/cairn/gate-anchor`); whether the record's tests read that ref. About 380 words: two blocking findings carry their evidence. Elapsed about 25 minutes; tokens unknown.
+
+**Verdict**: REVISE
+
+### Exact words from the Security Review
+
+Finding 1, plan. In "Build summary", after "under `tests/`" insert ", from the first signing after v0.9's". Replace the "Not checked" item beginning "whether the ceremony's scan digest" with: "the v0.9 signing's page: as a layout transition it shows the anchor's own scan (`release/repin.py`, the layout scan script), which skips files added under `tests/` or `dev/tools/` since the move; D1-1 cannot change it." Add to "Roadmap entries": "The closeout names those added files (test modules and `tests/fixtures/` aside) in `dev/PLANNING.md` section 1 under 'Narrowings from the layout move', and asks under 'Waiting on you' whether the Maintainer reads their added lines before he signs."
+
+Finding 2, Detail D4, end of the paragraph: "The join's `PASS` covers only the commit it names. Push only that commit as `master`: where you push from, `git rev-parse master` must print it; if not, stop and freeze again."
+
+Usual finding 3, Detail D4, in place of its words: "Before the freeze, fetch `refs/cairn/gate-anchor` into the clone from the trusted origin and verify its signed commit; fetch nothing after the freeze."
+
+Finding 4, plan, S4: "S4: nothing accepts more by default except, on Windows, the backslash spelling of a `file=` value the checker already accepts with forward slashes, absolute paths inside the checkout included; the field can only refuse a case."
