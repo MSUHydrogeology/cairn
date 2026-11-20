@@ -1,7 +1,7 @@
 # Settle every open defect at the start of v0.9: five plans, one signing
 
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — plans B to E change the installer engine, the session reader, shipped Python tools and protected tests.
 **Plan review**: required(Internal + Internal Security Review) — for plans B, C, D and E; plan A is prose only and takes required(Internal).
@@ -141,3 +141,34 @@ I spot-checked the code claims: `session.py:1264`, `:186-190`, the seven keys at
 3. Non-blocking. Choice 1 defers #94, which he asked for in v0.9. The text says so; the Decision should quote it.
 
 **Not covered**: I ran no upgrade, test or Windows check. I did not read the individual issue threads beyond titles. I did not read the re-anchor proposal or the runbook, so the signing order is checked only against the proposal's own text.
+
+## Review -- Claude Opus 5.5 (Security Review) -- 2026-11-20
+
+```
+Reviewed commit: 6b53be20f51a6ad80efa4e7b42d46c094b4c091a
+```
+
+**Tier**: Security Review
+**Findings**: raised (two blocking)
+**Verdict**: REVISE
+
+**Elapsed**: about 15 minutes
+**Tokens**: unknown
+
+The arc aims to fix every adopter-reported defect while keeping the signed gate anchor moving only once, after all pinned files settle. The defaults it states mostly lean the safe way.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes; issue #99 item 1 shows an upgrade silently disabling the security runners -- `gh issue view 99`.
+2. **Best alternative?** Doing nothing leaves that disabled; per-issue plans multiply Security Reviews -- the Alternatives section.
+3. **What would show it wrong?** `repin ceremony --transition` stopping on the 33 unrecorded lock and baseline commits -- `release/repin.py:2559`, as the re-anchor ceremony proposal measures.
+
+**Findings**
+
+1. Blocking. The Order omits the ceremony fix. Without it the transition ceremony refuses (re-anchor proposal, Context), and that fix edits `release/repin.py`, which the gate manifest freezes (`tests/fixtures/gate_manifest.json`, as `scripts/repin.py`). Add to "The one signing": "The signing also needs that proposal accepted and implemented; its change to `release/repin.py` lands before step 4, so the joined run covers it. If it is not accepted, step 5 waits."
+2. Blocking. S4 says defaults land on less authority, but two items add write routes into the install lock: healing upgraded trees (#99.1) and retiring a wrapper's record (#102). Add to S4: "Two items add authority: healing upgraded trees removes only the layout keys #99 names, and the retire route is run by the adopter, for wrapper files only."
+3. Non-blocking. The audit threshold (#101) lives in a file an agent can write. Plan C should print the threshold in force on every audit result.
+4. Non-blocking. Plans B and D edit protected files (`upgrade.py`, `test_fork_advisory.py`), so the verifier will show HOLDs; each plan should record a reason ready for the Maintainer's dispositions.
+5. Non-blocking. S3 misses session start and the gate, which fire plans C and D.
+
+**Not covered**: plan-level design, Windows separator handling in B2b, the retire route's mechanism, any run of code or tests.
