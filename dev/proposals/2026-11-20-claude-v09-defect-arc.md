@@ -1,7 +1,7 @@
 # Settle every open defect at the start of v0.9: five plans, one signing
 
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — plans B to E change the installer engine, the session reader, shipped Python tools and protected tests.
 **Plan review**: required(Internal + Internal Security Review) — for plans B, C, D and E; plan A is prose only and takes required(Internal).
@@ -217,3 +217,15 @@ The five plans, their order, the joined run and the signing are unchanged, so no
 - "v0.9 is a bugfix release" (choice 1 as reviewed): replaced by a tightening release with no notable new feature, on the Maintainer's word.
 - Test records waiting for v0.10: withdrawn. The row is decided after the assessment.
 - #79 deferred to v0.10: replaced. It goes to the tightening proposal.
+
+## Decision -- Maintainer (scribed by Claude Fable 5.2) -- 2026-11-20
+
+**Elapsed**: under 1 minute; **Tokens**: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** Asked "Do you accept the defect arc with all three choices as now worded, or do you want to change one?", the Maintainer's authorization, quoted verbatim (chat, 2026-11-20):
+
+> "Go ahead on the defect arc."
+
+This accepts the proposal as revised at `ef3590d0` (one link in it was repointed at `d4f3b1f0`), with all three choices as worded there. Choice 1: v0.9 carries no notable new feature, and the roadmap parts that choice lists wait for v0.10. Choice 2: #90 and #91 part 3 wait for v0.10, and #79 goes to the tightening proposal. Choice 3: the arc of five plans. He named no tier, so the tier is the one the proposal proposed: heavy. Plans B, C, D and E each get a usual review and a Security Review at the plan stage and at the code stage; plan A, prose only, gets a usual review at each.
