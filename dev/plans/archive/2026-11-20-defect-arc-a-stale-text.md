@@ -1,7 +1,7 @@
 # Plan: Defect arc A, stale text
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -19,7 +19,7 @@ The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defec
 
 **Result.** Text an adopter or agent reads no longer sends them to a folder or command that fails. Items settled: #93; #97 fix 1; #98 part 4; the five prose-check failures; #99 part 2 and the stale-path item; the line-ending note for #95.
 
-**Edit list.** The exact Find and Replace text is in `dev/plans/2026-11-20-defect-arc-a-stale-text-edits.md`, about 2,300 words, because a Low-tier implementer must design no wording. I checked each Find occurs exactly once in each target at `fea67042`, and applied the list to a scratch copy of that commit: all 42 applications matched, and `check_cairn.py` printed OK there. The plan review added 20 entries; the whole list, applied by script to a scratch copy of `3d7f3334`, gives 55 entries and 77 applications, each Find matching once, and `check_cairn.py` prints OK there. Shipped twins get identical text, and no shipped text names a model or vendor.
+**Edit list.** The exact Find and Replace text is in `dev/plans/archive/2026-11-20-defect-arc-a-stale-text-edits.md`, about 2,300 words, because a Low-tier implementer must design no wording. I checked each Find occurs exactly once in each target at `fea67042`, and applied the list to a scratch copy of that commit: all 42 applications matched, and `check_cairn.py` printed OK there. The plan review added 20 entries; the whole list, applied by script to a scratch copy of `3d7f3334`, gives 55 entries and 77 applications, each Find matching once, and `check_cairn.py` prints OK there. Shipped twins get identical text, and no shipped text names a model or vendor.
 
 **Generated files.** The lock `dev/.cairn/cairn-lock.yml` is regenerated, not edited: `upgrade --finalize <paths>` advances seven records (both session skills, `dev/modules/coordination-tiers.md`, `dev/plans/_template.md`, `dev/modules/claim-check.md`, `dev/modules/content-security.md`, `dev/modules/doc-drift-prevention.md`). Cairn's own installed copies cannot be regenerated from their sources: a scratch `upgrade --plan` lists them review-only. So each takes the same exact edit as its source, as the one-round-reviews plan did. `dev/.cairn/base/` is never touched. `docs/code-map.md` is hand-written, and `sync_doc_snippets.py --check` is clean on the quickstart.
 
@@ -312,3 +312,20 @@ Strategy coordinated this plan and answers; the implementing session (Claude Hai
 Not run after the fix: the quickstart's PowerShell column and `upgrade.py` itself. Not read by a second reviewer: the words Strategy added in 1 and 2. The reviewer wrote "about 40 minutes"; its commit followed the reviewed commit by under three minutes.
 
 **Elapsed**: about 36 minutes, of which 27 were one background test run. **Tokens**: unknown.
+
+## Implementation closeout -- Claude Fable 5.2 (Strategy) -- 2026-11-20
+
+Every criterion held, two of them as amended during implementation. C1: the quickstart's PowerShell column ran once in a scratch folder (each installer command exit 0, `RULES.md` installed). C2, as amended: both sweeps print nothing after C3, and twin files match. C3: the PowerShell prune form is at the five sites, measured on the merged tree. C4, as amended: `tests/check_cairn.py` exits 0 on the merged tree (226 files) and on a fresh clone that keeps line endings (221 files at `f55360c1`). C5: the upgrade notes hold the layout section as corrected at code review; the lock was committed alone (`508dfb55`) and `verify_integrity` reports OK for 70 files on the merged tree; CL1's link is repointed in this commit. The licence notes the Maintainer added are in (`dbe9ba0d`, after the limited review `d3f5d179`). The branch, 18 commits changing 36 files, merged into `0.9-dev` at `d35243f1` with no conflict.
+
+Not run: the 73 test files chunk C2 selects, 42 of them in no group that ran. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+Not run: the selected tests on the canonical runtime. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+Not covered: the default Windows clone, which stops on #95 before the prose check runs. Home: `dev/plans/2026-11-20-defect-arc-b-upgrading.md`, chunk C1.
+Not covered: the tests that fail on the Windows Server host before and after (95, 310 and 160 in three groups), and two cases of `tests/test_portable_security_sweeps.py` that each failed once while the machine was loaded. Home: `dev/PLANNING.md`, section 1, "Windows".
+Remaining: a re-read of the line-ending note in `install/UPGRADE.md`. Home: `dev/plans/2026-11-20-defect-arc-b-upgrading.md`, chunk C5.
+Remaining: comments that name old folders. Home: `dev/plans/2026-11-20-defect-arc-b-upgrading.md` and `dev/plans/2026-11-20-defect-arc-c-first-session-and-tools.md` for the files they edit, and `dev/PLANNING.md`, section 1, "Comments in protected files", for the seven frozen tools.
+
+Dispositions: the scope the Maintainer added is `accept`, with his words quoted in Scope. The code review's notes 1 to 3 are `accept` (fixed) and note 4 is `accept` (confirmed from code, no change). No follow-up is deferred.
+
+**Benefit versus cost**: unknown -- readers of the quickstart, the upgrade notes and the installed text are no longer sent to a folder or command that fails (#93, #97 fix 1, #98 part 4, #99 part 2); cost: 18 commits and one merge, one plan review, one limited review of added scope and one code review with no return visit, about 0.81 million subagent tokens in five runs as the harness reported them (Strategy's own use is unknown), and about 3.6 hours of machine time in background test runs on one host; remaining burden: no code and no test added. Revisit at the D6 recount at the end of v0.9.
+
+**Elapsed**: three hours from the plan's opening (15:53) to the merge (18:52). **Tokens**: unknown beyond the subagent figure above.

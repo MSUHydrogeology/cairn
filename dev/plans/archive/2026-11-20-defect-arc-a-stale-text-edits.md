@@ -1,6 +1,6 @@
 # Edit list: stale text (plan A of the defect arc)
 
-Companion to `dev/plans/2026-11-20-defect-arc-a-stale-text.md`, which says why this file exists and how to apply it. Each edit gives the exact text to find and the exact text to put in its place. A `Find` block occurs exactly once in every target named for it (checked at the commit the plan names). Copy it byte for byte; a line break inside a block is a real line break. Shipped twins get the identical replacement. No edit names a model or a vendor.
+Companion to `dev/plans/archive/2026-11-20-defect-arc-a-stale-text.md`, which says why this file exists and how to apply it. Each edit gives the exact text to find and the exact text to put in its place. A `Find` block occurs exactly once in every target named for it (checked at the commit the plan names). Copy it byte for byte; a line break inside a block is a real line break. Shipped twins get the identical replacement. No edit names a model or a vendor.
 
 ## C1: the quickstart (`docs/quickstart.md`)
 
@@ -1001,7 +1001,7 @@ This entry is written last, after re-reading `## Unreleased`. If a `### Minor ch
 Entry:
 
 ```text
-- **Fixed: Stale paths and commands in the docs.** The quickstart's Windows steps, the goodnight prune command, the session-start step for a missing `python`, the upgrade notes and several older path names now match the layout Cairn 0.8 installs, and the prose check passes on a fresh clone. ([plan](dev/plans/2026-11-20-defect-arc-a-stale-text.md))
+- **Fixed: Stale paths and commands in the docs.** The quickstart's Windows steps, the goodnight prune command, the session-start step for a missing `python`, the upgrade notes and several older path names now match the layout Cairn 0.8 installs, and the prose check passes on a fresh clone. ([plan](dev/plans/archive/2026-11-20-defect-arc-a-stale-text.md))
 ```
 
 ## Scope the Maintainer added: the licence notes
