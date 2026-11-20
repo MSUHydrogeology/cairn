@@ -52,8 +52,14 @@ runs cost machine time, not tokens, and are listed separately.
 | | fold of both reviews, by a fresh agent | Medium | 98,415 | 2 | ready to implement |
 | Testing assessment | reader of LHM | Medium | 153,729 | 2 | inventory |
 | | reader of modflow_tools | Medium | 114,050 | 2 | inventory |
+| Plan A, stale text | code review | Medium | 130,979 | 3 | accept, 4 notes |
+| Plan D1, gate narrowings | author | Medium | 240,961 | 10 | opened, 2,059 words plus a companion |
+| | usual review | Medium | 174,542 | 6 | revise, 1 blocking |
+| | Security Review | High | 151,767 | 7 | revise, 2 blocking |
+| | fold of both reviews, by a fresh agent | Medium | 82,907 | 1 | ready to implement |
+| Plan B, upgrading | helper: a scratch upgrade check as a script, run twice | Medium | 98,840 | 6 | defect shown from 0.7.0 |
 
-Total for the day: 4,735,387 tokens across 31 subagent runs. Plan A's
+Total for the day so far: 5,615,383 tokens across 37 subagent runs (the last six rows were added in the evening; the implementers of plans B, C and D1 are not in yet). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -61,7 +67,10 @@ each other is not known. The table uses the last.
 **Test runs (machine time on a Windows Server host, no tokens).** A selection of
 23 test files for a rule-text change: 16 to 17 minutes a run, three runs. Plan
 A's groups: 15 files, 11 minutes a run; 40 files, 57 minutes for one run. Seven
-files of signing tests in the Linux subsystem: 10 to 21 minutes a run.
+files of signing tests in the Linux subsystem: 10 to 21 minutes a run. Plan
+A's ten files that name the upgrade notes: 27 to 29 minutes a run, three runs.
+Plan A in all: about 3.6 hours of machine time for tests, against 0.81 million
+subagent tokens in five runs.
 
 ## What the day's numbers show
 
@@ -81,6 +90,15 @@ Measured:
 - **Writing and reviewing four plans cost about 2.3 million tokens before any
   of their code was written.** With plan A's implementation and its limited
   review the four come to about 2.6 million.
+- **Plan D1 cost 650,177 tokens to plan** (author, two reviews, fold), for four
+  small chunks. Both reviews said revise; the Security Review again raised
+  blocking findings the usual review had not.
+- **An agent's own "elapsed" figure is not data.** Four agents wrote an elapsed
+  time into their records this evening, and the harness timed the same runs:
+  40 minutes written against 3 measured, 30 against 6, 25 against 7, and 10
+  against 1. All four were too long, by 3.5 to 14 times. The coordinating
+  session did no better: it took plan A for an eight-hour job, and the commits
+  show three hours from opening to merge.
 
 My reading, not measured:
 
@@ -91,6 +109,9 @@ My reading, not measured:
   cost more than a fresh reviewer with a short brief would have.
 - Plans grow past their target because reviewers, rightly, ask for every
   condition and message to be written out for a low-tier implementer.
+- The rule that every review records its elapsed time gets a guess unless the
+  harness supplies the number. A candidate for the tightening: take time from
+  the harness or from commit times, or write `unknown`.
 
 ## Keeping it
 
