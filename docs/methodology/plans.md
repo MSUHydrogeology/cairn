@@ -32,7 +32,7 @@ flowchart TD
     ACR --> RVC["revising-code<br/>(the implementer holds it)"]
     ACR --> RTA["ready-to-archive"]
     RVC --> RTA
-    RVC -. revision introduced new defects .-> ACR
+    RVC -. further pass the caps allow .-> ACR
     RTA --> ARC["archived"]
 ```
 
@@ -66,7 +66,7 @@ not rename existing archived records. Each status names who holds it next.
   implementation; the reviewer is never the implementing agent.
 * **revising-code** — the implementer answers code-review findings; the
   answer carries it to `ready-to-archive`, and back to
-  `awaiting-code-review` only when the revision introduced new defects.
+  `awaiting-code-review` only for a further pass the caps allow (`dual-review.md` > "Caps and closure").
 * **ready-to-archive** — review has passed and the archive commit is
   owed.
 * **archived** — lasting truth has migrated to durable homes and the
@@ -81,7 +81,7 @@ a realistic work-window estimate with uncertainty; the estimate is not a
 deadline or a waiver. A plan is independently finishable: its implementation,
 required checks, reviews and archive finish without another unfinished plan.
 Internal chunks may depend on one another, and a coherent helper plus consumer
-may share a plan. Do not split work by default or lose accepted scope. A
+may share a plan, in at most five chunks; larger work becomes several plans. Do not split work by default or lose accepted scope. A
 proposal may retain later outcomes on the existing board with their source and
 revival condition until prerequisites are available.
 Open work only with its needed authority and resources available. Keep later
@@ -897,16 +897,16 @@ is met. No retired checker attests that a review occurred.
 ### Multi-round review
 
 A plan review has one round; the fold carries the plan forward and no
-second plan-review pass is run. The only plan-stage pass that may recur
-is a **Security Review**, which normally takes at most two passes to close the
-obligation it was raised against. A further pass requires a specific unresolved
+second plan-review pass is run, except for scope the Maintainer adds. A
+**Security Review** takes one pass to close the obligation it was raised
+against. A further pass requires a specific unresolved
 security question or newly changed material, why earlier passes and evidence
 cannot resolve it, expected value, the named artifact and scope, and explicit
 Maintainer authorization for that pass; each later pass needs new
 authorization. Without these, the cap stands. An unresolved blocker or unmet
 accepted criterion/check at the cap goes to the Maintainer by name and does not
-clear automatically. Each pass gets its own dated subsection with a round
-suffix:
+clear automatically. A further pass, when one is allowed, gets its own dated
+subsection with a round suffix:
 
 ```
 ## Plan review -- <reviewer> -- YYYY-MM-DD (round 2)

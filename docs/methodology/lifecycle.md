@@ -139,7 +139,7 @@ flowchart LR
     AR["awaiting-review<br/>(a reviewer holds it)"] --> AD["awaiting-decision<br/>(the Maintainer holds it)"]
     AR --> RV["revising<br/>(the author holds it)"]
     RV --> AD
-    RV -. revision widened scope .-> AR
+    RV -. Maintainer added scope .-> AR
     AD --> ACC["accepted"]
     AD --> REJ["rejected"]
     AD --> SUP["superseded"]
@@ -167,7 +167,7 @@ print a warning and still list it.
   a review. Either way the next move is someone else's.
 * **revising** — held by the author. The author records one disposition per
   finding and revises the operative text in place, then carries it to
-  `awaiting-decision`. A second pass is only for widened scope and covers only
+  `awaiting-decision`. A further pass is only for scope the Maintainer adds and covers only
   the new material.
 * **awaiting-decision** — held by the Human Maintainer. The author's
   revision moved it here; no further authorship is owed, only the
@@ -240,7 +240,7 @@ flowchart TD
     ACR --> RVC["revising-code<br/>(the implementer holds it)"]
     ACR --> RTA["ready-to-archive"]
     RVC --> RTA
-    RVC -. revision introduced new defects .-> ACR
+    RVC -. further pass the caps allow .-> ACR
     RTA --> ARC["archived"]
 ```
 
@@ -271,7 +271,7 @@ holder.
   implementing agent.
 * **revising-code** — held by the implementer, answering code-review
   findings; the answer carries it to `ready-to-archive`, and back to
-  `awaiting-code-review` only when the revision introduced new defects.
+  `awaiting-code-review` only for a further pass the caps allow (`dual-review.md` > "Caps and closure").
 * **ready-to-archive** — held by whoever closes the loop: review has
   passed and the archive commit is owed.
 * **archived** — lasting truth has migrated to durable homes (topic
