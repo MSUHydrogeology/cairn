@@ -199,3 +199,32 @@ Checked after folding, by script: the whole list applied to a scratch copy of `3
 Not checked: no test ran, and the quickstart's PowerShell column was not run.
 
 **Elapsed**: about 30 minutes. **Tokens**: unknown. The harness reported 210,989 tokens for the author and 159,834 for the review.
+
+## Implementation verification -- Claude Haiku 5.5 (Implementation, Low) -- 2026-11-20
+
+**BASE**: 02f92d37. Branch arc-a-impl. Plan header set to `implementing` in 19b13cec.
+
+**Commits**
+- 19b13cec: plan status to implementing (plan file only).
+- edef620b, C1 quickstart (Q1-Q4, 4 applications). Gates: diff check, claim_check, link_check, check_cairn OK. PowerShell check below.
+- 2c30f054, C2 pre-0.8 paths (57 applications, 19 files). Gates OK except the known `run_security_verification.py` flags (lines 18, 174, unchanged from HEAD). Module sweep empty; twins match.
+- a91261da, C3 prune command and python fallback (7 applications). Pre-0.8 sweep empty. Gates OK; session-start pair reports `meter.json` at line 115, the M1 item of C4 (present at HEAD, line 110).
+- 131b543f, C4 prose check (5 applications). Gates OK. Whole-tree `tests/check_cairn.py` exit 0 (221 files).
+- 031c00ba, C5 upgrade notes and CL1 (U1-U4 by driver: 4 applications; CL1 by hand under a new Minor changes heading). Gates OK.
+- 508dfb55, lock only: `upgrade --finalize` on the seven paths.
+
+**PowerShell check (C1)**, run once in a new scratch folder, Anaconda first on PATH, $CAIRN = worktree: copy profile (Copy-Item sets no exit code; profile.yml created); `python install/scaffold.py --config profile.yml --target . --summary` exit 0; `... --target .` exit 0; RULES.md installed; `git status` in the worktree showed only ` M docs/quickstart.md`. Scratch folder deleted.
+
+**Sweeps**: pre-0.8 path sweep after C2 printed one line (session-routines.md:272, R3); after C3 it prints nothing. Module sweep: nothing.
+
+**Lock step**: `verify_integrity` before finalize: 7 modified files, exactly the seven named. After finalize: OK, 70 files.
+
+**Fresh clone (C4 criterion)**: FAILED as run with the default Git config on this host. The clone has `core.autocrlf=true`; `tests/check_cairn.py` then stops with `RuntimeError: git-read-binding-failed` in `templates/modules/team-gated/link_check.py`, because the checked-out `dev/tools/git_read.py` hash (b6fad392...) differs from the pinned `_GIT_READ_SHA256` (b67deb4e...), which is the blob hash. With `git -c core.autocrlf=false clone`, the same commit prints `check_cairn: OK -- 221 Markdown file(s) scanned`. The clone was deleted in both cases. The plan's UPGRADE note already says to clone with autocrlf false.
+
+**Did not match the plan**: (1) the C2 sweep, corrected by the coordinator in 2a31f804; (2) claim-check and check_cairn on the session-start pair at C3 (M1, expected until C4); (3) the fresh-clone failure above under default config.
+
+**Not run**: the 86 selected test files (the coordinator runs them); no test set `CAIRN_FULL_SUITE`.
+
+**Claims**: C1's claim was released with `--commit HEAD`, which ran before its commit, so it records 19b13cec. Later claims cite the real commit.
+
+**Elapsed**: about 60 minutes. **Tokens**: unknown.
