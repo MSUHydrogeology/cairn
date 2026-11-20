@@ -204,7 +204,7 @@ Not run: the selected tests on the canonical runtime. Not rechecked: the other 1
 
 C1 held as amended: both `AGENTS.md` copies carry the paragraph at 63 words; Cairn's own three files total 1,592 words and the installed three 1,497, measured on the merged tree at `4bc4f90e`. C2, C3 and C4 held (implementation verification at `fe52e1c6`; code review `023ee592`). C5 held except its test criterion, which is settled by comparison and not by a clean pass: the 23 selected files fail the identical 126 tests at the starting commit and at `54672430`. The lock was refreshed three times, each in a commit of its own (`0426db19`, `26c3af13`, `54672430`), and `verify_integrity` reports OK for 70 files on the merged tree. The branch, 15 commits changing 21 files, merged into `0.9-dev` at `4bc4f90e`.
 
-Not run: the selected tests on the canonical runtime. Home: `dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md`, "Order", step 4, the joined run.
+Not run: the selected tests on the canonical runtime. Home: `dev/PLANNING.md`, section 1, the paragraph "Accepted on 2026-11-20", which names the defect arc's one joined run.
 Not covered: the 126 selected tests that fail on the Windows host before and after the change. Home: `dev/PLANNING.md`, section 1, "Windows".
 Remaining: the recount of review passes at the end of v0.9 (D6). Home: `dev/PLANNING.md`, section 2, row "Recount review passes under the one-round rule".
 Remaining: the sentence removed from `AGENTS.md` may be restored. Home: `dev/PLANNING.md`, "After the defects: a comprehensive tightening of the rules".
