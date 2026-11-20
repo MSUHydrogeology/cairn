@@ -230,3 +230,22 @@ Not checked: no test ran, and the quickstart's PowerShell column was not run.
 **Claims**: C1's claim was released with `--commit HEAD`, which ran before its commit, so it records 19b13cec. Later claims cite the real commit.
 
 **Elapsed**: about 60 minutes. **Tokens**: unknown.
+
+## Limited review of scope the Maintainer added -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-20
+
+```
+Reviewed commit: 96cca0ac
+```
+
+**Verdict**: ACCEPT. Findings: non-blocking only.
+
+1. Each Find (N1 to N4) occurs exactly once in its target on the branch (checked by script).
+2. The licences are unchanged. Exception 1, Exception 2 and the second note's three families are untouched, and the README section says the same thing. "Every explanatory diagram" leaves the brand mark under Exception 2, which names it as not CC BY; the eight listed diagrams are the only other files in `docs/assets/`. No file loses a licence a reader could tell.
+3. N4 matches N3's "shipped Python tools" and reads correctly in its sentence.
+4. After N1 to N4, no stale folder name remains in either note (grep for `scripts/`, `bootstrap`, `dimensions/`, `case-studies/`, `on-ramp`).
+
+Non-blocking: N1's "everything written for people to read or adapt" reads as a rule, so a reader could take it to cover files the old list never named (for example `AGENTS.md` or `dev/` records). That is for the Maintainer to read; I give no view on the licences.
+
+**Not covered**: no legal reading; I did not check other files that cite the old folder names.
+
+**Elapsed**: about 10 minutes. **Tokens**: unknown.
