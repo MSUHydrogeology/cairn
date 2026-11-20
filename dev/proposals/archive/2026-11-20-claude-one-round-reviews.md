@@ -1,3 +1,5 @@
+<!-- claim-check-allow: dev/scratch/review_rounds.py -->
+<!-- ^ The usual review below cites a scratch counting script that was never committed. -->
 # One round of review at each stage, and a closing test for each blocking finding
 
 **Author**: Claude Sonnet 5.5
