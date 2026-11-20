@@ -998,3 +998,95 @@ Entry:
 ```text
 - **Fixed: Stale paths and commands in the docs.** The quickstart's Windows steps, the goodnight prune command, the session-start step for a missing `python`, the upgrade notes and several older path names now match the layout Cairn 0.8 installs, and the prose check passes on a fresh clone. ([plan](dev/plans/2026-11-20-defect-arc-a-stale-text.md))
 ```
+
+## Scope the Maintainer added: the licence notes
+
+Added on 2026-11-20, after the plan review and before the code review. The two licence notes named folders the 0.8 layout moved or removed. The Maintainer chose to say what the content is instead of listing folders, with the licences unchanged: code is MIT; prose, document templates and explanatory diagrams are CC BY 4.0; the brand mark is CC BY-ND. He approved the words of N1 and N3 and the cut in N2 (chat, 2026-11-20). N4 applies the same rule to one line of the second note; its words are Strategy's. Nothing about what is licensed changes.
+
+### N1
+
+Targets: `LICENSE-CC-BY.md`
+
+Find:
+
+```text
+The **prose, templates, and explanatory visuals** in this repository —
+the methodology (`docs/methodology/`), the dimensions (`dimensions/`), the case
+studies (`case-studies/`), the bootstrap narrative (`bootstrap/*.md`),
+the forkable **document templates** — the Markdown (`.md`) files under
+`templates/` — the on-ramp (`on-ramp/`), this repository's documentation
+(`README.md`, `CITATION.cff`), the project site's page (`docs/index.html`),
+and the **explanatory diagrams** under `docs/assets/`
+(`dual-review-independence.svg`, `shared-record-across-sessions.svg`,
+`three-lanes-of-change.svg`, `independent-scientific-check.svg`,
+`two-ways-to-adopt.svg`, `assai-components.svg`,
+`assai-authority-boundaries.svg`, and `assai-investigation-cycle.svg`) — are licensed under
+the **Creative Commons Attribution 4.0 International License (CC BY 4.0)**.
+```
+
+Replace with:
+
+```text
+The **prose, document templates, and explanatory diagrams** in this repository
+are licensed under the **Creative Commons Attribution 4.0 International License
+(CC BY 4.0)**. This is decided by what a file is, not by the folder it sits in.
+It covers everything written for people to read or adapt: the methodology and
+guides, the case studies, the installation and release instructions, the
+forkable **document templates** (the Markdown files Cairn installs in a
+project), this repository's `README.md` and `CITATION.cff`, the project site's
+page, and every explanatory diagram.
+```
+
+### N2
+
+Targets: `LICENSE-CC-BY.md`
+
+Find:
+
+```text
+`templates/modules/team-gated/link_check.py`) and anything under `scripts/`.
+```
+
+Replace with:
+
+```text
+`templates/modules/team-gated/link_check.py`).
+```
+
+### N3
+
+Targets: `LICENSE-CC-BY.md`
+
+Find:
+
+```text
+All **source code** in this repository — `bootstrap/scaffold.py` and its
+tests, the shipped Python tools under `templates/` and `scripts/`, and any
+other code file — is licensed separately under the MIT License, which takes
+precedence over this document license. See [`LICENSE-MIT.md`](LICENSE-MIT.md).
+```
+
+Replace with:
+
+```text
+All **source code** in this repository — the installer, the shipped Python
+tools, the tests, and any other code file — is licensed separately under the
+MIT License, which takes precedence over this document license. See
+[`LICENSE-MIT.md`](LICENSE-MIT.md).
+```
+
+### N4
+
+Targets: `LICENSE-CC-BY-ND.md`
+
+Find:
+
+```text
+  including the tools shipped under `templates/` and `scripts/` — is
+```
+
+Replace with:
+
+```text
+  including the tools Cairn ships — is
+```
