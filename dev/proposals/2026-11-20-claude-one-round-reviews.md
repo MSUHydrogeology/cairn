@@ -1,7 +1,7 @@
 # One round of review at each stage, and a closing test for each blocking finding
 
 **Author**: Claude Sonnet 5.5
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it changes governing doctrine under `docs/methodology/` and lowers a Security Review limit.
 **Plan review**: required(Internal + Internal Security Review) — about 30 edits in 16 files; the plan changes a Security limit.
@@ -204,3 +204,15 @@ The Security reviewer's report doubted the lines cited for `docs/methodology/dua
 
 - S2's "reverting the fix fails it again": replaced by the recorded failing run before the fix and passing run after it. No one owned the revert.
 - The outside study in Rationale: removed. It had been read by abstract only.
+
+## Decision -- Maintainer (scribed by Claude Fable 5.2) -- 2026-11-20
+
+**Elapsed**: under 1 minute; **Tokens**: unknown.
+
+**Tier**: standard
+
+**ACCEPTED.** Asked "Do you accept option C as revised? If so, at which tier", the Maintainer's authorization, quoted verbatim (chat, 2026-11-20):
+
+> "Accept at Standard Tier."
+
+This accepts option C as revised at `97ab9d05`. The standard tier replaces the proposed heavy tier, so the plan gets one usual plan review and one usual code review, with no further Security Review pass.
