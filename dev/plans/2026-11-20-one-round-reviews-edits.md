@@ -462,7 +462,7 @@ Replace with:
 stops after one pass. Each further pass requires a specific
 ```
 
-### D1
+### TD1
 
 Targets: `dev/modules/testing-discipline.md`; `templates/modules/team-gated/testing-discipline.md`
 

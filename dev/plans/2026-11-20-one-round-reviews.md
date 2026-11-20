@@ -1,7 +1,7 @@
 # Plan: One round of review at each stage
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-one-round-reviews.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md
@@ -37,14 +37,14 @@ Governing text (`AGENTS.md` and its shipped twin, the collaboration guide pair),
 
 Estimate: 1 to 2 hours of Low-tier work for C1 to C5 (my guess, not measured). Uncertain: another session may hold an uncommitted edit on a shared file, which makes the chunk wait.
 
-**Every chunk.** A Low-tier implementer, the model named at spawn. Work in the Git worktree and on the branch the coordinator names, made from `0.9-dev` (the roadmap's working rules allow a worktree for implementation); stop if `git branch --show-current` prints `0.9-dev` or `master`. Merging the branch back is the Maintainer's. Claim the chunk's files with `dev/tools/intent.py claim` before editing and release the claim after the commit. Run `git status` and `git log -5 -- <chunk files>` and stop on another session's uncommitted edit to any of them. Apply each edit of the chunk, in order, to each target it names: write the Find block and the Replace block to two scratch files with no added final newline, then run `C:\ProgramData\Anaconda3\python.exe dev/tools/exact_replace.py <target> --old-file <find> --new-file <replace>`. Expected: `Applied exactly one replacement sequence.` If it says `No write: match count 0`, stop and tell the coordinator; never improvise text. If it says `Refused without write: input path changed while reading` (seen once when two edits hit one file within a second), run that edit again. Do not rewrap or regenerate text. Then `git diff -U0` shows only Find text removed and Replace text added. Commit once per chunk with explicit paths, never push; the message lists the edit ids and each check's result.
+**Every chunk.** A Low-tier implementer, the model named at spawn. Work in the Git worktree and on the branch the coordinator names, made from `0.9-dev` (the roadmap's working rules allow a worktree for implementation); stop if `git branch --show-current` prints `0.9-dev` or `master`. The coordinator merges the branch into `0.9-dev` once the code review has passed; the implementer never merges or pushes. Claim the chunk's files with `dev/tools/intent.py claim` before editing and release the claim after the commit. Run `git status` and `git log -5 -- <chunk files>` and stop on another session's uncommitted edit to any of them. Apply each edit of the chunk, in order, to each target it names: write the Find block and the Replace block to two scratch files with no added final newline, then run `C:\ProgramData\Anaconda3\python.exe dev/tools/exact_replace.py <target> --old-file <find> --new-file <replace>`. Expected: `Applied exactly one replacement sequence.` If it says `No write: match count 0`, stop and tell the coordinator; never improvise text. If it says `Refused without write: input path changed while reading` (seen once when two edits hit one file within a second), run that edit again. Do not rewrap or regenerate text. Then `git diff -U0` shows only Find text removed and Replace text added. Commit once per chunk with explicit paths, never push; the message lists the edit ids and each check's result.
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
 | C1 | Governing text | plan review accepted | `AGENTS.md`, `templates/core/AGENTS.md`, both collaboration guides (A1, G1 to G5) |
 | C2 | Templates | C1 | both plan templates, both proposal templates (T1 to T3, P1, P2) |
 | C3 | Methodology pages | C2 | `dual-review.md`, `plans.md`, `lifecycle.md`, `lifecycle-contract.md` under `docs/methodology/` (M1 to M13) |
-| C4 | Modules | C3 | both `security-review.md`, both `testing-discipline.md` (S1, D1) |
+| C4 | Modules | C3 | both `security-review.md`, both `testing-discipline.md` (S1, TD1) |
 | C5 | Records, install lock, selected tests | C4 | `CHANGELOG.md`, `dev/PLANNING.md` (R1, R2); then the lock alone |
 
 The chunks state one rule, so run them in order.
@@ -116,3 +116,17 @@ The plan aims to put the accepted one-round rules into every home as exact text,
 **Verdict**: ACCEPT; fold N1 to N3 as the author sees fit.
 
 **Elapsed**: about 15 minutes (estimate). **Tokens**: unknown.
+
+## Plan response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-20
+
+The review accepted the plan with three non-blocking notes. Strategy made the design, so Strategy answers them.
+
+1. **N1, the edit id `D1`**: accepted. The testing-discipline edit is now `TD1` in the edit list and in the Sequence table, so `D1` means only the proposal's governing paragraph.
+2. **N2, the general "targeted look" sentence**: no change. The proposal's D2 replaces it and D7 keeps the look after a failed joined run. The code review confirms that the two read as compatible.
+3. **N3, "a substantive plan amendment" is not named in M1 and T1**: no change. Amendment review is its own path in `docs/methodology/plans.md`, and A1 names it in the text every agent reads.
+
+One operative sentence changed with this fold, on the Maintainer's direction of 2026-11-20 as recorded in the roadmap's working rule: the coordinator merges the implementation branch into `0.9-dev` once the code review has passed.
+
+The plan is ready to implement.
+
+**Elapsed**: about 5 minutes (estimate). **Tokens**: unknown. The harness reported 112,010 tokens and about 4 minutes for the plan review, and 238,417 tokens and about 19 minutes for writing the plan.
