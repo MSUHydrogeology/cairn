@@ -111,7 +111,7 @@ Maintainer chat, 2026-11-19: *"We'll probably defer getting adopter feedback unt
 
 ## Working rules (for agents)
 
-- **Branch for v0.9.** Work proceeds on `0.9-dev`, made from the 0.8.0 release commit; `master` holds the release. Maintainer, 2026-11-19: *"Just make a 0.9-dev and put it there"*. No other topic branches and no worktrees for writing. A reviewer who must change code to test it
+- **Branch for v0.9.** Work proceeds on `0.9-dev`, made from the 0.8.0 release commit; `master` holds the release. Maintainer, 2026-11-19: *"Just make a 0.9-dev and put it there"*. Planning (proposals, plans, reviews, strategy notes and this roadmap) is committed directly on `0.9-dev`. Implementation may run in a Git worktree on its own branch; merging it back is the Maintainer's, per `RULES.md`. Maintainer, 2026-11-20: *"Please work right on 0.9-dev for planning. Worktrees are fine for actual implementation."* and *"That allows me to work with you more directly"*. A reviewer who must change code to test it
   works in a throwaway detached worktree of the reviewed commit and removes it
   afterwards. Maintainer, 2026-10-26: *"I actually would prefer that all work
   happen in the 0.5-dev branch, and that we use the intents board. This has
