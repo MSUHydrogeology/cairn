@@ -1,7 +1,7 @@
 # Plan: One round of review at each stage
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-one-round-reviews.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md
@@ -130,3 +130,30 @@ One operative sentence changed with this fold, on the Maintainer's direction of 
 The plan is ready to implement.
 
 **Elapsed**: about 5 minutes (estimate). **Tokens**: unknown. The harness reported 112,010 tokens and about 4 minutes for the plan review, and 238,417 tokens and about 19 minutes for writing the plan.
+
+## Implementation verification -- Claude Haiku 5.5 (Implementation, Low) -- 2026-11-20
+
+**BASE**: `76347908`. Branch `one-round-reviews-impl` (checked before any edit: branch, base commit and both plan files were present).
+
+**Commits**:
+- `5398b059` Step 0: header set to `implementing`, alone.
+- `622fa357` C1 (A1, G1 to G5). Checks: claim_check, link_check, check_cairn and sync_doc_snippets --check OK on the four files; neutrality `fail=0`; `git diff --check` clean; "to the reviewer for a targeted look" absent; word counts 1,609 (AGENTS.md, CLAUDE.md, RULES.md) and 1,441 (templates/core AGENTS.md and VENDOR.md); twin parity identical.
+- `87adc861` C2 (T1 to T3, P1, P2). Gates OK on the four files; neutrality `fail=0`; diff check clean; old phrase absent; changed hunks lie outside every `cairn:slot` block; twin parity identical.
+- `d7c330c4` C3 (M1 to M13). Gates OK on the four pages; neutrality `fail=0`; diff check clean; old phrases absent; no hunk touches dual-review.md 342-343 or plans.md 575-576; arrow-line counts in the three diagram files unchanged from HEAD.
+- `c8c6bb8d` C4 (S1, TD1). Gates OK on the four files; neutrality `fail=0`; diff check clean; "stops after two passes" absent; twin parity identical.
+- `a14c3409` C5(a) (R1, R2). Gates OK on CHANGELOG.md and dev/PLANNING.md; neutrality `fail=0`; diff check clean. The apply tool printed `NOT COMPARED` for CHANGELOG.md (outside the functional-prose roots); this is informational, not a failure.
+- `0426db19` C5(b) lock, alone. Before finalize, `verify_integrity` listed exactly the six expected files. `scaffold.py upgrade --finalize` printed `advanced 6 hash(es) (scoped to 6 path(s))`. Then `verify_integrity` printed `OK -- 70 recorded file(s)`. Diff: six hash lines changed.
+
+**Selector (C5(c))**: `tests/tier_inventory.py for` with the 19 changed paths and `--range 76347908..HEAD` selected **23 test files**, the same count as the plan's stand-in.
+
+**Test run**: `python -m pytest -q -p no:cacheprovider` on those 23 files, once, without `CAIRN_FULL_SUITE`: **127 failed, 715 passed, 10 skipped** (1001.81 s). Failures by file: `test_portable_security_sweeps.py` 105, `test_upgrade_module_additions.py` 11, `test_board_json_contract.py` 7, `test_replacement_tools.py` 2, `test_install_report_slots.py` 1, `test_scaffold.py` 1. Observed causes in the output (not verified against a baseline): 13 failures show `OSError: [WinError 10106]` from socket setup; many sweep failures mention the gitleaks adapter; several failures are symlink tests on this Windows host. Not fixed, per the plan. The plan's C5 criterion "the selected tests pass" is therefore **not met**; no baseline was measured, so I cannot say which failures predate this change.
+
+**Mistake during the run**: my first pytest command built its file list with a bad grep, so pytest received no file arguments and collected the whole tree. It stopped after 18.9 s on a collection error (`templates/modules/team-gated/test_coupling.py`, import file mismatch) before any test ran. That run did not use the selector's list. I then ran the correct 23-file command once. No other test was run.
+
+**Sweep (C5)**: the plan's `git grep` command printed nothing (exit 1).
+
+**Did not match the plan**: none in the edit text. The one deviation is the mis-run above. Status is set to `awaiting-code-review` as the plan's last step requires, but the test criterion is unmet, so the reviewer should read the failure list above.
+
+**Skipped**: no baseline test run at `76347908`; no full-suite run (not allowed).
+
+**Elapsed**: about 45 minutes of implementation plus the 16 min 41 s test run (from the pytest summary). **Tokens**: unknown.
