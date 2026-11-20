@@ -51,7 +51,7 @@ Low-tier implementer, the model named at spawn, in a worktree the coordinator na
 
 **C1.** `git diff -U0` shows only the four Find texts removed and Replace texts added. The PowerShell column names `install\` three times and the commit prompt and `git add` line both list `RULES.md`. Developmental check, deleted afterward: the PowerShell column run once in a scratch folder on this Windows host (profile copy, preview, install) exits 0 and `git status` then shows no untracked `RULES.md`. Not run at opening.
 
-**C2.** Both sweeps in Verification print nothing. Twin pairs (`security-verification.md`) have identical added and removed lines. No Replace changes a word other than a path.
+**C2.** The module sweep in Verification prints nothing. The pre-0.8 sweep prints one line after C2, the prune command at line 272 of `docs/methodology/session-routines.md`, which entry R3 corrects in C3; it prints nothing after C3. (Amended 2026-11-20 during implementation: as reviewed, this cell expected both sweeps clean after C2, but the last stale line in a C2 file is fixed by a C3 entry. Only the timing of the check changes.) Twin pairs (`security-verification.md`) have identical added and removed lines. No Replace changes a word other than a path.
 
 **C3.** `git grep -l -F '$env:CAIRN_HANDOFF_OWNER'` lists the five prune sites. Twin pairs match. The skill still says the agent does not run the prune, and the bash form is unchanged. The session-start skill tells a Windows reader what to run when `python` is not found and where its path is saved. I did not reproduce the message here.
 
