@@ -3,7 +3,7 @@
 **Author**: Claude Fable 5.2 (Strategy)
 **Model**: claude-fable-5-2
 **Date**: 2026-11-20
-**Status**: draft
+**Status**: settled
 **Type**: comparative-research
 **Surfaces this would feed**: the v0.9 rule-tightening proposal (not yet written); the roadmap row "Test records, so a release reuses current results" (#81, #92) in `dev/PLANNING.md`; the Maintainer's pending worktree question in LHM.
 
@@ -80,6 +80,6 @@ Residual risk: rules without a tool depend on agents following them. The guards 
 
 ## Open questions
 
-1. Does the roadmap row change as proposed, and do the ladder and the three guards join the tightening proposal?
-2. Is the worktree inference right? One changed line and one test in one LHM worktree would settle it.
+1. Answered on 2026-11-20: the Maintainer agreed with both. The roadmap row moved to v0.10 with the decision recorded, and the ladder and the three guards join the tightening proposal.
+2. Is the worktree inference right? One changed line and one test in one LHM worktree would settle it. At the Maintainer's word the finding was passed to the LHM session on 2026-11-20; no result is known here.
 3. Who measures how much of Cairn's own run time must always run, and when?
