@@ -1,7 +1,7 @@
 # Plan: let the re-anchor pass a long history, and shrink the Maintainer's part
 
 **Source proposal**: `dev/proposals/archive/2026-11-19-claude-simpler-reanchor-ceremony.md`
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Waiting on Maintainer**: which Linux or macOS host runs the ceremony tests for C1 and C2; they cannot run on Windows (see Verification)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
@@ -106,3 +106,35 @@ The plan tries to let a long history pass by checking the end state and showing 
 6. Non-blocking. The digest check needs no old-path mapping, only the display. The plan runs about 1,500 words against a 1,000 target.
 
 **Not covered**: no run, ceremony or key (over the word target because four blocking findings carry exact words); the real-range net change was measured by script only (about 100 changed fixture keys, 101 lock records); Security questions are left to that pass.
+
+## Plan review -- Claude Opus 5.5 (Security reviewer) -- 2026-11-20
+
+```
+Reviewed commit: 8bc610406a8bba35a91d4874d2470a346a782387
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Security Review
+**Findings**: raised (three blocking)
+**Verdict**: REVISE
+
+**Elapsed**: about 25 minutes (estimate). **Tokens**: unknown.
+
+The plan keeps one deliberate approval of the end state and moves setup faults to an agent's dry run. Under the runbook's threat, honest agent mistakes (`REANCHOR_RUNBOOK.md:5`), the chunking keeps the proposal's protections, with three gaps.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes; transition is measured, not chosen, so the ordinary path is untouched -- `repin.py:2993-2997`, `3003`.
+2. **Best alternative.** Check the net-change digest beside the other record digests, so check-only gets it free -- `check_record`, `repin.py:2945`.
+3. **What would show it wrong.** Test (b) with `net-change-sha256` one digit off still reaching stage 1.
+
+**Findings**
+
+1. **Blocking.** The first candidate code is not stage 1: `reading("validate")` (line 2954) runs the candidate's `reanchor.sh`. In C1 replace "Before stage 1 runs candidate code, it computes" with "Right after `check_record` (line 2945) and before `reading(\"validate\")`, it computes", and add: "It refuses there if the text's digest differs from `net-change-sha256`; check-only makes the same check."
+2. **Blocking.** Check-only can run `ssh-keygen` on the private key: `key_fingerprint` (line 2963) runs on `signing_key`, which may name the private file (line 2882), and line 2965 reads it as text. Add to C2: "Before reading any key file, check-only and the real run refuse unless `signing_key` ends in `.pub`."
+3. **Blocking.** S1 needs the reader to compute digests, not copy them. Add to C3: "The reader computes each `pinned-sha256` itself from `git cat-file blob <read-commit>:<path>`, reads the whole net-change text, and only then records its digest."
+4. Agree with the usual review's 1 to 4. Its finding 5 is blocking; its "holds the text in memory from before stage 1" is replaced by my finding 1.
+5. Non-blocking. The display-only variant must keep `d()` on every key and value; `test_repin.py:1664` (the add/drop refusal) stays unchanged.
+6. Non-blocking. Frame the display with a driver-printed line count, since stage 1's relayed output (line 3026) precedes it.
+
+**Not covered**: no run, ceremony or key; `reanchor.sh` validate and the launcher read only where cited; the card's wording left to the usual review.
