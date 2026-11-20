@@ -1,7 +1,7 @@
 # Plan: Defect arc A, stale text
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -82,3 +82,95 @@ Known positive: add `-c` and `<BASE>` after the pattern; it lists 13 files at `f
 **Issues, for the Maintainer.** Nobody closes or comments on any: #93; #97 (fixes 2 and 3 are not in this arc); #98 (part 4 only); #99 (part 2 only); #95 (note only).
 
 **Does any rule weaken or disappear?** No. The word limits are unaffected: none of the six governed files (`AGENTS.md`, `CLAUDE.md`, `RULES.md` and the three under `templates/core/`) is edited; counts stay 1,592 of 2,000 and 1,497 of 1,500 (`wc -w`).
+
+## Plan review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`, usual reviewer) -- 2026-11-20
+
+```
+Reviewed commit: a471308fbb9bd2d2fd0f54c404db20f5c507eaca
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+
+The plan makes the paths and commands adopters read true in the 0.8 layout, by exact swaps. Mostly it does: I applied all 41 entries (42 applications) to a copy of the reviewed commit; each Find matched once, `tests/check_cairn.py` printed OK, the C2 sweep printed nothing, and the selector gives 58 files.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, but it drops stale-path work the proposal gave plan A (finding 1) -- `git grep -n "scripts/" -- templates/modules`.
+2. **Best alternative.** None simpler than one exact-edit list; finding 3 keeps it low-tier-safe -- the edit list.
+3. **What would show it wrong.** A shipped module still naming `scripts/` after C5, or a baseline test id failing with a new message -- `git grep -n "target's .scripts/" -- templates dev/modules`.
+
+**Does any rule weaken or disappear?** No. Every entry swaps a path or command; the PowerShell prune form works as written, and R4 matches `install.py` (`.git/cairn/local-env.json`) and `session.py` (the `interpreter` key).
+
+**Findings**
+
+1. **Blocking.** Four shipped module pages and their Cairn copies still tell adopters their tools land in `scripts/`, and cite `scripts/check_cairn.py` (16 places). This is the appendix's stale-path item. Entries S1-S4, T1-T3 and P1 follow; add them to C2, and add the three lock-tracked copies to the C5 `--finalize` list.
+2. **Blocking.** U3's order is wrong. `_layout_plan` (`upgrade.py:4282`) blocks an unmatched copy with "unproved ancestry; reconcile", so a plain `--stage` exits 2 with no receipt; reconcile comes first, as in #99. Replace U3's steps 1-5 with the block below.
+3. **Blocking.** Low-tier gaps. (a) Replace "A failure is a host failure only if it is on the first list; any other is reported." with: "Run both times as `C:\ProgramData\Anaconda3\python.exe -m pytest -q -rf --tb=line -p no:cacheprovider <files>`, selector re-run at the starting commit. A failure is a host failure only if its test id and message are both on the first list; a listed id with a new message, or a new id, is reported." (b) Add to Sequence: "Write the text between the fences, with no final newline, to two scratch files outside the repo; run `C:\ProgramData\Anaconda3\python.exe dev/tools/exact_replace.py <target> --old-file <old> --new-file <new>` per target; a count other than one stops." (c) C5: `python install/scaffold.py upgrade --target . --finalize <paths>`. (d) Fresh clone: `git clone --no-hardlinks <repo path> <scratch>/fresh`, check out the final commit, run `tests/check_cairn.py` there; delete it.
+4. Non-blocking. CL1 links the live plan path; archiving must repoint it.
+
+**Found, not fixed.** Licence file: its `dimensions/`, `bootstrap/*.md`, `on-ramp/` names no longer exist, so what it covers under `install/` is unclear (Maintainer's). `cairn/templates/` paths are correct (a Cairn clone has `templates/`); leave. `test_command`: plan B, but the proposal's B list omits it; tell B. Tooling slot: plan A (T1-T3).
+
+**Not covered.** No test suite, no Windows run of the PowerShell column. I could not use a worktree (denied) and applied the list to an archive copy. Over target (about 520 words) to carry the exact fixes. Elapsed about 40 minutes; tokens unknown.
+
+### Replacement U3 steps 1-5 (finding 2)
+
+Replace, in entry U3's Replace text, the numbered steps 1 to 5 with:
+
+````text
+1. `python install/scaffold.py upgrade --target <repo> --plan` lists each move
+   as `action: old -> new`. It writes nothing. A line that starts `blocked:`
+   (for example "unproved ancestry") means the installer could not match an
+   old copy to a Cairn release: do step 2 first. Without one, go to step 3.
+2. `upgrade --target <repo> --stage --reconcile-layout <REV>` compares the old
+   copies with the Cairn revision `<REV>` (the release the project was
+   installed from, for example its tag) and prints `Apply to the same project
+   with --apply --migration-receipt <digest>`. Run that printed command
+   exactly; it ends with `Layout reconciliation complete.` Then run `--plan`
+   again.
+3. `upgrade --target <repo> --stage` stages the move and prints the same kind
+   of `Apply to the same project ...` line.
+4. Run that printed command exactly. It ends with `Layout migration
+   complete.`
+5. Now follow [The workflow](#the-workflow).
+````
+
+### Added entries (findings 1; same form as the edit list)
+
+Each Find occurs once in each target at the reviewed commit (checked by script). Replace changes only the quoted path.
+
+**S1** Targets: `templates/modules/default-on/claim-check.md`; `dev/modules/claim-check.md`. Find and Replace pairs, each `scripts/` to `dev/tools/` or `scripts/check_cairn.py` to `tests/check_cairn.py`:
+
+- `scaffold installs as `claim_check.py` in the target's `scripts/`` -> `... in the target's `dev/tools/``
+- `writes `claim_check.py` into the target's `scripts/` directory` -> `... `dev/tools/` directory`
+- `allow.json, scripts/check_cairn.py,` -> `allow.json, tests/check_cairn.py,`
+- `cites Cairn's own `scripts/check_cairn.py`` -> `... `tests/check_cairn.py``
+- `on itself: `scripts/check_cairn.py` imports` -> `on itself: `tests/check_cairn.py` imports`
+
+**S2** Targets: `templates/modules/team-gated/content-security.md`; `dev/modules/content-security.md`:
+
+- `in the target's `scripts/` directory.` -> `in the target's `dev/tools/` directory.`
+- `writes `content_scan.py` into the target's `scripts/`` -> `... `dev/tools/``
+- `(installed beside the runner in `scripts/`)` -> `(installed beside the runner in `dev/tools/`)`
+
+**S3** Targets: `templates/modules/team-gated/doc-drift-prevention.md`; `dev/modules/doc-drift-prevention.md`:
+
+- ``scripts/` directory — `link_check.py`` -> ``dev/tools/` directory — `link_check.py``
+- ``scripts/` directory:` -> ``dev/tools/` directory:`
+- `When Cairn runs `scripts/check_cairn.py`` -> `When Cairn runs `tests/check_cairn.py``
+- `citations) into the target's `scripts/`.` -> `citations) into the target's `dev/tools/`.`
+- ``render_schema_docs.py` under `scripts/`` -> ``render_schema_docs.py` under `dev/tools/``
+- Template only (the Cairn copy has no such line): `docs/methodology/, scripts/check_cairn.py,` -> `docs/methodology/, tests/check_cairn.py,`
+
+**S4** Targets: `templates/modules/default-on/security-verification.md`; `dev/modules/security-verification.md`:
+
+- ``run_security_verification.py` in the target's `scripts/` directory` -> `... `dev/tools/` directory`
+- `target's `scripts/` directory (copied` -> `target's `dev/tools/` directory (copied`
+
+**T1-T3** Target: `dev/plans/_template.md` (Cairn's filled slot): `` `python scripts/sync_doc_snippets.py` `` -> `` `python dev/tools/sync_doc_snippets.py` ``; `` `python scripts/check_cairn.py` `` -> `` `python tests/check_cairn.py` ``; `` `python scripts/link_check.py` `` -> `` `python dev/tools/link_check.py` ``.
+
+**P1** Target: `dev/.cairn/profile.yml`: Find `` lockfile with `python bootstrap/scaffold.py upgrade --init-lock --target .` `` Replace `` lockfile with `python install/scaffold.py upgrade --init-lock --target .` ``. Not tracked in the lock; `bootstrap/scaffold.py` now only prints "Cairn moved" and exits 2.
+
+C5 `--finalize` then covers seven paths: the four named plus `dev/modules/claim-check.md`, `dev/modules/content-security.md`, `dev/modules/doc-drift-prevention.md`.
