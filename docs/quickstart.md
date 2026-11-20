@@ -199,7 +199,7 @@ cp "$CAIRN/install/profiles/solo-greenfield.yml" profile.yml
 <td>
 
 ```powershell
-Copy-Item "$CAIRN\bootstrap\profiles\solo-greenfield.yml" profile.yml
+Copy-Item "$CAIRN\install\profiles\solo-greenfield.yml" profile.yml
 ```
 
 </td>
@@ -255,7 +255,7 @@ The `--summary` flag only previews: nothing is written.  For the
 
 > Run the same command without `--summary` to install, and show me the
 > report it prints.  Then commit what it installed (`AGENTS.md`,
-> `VENDOR.md`, `NOTICE.md`, `.gitattributes`, `.gitignore`, `dev/`,
+> `VENDOR.md`, `RULES.md`, `NOTICE.md`, `.gitattributes`, `.gitignore`, `dev/`,
 > `.agents/`, `docs/` and `CHANGELOG.md`) with the message
 > `Install Cairn kernel + default-on modules`.  Leave `profile.yml`
 > uncommitted.
@@ -277,8 +277,8 @@ python "$CAIRN/install/scaffold.py" --config profile.yml --target .
 <td>
 
 ```powershell
-python "$CAIRN\bootstrap\scaffold.py" --config profile.yml --target . --summary
-python "$CAIRN\bootstrap\scaffold.py" --config profile.yml --target .
+python "$CAIRN\install\scaffold.py" --config profile.yml --target . --summary
+python "$CAIRN\install\scaffold.py" --config profile.yml --target .
 ```
 
 </td>
@@ -288,7 +288,7 @@ python "$CAIRN\bootstrap\scaffold.py" --config profile.yml --target .
 Then commit the install; the commands are the same in both terminals:
 
 ```text
-git add AGENTS.md VENDOR.md NOTICE.md .gitattributes .gitignore dev/ .agents/ docs/ CHANGELOG.md
+git add AGENTS.md VENDOR.md RULES.md NOTICE.md .gitattributes .gitignore dev/ .agents/ docs/ CHANGELOG.md
 git commit -q -m "Install Cairn kernel + default-on modules"
 ```
 
