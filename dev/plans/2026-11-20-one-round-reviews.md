@@ -1,7 +1,7 @@
 # Plan: One round of review at each stage
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-one-round-reviews.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md
@@ -51,7 +51,7 @@ The chunks state one rule, so run them in order.
 
 ## Acceptance criteria
 
-**C1.** `AGENTS.md` and `templates/core/AGENTS.md` carry the D1 paragraph, 80 words replacing 59. `AGENTS.md`, `CLAUDE.md` and `RULES.md` total 1,609 words, at most 2,000; the shipped `AGENTS.md` and `VENDOR.md` total 1,441. Each guide holds the closing-finding paragraph, the Maintainer-added-scope paragraph, the five-chunk and code-once sentence, and the amendment pointer. `git grep -n -F "to the reviewer for a targeted look" -- dev/agent_collaboration.md templates/core/dev/agent_collaboration.md` prints nothing. The two guides' added and removed lines are identical.
+**C1.** `AGENTS.md` and `templates/core/AGENTS.md` carry the D1 paragraph less one sentence (see Scope delta), 63 words replacing 59. `AGENTS.md`, `CLAUDE.md` and `RULES.md` total 1,592 words, at most 2,000; the shipped `AGENTS.md`, `VENDOR.md` and `RULES.md` total 1,497, at most 1,500. (Amended 2026-11-20 after code review: as opened, this cell said 80 words, 1,609 and 1,441, and counted two of the three installed files.) Each guide holds the closing-finding paragraph, the Maintainer-added-scope paragraph, the five-chunk and code-once sentence, and the amendment pointer. `git grep -n -F "to the reviewer for a targeted look" -- dev/agent_collaboration.md templates/core/dev/agent_collaboration.md` prints nothing. The two guides' added and removed lines are identical.
 
 **C2.** Neither plan template says "A second code-review pass runs only when". The plan template's Sequence line names five rows; the proposal template says "unless the Maintainer adds scope". Each twin pair's added and removed lines are identical, and no changed line sits inside a `cairn:slot` block.
 
@@ -63,7 +63,9 @@ The chunks state one rule, so run them in order.
 
 ## Scope delta
 
-**Scope delta**: preserved. Every home in the appendix is covered, plus one the appendix missed (M10) and the five diagram labels that state the same removed conditions (M12, M13). The checks D6 sets (recount at the end of v0.9) get a roadmap row (R2).
+**Scope delta**: degraded, by one sentence in one home. Every home in the appendix is covered, plus one the appendix missed (M10) and the five diagram labels that state the same removed conditions (M12, M13). The checks D6 sets (recount at the end of v0.9) get a roadmap row (R2).
+
+- Removed from edit A1, in `AGENTS.md` and `templates/core/AGENTS.md`: "A blocking finding states what closes it: a failing test for code, exact words for a document." With it, the installed `AGENTS.md`, `VENDOR.md` and `RULES.md` total 1,514 words against the standing limit of 1,500 that `tests/test_scaffold.py` holds. The sentence was cut, not reworded: Strategy's shorter drafts of the paragraph each weakened the wording of the Security Review cap. The rule stays in force in both guides ("Closing a blocking finding") and in the plan template. The Maintainer (chat, 2026-11-20): "Fix this one now by dropping the sentence." **disposition**: accept
 
 ## Verification
 
@@ -130,3 +132,70 @@ One operative sentence changed with this fold, on the Maintainer's direction of 
 The plan is ready to implement.
 
 **Elapsed**: about 5 minutes (estimate). **Tokens**: unknown. The harness reported 112,010 tokens and about 4 minutes for the plan review, and 238,417 tokens and about 19 minutes for writing the plan.
+
+## Implementation verification -- Claude Haiku 5.5 (Implementation, Low) -- 2026-11-20
+
+**BASE**: `76347908`. Branch `one-round-reviews-impl` (checked before any edit: branch, base commit and both plan files were present).
+
+**Commits**:
+- `5398b059` Step 0: header set to `implementing`, alone.
+- `622fa357` C1 (A1, G1 to G5). Checks: claim_check, link_check, check_cairn and sync_doc_snippets --check OK on the four files; neutrality `fail=0`; `git diff --check` clean; "to the reviewer for a targeted look" absent; word counts 1,609 (AGENTS.md, CLAUDE.md, RULES.md) and 1,441 (templates/core AGENTS.md and VENDOR.md); twin parity identical.
+- `87adc861` C2 (T1 to T3, P1, P2). Gates OK on the four files; neutrality `fail=0`; diff check clean; old phrase absent; changed hunks lie outside every `cairn:slot` block; twin parity identical.
+- `d7c330c4` C3 (M1 to M13). Gates OK on the four pages; neutrality `fail=0`; diff check clean; old phrases absent; no hunk touches dual-review.md 342-343 or plans.md 575-576; arrow-line counts in the three diagram files unchanged from HEAD.
+- `c8c6bb8d` C4 (S1, TD1). Gates OK on the four files; neutrality `fail=0`; diff check clean; "stops after two passes" absent; twin parity identical.
+- `a14c3409` C5(a) (R1, R2). Gates OK on CHANGELOG.md and dev/PLANNING.md; neutrality `fail=0`; diff check clean. The apply tool printed `NOT COMPARED` for CHANGELOG.md (outside the functional-prose roots); this is informational, not a failure.
+- `0426db19` C5(b) lock, alone. Before finalize, `verify_integrity` listed exactly the six expected files. `scaffold.py upgrade --finalize` printed `advanced 6 hash(es) (scoped to 6 path(s))`. Then `verify_integrity` printed `OK -- 70 recorded file(s)`. Diff: six hash lines changed.
+
+**Selector (C5(c))**: `tests/tier_inventory.py for` with the 19 changed paths and `--range 76347908..HEAD` selected **23 test files**, the same count as the plan's stand-in.
+
+**Test run**: `python -m pytest -q -p no:cacheprovider` on those 23 files, once, without `CAIRN_FULL_SUITE`: **127 failed, 715 passed, 10 skipped** (1001.81 s). Failures by file: `test_portable_security_sweeps.py` 105, `test_upgrade_module_additions.py` 11, `test_board_json_contract.py` 7, `test_replacement_tools.py` 2, `test_install_report_slots.py` 1, `test_scaffold.py` 1. Observed causes in the output (not verified against a baseline): 13 failures show `OSError: [WinError 10106]` from socket setup; many sweep failures mention the gitleaks adapter; several failures are symlink tests on this Windows host. Not fixed, per the plan. The plan's C5 criterion "the selected tests pass" is therefore **not met**; no baseline was measured, so I cannot say which failures predate this change.
+
+**Mistake during the run**: my first pytest command built its file list with a bad grep, so pytest received no file arguments and collected the whole tree. It stopped after 18.9 s on a collection error (`templates/modules/team-gated/test_coupling.py`, import file mismatch) before any test ran. That run did not use the selector's list. I then ran the correct 23-file command once. No other test was run.
+
+**Sweep (C5)**: the plan's `git grep` command printed nothing (exit 1).
+
+**Did not match the plan**: none in the edit text. The one deviation is the mis-run above. Status is set to `awaiting-code-review` as the plan's last step requires, but the test criterion is unmet, so the reviewer should read the failure list above.
+
+**Skipped**: no baseline test run at `76347908`; no full-suite run (not allowed).
+
+**Elapsed**: about 45 minutes of implementation plus the 16 min 41 s test run (from the pytest summary). **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (Reviewer, Medium) -- 2026-11-20
+
+Reviewed commit: fe52e1c6 (range `76347908..fe52e1c6`)
+
+**Obligation**: the usual code review the Decision set (standard tier); no Security Review pass.
+**Findings**: one blocking (open check, not a text defect), two non-blocking.
+
+The change aims to state one round per stage in every home, in identical words across shipped twins. It does. A script applied all 28 edits to the base text of each of the 18 target files and compared the result with the head text: all identical, every Find matched once, nothing added or lost. The lock commit touches only `dev/.cairn/cairn-lock.yml`, six hash lines. Shipped twin text names no model or vendor. The plan's old-phrase sweep prints nothing.
+
+**Foundations**
+1. **Should this happen as framed?** Yes; it carries D1 to D7 as exact text -- the script above against the edit list.
+2. **Best alternative.** None simpler -- exact replacement is the lightest mechanism.
+3. **What would show it wrong.** A selected test failing on head but passing at base -- the coordinator's two-tree run.
+
+**Does any rule weaken or disappear?** Only what the Decision named (second Security pass, second code pass, second read of a fix). The further-pass path, cap path and named-question rule remain.
+
+- **B1 (blocking, open check)**: "the selected tests pass" is unmet: 127 failed with no baseline. It closes when the same 23 files at base and head fail the identical set of tests and counts. A test failing only at head is a defect: fix the edited text, not the test. A difference confined to host failures (sockets, symlinks, gitleaks) at both ends settles it; record that in the plan.
+- **N1 (non-blocking)**: `dev/agent_collaboration.md` 283 says "no second read of the fix follows", while `dual-review.md` 342 and `plans.md` 576 keep a targeted look after a failed joined run. Compatible in practice (separate trigger), but the guide never says so. Optional: add "except after a failed joined integration run" at 283.
+- **N2 (non-blocking)**: implementer's mis-run test command is recorded honestly; no action.
+
+**Not covered**: no test run; no read of every methodology page beyond the edited passages and a phrase search.
+
+**Verdict**: REVISE until B1 is recorded; text is otherwise ACCEPT.
+
+**Elapsed**: about 20 minutes (estimate). **Tokens**: unknown.
+
+## Code-review response -- Claude Fable 5.2 (Strategy, acting as implementer) -- 2026-11-20
+
+Strategy coordinated this plan and ran the comparison the review asked for, so Strategy answers. The implementing session (Claude Haiku 5.5) had ended.
+
+- **B1, the selected tests: closed, after one defect was found and fixed.** The same 23 files ran once each on this Windows host. At the starting commit `76347908`: 126 failed, 716 passed, 10 skipped. At `fe52e1c6`: 127 failed, 715 passed, 10 skipped. One test failed only after the edits, `tests/test_scaffold.py::TestRulesMdStarter::test_full_install_seeds_rules_md_within_word_budget`: edit A1 took the installed `AGENTS.md`, `VENDOR.md` and `RULES.md` to 1,514 words against a limit of 1,500. As the review directed, the text was fixed and the test left alone. One sentence came out of both `AGENTS.md` copies (`e1b3f0b8`; lock `54672430`), on the Maintainer's word (Scope delta). Rerun at `54672430`: 126 failed, 716 passed, 10 skipped. The failing set is identical to the starting commit's: no test fails at only one end, and the word-limit test passes. The failures common to both ends are this host's (sockets, symlinks, the gitleaks adapter); their home is the Windows item in section 1 of `dev/PLANNING.md`.
+- **N1: accepted.** Both guides now end that sentence "except after a failed joined integration run." (`91dee1d2`; lock `26c3af13`).
+- **N2: no action.**
+
+Three plan cells were amended to match what shipped: C1's word counts, the Scope delta, and edit A1 in the edit list. The prose gates, the neutrality gate, twin parity for the two `AGENTS.md` copies and the C5 phrase sweep were rerun after the fix and pass.
+
+Not run: the selected tests on the canonical runtime. Not rechecked: the other 18 changed files, which no commit touched after the review.
+
+**Elapsed**: about 75 minutes, of which about 48 were three background test runs. **Tokens**: unknown.

@@ -37,6 +37,10 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ## Unreleased
 
+### Major changes
+
+- **Changed: One round of review.** Each review stage (proposal, plan, code) now gets one round, and a reviewer who blocks work supplies the failing test or the exact words that close the finding, so nobody reads the fix a second time. Security Review's normal limit drops from two passes to one, code is reviewed once after a plan's last chunk, and a plan has at most five chunks; the rules apply to proposals and plans opened after the upgrade. ([accepted proposal](dev/proposals/archive/2026-11-20-claude-one-round-reviews.md))
+
 ## 0.8.0 — 2026-11-19
 
 The main change: everything Cairn installs in a project now lives in one `dev/` folder, apart from a few root files such as `AGENTS.md` and `RULES.md`.

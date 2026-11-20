@@ -106,7 +106,7 @@ every artifact that carries it.
 write the work, on the work's side: it makes the work better by questioning
 its foundations, and it answers in writing. No agent picks a kind of review.
 A plan review is fresh-context and one round: the fold carries the plan to
-`ready-to-implement`, and there is no second plan-review pass. Plan review and
+`ready-to-implement`, and there is no second plan-review pass, except for scope the Maintainer adds (`dev/agent_collaboration.md` > "Review rules"). Plan review and
 code review each ask three questions:
 
 * **Plan review.** *Should this happen as framed?* The Decision settled the
@@ -249,7 +249,7 @@ slot is a review finding.)
 
 
 
-One row per chunk: what it does, what gates it, roughly what it ships. Mark a
+One row per chunk, at most five (plan review checks this; larger work becomes several plans): what it does, what gates it, roughly what it ships. Mark a
 chunk MAINTAINER-GATED or MAINTAINER-ONLY only when an actual decision or
 permission is load-bearing to carry out accepted work. Do not use a fence for a
 routine approval or passive calendar wait.
@@ -445,9 +445,11 @@ scripts.
 Code review's floor is not the implementing agent; a fresh session clears it. It
 never reopens the Decision. Self-committed by its author; blocking findings move
 the plan to `revising-code`, and the implementer's answer carries it to
-`ready-to-archive`. A second code-review pass runs only when the revision
-introduced new defects, never to re-confirm that the first round's findings were
-addressed. Same basis block, with the range made explicit:
+`ready-to-archive`. Code review is one round after the plan's last chunk (a plan
+may name one earlier review point for a high-risk chunk that later chunks build
+on). A blocking finding closes with the reviewer's failing test or exact words
+(`dev/agent_collaboration.md` > "Review rules"); no second pass re-reads a fix.
+Same basis block, with the range made explicit:
 
 ```
 Reviewed commit: <full commit id>

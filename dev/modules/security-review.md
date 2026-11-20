@@ -81,7 +81,7 @@ Existing Foundations may question an unsupported declaration before Decision.
 After acceptance, changing a required review follows Maintainer authority and
 plan fences; a reviewer cannot waive it.
 The proposal's `heavy` tier adds this pass to the usual review. Security Review
-normally stops after two passes. Each further pass requires a specific
+stops after one pass. Each further pass requires a specific
 unresolved security question or newly changed material, why prior passes and
 evidence cannot resolve it, expected value, the named artifact and scope, and
 explicit Maintainer authorization for that pass; another pass needs new

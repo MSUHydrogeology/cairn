@@ -28,7 +28,7 @@
     },
     {
       "dst": "AGENTS.md",
-      "hash": "sha256:efee9820373c7844039c9ab8e50c4f72da4db11af1a6fd709b6253a81f06e769",
+      "hash": "sha256:e0768ef340f004cfb4ec94f451fa02c96ba39e21c7868487f36e8d65ddc22e71",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -66,7 +66,7 @@
     },
     {
       "dst": "dev/agent_collaboration.md",
-      "hash": "sha256:61b213a1912f8b9a19770a8bc74e8658886a57d18f2bd4c9c90cb95e41b4d26b",
+      "hash": "sha256:873243e1e2b50d0cccb7a525d7ecaab8436d58523fef6ef5b0a52c4745d068a4",
       "src": "core/dev/agent_collaboration.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -173,28 +173,28 @@
     },
     {
       "dst": "dev/modules/security-review.md",
-      "hash": "sha256:abb9a4a50ca441a31890e5d31f73c77016b37d5138a32ab3472e275cc71d46c9",
+      "hash": "sha256:369b046101506348a39e09f46626de7939905e8420f747ca0cdbc6abc110d12b",
       "src": "modules/team-gated/security-review.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/testing-discipline.md",
-      "hash": "sha256:d7eb7c3532eee7c8ed4d6a2d5fcac42d2a5f835b2473dd33e6b984cf36d99e07",
+      "hash": "sha256:c21186761d3cec386a42b9d216b2a770003e902e8869085f5f4a98f4e3d6aa9d",
       "src": "modules/team-gated/testing-discipline.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/plans/_template.md",
-      "hash": "sha256:97b61016632fdf866fa7683a1aa0cf16b538b2528ca8ab81ed58068bf18b0802",
+      "hash": "sha256:4208715fb056e762309e99bab27c61eb2a5e6492b9b57ba2bd89d0d990ab6bfd",
       "src": "core/dev/plans/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/proposals/_template.md",
-      "hash": "sha256:63aaa9bbe4d8de17b044b3011b0ad837b432f1980d484ec4192eab68c0175025",
+      "hash": "sha256:9c45d9900895ccad5932ed4975d61e3c584b26bd2c47ed36b057190c28a99965",
       "src": "core/dev/proposals/_template.md",
       "unrecoverable_base": true,
       "verbatim": false

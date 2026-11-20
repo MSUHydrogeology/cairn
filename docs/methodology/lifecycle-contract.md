@@ -85,7 +85,7 @@ flowchart LR
     AR["awaiting-review<br/>(a reviewer holds it)"] --> AD["awaiting-decision<br/>(the Maintainer holds it)"]
     AR --> RV["revising<br/>(the author holds it)"]
     RV --> AD
-    RV -. revision widened scope .-> AR
+    RV -. Maintainer added scope .-> AR
     AD --> ACC["accepted"]
     AD --> REJ["rejected"]
     AD --> SUP["superseded"]
@@ -95,7 +95,7 @@ flowchart LR
 |---|---|---|
 | → **awaiting-review** | author | the file exists under `dev/proposals/`; carries the house front-matter (`Author`, `Date opened`, `Status: awaiting-review`) and the opening sections (context, the change, alternatives, evidence/verification plan, signals-it-is-wrong); a mandatory `Plan review:` line is present. |
 | awaiting-review → **revising** | a reviewer (AI or human), **not the author** | a `## Review -- <reviewer> ... ` section is appended; its author token is **not** the proposal's author (reviewer-authorship); operative sections may be revised in place; earlier versions remain in git history. |
-| revising → **awaiting-decision** | author | a `## Response` listing one disposition per finding is appended, and the author revises operative proposal sections in place; reviews and prior responses remain untouched. The current `### Withdrawn / superseded commitments` ledger records replacements and withdrawals. The revision carries the proposal to the Decision; it returns to `awaiting-review` instead **only when it widened scope** (material the review never saw), and only that material gets the round. |
+| revising → **awaiting-decision** | author | a `## Response` listing one disposition per finding is appended, and the author revises operative proposal sections in place; reviews and prior responses remain untouched. The current `### Withdrawn / superseded commitments` ledger records replacements and withdrawals. The revision carries the proposal to the Decision; it returns to `awaiting-review` instead **only when the Maintainer added scope** (material the review never saw), and only that material gets the round. |
 | awaiting-decision → **accepted** | **Human Maintainer** | a `## Decision -- <Maintainer> ... ` section is appended that (a) is authored by the human Maintainer identity, (b) **quotes an authorization verbatim** in an isolated blockquote, (c) is **Decision-only** — the commit touches nothing but this section, and (d) does **not** archive the file (an accepted proposal stays in `dev/proposals/`). |
 | awaiting-decision → **rejected** / **superseded** | **Human Maintainer** | as **accepted**, except the Decision commit **also** archives the file (moves it to `archive/`). |
 
@@ -128,7 +128,7 @@ flowchart TD
     ACR --> RVC["revising-code<br/>(the implementer holds it)"]
     ACR --> RTA["ready-to-archive"]
     RVC --> RTA
-    RVC -. revision introduced new defects .-> ACR
+    RVC -. further pass the caps allow .-> ACR
     RTA --> ARC["archived"]
 ```
 
@@ -150,7 +150,7 @@ review's floor is unchanged and independent of this: **not the implementing
 agent**. History: a plan whose header still declares the retired external
 tier is read as written, never rewritten or warned. Full contract in
 [`dual-review.md`](dual-review.md) > "Plan review is Internal, always".
-| implementing → **awaiting-code-review** → **revising-code** | a reviewer, then the implementer | a code-review pass section is appended (append-only); the reviewer is **never** the implementing agent. Findings move the plan to `revising-code`; the implementer's answer carries it to `ready-to-archive`, and back to `awaiting-code-review` **only when the revision introduced new defects**. |
+| implementing → **awaiting-code-review** → **revising-code** | a reviewer, then the implementer | a code-review pass section is appended (append-only); the reviewer is **never** the implementing agent. Findings move the plan to `revising-code`; the implementer's answer carries it to `ready-to-archive`, and back to `awaiting-code-review` **only for a further pass the caps allow**. |
 | awaiting-code-review *or* revising-code → **ready-to-archive** → **archived** | author | **the plan-archive precondition holds: a code review has occurred** (the archive commit is distinct from the implementing commits); **and** every explicitly-deferred follow-up carries a recorded disposition in an auditable `Dispositions: …` block (the older `Follow-ups migrated to: …` spelling stays valid), presented as one batch at archive-preparation, with any `defer` carrying the Maintainer's quoted authorization; the loop-fidelity sign-off names the implementing commit and the governing Revised section. |
 
 A plan is an execution artifact: its four operative cells remain editable

@@ -43,7 +43,9 @@ Merged into the project's `tests/` guide:
 >
 > **Developmental tests are scratch work; permanent tests guard promises.** Run
 > debugging tests in scratch, record results and delete them before merge or
-> archive. Keep a test only for a listed external promise through a public entry
+> archive. A test a reviewer writes to close a blocking finding is scratch work
+> too, unless it guards a listed promise; then it joins that promise's existing
+> test. Keep a test only for a listed external promise through a public entry
 > point; run each new test once on a clean checkout. Before adding an input
 > variation, confirm production branches differently; one uniform guard or
 > passthrough needs one test. Never add a test file per plan, bug or review

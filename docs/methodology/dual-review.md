@@ -208,20 +208,21 @@ proposal review and verification record; standard and heavy work retain their
 plan and code reviews, with Security Reviews where required. A finding that
 meets the blocking test remains blocking at every applicable stage.
 
-**Caps and closure.** A proposal gets one usual review and one author
-response; a plan gets one review; code gets one review. A second proposal pass
-is only for widened scope, a second code pass only for defects introduced by
-the revision, and plan review never repeats. Security Review normally takes at
-most two passes. A further pass requires its specific unresolved security
-question or newly changed material, why earlier passes and evidence cannot
-resolve it, expected value, the named artifact and scope, and explicit
-Maintainer authorization for that pass. Another pass needs new authorization.
-Without these, the cap stands. A pass does not clear an
+**Caps and closure.** Each stage is one round: one usual review and, where the
+tier requires it, one Security Review. A proposal gets one usual review and one
+author response; a plan gets one review; code gets one review, after the plan's
+last chunk. A further proposal or plan review is only for scope the Maintainer
+adds, on a brief of the added text and the first review of the same kind; code
+gets no second usual pass, and plan review otherwise never repeats. A further
+Security Review pass requires its specific unresolved security question or newly
+changed material, why earlier passes and evidence cannot resolve it, expected
+value, the named artifact and scope, and explicit Maintainer authorization for
+that pass. Another pass needs new authorization. Without these, the cap stands. A pass does not clear an
 obligation, finding, criterion or check automatically. Clean work and closed
 findings move forward without another approval or a clearing round.
 
-For example, if a second pass closes the finding and no accepted check remains
-unmet, advance without a third read. If a new security question remains, a
+For example, if the closing test passes or the exact words are applied and no
+accepted check remains unmet, advance without another read. If a new security question remains, a
 further pass may be commissioned only after the record names that question,
 why prior evidence cannot resolve it, expected value, artifact and scope, and
 the Maintainer authorizes that one pass. Missing details or authorization leave
@@ -239,9 +240,7 @@ A non-blocking finding is not automatically deferrable.
 The author carries the artifact forward after their response or revision.
 Do not escalate a disagreement merely because two passes differ. The author
 states which advice they adopted and why, and the Maintainer reads that
-resolution at Decision. A proposal revision that widens scope gets a pass only
-on the new material; code gets a second pass only when its revision introduced
-a defect. The Security Review exception never clears by an ordinary pass.
+resolution at Decision. A further pass on scope the Maintainer adds covers only the new material; code gets no second usual pass, because a blocking finding closes by the reviewer's failing test or exact words, or stays open and goes to the Maintainer if declined (`dev/agent_collaboration.md` > "Review rules"). The Security Review exception never clears by an ordinary pass.
 The Decision closes the phase. Later critique becomes a new proposal.
 
 ## Plan review is Internal, always
@@ -251,7 +250,7 @@ round. Standard or security-flavored, the reviewer is a fresh session
 of the same agent type; no plan review is a mandated different-type
 round, a recommendation slot, or an escalation target. **Freshness
 lives at every stage; the Maintainer decides** whether to spend
-anything more, per artifact, never by tier.
+anything more, per artifact, never by tier. The one exception is scope the Maintainer adds, which follows `dev/agent_collaboration.md` > "Review rules".
 
 **A plan whose surface or triggers call for security treatment**
 declares `Plan review: required(Internal + Internal Security Review)`

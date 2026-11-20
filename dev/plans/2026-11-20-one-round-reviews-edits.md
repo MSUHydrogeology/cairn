@@ -17,8 +17,10 @@ Each review is one pass; add a second only for widened scope (proposal) or new d
 Replace with:
 
 ```text
-Each review stage is one round: one usual pass and, where the tier requires it, one Security Review pass. A blocking finding states what closes it: a failing test for code, exact words for a document. A further pass needs scope the Maintainer added, a substantive plan amendment, or the Maintainer's explicit authorization and a specific unresolved security question; each later pass needs new authorization. At a cap, send only unresolved blocking findings or unmet accepted checks to the Maintainer.
+Each review stage is one round: one usual pass and, where the tier requires it, one Security Review pass. A further pass needs scope the Maintainer added, a substantive plan amendment, or the Maintainer's explicit authorization and a specific unresolved security question; each later pass needs new authorization. At a cap, send only unresolved blocking findings or unmet accepted checks to the Maintainer.
 ```
+
+Amended 2026-11-20 after code review (B1). As accepted, the text had one more sentence after the first: "A blocking finding states what closes it: a failing test for code, exact words for a document." It was removed on the Maintainer's word; see the plan's Scope delta.
 
 ### G1
 
