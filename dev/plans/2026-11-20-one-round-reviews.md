@@ -51,7 +51,7 @@ The chunks state one rule, so run them in order.
 
 ## Acceptance criteria
 
-**C1.** `AGENTS.md` and `templates/core/AGENTS.md` carry the D1 paragraph, 80 words replacing 59. `AGENTS.md`, `CLAUDE.md` and `RULES.md` total 1,609 words, at most 2,000; the shipped `AGENTS.md` and `VENDOR.md` total 1,441. Each guide holds the closing-finding paragraph, the Maintainer-added-scope paragraph, the five-chunk and code-once sentence, and the amendment pointer. `git grep -n -F "to the reviewer for a targeted look" -- dev/agent_collaboration.md templates/core/dev/agent_collaboration.md` prints nothing. The two guides' added and removed lines are identical.
+**C1.** `AGENTS.md` and `templates/core/AGENTS.md` carry the D1 paragraph less one sentence (see Scope delta), 63 words replacing 59. `AGENTS.md`, `CLAUDE.md` and `RULES.md` total 1,592 words, at most 2,000; the shipped `AGENTS.md`, `VENDOR.md` and `RULES.md` total 1,497, at most 1,500. (Amended 2026-11-20 after code review: as opened, this cell said 80 words, 1,609 and 1,441, and counted two of the three installed files.) Each guide holds the closing-finding paragraph, the Maintainer-added-scope paragraph, the five-chunk and code-once sentence, and the amendment pointer. `git grep -n -F "to the reviewer for a targeted look" -- dev/agent_collaboration.md templates/core/dev/agent_collaboration.md` prints nothing. The two guides' added and removed lines are identical.
 
 **C2.** Neither plan template says "A second code-review pass runs only when". The plan template's Sequence line names five rows; the proposal template says "unless the Maintainer adds scope". Each twin pair's added and removed lines are identical, and no changed line sits inside a `cairn:slot` block.
 
@@ -63,7 +63,9 @@ The chunks state one rule, so run them in order.
 
 ## Scope delta
 
-**Scope delta**: preserved. Every home in the appendix is covered, plus one the appendix missed (M10) and the five diagram labels that state the same removed conditions (M12, M13). The checks D6 sets (recount at the end of v0.9) get a roadmap row (R2).
+**Scope delta**: degraded, by one sentence in one home. Every home in the appendix is covered, plus one the appendix missed (M10) and the five diagram labels that state the same removed conditions (M12, M13). The checks D6 sets (recount at the end of v0.9) get a roadmap row (R2).
+
+- Removed from edit A1, in `AGENTS.md` and `templates/core/AGENTS.md`: "A blocking finding states what closes it: a failing test for code, exact words for a document." With it, the installed `AGENTS.md`, `VENDOR.md` and `RULES.md` total 1,514 words against the standing limit of 1,500 that `tests/test_scaffold.py` holds. The sentence was cut, not reworded: Strategy's shorter drafts of the paragraph each weakened the wording of the Security Review cap. The rule stays in force in both guides ("Closing a blocking finding") and in the plan template. The Maintainer (chat, 2026-11-20): "Fix this one now by dropping the sentence." **disposition**: accept
 
 ## Verification
 
