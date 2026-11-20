@@ -30,7 +30,7 @@ them.
   the proposed provider-log roots and project paths and explicitly enabled
   consent in `~/.cairn/meter.json`. Its private ledger is
   `~/.cairn/meter/ledger.json`; each configured project receives a sanitized
-  `dev/measurement/meter.json` export. The recurring work and cost depend on
+  `meter.json` export in its `dev/measurement/` folder. The recurring work and cost depend on
   selected logs and are unmeasured. `python dev/tools/meter.py refresh --report
   --json` reports the complete pulse and joins only the current configured
   project from that successful refresh. Partial or failed runs return a closed

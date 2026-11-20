@@ -26,7 +26,7 @@ complete sanitized `cairn-pulse/1` record in the reflection. For a closed
 `partial`, `unavailable` or `disabled` receipt, include only the status and
 reason exactly as reported; missing or failed usage is never zero. This fresh
 report joins only the current configured project after its export succeeds. Do
-not read an older `dev/measurement/meter.json`, pass an aggregate path, or
+not read an older `meter.json` export in `dev/measurement/`, pass an aggregate path, or
 commit a per-project export. If it exits without a valid pulse or closed
 receipt, report unavailable without raw diagnostics. Collection reads only roots and projects in the
 private consent file `~/.cairn/meter.json`; never create or edit it without the
