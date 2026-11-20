@@ -24,6 +24,11 @@ when the arguments contain `--drain`.
 python dev/tools/session.py session-start
 ```
 
+If `python` is not found (on Windows the message mentions the Microsoft Store),
+run the same command with `py -3`, or with the full path of your interpreter.
+The installer saved that path as the `interpreter` entry of the
+`local-env.json` file in your project's Git folder, under `cairn`.
+
 It **reports** (read-only): commits since the last handoff (with a graceful
 fallback on a fresh repo), working-tree state, open proposals/plans, the active
 work-intents (if the coordination tool is installed), and the resolved project
@@ -107,7 +112,7 @@ unattended start. If an enabled consent config already exists or the project's
 `## Session start` routine records a remembered refusal, do not offer or read
 provider logs. Otherwise, show the exact proposed provider-log roots and
 projects, the private ledger path (`~/.cairn/meter/ledger.json`), the sanitized
-project-export paths (`dev/measurement/meter.json` under each project), and
+project-export paths (each project's `meter.json` file in `dev/measurement/`), and
 that recurring work and cost depend on those logs and are unmeasured. Ask for a
 clear yes before creating or changing the consent file. The offer itself must
 not run a refresh or read provider logs. After consent, use the configuration

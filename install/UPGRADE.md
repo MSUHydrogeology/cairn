@@ -14,10 +14,10 @@ you (or your agent) review, resolve any conflicts, and apply — and the
 applied upgrade is itself a tracked change in your repo that goes through
 your own review lifecycle.
 
-**Start here.** To run an upgrade, go to [The workflow](#the-workflow). The three
+**Start here.** To run an upgrade, go to [The workflow](#the-workflow). The four
 sections before it are migration notes and background: moving to one review
-stage, files Cairn stopped shipping, and the two on-disk artifacts. Read them
-when the workflow sends you there.
+stage, the 0.8 layout move, files Cairn stopped shipping, and the two on-disk
+artifacts. Read them when the workflow sends you there.
 
 ## Moving to one review at every stage
 
@@ -48,6 +48,44 @@ are examples of what to inspect, not automatic resolutions for your tree.
 The module-body-coverage probe now lists 11 unmatched old heading names for
 `dual-review` (8 before this change); the three added names moved under other
 headings rather than losing their rules.
+
+## Moving an install from 0.7.0 to the 0.8 layout
+
+Cairn 0.8 moved the tool scripts it installs in your project, from `scripts/`
+and `tools/` to `dev/tools/`. An install made by 0.7.0 or earlier meets this
+move before any ordinary upgrade; an install from 0.8.0 or later does not.
+The move runs on its own, and a receipt makes it apply exactly what you
+staged. Run it from a full clone of Cairn, with all of its history: the
+installer checks each old copy against that history, and a shallow clone
+cannot supply it.
+
+1. `python install/scaffold.py upgrade --target <repo> --plan` lists each move
+   as `action: old -> new`. It writes nothing. A `blocked:` line that says
+   "unproved ancestry" means the installer could not match an
+   old copy to a Cairn release: do step 2 first. Any other `blocked:` line
+   names its own problem; fix that first. With no `blocked:` line, go to
+   step 3.
+2. `upgrade --target <repo> --stage --reconcile-layout <REV>` compares the old
+   copies with the Cairn revision `<REV>` (the release the project was
+   installed from, for example its tag) and prints `Apply to the same project
+   with --apply --migration-receipt <digest>`. Run
+   `upgrade --target <repo> --apply --migration-receipt <digest>` with that
+   digest, adding `--to <id>` if the line shows it; it ends with
+   `Layout reconciliation complete.` Then run `--plan`
+   again.
+3. `upgrade --target <repo> --stage` stages the move and prints the same kind
+   of `Apply to the same project ...` line.
+4. Run `upgrade --target <repo> --apply --migration-receipt <digest>` with
+   that digest, adding `--to <id>` if the line shows it. It ends with
+   `Layout migration complete.`
+5. Now follow [The workflow](#the-workflow).
+
+If a run stops partway, the next `upgrade` command says where the unfinished
+move is; resume it with `--apply --migration-receipt <digest>`.
+
+**Known limit.** `--plan` lists only the moves that can be made now. A second
+move can show up only after the first is applied, so the first `--plan` may
+not list every move. Run `--plan` again after each apply.
 
 ## Files Cairn stopped shipping
 
@@ -370,6 +408,8 @@ and skills files; additions to selected modules follow their existing selection.
   concurrent writes between a check and a write are outside this boundary.
 
   If `--plan` lists files that differ only in line endings, Git converted saved ancestors or scripts when it checked your project out (`core.autocrlf`). Re-clone with `git clone -c core.autocrlf=false` and run `--plan` again; do not edit `dev/.cairn/base/`.
+
+  The same applies to the Cairn checkout you run the upgrade from. On Windows, Git for Windows may set `core.autocrlf=true`, which gives Cairn's own pinned helper files CRLF line endings. The upgrade then stops with `use a Cairn Git checkout with the legacy installer history to verify these old copies`, although the clone has its full history. Clone Cairn with `git clone -c core.autocrlf=false` as well.
 
   For an invalid ancestor, keep the original cache untouched. Compare the
   `.ours` and `.theirs` pair, reconcile the original file by hand, then use

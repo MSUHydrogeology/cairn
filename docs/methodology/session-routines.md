@@ -33,18 +33,18 @@ The pass has four moves:
 3. **Note in-flight threads.** Open proposals and plans are live
    multi-agent threads; surface them. *If the `coordination-tiers`
    module is installed*, also **read the active work-intent set**
-   (`python tools/intent.py list`) and confirm the hooks are present
-   (`python tools/intent.py hooks-status`): a starting session sees who holds
+   (`python dev/tools/intent.py list`) and confirm the hooks are present
+   (`python dev/tools/intent.py hooks-status`): a starting session sees who holds
    which paths before its first edit. This is the *read* half of the
    work-intent convention — the complement to claiming before you edit
    (`coordination-tiers`); skipping it is how a session collides with an
    active claim it never saw.
 
-   When `tools/board.py` is available, use the **board** as an orientation
+   When `dev/tools/board.py` is available, use the **board** as an orientation
    view before reading the relevant artifacts:
 
    ```
-   python tools/board.py
+   python dev/tools/board.py
    ```
 
    One row per active proposal and plan: its kind and name, then the
@@ -252,7 +252,7 @@ The routines above are also **invokable skills**, installed at scaffold time as
 the agentskills.io `SKILL.md` pair under `.agents/skills/` (`session-start` and
 `session-end`, invoked as `/session-start` / `/session-end`), backed by a
 deterministic CLI
-(`tools/session.py`). The skill bodies orchestrate the *mechanizable* steps
+(`dev/tools/session.py`). The skill bodies orchestrate the *mechanizable* steps
 (gather git state, scaffold the reflection, prepare the handoff, and surface
 intents). The designated owner prepares and records the handoff, then gives the
 user the guarded prune command. This doctrine stays the single source of *what*
@@ -269,7 +269,10 @@ Two invariants are load-bearing and structural, not stylistic:
 * **Single-owner full handoff.** The designated owner runs
   `--prepare-handoff`, completes the reflection, roadmap scrub, next-session
   note, custom steps and handoff commit, then gives the user
-  `CAIRN_HANDOFF_OWNER=1 python tools/session.py session-end --handoff`.
+  `CAIRN_HANDOFF_OWNER=1 python dev/tools/session.py session-end --handoff`
+  in bash or zsh, or `$env:CAIRN_HANDOFF_OWNER = '1'; python
+  dev/tools/session.py session-end --handoff; Remove-Item
+  Env:CAIRN_HANDOFF_OWNER` in PowerShell.
   The user's command may repeat non-destructive output; only its prune step
   removes eligible records. A listing of the intent log is a snapshot, not
   proof that no session is appending or will append later, so the owner and
@@ -284,7 +287,7 @@ Two invariants are load-bearing and structural, not stylistic:
 
 ### Project-owned routine customization — `custom_session_routines.md`
 
-The skills + `tools/session.py` carry the *universal* routine — the
+The skills + `dev/tools/session.py` carry the *universal* routine — the
 invocation, the mechanizable gather/scaffold/prune, and the judgment steps every
 adopter runs. The *tail* — a project's **concrete** steps (which doc-build
 command, which test environment, the changelog cadence, a foldback-capture

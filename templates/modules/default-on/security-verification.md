@@ -10,7 +10,7 @@
 adopter opts out explicitly with `modules_remove: [security-verification]`.
 **Adds to:** a `## Security verification` standing-command note in
 `AGENTS.md`, **plus a runnable dispatcher** the scaffold installs verbatim as
-`run_security_verification.py` in the target's `scripts/` directory (see
+`run_security_verification.py` in the target's `dev/tools/` directory (see
 "Reference implementation" below).
 
 This module installs a **route, not any evidence**. It ships one
@@ -39,7 +39,7 @@ directive below):
 > dispatcher, its source-owned registry, its child result schema, its
 > binding-mode schema, and every registry entry are **high-risk
 > Security-Review surfaces**: a change to any of them takes a Security
-> Review, the same tier as `bootstrap/_scaffold/` in Cairn's own
+> Review, the same tier as `install/_scaffold/` in Cairn's own
 > `AGENTS.md`.
 
 Leave the `security-verification` slot body in `AGENTS.md` empty, installed
@@ -191,7 +191,7 @@ execute the attacker's own dispatcher and registry.
 ## Reference implementation
 
 Enabling this module writes `run_security_verification.py` into the
-target's `scripts/` directory (copied **verbatim** — no token substitution
+target's `dev/tools/` directory (copied **verbatim** — no token substitution
 over the code, and hash-pinned by the install lockfile). Standard library
 only; no third-party dependency, no network egress of its own — a selected
 capability's own runner may open a connection under its own `local` /

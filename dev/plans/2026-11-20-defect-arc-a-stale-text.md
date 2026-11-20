@@ -1,7 +1,7 @@
 # Plan: Defect arc A, stale text
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -9,7 +9,7 @@
 
 ## Build summary
 
-After this plan, the quickstart's Windows steps work and list `RULES.md`; text that named the pre-0.8 folders names the real ones; the goodnight prune command is given for bash and for PowerShell; session start says what to run when `python` is not found; `python tests/check_cairn.py` exits 0 on a fresh clone; and `install/UPGRADE.md` describes the 0.7.0 to 0.8 layout move and the line-ending trap. The change is 55 exact replacements (77 applications) in 30 files, one changelog line and a refreshed install lock. No code, rule or status changes.
+After this plan, the quickstart's Windows steps work and list `RULES.md`; text that named the pre-0.8 folders names the real ones; the goodnight prune command is given for bash and for PowerShell; session start says what to run when `python` is not found; `python tests/check_cairn.py` exits 0 on a fresh clone; and `install/UPGRADE.md` describes the 0.7.0 to 0.8 layout move and the line-ending trap. The change is 59 exact replacements (81 applications) in 32 files, one changelog line and a refreshed install lock. No code, rule or status changes.
 
 ## Source proposal
 
@@ -25,7 +25,9 @@ The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defec
 
 **Where the files contradict the brief.** (1) Issue #98 has four parts and #99 has four, so "#98.5" and "#99.5" are the arc's own items, not issue parts; close neither issue from this plan. (2) The shipped plan template already says `dev/tools/board.py`; only Cairn's own copy is stale (edit L19). (3) The PowerShell prune form ends with `Remove-Item Env:CAIRN_HANDOFF_OWNER`, which the issue's form lacks: it keeps the variable set for one run only, as bash does, so the guard keeps its meaning.
 
-**Found, not fixed.** Python comments in about 34 files naming old folders go to plans B and C, and so does the bash-only hint in the refusal message at `dev/tools/session.py` line 2309 (plan C). `docs/DOCUMENTATION_PLAN.md` goes to plan E. A stale `test_command` in `dev/.cairn/profile.yml` is functional and goes to plan B, whose author was told. The `cairn/templates/` paths in the documentation-plan module and the contribution templates are correct, since a Cairn clone has `templates/`, and stay. The licence file names folders that no longer exist (`dimensions/`, `bootstrap/*.md`, `on-ramp/`, `scripts/`); correcting it is the Maintainer's call and was put to him on 2026-11-20. The plan template's tooling slot and one profile comment, first left alone, are now fixed (T1 to T3, P1).
+**Found, not fixed.** Python comments in about 34 files naming old folders go to plans B and C, and so does the bash-only hint in the refusal message at `dev/tools/session.py` line 2309 (plan C). `docs/DOCUMENTATION_PLAN.md` goes to plan E. A stale `test_command` in `dev/.cairn/profile.yml` is functional and goes to plan B, whose author was told. The `cairn/templates/` paths in the documentation-plan module and the contribution templates are correct, since a Cairn clone has `templates/`, and stay. The licence file named folders that no longer exist; the Maintainer settled that on 2026-11-20 (the next paragraph). The plan template's tooling slot and one profile comment, first left alone, are now fixed (T1 to T3, P1).
+
+**Scope the Maintainer added (2026-11-20).** The licence notes `LICENSE-CC-BY.md` and `LICENSE-CC-BY-ND.md` say what kind of content each licence covers instead of listing folders, four of which no longer exist. Asked whether to correct the folder names, he wrote: "Instead of listing folders, say what the content is", and then chose the wording "By content, same licences". The licences do not change. Entries N1 to N4 are at the end of the edit list; they are applied after C5 as one more commit. Neither file is in the install lock or the gate manifest, and the selector names no test for them (measured). This addition gets one limited review of the added text, as "Review rules" says.
 
 **Must not change.** What any rule says. Every edit is a path or a command; Security Review is not needed.
 
@@ -51,11 +53,11 @@ Low-tier implementer, the model named at spawn, in a worktree the coordinator na
 
 **C1.** `git diff -U0` shows only the four Find texts removed and Replace texts added. The PowerShell column names `install\` three times and the commit prompt and `git add` line both list `RULES.md`. Developmental check, deleted afterward: the PowerShell column run once in a scratch folder on this Windows host (profile copy, preview, install) exits 0 and `git status` then shows no untracked `RULES.md`. Not run at opening.
 
-**C2.** Both sweeps in Verification print nothing. Twin pairs (`security-verification.md`) have identical added and removed lines. No Replace changes a word other than a path.
+**C2.** The module sweep in Verification prints nothing. The pre-0.8 sweep prints one line after C2, the prune command at line 272 of `docs/methodology/session-routines.md`, which entry R3 corrects in C3; it prints nothing after C3. (Amended 2026-11-20 during implementation: as reviewed, this cell expected both sweeps clean after C2, but the last stale line in a C2 file is fixed by a C3 entry. Only the timing of the check changes.) Twin pairs (`security-verification.md`) have identical added and removed lines. No Replace changes a word other than a path.
 
 **C3.** `git grep -l -F '$env:CAIRN_HANDOFF_OWNER'` lists the five prune sites. Twin pairs match. The skill still says the agent does not run the prune, and the bash form is unchanged. The session-start skill tells a Windows reader what to run when `python` is not found and where its path is saved. I did not reproduce the message here.
 
-**C4.** `python tests/check_cairn.py` exits 0 on the working tree (exits 1 with five issues today), and again on a fresh clone of the final commit: `git clone --no-hardlinks <repo path> <scratch>/fresh`, check out the final commit, run `tests/check_cairn.py` there; delete it. No Replace names the untracked meter export by a full path.
+**C4.** `python tests/check_cairn.py` exits 0 on the working tree (exits 1 with five issues today), and again on a fresh clone of the final commit: `git -c core.autocrlf=false clone --no-hardlinks <repo path> <scratch>/fresh`, check out the final commit, run `tests/check_cairn.py` there; delete it. (Amended 2026-11-20 during implementation: on a Windows host whose Git converts line endings by default, a plain clone stops on the pinned-helper hash before the prose check reads anything, at the starting commit as well as after this plan. That is #95, which plan B fixes.) No Replace names the untracked meter export by a full path.
 
 **C5.** `install/UPGRADE.md` has the new section with its known limit, "four sections" (U1, U2) and the Cairn-checkout line-ending note. `CHANGELOG.md` has one entry. After `python install/scaffold.py upgrade --target . --finalize <paths>` on the seven paths, `install/verify_integrity.py --target .` prints OK for 70 files. The lock is committed alone. At archive, CL1's link to this plan is repointed to the plan's archive path. The new section was written from `install/_scaffold/upgrade.py` and issue #99, and no upgrade was run; the code reviewer checks it against `_layout_command`. Plan B owes a re-read of the line-ending note, since it changes that error and adds a `.gitattributes`.
 
@@ -199,3 +201,114 @@ Checked after folding, by script: the whole list applied to a scratch copy of `3
 Not checked: no test ran, and the quickstart's PowerShell column was not run.
 
 **Elapsed**: about 30 minutes. **Tokens**: unknown. The harness reported 210,989 tokens for the author and 159,834 for the review.
+
+## Implementation verification -- Claude Haiku 5.5 (Implementation, Low) -- 2026-11-20
+
+**BASE**: 02f92d37. Branch arc-a-impl. Plan header set to `implementing` in 19b13cec.
+
+**Commits**
+- 19b13cec: plan status to implementing (plan file only).
+- edef620b, C1 quickstart (Q1-Q4, 4 applications). Gates: diff check, claim_check, link_check, check_cairn OK. PowerShell check below.
+- 2c30f054, C2 pre-0.8 paths (57 applications, 19 files). Gates OK except the known `run_security_verification.py` flags (lines 18, 174, unchanged from HEAD). Module sweep empty; twins match.
+- a91261da, C3 prune command and python fallback (7 applications). Pre-0.8 sweep empty. Gates OK; session-start pair reports `meter.json` at line 115, the M1 item of C4 (present at HEAD, line 110).
+- 131b543f, C4 prose check (5 applications). Gates OK. Whole-tree `tests/check_cairn.py` exit 0 (221 files).
+- 031c00ba, C5 upgrade notes and CL1 (U1-U4 by driver: 4 applications; CL1 by hand under a new Minor changes heading). Gates OK.
+- 508dfb55, lock only: `upgrade --finalize` on the seven paths.
+
+**PowerShell check (C1)**, run once in a new scratch folder, Anaconda first on PATH, $CAIRN = worktree: copy profile (Copy-Item sets no exit code; profile.yml created); `python install/scaffold.py --config profile.yml --target . --summary` exit 0; `... --target .` exit 0; RULES.md installed; `git status` in the worktree showed only ` M docs/quickstart.md`. Scratch folder deleted.
+
+**Sweeps**: pre-0.8 path sweep after C2 printed one line (session-routines.md:272, R3); after C3 it prints nothing. Module sweep: nothing.
+
+**Lock step**: `verify_integrity` before finalize: 7 modified files, exactly the seven named. After finalize: OK, 70 files.
+
+**Fresh clone (C4 criterion)**: FAILED as run with the default Git config on this host. The clone has `core.autocrlf=true`; `tests/check_cairn.py` then stops with `RuntimeError: git-read-binding-failed` in `templates/modules/team-gated/link_check.py`, because the checked-out `dev/tools/git_read.py` hash (b6fad392...) differs from the pinned `_GIT_READ_SHA256` (b67deb4e...), which is the blob hash. With `git -c core.autocrlf=false clone`, the same commit prints `check_cairn: OK -- 221 Markdown file(s) scanned`. The clone was deleted in both cases. The plan's UPGRADE note already says to clone with autocrlf false.
+
+**Did not match the plan**: (1) the C2 sweep, corrected by the coordinator in 2a31f804; (2) claim-check and check_cairn on the session-start pair at C3 (M1, expected until C4); (3) the fresh-clone failure above under default config.
+
+**Not run**: the 86 selected test files (the coordinator runs them); no test set `CAIRN_FULL_SUITE`.
+
+**Claims**: C1's claim was released with `--commit HEAD`, which ran before its commit, so it records 19b13cec. Later claims cite the real commit.
+
+**Elapsed**: about 60 minutes. **Tokens**: unknown.
+
+## Limited review of scope the Maintainer added -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-20
+
+```
+Reviewed commit: 96cca0ac
+```
+
+**Verdict**: ACCEPT. Findings: non-blocking only.
+
+1. Each Find (N1 to N4) occurs exactly once in its target on the branch (checked by script).
+2. The licences are unchanged. Exception 1, Exception 2 and the second note's three families are untouched, and the README section says the same thing. "Every explanatory diagram" leaves the brand mark under Exception 2, which names it as not CC BY; the eight listed diagrams are the only other files in `docs/assets/`. No file loses a licence a reader could tell.
+3. N4 matches N3's "shipped Python tools" and reads correctly in its sentence.
+4. After N1 to N4, no stale folder name remains in either note (grep for `scripts/`, `bootstrap`, `dimensions/`, `case-studies/`, `on-ramp`).
+
+Non-blocking: N1's "everything written for people to read or adapt" reads as a rule, so a reader could take it to cover files the old list never named (for example `AGENTS.md` or `dev/` records). That is for the Maintainer to read; I give no view on the licences.
+
+**Not covered**: no legal reading; I did not check other files that cite the old folder names.
+
+**Elapsed**: about 10 minutes. **Tokens**: unknown.
+
+## Coordinator verification -- Claude Fable 5.2 (Strategy) -- 2026-11-20
+
+The implementer applied the edit list and stopped twice, as briefed: once on a check the plan had timed wrong, once on the fresh-clone check. Strategy settled both (the amended cells C2 and C4 say how), applied the scope the Maintainer added (N1 to N4, at `dbe9ba0d`, after the limited review), and ran the tests.
+
+- **The edits.** The 30 files the first 55 entries target are byte for byte what a script produces by applying those entries to the starting commit (77 applications, each Find matching once).
+- **Fresh clone.** A default clone on this Windows host fails before the prose check runs, at the starting commit too (measured): its Git converts line endings, and the pinned-helper hash then refuses. That is #95. With `core.autocrlf=false` the check prints OK for 221 files. Home for the default clone: plan B, chunk C1.
+- **Tests and the 40-file guard.** One call of the 86 selected files was refused by Cairn's guard (`tests/conftest.py`). By chunk the selector gives 1, 73, 15, 40 and 10 files. The four selections that fit ran at `02f92d37` and at `f55360c1`, and each failure was compared by test id and message. C1: 2 passed at both. C3: the same 95 failures. C4: the same 310. C5: 161 failures at the start and 160 after. The one difference is a control case of a timeout test (`tests/test_portable_security_sweeps.py`, case `control-adapter-answers`): it failed once in the loaded run at the start, and passed in four reruns alone, at the start and after. No test fails only after the change. Commits after `f55360c1` change only this plan's two files and the two licence notes, which no test names.
+- **C2's 73 files were not run.** By the guard's own rule that is a broad run, and it was not split to get under the limit. In its place: both sweeps are clean, twin files match, and a search of all 164 test files found none that holds any of the 44 changed lines. Home: the arc's joined run (`dev/PLANNING.md`, section 1, "Accepted on 2026-11-20").
+
+Machine time for one run: C3 11 minutes, C4 57, C5 27. **Elapsed**: about 3 hours, nearly all of it background test runs. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`, usual reviewer) -- 2026-11-20
+
+```
+Reviewed commit: 142b1377321ca36bfca5497786557fd957c2766d
+Range: 02f92d37..142b1377
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised, non-blocking only
+**Verdict**: ACCEPT
+
+The change makes paths and commands that adopters read true in the 0.8 layout, by exact swaps. It does that. I applied all 59 entries (81 applications) by script to a `git archive` copy of the base commit. All 32 target files match HEAD byte for byte, and each Find matched once. The other four changed files are the changelog, the lock and this plan's two files.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes; the edits equal the list, twins carry identical text, and no added shipped text names a model or vendor -- my apply-and-compare script; `git diff 02f92d37..HEAD -- templates .agents install`.
+2. **Best alternative.** None simpler than an exact-edit list; the lock commit `508dfb55` is alone and changes seven hash lines -- `verify_integrity.py --target .` prints OK for 70 files.
+3. **What would show it wrong.** A stale folder name in the licence notes or module pages, or a test among the 42 unrun files failing -- `git grep -n -E "scripts/|bootstrap/" -- LICENSE-CC-BY.md LICENSE-CC-BY-ND.md templates/modules/*/*.md dev/modules` prints nothing.
+
+**Does any rule weaken or disappear?** No. The prune, `python` and path edits only add the PowerShell form or a path; the licences keep their three families.
+
+**Findings** (all non-blocking)
+
+1. UPGRADE.md step 1 overstates: `blocked:` has other causes (`upgrade.py:4321`, "unlisted copy requires reconciliation"), which step 2 does not fix. Replace "A line that starts `blocked:` (for example "unproved ancestry") means" with "A `blocked:` line that says "unproved ancestry" means"; add after "do step 2 first." the words "Any other `blocked:` line names its own problem; fix that first."
+2. Steps 2 and 4 say "Run that printed command exactly", but `upgrade.py:4533` prints only the flags. Say: "Run `upgrade --target <repo> --apply --migration-receipt <digest>` with that digest."
+3. The Build summary still says 55 replacements, 77 applications and 30 files; the total is 59, 81 and 32.
+4. The Known limit comes from issue #99, not from code I could confirm.
+
+**The amendments** are sound, and homed: C2's timing (R3 is a C3 entry), and the default Windows clone in plan B, chunk C1.
+
+**Tests.** The record settles C1, C3, C4 and C5. C2's 73 files were not run. Of them, 42 are in none of the four run selections, among them `test_profile_grammar`, `test_profiles_smoke`, `test_claim_check_module`, `test_security_verification` and `test_session_routines`. "No test holds a changed line" does not show those pass. The joined run is enough, if it runs the C2 selection. Bounding: ACCEPTED.
+
+**Not covered**: no tests run; the licences; UPGRADE.md was read, not run. Over target to carry exact words. Elapsed about 40 minutes; tokens unknown.
+
+## Code-review response -- Claude Fable 5.2 (Strategy, acting as implementer) -- 2026-11-20
+
+Strategy coordinated this plan and answers; the implementing session (Claude Haiku 5.5) had ended. The review raised no blocking finding. Its four notes are cheap, so each is settled here, before archive.
+
+- **1, step 1 of the new upgrade section: fixed** (`b9174bb9`) with the reviewer's words. One more change is Strategy's: "Without one" became "With no `blocked:` line", because the added sentence made "one" unclear.
+- **2, "Run that printed command exactly": fixed** (`b9174bb9`) with the reviewer's command, plus eight words of Strategy's: "adding `--to <id>` if the line shows it". The printed line carries `--to` when the stage was given one (`install/_scaffold/upgrade.py`, `_layout_command`), and an apply without it is refused because the receipt no longer matches (`install/_scaffold/layout_migration.py`, `Transaction.apply`). Without those words the fix would have dropped what "exactly" protected.
+- **3, the counts: fixed** (`27d82896`). The Build summary says 59, 81 and 32. Entry U3 of the edit list holds the corrected section, so the list, applied by script to `02f92d37`, still equals this branch in all 32 files.
+- **4, the Known limit: kept, and now confirmed from code.** A file with unproved ancestry is printed as `blocked:` and not as a move (`_layout_plan`, the `if not old_proved` branch); reconciling records it as "keep"; only the next `--plan` lists its move.
+
+**Tests after the fix.** The ten files that name `install/UPGRADE.md` ran again at `27d82896`: 161 failed, 429 passed, 50 skipped, against 160, 430 and 50 at `f55360c1`. One id is new, `tests/test_portable_security_sweeps.py::test_full_mode_is_unreachable_without_a_digest_match[mismatched_digest]`. It passed three times alone at `27d82896`; other agents were loading the machine during the full run, and another case in the same file failed once in a loaded run earlier today. Every other failing id and message is unchanged. No file under `tests/` holds a phrase the fix changed (text search).
+
+**The reviewer's condition is accepted.** Chunk C2's 73-file selection, with the 42 files no group covered, is owed by the arc's joined run. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+
+Not run after the fix: the quickstart's PowerShell column and `upgrade.py` itself. Not read by a second reviewer: the words Strategy added in 1 and 2. The reviewer wrote "about 40 minutes"; its commit followed the reviewed commit by under three minutes.
+
+**Elapsed**: about 36 minutes, of which 27 were one background test run. **Tokens**: unknown.

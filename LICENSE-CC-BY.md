@@ -2,23 +2,19 @@
 
 Copyright (c) 2026 Anthony Kendall and the Cairn contributors.
 
-The **prose, templates, and explanatory visuals** in this repository —
-the methodology (`docs/methodology/`), the dimensions (`dimensions/`), the case
-studies (`case-studies/`), the bootstrap narrative (`bootstrap/*.md`),
-the forkable **document templates** — the Markdown (`.md`) files under
-`templates/` — the on-ramp (`on-ramp/`), this repository's documentation
-(`README.md`, `CITATION.cff`), the project site's page (`docs/index.html`),
-and the **explanatory diagrams** under `docs/assets/`
-(`dual-review-independence.svg`, `shared-record-across-sessions.svg`,
-`three-lanes-of-change.svg`, `independent-scientific-check.svg`,
-`two-ways-to-adopt.svg`, `assai-components.svg`,
-`assai-authority-boundaries.svg`, and `assai-investigation-cycle.svg`) — are licensed under
-the **Creative Commons Attribution 4.0 International License (CC BY 4.0)**.
+The **prose, document templates, and explanatory diagrams** in this repository
+are licensed under the **Creative Commons Attribution 4.0 International License
+(CC BY 4.0)**. This is decided by what a file is, not by the folder it sits in.
+It covers everything written for people to read or adapt: the methodology and
+guides, the case studies, the installation and release instructions, the
+forkable **document templates** (the Markdown files Cairn installs in a
+project), this repository's `README.md` and `CITATION.cff`, the project site's
+page, and every explanatory diagram.
 
 **Exception 1 — source code takes precedence.** Any source-code file
 (`.py` or other code) is **MIT, wherever it lives** — including the shipped
 Python tools delivered *inside* the `templates/` tree (e.g.
-`templates/modules/team-gated/link_check.py`) and anything under `scripts/`.
+`templates/modules/team-gated/link_check.py`).
 "Other code" includes functional configuration and data files that are
 operational parts of the tools — for example `.yml`/`.txt` files such as
 `vendor_targets.yml` or `content_scan_*.txt` — as distinct from prose data.
@@ -33,10 +29,10 @@ canonical. See [`LICENSE-CC-BY-ND.md`](LICENSE-CC-BY-ND.md).
 * Full legal text: <https://creativecommons.org/licenses/by/4.0/legalcode>
 * Human-readable summary: <https://creativecommons.org/licenses/by/4.0/>
 
-All **source code** in this repository — `bootstrap/scaffold.py` and its
-tests, the shipped Python tools under `templates/` and `scripts/`, and any
-other code file — is licensed separately under the MIT License, which takes
-precedence over this document license. See [`LICENSE-MIT.md`](LICENSE-MIT.md).
+All **source code** in this repository — the installer, the shipped Python
+tools, the tests, and any other code file — is licensed separately under the
+MIT License, which takes precedence over this document license. See
+[`LICENSE-MIT.md`](LICENSE-MIT.md).
 
 ## What CC BY 4.0 grants
 

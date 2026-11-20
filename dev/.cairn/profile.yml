@@ -1,7 +1,7 @@
 # Cairn self-host install-config (authoritative committed profile).
 #
 # This is the file you EDIT to change the profile; then regenerate the
-# lockfile with `python bootstrap/scaffold.py upgrade --init-lock --target .`
+# lockfile with `python install/scaffold.py upgrade --init-lock --target .`
 # (see BOOTSTRAP.md Act II-2, "Where the profile lives").
 #
 # Accepted by the Maintainer on 2026-06-12 (Act I-6). The deliberation

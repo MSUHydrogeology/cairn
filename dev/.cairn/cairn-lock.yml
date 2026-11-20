@@ -14,14 +14,14 @@
     },
     {
       "dst": ".agents/skills/session-end/SKILL.md",
-      "hash": "sha256:a8a1c481ece4e9a30e58e443b02f5438dce1a4ce565edecb0d33b0dd423daac6",
+      "hash": "sha256:cc3376c9feab0d43c4bab8fa85c20133382f5fc7b61ad2064223a48c38c5ad79",
       "src": "skills/session-end/SKILL.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": ".agents/skills/session-start/SKILL.md",
-      "hash": "sha256:77e29aa8368e5fc4d9fdb93a86cbf0d7c764998dddee232ed463cbae03c1f2a9",
+      "hash": "sha256:5bead24293bd9fc813adc2f1897747565f38e9446076d2892b2b8ae556e0ee88",
       "src": "skills/session-start/SKILL.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -80,7 +80,7 @@
     },
     {
       "dst": "dev/modules/claim-check.md",
-      "hash": "sha256:28188209b87bd31e71d8120a8e885207da829aa1b6f57cdb39da5681f3ed8b96",
+      "hash": "sha256:b8adb8f747ffb98e934b2f12a183634cef844f25dfc615d98e0048f2e10dca37",
       "src": "modules/default-on/claim-check.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -89,20 +89,20 @@
       "base_cache": "dev/.cairn/base/dev/modules/content-security.md",
       "base_hash": "sha256:be93184eb37dc179983ae6d4fd7b4935156bc1e527fe662f1d696a85a1f5ac0f",
       "dst": "dev/modules/content-security.md",
-      "hash": "sha256:90a2d16a4705a26b1d47b22f16316ed62aa2c9cd6a585d33a880eeeaf9a9e46d",
+      "hash": "sha256:345aa5893c255ff0a6d854218bf1d5b8c99031484447aa042ab1adf88ca58881",
       "src": "modules/team-gated/content-security.md",
       "verbatim": false
     },
     {
       "dst": "dev/modules/coordination-tiers.md",
-      "hash": "sha256:8efc082f3a01b6d2f5076096a865cbe71e1a8fbdcba5a46545442e7ee71be032",
+      "hash": "sha256:1c8a3a8c8298aedd19280f5666b138bde214efaa61cc5e8f585ac463de7fa257",
       "src": "modules/team-gated/coordination-tiers.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/doc-drift-prevention.md",
-      "hash": "sha256:b33a1bc9e5c5e6eb5d0c131550f1a920eb334d3050d116343edd41b81b591299",
+      "hash": "sha256:8d4cb2c8b8e6a66612b826157b8f8e2f64aed2ab166f073e99962359dc06d044",
       "src": "modules/team-gated/doc-drift-prevention.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -187,7 +187,7 @@
     },
     {
       "dst": "dev/plans/_template.md",
-      "hash": "sha256:4208715fb056e762309e99bab27c61eb2a5e6492b9b57ba2bd89d0d990ab6bfd",
+      "hash": "sha256:e25ccaa7bdbd1d8473795b597b4cfb71eac7e57f690d76b98e282cc9114e234c",
       "src": "core/dev/plans/_template.md",
       "unrecoverable_base": true,
       "verbatim": false

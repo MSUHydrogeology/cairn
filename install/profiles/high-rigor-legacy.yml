@@ -1,6 +1,6 @@
 # Cairn profile -- high-rigor-legacy
 #
-# Dimensional profile (per cairn/dimensions/ rubrics):
+# Dimensional profile (per install/dimensions/ rubrics):
 #
 #   axis            | value                       | reason
 #   ----------------|-----------------------------|---------------------
@@ -21,7 +21,7 @@
 #     modules (dual-review, coordination-tiers) through the
 #     team-staffing gate.
 #
-# Recommended pre-pass: fill cairn/templates/codebase-readiness-report.md
+# Recommended pre-pass: fill install/codebase-readiness-report.md
 # before running the bootstrap -- the eleven-section assessment
 # surfaces the hidden state, scientific assumptions, and security
 # boundaries that legacy codebases carry and that decide how much of
@@ -29,7 +29,7 @@
 # fix the gaps first.
 #
 # Who this is for: a legacy codebase with a team behind it, after the
-# readiness-report pre-pass (cairn/on-ramp/README.md > "Choosing a
+# readiness-report pre-pass (install/on-ramp/README.md > "Choosing a
 # profile").  It fits when the legacy code has tests, documented data
 # I/O, and clear scientific assumptions; if the readiness report flags
 # section 10 (security boundaries) or section 11 (scientific

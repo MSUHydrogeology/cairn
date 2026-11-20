@@ -7,7 +7,7 @@ with `modules_remove: [content-security]`.
 **Adds to:** a content-integrity note in the docs guide (and a
 cross-reference from `dev/agent_collaboration.md`), **plus a runnable,
 stdlib-only scanner** the scaffold installs verbatim as `content_scan.py`
-in the target's `scripts/` directory.
+in the target's `dev/tools/` directory.
 
 An adopter's agents ingest files an outsider can influence — a Markdown doc
 in a contributor's PR, a pasted-in spec, a vendored README. A
@@ -54,7 +54,7 @@ Merged into the project's docs guide:
 
 ## Reference implementation
 
-Enabling this module writes `content_scan.py` into the target's `scripts/`
+Enabling this module writes `content_scan.py` into the target's `dev/tools/`
 directory (copied **verbatim** — no token substitution over the code). It is
 vendor-neutral and **standard-library only**. Run it over specific files or
 a PR's changed set:
@@ -115,7 +115,7 @@ The runner's exit code is the fail-closed contract a CI step keys on:
 ### Audited-roots manifest (`content_scan_roots.txt`)
 
 The runner scans the git-tracked `.md` / `.txt` under the roots named in
-`content_scan_roots.txt` (installed beside the runner in `scripts/`) — an
+`content_scan_roots.txt` (installed beside the runner in `dev/tools/`) — an
 explicit, adopter-owned manifest, never
 a shell glob or a profile-derived guess. The manifest is read fail-closed:
 paths must be repo-relative (no leading `/`, no `..`), a root that resolves

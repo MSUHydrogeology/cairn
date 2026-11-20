@@ -1,6 +1,6 @@
 # Cairn profile -- solo-greenfield
 #
-# Dimensional profile (per cairn/dimensions/ rubrics):
+# Dimensional profile (per install/dimensions/ rubrics):
 #
 #   axis            | value           | reason
 #   ----------------|-----------------|---------------------------------
@@ -12,7 +12,7 @@
 #   agent_team      | single          | one AI agent
 #
 # Resulting module roster (from `preset: solo-greenfield` expansion in
-# bootstrap/scaffold.py's _PRESETS):
+# install/_scaffold/config.py's _PRESETS):
 #
 #   Default-on (always): reflections, claim-check, incident-trackers,
 #     documentation-plan, content-security, security-verification.
@@ -20,7 +20,7 @@
 #
 # Who this is for: one Maintainer starting a new project -- the
 # smallest install Cairn ships.  Add modules as the work earns them.
-# See cairn/on-ramp/README.md.
+# See install/on-ramp/README.md.
 #
 # Quickstart adopters: copy this file as `profile.yml` in your target
 # repo; see cairn/docs/quickstart.md for the literal command sequence.

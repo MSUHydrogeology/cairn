@@ -17,7 +17,7 @@ license. The repository is licensed by file kind across three
 non-overlapping families, with **source code taking precedence**:
 
 * **All source code** (`.py` or other code), *wherever it lives* —
-  including the tools shipped under `templates/` and `scripts/` — is
+  including the tools Cairn ships — is
   **MIT** (see [`LICENSE-MIT.md`](LICENSE-MIT.md)); a code file is never
   CC BY even when it sits beside CC-BY documents.
 * **Prose, document templates** (the Markdown under `templates/`), and
