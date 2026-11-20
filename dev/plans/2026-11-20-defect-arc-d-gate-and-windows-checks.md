@@ -1,7 +1,7 @@
 # Plan: Defect arc D1, gate narrowings and release control
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -9,7 +9,7 @@
 
 ## Build summary
 
-After this plan, the ceremony's review page again shows the lines a new tool file adds under `tests/`, the fork-advisory test again tells which lock record a refusal names, the release membership check reads the backslash paths pytest writes on Windows, and the release process says to freeze history from a fresh clone. Four chunks. The older Windows failures, the Windows tag check and the signing-ceremony tests go to a second plan, D2, because each needs a Windows measurement first.
+After this plan, the ceremony's review page again shows the lines a new tool file adds under `tests/`, from the first signing after v0.9's, the fork-advisory test again tells which lock record a refusal names, the release membership check reads the backslash paths pytest writes on Windows, and the release process says to freeze history from a fresh clone. Four chunks. The older Windows failures, the Windows tag check and the signing-ceremony tests go to a second plan, D2, because each needs a Windows measurement first.
 
 ## Source proposal
 
@@ -75,7 +75,7 @@ D1-1 to D1-4 touch disjoint files and may land in any order. Code review once af
 
 **D1-4.** `release/RELEASE_PROCESS.md` says, in "Strict release-security evidence", to freeze from a fresh clone and to take the Mac record and run the join in that same clone (Detail D4, exact text). The `bash` block the contract test reads is byte-identical. **Developmental:** `git diff` shows one inserted paragraph; the contract test's `test_actual_pytest_identities_and_documented_sequence` still finds its block.
 
-**Security (re-answered, only where chunking changes an answer).** S1: the report's `file=` field and the new files in the range come from the thing judged; the first is compared with an independent source (the classname) and the second is read from raw objects. S2: the negative controls are the off-Windows refusal, the other-file and `..` cases, and the test-module and fixture exclusions. S3: the ceremony range report and the release block fire the checks; D1-4 is read at the cut. S4: nothing accepts more by default except one spelling of one field on one host. S5: a forged `file=` that names the same file passes, as before; the classname is the authority. D1 does not run the freeze, join or any signing.
+**Security (re-answered, only where chunking changes an answer).** S1: the report's `file=` field and the new files in the range come from the thing judged; the first is compared with an independent source (the classname) and the second is read from raw objects. S2: the negative controls are the off-Windows refusal, the other-file and `..` cases, and the test-module and fixture exclusions. S3: the ceremony range report and the release block fire the checks; D1-4 is read at the cut. S4: nothing accepts more by default except, on Windows, the backslash spelling of a `file=` value the checker already accepts with forward slashes, absolute paths inside the checkout included; the field can only refuse a case. S5: a forged `file=` that names the same file passes, as before; the classname is the authority. D1 does not run the freeze, join or any signing.
 
 ## Scope delta
 
@@ -87,11 +87,13 @@ D1-1 to D1-4 touch disjoint files and may land in any order. Code review once af
 
 **Hosts.** This Windows Server machine: all chunks and new tests, including the Windows node of D1-3 (not the project's guest, so not Windows-record evidence). The Mac session: D1-1's selection, and optionally a disposable fresh-clone freeze and Mac record to prove D1-4 before the cut. The project's Windows guest: nothing in D1. The signing refreshes the manifest on the Mac.
 
+**Owners.** The Mac run of D1-1's nine files is the Maintainer's, taken by the Mac session that takes the re-anchor plan; D1's closeout records that run's failures by test id and message, or states it was not run. If the new node cannot run on the Windows Server machine, the closeout says so. The D2 measuring list is copied into `dev/PLANNING.md` section 1, under 'Windows', with the Maintainer's launch of a Mac session that reaches `cairn-windows` listed under 'Waiting on you'. D1 does not reach `ready-to-archive` until both edits are committed.
+
 **Prose gates**, one file per call, on this plan, the companion and `release/RELEASE_PROCESS.md`: `dev/tools/claim_check.py`, `dev/tools/link_check.py`, `tests/check_cairn.py`, and `git diff --check`.
 
-**Roadmap entries.** D1 settles "Narrowings from the layout move", the `file=` clause of "Windows", and "The history freeze in a live repository". No GitHub issue is touched; nobody closes or comments on one without the Maintainer's word.
+**Roadmap entries.** D1 settles "Narrowings from the layout move", the `file=` clause of "Windows", and "The history freeze in a live repository". No GitHub issue is touched; nobody closes or comments on one without the Maintainer's word. The closeout names those added files (test modules and `tests/fixtures/` aside) in `dev/PLANNING.md` section 1 under 'Narrowings from the layout move', and asks under 'Waiting on you' whether the Maintainer reads their added lines before he signs.
 
-**Not checked.** No code or test was run for this plan. Not run: any freeze, record, join or signing; the Windows node of D1-3; whether `git clone` leaves out refs that point at trees (assumed from Git's default); whether the ceremony's scan digest still agrees in the layout transition (read: the transition supplies the scan, `tests/_gate_preflight.py` `_layout_stage` and `release/repin.py` around line 3014); macOS. **Does any rule weaken or disappear?** No: D1 scans more, asserts more, and accepts one spelling on one host.
+**Not checked.** No code or test was run for this plan. Not run: any freeze, record, join or signing; the Windows node of D1-3; whether `git clone` leaves out refs that point at trees (assumed from Git's default); the v0.9 signing's page: as a layout transition it shows the anchor's own scan (`release/repin.py`, the layout scan script), which skips files added under `tests/` or `dev/tools/` since the move; D1-1 cannot change it; macOS. **Does any rule weaken or disappear?** No: D1 scans more, asserts more, and accepts, on Windows, the backslash spelling of one field.
 
 ## Plan review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-20
 
@@ -171,3 +173,30 @@ Finding 2, Detail D4, end of the paragraph: "The join's `PASS` covers only the c
 Usual finding 3, Detail D4, in place of its words: "Before the freeze, fetch `refs/cairn/gate-anchor` into the clone from the trusted origin and verify its signed commit; fetch nothing after the freeze."
 
 Finding 4, plan, S4: "S4: nothing accepts more by default except, on Windows, the backslash spelling of a `file=` value the checker already accepts with forward slashes, absolute paths inside the checkout included; the field can only refuse a case."
+
+## Plan response -- Claude Sonnet 5.5 (`claude-sonnet-5-5`, for the author) -- 2026-11-20
+
+Both reviews said REVISE. Every blocking finding is applied with its reviewer's words; where the two touch the same point, the Security Review governs.
+
+**Usual review**
+
+1. Blocking: the "Owners." paragraph added to Verification after "Hosts".
+2. Non-blocking: replaced by the Security Review's S4 words; the matching "one spelling on one host" phrase in "Not checked" now reads "accepts, on Windows, the backslash spelling of one field".
+3. Non-blocking: the Security Review's fetch sentence added to Detail D4 before the freeze instructions end; the usual review's sentence not used.
+4. Non-blocking, first part: Detail D1 now gives the exact `_scan_range` docstring lines to write. Second part: Detail D3 says the four nodes start from the `evidence` fixture and rewrite the report; `evidence` and `test_report_refusals` both exist in `tests/contract/test_release_members_contract.py`.
+5. For the Maintainer: six plans where the Decision named five. No change; Strategy carries it to the Maintainer through `dev/PLANNING.md`. The split follows the rule that a plan has at most five chunks.
+
+**Security Review**
+
+1. Blocking: Build summary insertion, the "Not checked" replacement and the "Roadmap entries" sentence applied.
+2. Blocking: the push-only-that-commit sentences added at the end of Detail D4.
+3. Agrees with usual findings 1 and 3; applied as above.
+4. Non-blocking: S4 replaced (see usual 2).
+5. For the Maintainer: new test modules or a `conftest.py` under `tests/fixtures/` still run unscanned. No change; Strategy carries it to the Maintainer through `dev/PLANNING.md`.
+6. Non-blocking: Detail D3's `..` node writes its `file=` with the host's path separator.
+
+**Disposition**: ready-to-implement
+
+**Not checked**: no code or test was run. The roadmap edits in `dev/PLANNING.md` are Strategy's and are not made here. The two edits the "Owners" paragraph names must be committed before archive.
+
+Elapsed about 10 minutes; tokens unknown.

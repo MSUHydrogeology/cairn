@@ -31,7 +31,7 @@ or (change == "added"
     and not _is_test_module(rel)))
 ```
 
-Nothing else changes. `release/repin.py` line 203 reads these two constants from the prior verifier's own copy of the file, so it is not edited. The pattern list, size limits, `_LISTED_MODES` and the report schema stay as they are.
+Nothing else changes except the docstring of `_scan_range`: in its `Scope:` paragraph replace the line `range adds under `install/`, `release/`, or `dev/tools/`. Everything` with the two lines `range adds under `install/`, `release/`, `dev/tools/`, or `tests/` (test` and `modules and `tests/fixtures/` excepted). Everything`, so the list of roots matches the restored behaviour. `release/repin.py` line 203 reads these two constants from the prior verifier's own copy of the file, so it is not edited. The pattern list, size limits, `_LISTED_MODES` and the report schema stay as they are.
 
 Why this shape. Before the move, `scripts/` (every new tool) and `bootstrap/` outside the old test folder were scanned. The move put the former `scripts/` tools at the top of `tests/` (for example `tests/gauge.py`), where the scan stopped looking. New non-test files under `tests/` (a tool, a `conftest.py` or `__init__.py` in a subfolder, a helper module) run at collection or as tools. New `test_*.py` modules and `tests/fixtures/` were left out before and stay out; scanning every new test would put `subprocess` and file-write hits for nearly every test on the Maintainer's page.
 
@@ -83,7 +83,9 @@ Permanent nodes in `tests/contract/test_release_members_contract.py`, through `_
 - `test_backslash_file_field_is_refused_off_windows`, skipped on `os.name == "nt"` with reason `"on Windows the backslash spelling is accepted; the next test covers it"`: `file="tests\\test_security_lint.py"` gives return code 1 and `invalid test-file identity` on stderr.
 - `test_backslash_file_field_is_accepted_on_windows`, skipped unless `os.name == "nt"` with reason `"pytest writes a backslash file= path only on Windows"`: the same report gives return code 0.
 - `test_file_field_naming_another_file_is_refused`, every host: `file="tests/test_security_marker.py"` (written with the host's separator) for the `test_security_lint` case gives return code 1 and `test file and classname identities disagree`.
-- `test_dotdot_in_a_windows_file_field_is_refused`, every host: `file="tests/../tests/test_security_lint.py"` gives return code 1 and `not a canonical relative path`.
+- `test_dotdot_in_a_windows_file_field_is_refused`, every host: `file="tests/../tests/test_security_lint.py"` (written with the host's path separator) gives return code 1 and `not a canonical relative path`.
+
+The four nodes start from the `evidence` fixture and rewrite the report, as `test_report_refusals` does.
 
 Developmental probe on any host: import the module with `importlib.util` and check `_report_file("tests\\a.py", windows=True) == "tests/a.py"`, `_report_file("tests\\a.py", windows=False) == "tests\\a.py"` and `_report_file(5, windows=True) == 5`.
 
@@ -91,6 +93,6 @@ Developmental probe on any host: import the module with `importlib.util` and che
 
 Insert after the first code block of "Strict release-security evidence" (the three `security_check.py` lines), by exact insertion, this paragraph:
 
-> Freeze from a fresh clone, not from a working checkout. `--freeze-history` records every ref in the repository and stops with `cannot peel to a commit` when a ref points at a tree; some tools leave such refs in a working checkout (the Codex tool's `refs/codex/turn-diffs/...`). A new `git clone` of the clean Mac authority, checked out at the cut commit, copies branches and tags and none of those. Take the Mac record and run the join from that same clone: the join refuses when the repository's refs or its location differ from the frozen manifest. The Windows record is taken in the Windows checkout, with the same manifest file.
+> Freeze from a fresh clone, not from a working checkout. `--freeze-history` records every ref in the repository and stops with `cannot peel to a commit` when a ref points at a tree; some tools leave such refs in a working checkout (the Codex tool's `refs/codex/turn-diffs/...`). A new `git clone` of the clean Mac authority, checked out at the cut commit, copies branches and tags and none of those. Before the freeze, fetch `refs/cairn/gate-anchor` into the clone from the trusted origin and verify its signed commit; fetch nothing after the freeze. Take the Mac record and run the join from that same clone: the join refuses when the repository's refs or its location differ from the frozen manifest. The Windows record is taken in the Windows checkout, with the same manifest file. The join's `PASS` covers only the commit it names. Push only that commit as `master`: where you push from, `git rev-parse master` must print it; if not, stop and freeze again.
 
 Do not touch the `bash` block that the contract test reads, or any other line. The basis is `release/security_check.py` (`_collect_source_inventory` and the live-against-frozen comparison in `_run_join`): read, not run.
