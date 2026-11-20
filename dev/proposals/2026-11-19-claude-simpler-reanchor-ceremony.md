@@ -1,7 +1,7 @@
 # Let the re-anchor pass a long history, and shrink the Maintainer's part
 
 **Author**: Claude Sonnet 5.5
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it changes what the signing ceremony accepts.
 **Plan review**: required(Internal + Internal Security Review)
@@ -114,3 +114,33 @@ The proposal tries to let the next signing pass a history in which Cairn rewrote
 4. Non-blocking. The card is well aimed, but the proposal never says the Maintainer's hash comparison is among three named digests; list them.
 
 **Not covered**: no test, ceremony or repin run; I did not judge the Security questions (end-state check against the per-commit check, key exposure, the five preflight answers), which the next pass owns. Line 3353 cited for `--first-run` is the `if`; the refusal is on 3354.
+
+## Review -- Claude Opus 5.5 (Security reviewer) -- 2026-11-20
+
+```
+Reviewed commit: 4eaf26f62d6c6d50e7c52b8efca02f5a33a029de
+```
+
+**Tier**: Security Review
+**Findings**: raised (two blocking)
+**Verdict**: REVISE
+
+**Elapsed**: about 25 minutes
+**Tokens**: unknown
+
+The proposal wants one deliberate approval of the final pinned files in place of dozens of per-commit ones. That aim is right; the mechanism drops the approval.
+
+**Foundations**
+
+1. **Should this happen as framed?** The goal, yes; Part 1 as written, no -- finding 1; `release/repin.py:2559-2609`.
+2. **Best alternative?** Show the net change of the three files from the old anchor to the candidate at one prompt -- `render_changes`, `repin.py:1082`.
+3. **What would show it wrong?** A transition test where an agent commit rewrites one AST baseline key: it must be displayed before signing.
+
+**Findings**
+
+1. **Blocking.** The digest check is almost a no-op: the record commit may change only the record and must sit on the read commit (`repin.py:2819-2827`), so the reader's digests already equal the candidate's files. The verifier does not hash the AST baseline (`tests/_gate_manifest.py:86-91`); stop records are the ceremony's only sight of it. Here four fixture commits would be signed unseen; the runbook's threat is honest agent mistakes (`REANCHOR_RUNBOOK.md:5`). Add to Part 1, after its second sentence: "Before the Summary 2 prompt the driver shows each pinned file's net change from the old anchor to the candidate, key by key, old paths mapped to new; that `yes` covers it, and the reader records reading that change." Replace S2's second clause with "promise (b) catches a change after the reader's record; new promise (e), a fixture change before it is displayed, covers the rest." Replace S5 with: "An honest agent rewrite of a pinned file is no longer stopped per commit; the net change is shown once instead."
+2. **Blocking.** Replace Part 2's second and third sentences, superseding the usual review's wording, which would need stage 1's report (`repin.py:3036-3044`): "It stops before `key_checks` (line 3004): it runs no `ssh-keygen` or `ssh-add` against the private key, never starts stage 1 and checks no package or report. It writes nothing the real run reads, and the real run remakes every check."
+3. Non-blocking. Transition is measured, not chosen (`repin.py:2993-2997`), so the ordinary ceremony stays unchanged; but the relaxation covers every future transition. Say so.
+4. Non-blocking. Check-only runs the candidate's `reanchor.sh` validate as the agent (`repin.py:2948-2957`): no new authority, but say so. S1, S3, S4 hold.
+
+**Not covered**: no runs; the launcher template and `reanchor_ceremony.py` read only where `repin.py` calls them; layout context setup (`repin.py:2480-2515`) skimmed.
