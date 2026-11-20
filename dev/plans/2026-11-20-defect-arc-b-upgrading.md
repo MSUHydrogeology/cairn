@@ -1,7 +1,7 @@
 # Plan: Defect arc B, upgrading
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -148,3 +148,44 @@ The plan turns five upgrade defects into small, tested engine changes. The desig
 **X (replace C1's test sentence).** "In `tests/test_first_session_report.py`, change `test_skipped_vendor_absent_is_a_calm_no_action_line` so each `Skills fan-out` line for `claude-code` holds `.claude` and neither "skipped" nor "error", and the whole output holds `session-start`. In `main`, find the row with `row["target"] == name`."
 
 **Y (replace the `old_proved` change).** "`old_proved = old is not None and rec is not None and ((rec.get("base_hash") or rec.get("hash")) == _layout_digest(old.raw) or (verbatim and live.raw == old.raw))`."
+
+## Plan review -- Claude Opus 5.5 (`claude-opus-5-5`, Security Review) -- 2026-11-20
+
+```
+Reviewed commit: d087d2fc9346aabc83561292ba7e80f5039ab3e0
+```
+
+**Obligation**: Internal Security Review (heavy tier, plan stage)
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+The plan repairs upgrades without widening the dispatcher: its record-key list stays as it is (`run_security_verification.py:136`), so the heal removes keys and adds none. One opt-out trusts the lock it should judge.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, once the wrapper opt-out is bound to the wrapper -- `run_security_verification.py:504`; appendix row #102.
+2. **Best alternative.** The `RULES.md` exemption binds source, destination and `lstat` absence; copy that shape -- `upgrade.py:983`.
+3. **What would show it wrong.** A lock that moves `adopter_deleted` onto a deleted script passes `verify_integrity` -- the Z2 test.
+
+**Findings**
+
+1. **Blocking.** C5 honors `adopter_deleted` on the lock's `src` alone. The lock is a tamper target (`verify_integrity.py:439`), so an edited record can hide any deleted file, a security runner included, from both the verifier and the upgrade. S5 is untrue until this closes. Words: Z1. Mine governs over finding 6 of the usual review: "no `/`" alone still lets `AGENTS.md` go.
+2. **Blocking.** No negative control exercises a tampered lock; the C5 refusals test only the command, which a lock edit bypasses. Words: Z2.
+3. **Blocking.** C4 reads a saved ancestor and a project file at paths the lock names, without saying through which reader; nor do the new commands say how a containment refusal exits. Words: Z3.
+4. Non-blocking. C1's diagnosis reads `_cairn_root()`, which follows links; `_git_read_helper` refuses them (`lockfile.py:57`). Build the helper's own path and give the first text only when no part is a link. Use `_GIT_READ_MAX_BYTES`: agreed.
+5. Non-blocking, checked. #99.4's equality proof uses a blob from Cairn's own history (`upgrade.py:4183`), stronger than the lock hash; the shallow text changes words only and blocks as before; dropping `layout_ancestry` loses nothing, since only `upgrade.py:4273` reads it, on records the heal skips.
+
+I agree with V, W, X, Y and findings 7 and 8: keep one plan.
+
+**Not covered.** No test, installer or Windows run; `_lock_record_identity` and staged-apply evidence with the new key; `_run_slot_note` on a retired record. Over target for three blocking findings.
+
+**Elapsed**: about 35 minutes. **Tokens**: unknown.
+
+### Exact words for the Security Review above
+
+**Z1 (replace C5's sentence beginning "Honoring the key needs all of:" through "says so in its OK line.")** "One rule decides whether a record is a retired wrapper: `_wrapper_retired(rec, files, target)` in `upgrade.py`, repeated inline in `verify_integrity` (which imports only the lockfile reader). All must hold: `rec.get("adopter_deleted") is True`; `rec.get("src") == "core/VENDOR.md"`; `rec.get("verbatim")` is falsy; no other record in `files` has that `src`; `dst` is text with no `/` or `\`, ends in `.md`, and is not `AGENTS.md`, `CHANGELOG.md`, `RULES.md` or `NOTICE.md`; and `os.lstat(target / dst)` raises `FileNotFoundError`. For such a record `_compute_upgrade` returns `up-to-date` (`vendor wrapper deleted on purpose`) before the `layout_keep` check; `_cmd_finalize_lockfile` skips it, and removes the key when its file is present; `_layout_plan` skips its wrapper section; `verify_integrity` skips it after the `living_state` branch and adds `(1 vendor wrapper record retired by the adopter)` to its OK line. `--retire-wrapper` refuses, exit 1, a record failing any part but the `lstat` one. A record with the key that fails the rule is checked like any other. Only the wrapper record's `missing:` line adds `(deleted on purpose? upgrade --retire-wrapper <name>)`, the name through `_plain`."
+
+**Z2 (add to C5's permanent tests).** "Tampered-lock controls: remove the wrapper record, give a shipped `dev/tools/` script's record `src: core/VENDOR.md` and `adopter_deleted: true` without `verbatim`, delete the script: `verify_integrity` exits 1 naming it `missing:`, and `upgrade --plan` does not call it `up-to-date`. The same for `AGENTS.md`, and for two `core/VENDOR.md` records."
+
+**Z3 (add to C4 after "contains `{{name}}`"; and to W).** C4: "It reads the ancestor as `_compute_upgrade` reads a merge ancestor (`_assert_safe_write`, `_read_regular_bytes`, raw digest against `base_hash` before decoding) and the project file with `_assert_safe_write` then `_read_regular_bytes`; on any failure it keeps the file and prints `kept <dst>: could not be read safely; correct it by hand`." W: "Each new command catches `ScaffoldSecurityError` as `--remove-retired` does: `error: upgrade --heal-layout refused (containment): <reason>` (or `--retire-wrapper`), exit 2."
