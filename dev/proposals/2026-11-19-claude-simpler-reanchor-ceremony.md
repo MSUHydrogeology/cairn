@@ -1,7 +1,7 @@
 # Let the re-anchor pass a long history, and shrink the Maintainer's part
 
 **Author**: Claude Sonnet 5.5
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it changes what the signing ceremony accepts.
 **Plan review**: required(Internal + Internal Security Review)
@@ -171,3 +171,15 @@ Both reviews said REVISE. Every finding is accepted. Where the two reviews gave 
 
 - Check-only no longer covers the report binding, the dispositions or the two scans. They need stage 1, which runs candidate code, so an agent-run mode must not reach them. Promise (c) drops the wrong-report-digest fault for the same reason.
 - S5's earlier statement, that a bad pinned file committed early and restored later is no longer caught: replaced by the reviewer's sentence.
+
+## Decision -- Maintainer (scribed by Claude Fable 5.2) -- 2026-11-20
+
+**Elapsed**: under 1 minute; **Tokens**: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** Asked "Do you accept it as revised? I recommend the heavy tier, because it changes what your signature covers.", the Maintainer's authorization, quoted verbatim (chat, 2026-11-20):
+
+> "I accept this as revised, at the heavy tier"
+
+This accepts the proposal as revised at `dabee982`, at the heavy tier it proposed: its plan gets a usual and a Security Review at the plan stage and at the code stage.
