@@ -29,7 +29,7 @@ format and how to handle an existing history.
 
 Proposals move `awaiting-review -> revising -> awaiting-decision -> accepted | rejected | superseded`. Plans move `awaiting-plan-review -> revising-plan -> ready-to-implement -> implementing -> awaiting-code-review <-> revising-code -> ready-to-archive -> archived`. A non-trivial accepted standard or heavy proposal gets a plan. A light proposal gets none, however wide the work.
 
-Each review is one pass; add a second only for widened scope (proposal) or new defects (code). Security Review takes at most two passes. A further pass needs the Maintainer's explicit authorization and a specific unresolved security question; each later pass needs new authorization. At a cap, send only unresolved blocking findings or unmet accepted checks to the Maintainer.
+Each review stage is one round: one usual pass and, where the tier requires it, one Security Review pass. A blocking finding states what closes it: a failing test for code, exact words for a document. A further pass needs scope the Maintainer added, a substantive plan amendment, or the Maintainer's explicit authorization and a specific unresolved security question; each later pass needs new authorization. At a cap, send only unresolved blocking findings or unmet accepted checks to the Maintainer.
 
 Revise a proposal's operative text in place; append its reviews, responses and decisions. Plan cells remain editable during active work. Substantive amendments stop
 affected/dependent work pending review and disposition, then return to
