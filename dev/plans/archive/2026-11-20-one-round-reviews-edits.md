@@ -1,6 +1,6 @@
 # Edit list: one round of review at each stage
 
-Companion to `dev/plans/2026-11-20-one-round-reviews.md`, which says why this file exists and how to apply it. Each edit gives the exact text to find and the exact text to put in its place. A `Find` block occurs exactly once in every target named for it (checked at `849eab4c`). Copy it byte for byte; a line break inside a block is a real line break. Shipped twins get the identical replacement.
+Companion to `dev/plans/archive/2026-11-20-one-round-reviews.md`, which says why this file exists and how to apply it. Each edit gives the exact text to find and the exact text to put in its place. A `Find` block occurs exactly once in every target named for it (checked at `849eab4c`). Copy it byte for byte; a line break inside a block is a real line break. Shipped twins get the identical replacement.
 
 ## C1: governing text (`AGENTS.md` pair, collaboration guide pair)
 

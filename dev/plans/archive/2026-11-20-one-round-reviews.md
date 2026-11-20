@@ -1,7 +1,7 @@
 # Plan: One round of review at each stage
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-one-round-reviews.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md
@@ -21,7 +21,7 @@ The Maintainer accepted option C of the one-round proposal as revised, at the st
 
 **Where the new rules start (D7).** They apply to proposals and plans opened after the change ships. This plan runs under today's rules.
 
-**Edit list.** The exact Find and Replace text for all 28 replacements is in `dev/plans/2026-11-20-one-round-reviews-edits.md`. A separate file is needed because the text is about 2,300 words, over twice this plan's body target, and a Low-tier implementer must not design any of it. Each Find text was checked to occur exactly once in every target at `849eab4c`, and the list as first written was applied in a scratch checkout without error. The coordinator then added M12 and M13 (the diagram labels) and moved R2 to the roadmap as it stands on `0.9-dev`; those three were checked for a single match and have not been rehearsed. Shipped twins get identical replacements and the shipped text names no model or vendor.
+**Edit list.** The exact Find and Replace text for all 28 replacements is in `dev/plans/archive/2026-11-20-one-round-reviews-edits.md`. A separate file is needed because the text is about 2,300 words, over twice this plan's body target, and a Low-tier implementer must not design any of it. Each Find text was checked to occur exactly once in every target at `849eab4c`, and the list as first written was applied in a scratch checkout without error. The coordinator then added M12 and M13 (the diagram labels) and moved R2 to the roadmap as it stands on `0.9-dev`; those three were checked for a single match and have not been rehearsed. Shipped twins get identical replacements and the shipped text names no model or vendor.
 
 **Must not change.** The status names and edges of the lifecycle: no node or edge is added or removed, and only the five edge labels that state the removed conditions are reworded (M12, M13); the targeted look after a failed joined integration run (`docs/methodology/dual-review.md` lines 342-343, `docs/methodology/plans.md` lines 575-576); when a Security Review applies; tiers; fences; Decisions; model floors; required checks; the certifying run. No Python, installer structure or functional configuration is touched. No file is in the gate manifest, so no re-anchor is owed.
 
@@ -199,3 +199,18 @@ Three plan cells were amended to match what shipped: C1's word counts, the Scope
 Not run: the selected tests on the canonical runtime. Not rechecked: the other 18 changed files, which no commit touched after the review.
 
 **Elapsed**: about 75 minutes, of which about 48 were three background test runs. **Tokens**: unknown.
+
+## Implementation closeout -- Claude Fable 5.2 (Strategy) -- 2026-11-20
+
+C1 held as amended: both `AGENTS.md` copies carry the paragraph at 63 words; Cairn's own three files total 1,592 words and the installed three 1,497, measured on the merged tree at `4bc4f90e`. C2, C3 and C4 held (implementation verification at `fe52e1c6`; code review `023ee592`). C5 held except its test criterion, which is settled by comparison and not by a clean pass: the 23 selected files fail the identical 126 tests at the starting commit and at `54672430`. The lock was refreshed three times, each in a commit of its own (`0426db19`, `26c3af13`, `54672430`), and `verify_integrity` reports OK for 70 files on the merged tree. The branch, 15 commits changing 21 files, merged into `0.9-dev` at `4bc4f90e`.
+
+Not run: the selected tests on the canonical runtime. Home: `dev/proposals/2026-11-20-claude-v09-defect-arc.md`, "Order", step 4, the joined run.
+Not covered: the 126 selected tests that fail on the Windows host before and after the change. Home: `dev/PLANNING.md`, section 1, "Windows".
+Remaining: the recount of review passes at the end of v0.9 (D6). Home: `dev/PLANNING.md`, section 2, row "Recount review passes under the one-round rule".
+Remaining: the sentence removed from `AGENTS.md` may be restored. Home: `dev/PLANNING.md`, "After the defects: a comprehensive tightening of the rules".
+
+Dispositions: the Scope delta's one entry is `accept`, with the Maintainer's words quoted there. No other follow-up is deferred.
+
+**Benefit versus cost**: unknown -- one round of review at each stage, stated in every rule home; cost: 15 commits and one merge, two review passes and no return visit, three background test runs of 16 to 17 minutes each, about 1.14 million subagent tokens across the proposal and this plan as the harness reported them (Strategy's own use is unknown), and 4 more always-loaded words in each rule set; remaining burden: no code and no test added. Revisit at the D6 recount at the end of v0.9.
+
+**Elapsed**: one working day from the proposal's opening to the merge. **Tokens**: unknown beyond the subagent figure above.
