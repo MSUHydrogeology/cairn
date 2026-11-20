@@ -114,3 +114,35 @@ N/A: no scientific assumption or result touched.
 ## Assurance path
 
 **Assurance path**: high-assurance. The change alters governing doctrine and lowers a Security Review limit.
+
+
+## Review -- Claude Sonnet 5.5, Reviewer (usual) -- 2026-11-20
+
+```
+Reviewed commit: 2883024af3893c2dbfae3bfbb03fcbba6da44355
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+The proposal tries to stop paying for a second reader of each fix, by making the reviewer hand over a test that fails first and passes after. I re-ran `dev/scratch/review_rounds.py`: 413 plan passes, 144 code-usual and 101 code-Security, 63 return visits, 43 of 73 plans with three or more code passes. All match the appendix.
+
+**Foundations**
+1. **Should this happen as framed?** Yes, with one gap below. `AGENTS.md:19` already says one pass, and the counts show it is not followed. -- `review_rounds.py` output.
+2. **Best alternative.** Option B plus a recommend-only test. It is weaker on independence, which the Maintainer chose against. -- Context quote, 2026-11-20.
+3. **What would show it wrong.** After archive, defects that trace to a fix no reviewer re-read. The proposal's Signals section already names this; a recount at v0.9 (D6) is a real, owned check. -- D6.
+
+**Does any rule weaken or disappear?** Yes, openly: the second Security pass and the new-defects code pass (`AGENTS.md:19`, `security-review.md:84`). Both are stated and the Maintainer is asked.
+
+**Findings**
+- **Blocking.** D2 lets the implementer or author decline a closing test or exact words "with a reason". Nobody reads that reason, so a blocker can be closed by its author alone. Add to D2 after "declines with a reason": "A declined blocking finding stays open and goes to the Maintainer with the reason, as at a cap."
+- Non-blocking. D3 allows an earlier code review point, so "one round" has an exception; say so in the D1 sentence or D3.
+- Non-blocking. A proposal or plan blocker that is a premise objection has no "exact words". Say it goes to the Maintainer.
+- Non-blocking. Terms the Maintainer must learn: return visit, joined run, arc, S1 to S5. Define each once.
+- Non-blocking. 1,833 words against the 1,000 target; the Wang study is cited from an abstract only (disclosed).
+
+**Not covered:** the 16 files' line numbers beyond those I opened; the 2,000-word cap arithmetic; whether tests or tools match the changed phrases.
