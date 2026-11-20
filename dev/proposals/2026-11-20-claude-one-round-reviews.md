@@ -1,7 +1,7 @@
 # One round of review at each stage, and a closing test for each blocking finding
 
 **Author**: Claude Sonnet 5.5
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it changes governing doctrine under `docs/methodology/` and lowers a Security Review limit.
 **Plan review**: required(Internal + Internal Security Review) — about 30 edits in 16 files; the plan changes a Security limit.
@@ -28,7 +28,7 @@
 - Two of the 63 return visits caught a new defect made by the fix. Later test runs must now catch such defects.
 - Three of the 24 Security return visits asked for more work. The reviewer's test must now carry that.
 - A passing test is not proof that a fix is right.
-- A blocking Security finding still open at the limit reaches the Maintainer as a question of risk. That happened twice in the 73 plans; with a limit of one pass it may happen more often.
+- A blocking finding that is declined, or still open at the limit, reaches the Maintainer. That happened twice in the 73 plans, both times for Security; with one pass it may happen more often.
 - No human operation is added.
 
 **Options.**
@@ -55,13 +55,13 @@ The Maintainer asked for this (chat, 2026-11-20): "How about we limit plan revie
 
 The second code pass, allowed today for "new defects (code)", goes.
 
-**D2. What closes a blocking finding.** On code, the reviewer writes a failing developmental test (Cairn's scratch test, deleted before archive) in the review, with its command and two or three cases where input regimes differ. Example: a tool crashes on an empty input file, so the review holds a test that feeds it one and fails today. The implementer runs the test, fixes the code, runs it again, and records both results with commit ids. The implementer may decline a test as wrong, with a reason. No return visit follows. If the test guards a listed promise, it joins that promise's existing test (`dev/modules/testing-discipline.md:44`). Where no test can express the finding, the reviewer names the exact lines to remove or replace, as for dead code. On a document, the reviewer gives the exact words; the author applies them or declines with a reason. A design objection means the plan was wrong and takes the amendment path, with its fresh non-author review. This replaces the "targeted look before Boundary B" (`dev/agent_collaboration.md:365`).
+**D2. What closes a blocking finding.** On code, the reviewer writes a failing developmental test (Cairn's scratch test, deleted before archive) in the review, with its command and two or three cases where input regimes differ. Example: a tool crashes on an empty input file, so the review holds a test that feeds it one and fails today. The implementer runs the test, fixes the code, runs it again, and records both results with commit ids. The implementer runs the test exactly as the review gives it; a changed test counts as a decline. The implementer may decline a test as wrong, with a reason. No return visit follows. If the test guards a listed promise, it joins that promise's existing test (`dev/modules/testing-discipline.md:44`). Where no test can express the finding, the reviewer names the exact lines to remove or replace, as for dead code. On a document, the reviewer gives the exact words; the author applies them or declines with a reason. A declined blocking finding stays open and goes to the Maintainer with the reason, as at a cap. On a proposal or plan, a premise objection has no exact words; it goes to the Maintainer with the author's reply. At code review, a design objection means the plan was wrong and takes the amendment path, with its fresh non-author review. This replaces the "targeted look before Boundary B" (`dev/agent_collaboration.md:365`).
 
-**D3. Code review once.** It follows the last chunk; a chunk is one row of a plan's Sequence table. A plan may name one earlier review point, at plan time, for a high-risk chunk that later chunks build on.
+**D3. Code review once.** It follows the last chunk; a chunk is one row of a plan's Sequence table. A plan may name one earlier review point, at plan time, for a high-risk chunk that later chunks build on. That named point is the one exception to a single code review.
 
-**D4. Scope the Maintainer adds.** A further proposal or plan review happens only for "maintainer additions that increase scope" (chat, 2026-11-20). It gets "a very limited brief": the added text and the first review. It goes to the first reviewer where the tool can resume that session, otherwise to a reviewer given only those two things, and never to the author. An addition that alters what a high-risk surface does gets one Security pass on the same brief. On a plan this is one exception to the amendment rule's fresh reviewer (`dev/agent_collaboration.md:309`). Cairn already sends one limited look "to the same reviewer" (`docs/methodology/dual-review.md:342-343`).
+**D4. Scope the Maintainer adds.** A further proposal or plan review happens only for "maintainer additions that increase scope" (chat, 2026-11-20). It gets "a very limited brief": the added text and the first review of the same kind. It goes to the first reviewer where the tool can resume that session, otherwise to a reviewer given only those two things, and never to the author. An addition that alters what a high-risk surface does gets one Security pass on the same brief. A Security reviewer may also read any file the addition touches. On a plan this is one exception to the amendment rule's fresh reviewer (`dev/agent_collaboration.md:309`). Cairn already sends one limited look "to the same reviewer" (`docs/methodology/dual-review.md:342-343`).
 
-**D5. At most five chunks.** The Maintainer asked that "plans are smaller, with fewer chunks", without more testing (chat, 2026-11-20). Five is a target that the plan review checks. Larger work is cut into smaller finishable outcomes, each its own plan under the one proposal, grouped as one arc: plans that share one joined test run. Two existing rules keep testing from rising: a plan runs only the tests that name its changed files, and an arc has one joined run. Today a plan costs about five review passes whatever its size (appendix), so the limit takes effect with D1 to D3, not before.
+**D5. At most five chunks.** The Maintainer asked that "plans are smaller, with fewer chunks", without more testing (chat, 2026-11-20). Five is a target that the plan review checks. Larger work is cut into smaller finishable outcomes, each its own plan under the one proposal, grouped as one arc: plans that share one joined run, the single wide test run after they finish. Two existing rules keep testing from rising: a plan runs only the tests that name its changed files, and an arc has one joined run. Today a plan costs about five review passes whatever its size (appendix), so the limit takes effect with D1 to D3, not before.
 
 **D6. How we will know.** At the end of v0.9, repeat the heading count on plans opened under the new rule. Each plan's verification record also states how many test files the selector chose.
 
@@ -69,7 +69,7 @@ The second code pass, allowed today for "new defects (code)", goes.
 
 ## Rationale
 
-Return visits mostly confirm a fix (about 44 of 63 by my count). A test from the reviewer, seen failing first, lets anyone check the fix without a second review. A passing test is still not proof: in one study, 29.6% of test-passing agent patches behaved differently from the developers' fix (Wang, Pradel and Liu 2026, doi:10.1145/3744916.3764576; the Strategy agent read the abstract only, and I did not open the paper). So the later test runs stay. This is not a single incident. It rests on a strategy review, the Maintainer's direction and a pattern counted in 73 plans, and I claim no rate-limit trigger it lacks.
+Return visits mostly confirm a fix (about 44 of 63 by my count). A test from the reviewer, seen failing first, lets anyone check the fix without a second review. A passing test is still not proof, so the later test runs stay. This is not a single incident. It rests on a strategy review, the Maintainer's direction and a pattern counted in 73 plans, and I claim no rate-limit trigger it lacks.
 
 ## Alternatives considered
 
@@ -89,11 +89,11 @@ N/A: prose only; no code or caller-visible behaviour changes.
 
 ### Security preflight
 
-- **S1.** The reviewer supplies the closing test; the implementer supplies only results, which are self-reported with commit ids, as is every check an implementer records today.
-- **S2.** The reviewer sees the test fail before the fix; reverting the fix fails it again; its expected value must not come from the fixed code.
-- **S3.** The reviewer's command fires it over the cases in the review.
-- **S4.** A weak test closes a finding wrongly: less protection.
-- **S5.** A fix that passes the cases but leaves the fault, or adds a defect, still gets through; the class is closed by enumeration, not construction.
+- **S1, who supplies the check.** The reviewer supplies the closing test, and the implementer must run it unchanged; a changed test counts as a decline. The results are self-reported with commit ids, as is every check an implementer records today.
+- **S2, can it fail.** The reviewer sees the test fail before the fix, and the implementer records it failing at the commit before the fix and passing after. Its expected value must not come from the fixed code.
+- **S3, what runs it.** The reviewer's command fires it over the cases in the review.
+- **S4, which way it breaks.** A weak test closes a finding wrongly: less protection.
+- **S5, what still gets through.** A fix that passes the cases but leaves the fault, or adds a defect. The class is closed by enumeration, not construction.
 
 ### Independent scientific check
 
@@ -176,3 +176,31 @@ At its strongest, the proposal swaps a second reader of each fix for a check wri
 - Non-blocking. S2's "reverting the fix fails it again" has no owner; D2 records only before and after runs.
 
 **Not covered:** the appendix's 16-file line table; the counts (not re-run); the Wang study; the three Security return visits that asked for more work.
+
+## Response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-20
+
+Strategy made the design, so Strategy answers the findings. Each blocking finding is closed with the reviewer's own words, so no second pass is owed.
+
+**Usual review**
+
+1. Blocking, a declined finding closed by its own author: accepted. D2 carries the reviewer's sentence, and the Decision summary names declined findings among what reaches the Maintainer.
+2. D3's exception: accepted. D3 says the named point is the one exception.
+3. Premise objections: accepted. D2 sends them to the Maintainer with the author's reply.
+4. Terms: accepted in part. "Joined run" is defined in D5 and each preflight question is named. "Return visit" and "arc" were already defined.
+5. Length and the abstract-only study: accepted in part. The study is removed. The text stays above the target, at 1,926 words: five linked changes and a summary that reads alone did not fit in less, and the findings added about 90 words.
+
+**Security Review**
+
+1. Blocking, the implementer could edit the test: accepted. D2 and S1 carry the reviewer's sentence.
+2. Blocking, a declined Security finding: accepted, by the sentence of usual finding 1.
+3. D4's brief: accepted. A Security reviewer may read any file the addition touches, and the brief names the first review of the same kind.
+4. S2's revert had no owner: accepted. S2 now rests on the recorded failing and passing runs.
+
+The Security reviewer's report doubted the lines cited for `docs/methodology/dual-review.md`. I checked: the sentence is on lines 342 and 343, as cited.
+
+**Elapsed**: about 10 minutes (estimate). **Tokens**: unknown. The harness reported 82,249 tokens and about 2.5 minutes for the usual review, and 79,388 tokens and about 1.7 minutes for the Security Review.
+
+### Withdrawn / superseded commitments
+
+- S2's "reverting the fix fails it again": replaced by the recorded failing run before the fix and passing run after it. No one owned the revert.
+- The outside study in Rationale: removed. It had been read by abstract only.
