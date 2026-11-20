@@ -7,11 +7,11 @@
 **Plan review**: required(Internal + Internal Security Review) — for plans B, C, D and E; plan A is prose only and takes required(Internal).
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
-**In brief**: Twelve open issues and some Windows and gate gaps get fixed, closed with a reason or deferred in five small plans and one signing, so v0.9 can be a clean bugfix release.
+**In brief**: Twelve open issues and some Windows and gate gaps get fixed, closed with a reason or deferred in five small plans and one signing, so v0.9 starts clean before its rules are tightened.
 
 ## Decision summary
 
-**Conclusion.** Adopters reported defects after the v0.8 cut in the upgrade, the first session, the quickstart and two tools. I propose one arc of five small plans that fixes them, closes what is not a defect and defers three feature requests. I recommend all three choices below.
+**Conclusion.** Adopters reported defects after the v0.8 cut in the upgrade, the first session, the quickstart and two tools. I propose one arc of five small plans that fixes them, closes what is not a defect, defers two feature requests and sends a third to the tightening proposal. I recommend all three choices below.
 
 **Who each plan helps.**
 
@@ -21,16 +21,16 @@
 - **Plan D, gate and Windows checks.** The release operator. A check that the v0.8 file move narrowed comes back, and the older Windows test failures are measured, then repaired.
 - **Plan E, one more file moves.** `docs/DOCUMENTATION_PLAN.md` moves into `dev/`, as the Maintainer asked on 2026-11-19. Adopters get the move through the upgrade.
 
-**What the Maintainer is asked to choose.** He wrote (chat, 2026-11-20): "Once this is complete, please write the arc necessary for the defect fixes, including any in the Cairn Issues reported after the v0.8 cut. I really want a clean v0.9. Probably a bugfix releasee."
+**What the Maintainer is asked to choose.** He wrote (chat, 2026-11-20): "Once this is complete, please write the arc necessary for the defect fixes, including any in the Cairn Issues reported after the v0.8 cut. I really want a clean v0.9. Probably a bugfix releasee." He then set the release's shape (chat, same day): "I want a 0.9.1 bugfix, not a full version bugfix. I don't mind a 0.9 tightening with no notable new features, but not just defects alone" and "So we are going to do a comprehensive tightening. After the defects."
 
-1. **Is v0.9 a bugfix release?** If yes, these parts of the roadmap wait for v0.10 with their scope kept:
-   - section 3, scientific software: dimensions and governance (#19), the release module, test records;
+1. **Does v0.9 carry no notable new feature?** v0.9 is a tightening release: the defects in this arc first, then a comprehensive tightening of the rules, which gets its own proposal. A release that only fixes defects takes a point number, such as 0.9.1. If yes, these parts of the roadmap, each a new feature, wait for v0.10 with their scope kept:
+   - section 3, scientific software: dimensions and governance (#19) and the release module. Test records are not decided here: he asked (chat, 2026-11-20) for an assessment of LHM's and modflow_tools' testing work first, and cheaper testing may belong to the tightening;
    - section 4, monitoring: the oversight website, the four-view comparison, the real-use meter comparisons;
    - section 5, less supervision: delegating decisions, the budget guard, draining an adopter's roadmap;
    - in section 2, the release `.zip` (#94), which he asked for in v0.9 (chat, 2026-11-19): "put a v0.9 issue to add a release .zip archive to that release, which omits Cairn's own dev folder".
 
-   The three-host verification in section 2 stays, because a clean release is one checked where adopters run it. *Recommended: yes, with that one exception.* Nothing is dropped. The oversight website is what waits longest.
-2. **Defer three feature requests to v0.10?** #90 (find the repository root by a marker), #91 part 3 (a helper that archives a plan and repoints links) and #79 (a smaller entry file). Each is large and none is a defect. *Recommended: yes.* #90 would join the code-structure work.
+   The three-host verification in section 2 stays, because a clean release is one checked where adopters run it. *Recommended: yes.* Nothing is dropped. The oversight website is what waits longest.
+2. **Defer two feature requests to v0.10, and send one to the tightening?** #90 (find the repository root by a marker) and #91 part 3 (a helper that archives a plan and repoints links) are large and are not defects; they wait for v0.10. #79 asks for a smaller entry file, which is what the tightening is about, so it goes to that proposal. *Recommended: yes.* #90 would join the code-structure work.
 3. **Accept the arc as grouped?** *Recommended: yes.*
 
 **What the Maintainer does by hand.** This Decision, and the one on the separate re-anchor proposal. One signing: the re-anchor, his signed approval of the exact test files that guard Cairn's security checks, so that no agent can change them unseen. And the release cut, where the strict Mac and Windows records and the secrets scans waived for 0.8 fall due. Nothing else, and no list of tests.
@@ -53,7 +53,7 @@ Each plan has at most five chunks, and shows at its plan review how its items fi
 - **Plan D, gate and Windows checks (protected tests; Security Review).** It restores the scan of new files under `tests/` (B3a). For `tests/test_fork_advisory.py` (B3b) it restores no word match: if the test must tell one refusal from another, it checks which record the refusal names. It measures the older Windows failures on the Windows host, then repairs what still fails (B2a, B2d, B2e). It chooses between accepting Windows path separators in the release-membership checker and recording that the check runs only on the Mac (B2b). It checks the published v0.8.0 tag through both documented release routes in Windows Git Bash. For the history freeze that fails on refs pointing at trees, the default is to document a freeze from a clean clone.
 - **Plan E, the documentation plan moves (installer engine and install contract; Security Review).** It moves `docs/DOCUMENTATION_PLAN.md` into `dev/`, adds the upgrade move, and updates the shipped files that name the old path. It runs after plan B, because it uses the move machinery that plan B repairs.
 
-**Closed or deferred.** #91 part 1 is closed; 0.8 delivered it. The AST baseline correction was fixed at `ed893f0d`, and the joined run confirms it. The "bootstrap" wording check is not restored, because it looked for one word in a refusal message (Maintainer, chat, 2026-11-20: "Drop it."). #90, #91 part 3 and #79 are deferred on choice 2. A full Windows suite as a release gate belongs to the roadmap row on verifying releases on three hosts.
+**Closed or deferred.** #91 part 1 is closed; 0.8 delivered it. The AST baseline correction was fixed at `ed893f0d`, and the joined run confirms it. The "bootstrap" wording check is not restored, because it looked for one word in a refusal message (Maintainer, chat, 2026-11-20: "Drop it."). On choice 2, #90 and #91 part 3 are deferred and #79 goes to the tightening proposal. A full Windows suite as a release gate belongs to the roadmap row on verifying releases on three hosts.
 
 **Order.** (1) The one-round review rules (`dev/proposals/archive/2026-11-20-claude-one-round-reviews.md`) ship first. (2) Plans A, B and C. (3) Plans D and E, and the ceremony fix from the separate re-anchor proposal. (4) One joined run, on the canonical runtime and on Windows. (5) The re-anchor, signed once. (6) The light proposal `2026-11-19-codex-native-release-membership.md` is archived.
 
@@ -198,3 +198,22 @@ The usual review did not read the runbook; the Security Review read its top sect
 ### Withdrawn / superseded commitments
 
 None.
+
+## Response -- Claude Fable 5.2 (Strategy, to the Maintainer's direction) -- 2026-11-20
+
+The Maintainer set the shape of v0.9 in chat on 2026-11-20, after the reviews and before a Decision. His words are quoted in the Decision summary. Choices 1 and 2 are revised in place to follow them.
+
+1. **Choice 1.** It asked whether v0.9 is a bugfix release. He answered that a release of defects alone takes a point number, and that v0.9 is a tightening release with no notable new feature. Choice 1 now asks only which roadmap parts wait for v0.10 as new features.
+2. **Test records leave choice 1.** He asked for an assessment of LHM's and modflow_tools' testing work first. That row is decided after it.
+3. **Choice 2, #79.** A smaller entry file is the subject of the tightening, so #79 goes to that proposal and not to v0.10. The appendix row says the same.
+4. **The tightening is not in this arc.** It gets its own proposal and runs after the defects, as he said.
+
+The five plans, their order, the joined run and the signing are unchanged, so no scope was added to what the reviewers read and no further review pass follows. Not checked: whether a plan in this arc edits a rule file that the tightening will also edit. The tightening proposal has to read this arc's file lists.
+
+**Elapsed**: about 15 minutes (estimate). **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+- "v0.9 is a bugfix release" (choice 1 as reviewed): replaced by a tightening release with no notable new feature, on the Maintainer's word.
+- Test records waiting for v0.10: withdrawn. The row is decided after the assessment.
+- #79 deferred to v0.10: replaced. It goes to the tightening proposal.

@@ -36,7 +36,7 @@ Companion to `2026-11-20-claude-v09-defect-arc.md`. Sources: the open issues rea
 | AST baseline correction | already fixed | fixed at `ed893f0d`; the joined run confirms | none | any | GATE |
 | #90 repository root by a marker | feature | defer to v0.10 (Decision 2) | none | any | PYT |
 | #91 part 3 archive helper | feature | defer to v0.10 (Decision 2) | none | any | PYT |
-| #79 smaller entry file | feature | defer to v0.10 (Decision 2) | none | any | none |
+| #79 smaller entry file | feature | to the tightening proposal (Decision 2) | none | any | none |
 | B2c full Windows suite as a release gate | process | belongs to the roadmap row on verifying releases on Linux and Windows | none | Windows | GATE |
 | B1 the re-anchor and its ceremony proposal | process | separate proposal, one signing after the joined run | none | Mac (Maintainer) | GATE |
 | B4 "bootstrap" wording check | wording check | not restored: it looked for one word in a refusal message (Maintainer, chat, 2026-11-20: "Drop it.") | none | any | GATE |
