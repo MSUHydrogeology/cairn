@@ -6,7 +6,7 @@
 # the Cairn bootstrap procedure and was not installed by `scaffold.py`;
 # this manifest captures the equivalent state.
 #
-# Format spec: ../bootstrap/fidelity-check.md
+# Format spec: ../../install/fidelity-check.md
 #
 # Cairn reference commit: d152cbb
 # (the commit at which the Phase 2 templates were finalized)

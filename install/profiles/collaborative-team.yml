@@ -1,6 +1,6 @@
 # Cairn profile -- collaborative-team
 #
-# Dimensional profile (per cairn/dimensions/ rubrics):
+# Dimensional profile (per install/dimensions/ rubrics):
 #
 #   axis            | value                       | reason
 #   ----------------|-----------------------------|---------------------
@@ -22,7 +22,7 @@
 #
 # Who this is for: a team -- several people or agents working in the
 # tree at once.  Install it with the scaffold, ideally walking
-# cairn/bootstrap/BOOTSTRAP.md with your agent.
+# install/BOOTSTRAP.md with your agent.
 # Default-on modules are installed alongside the axis-driven team-gated
 # set; the team-staffing gate determines whether dual-review +
 # coordination-tiers land in the baseline or stay opt-in.

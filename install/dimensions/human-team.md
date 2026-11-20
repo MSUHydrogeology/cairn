@@ -42,7 +42,7 @@ is done by the agent team, and the Maintainer reads at the Decision
   rules (it does not duplicate them). The scaffold installs it for
   these positions and records it under `optional_templates:` in the
   fidelity manifest so the gate is auditable
-  (`../bootstrap/fidelity-check.md`). A solo project ships no
+  (`../fidelity-check.md`). A solo project ships no
   `CONTRIBUTING.md`.
 * A multi-human-team review module — shared decision rights, a
   formal human-review rotation — is a **named follow-up**, picked

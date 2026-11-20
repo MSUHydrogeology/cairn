@@ -571,7 +571,7 @@ standing process that closes that gap.
 
 A companion **core-completeness probe** — the adopter-side check that an
 install merged all its module content and captured its tacit rules in
-`AGENTS.md` — lives in `../bootstrap/fidelity-check.md`. The harvest
+`AGENTS.md` — lives in `../../install/fidelity-check.md`. The harvest
 keeps *core* from lagging its best adopter; the probe keeps an
 *install* from silently shipping incomplete. Both are distinct from the
 R-F fidelity gate, which proves only *faithful install*.

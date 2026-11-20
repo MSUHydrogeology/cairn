@@ -1,4 +1,4 @@
-<!-- claim-check-allow: docs/methodology/, scripts/check_cairn.py, docs/methodology/proposals.md, docs/methodology/plans.md -->
+<!-- claim-check-allow: docs/methodology/, tests/check_cairn.py, docs/methodology/proposals.md, docs/methodology/plans.md -->
 # Module: doc-drift-prevention
 
 **Selected when:** the project ships documentation that *describes code*
@@ -8,7 +8,7 @@ as the code changes. Broadly applicable; team-gated so a preset
 **Adds to:** a drift-prevention note in the adopting repo's docs guide
 (and a cross-reference from `dev/agent_collaboration.md`), **plus two
 runnable, stdlib-only scripts** the scaffold installs into the target's
-`scripts/` directory — `link_check.py` and `sync_doc_snippets.py` (see
+`dev/tools/` directory — `link_check.py` and `sync_doc_snippets.py` (see
 "Doctrine + tooling" below).
 
 Documentation that restates what the code does will drift the moment the
@@ -66,7 +66,7 @@ This module ships the **discipline above** *and* a **stack-neutral,
 scaffold-installed tooling set** -- the way the `claim-check` and
 `portable-security-sweeps` modules ship runnable scripts (the 1:many
 verbatim-install pattern). Two stdlib-only scripts land in the target's
-`scripts/` directory:
+`dev/tools/` directory:
 
 * **`link_check.py`** -- the link / anchor half of the gate. Confirms
   every internal Markdown link, image, and reference definition resolves
@@ -141,7 +141,7 @@ configuration remains exact and requires reasons.
 
 ### Cairn's review-ID advisory
 
-When Cairn runs `scripts/check_cairn.py`, it also looks for explicit,
+When Cairn runs `tests/check_cairn.py`, it also looks for explicit,
 temporary finding references in tracked Markdown under `docs/` and
 `templates/modules/`, in `CHANGELOG.md`, and in Python files under
 `templates/modules/`. It recognizes `R`, `F`, and `N` tokens with one or two
@@ -168,7 +168,7 @@ source; each exception names only its exact line and reason.
 
 **The claim half is *not* shipped here.** The default-on `claim-check`
 module already installs `claim_check.py` (broken repo paths,
-out-of-bounds citations) into the target's `scripts/`. The doc-drift gate
+out-of-bounds citations) into the target's `dev/tools/`. The doc-drift gate
 **composes** with it rather
 than bundling a second copy: the full authoring-time check runs
 `claim_check.py` (claims) + `link_check.py` (links) +
@@ -188,7 +188,7 @@ drift.
 tool.** Generating a reference doc from a machine-readable schema (a
 config schema, a type definition) inherently couples to one schema
 language, so a *generic* generator cannot ship stack-neutrally. The
-adopter wires their own (e.g. a `render_schema_docs.py` under `scripts/`
+adopter wires their own (e.g. a `render_schema_docs.py` under `dev/tools/`
 over their schema source), and the "generated, do not hand-edit" doctrine
 above tells them what contract it must satisfy. Shipping it as an
 optional, explicitly stack-specific module is a possible future

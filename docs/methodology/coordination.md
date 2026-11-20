@@ -258,7 +258,7 @@ where one tool spawns many parallel sessions.
 ### Enforcing the coordination check — warn, then bind a proven conflict
 
 The pre-commit work-intent check is **opt-in**: the adopter installs it with
-`python tools/intent.py install-precommit`; the scaffold never installs it.
+`python dev/tools/intent.py install-precommit`; the scaffold never installs it.
 Once installed, its shipped default is `warn`: an unclaimed staged path warns,
 and so does a fresh claim from a different live session, and the commit goes
 through. An adopter who sets `"enforce": "block"` has a commit refused only
@@ -294,11 +294,11 @@ warnings. These settings do not install the hook or change identity handling.
 
 Use the same session-specific label for `claim`, the commit, and inherited
 post-commit auto-release. Prefer the harness-derived identity. To diagnose a
-mismatch, compare `python tools/intent.py whoami` in each relevant command
+mismatch, compare `python dev/tools/intent.py whoami` in each relevant command
 environment. If an explicit `CAIRN_AGENT` override is needed, provide the same
 session-specific value separately to each fresh shell that runs a claim or
 commit; the commit shell also launches the post-commit hook. For example,
-`CAIRN_AGENT=synthetic-codex-a python tools/intent.py claim --files src/a.py
+`CAIRN_AGENT=synthetic-codex-a python dev/tools/intent.py claim --files src/a.py
 --action 'edit a'` and, in the fresh shell that commits,
 `CAIRN_AGENT=synthetic-codex-a git commit -- src/a.py`. The override sets a
 label; by itself it supplies no session token and cannot enable blocking.

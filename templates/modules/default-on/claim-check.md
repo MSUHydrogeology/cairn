@@ -1,5 +1,5 @@
-<!-- claim-check-allow: dev/.cairn/claim-check-allow.json, scripts/check_cairn.py, dev/.cairn/measurements.json -->
-<!-- ^ Adopter-safety: this module doc cites Cairn's own `scripts/check_cairn.py`
+<!-- claim-check-allow: dev/.cairn/claim-check-allow.json, tests/check_cairn.py, dev/.cairn/measurements.json -->
+<!-- ^ Adopter-safety: this module doc cites Cairn's own `tests/check_cairn.py`
      (which exists in Cairn but not in an adopter tree). The directive travels
      with the rendered copy so every installed adopter passes its own claim
      checker. -->
@@ -9,7 +9,7 @@
 **Selected when:** default-on.
 **Adds to:** a note in `AGENTS.md` documenting the
 verify-before-asserting discipline, **plus a runnable checker** the
-scaffold installs as `claim_check.py` in the target's `scripts/`
+scaffold installs as `claim_check.py` in the target's `dev/tools/`
 directory (see "Reference implementation" below).
 
 The claim-check module operationalizes **verify-before-asserting**:
@@ -143,7 +143,7 @@ shifts its cheap, mechanical part left, ahead of review.
 ## Reference implementation
 
 **The scaffold installs a runnable checker.** Enabling this module
-writes `claim_check.py` into the target's `scripts/` directory (copied
+writes `claim_check.py` into the target's `dev/tools/` directory (copied
 verbatim -- no token substitution over the code) and fills
 `{{claim_check_command}}` to point at it. The script is vendor-neutral and **standard-library
 only**: it hard-flags broken repo paths and out-of-bounds line
@@ -191,7 +191,7 @@ Three knobs cover most local needs:
 * The markdown-context rules are small, readable edits at the top of
   the script if your conventions differ.
 
-Cairn runs this exact script on itself: `scripts/check_cairn.py` imports
+Cairn runs this exact script on itself: `tests/check_cairn.py` imports
 its claim-path checker (and adds link-checking on top), so the
 methodology's own gate and the tool it ships an adopter are the same
 code -- no drift between what Cairn preaches and what it hands out.

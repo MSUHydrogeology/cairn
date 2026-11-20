@@ -95,7 +95,7 @@ waits as Maintainer-gated final chunks; queue those outcomes before opening
 their work. Keep
 `<what>` under 48 characters, the board's cell width; the detail stays in the
 plan. The colon sits outside the bold, exactly as shown: with the colon
-inside the bold the board does not read the line. `python tools/board.py --maintainer` lists
+inside the bold the board does not read the line. `python dev/tools/board.py --maintainer` lists
 every artifact that carries it.
 
 ## Review
@@ -306,13 +306,13 @@ records whether anything else would have shown the error.
   <!-- cairn:slot acceptance-doc-tooling -->
   Cairn's doc surface is mostly hand-authored Markdown read on GitHub;
   the doc tooling is drift-prevention, not generation:
-  - **Snippet-sync** — `python scripts/sync_doc_snippets.py` pulls
+  - **Snippet-sync** — `python dev/tools/sync_doc_snippets.py` pulls
     fenced blocks from runnable example sources into docs; update the
     source, then run the sync (never hand-edit a synced block).
-  - **Prose-integrity gate** — `python scripts/check_cairn.py` resolves
+  - **Prose-integrity gate** — `python tests/check_cairn.py` resolves
     every internal Markdown link / anchor and every claim-path; it is
     the doc smoke for any Markdown change.
-  - **Link check** — `python scripts/link_check.py` for the broader
+  - **Link check** — `python dev/tools/link_check.py` for the broader
     cross-reference sweep.
   There is no schema-render generator; a plan that introduces one names
   its source + render command here.

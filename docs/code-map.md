@@ -9,10 +9,10 @@ it never imports or executes inspected files.
 The command writes one JSON object to standard output:
 
 ```text
-python -I tools/code_map.py --root PATH
-python -I tools/code_map.py --root PATH --changed src/module.py
-python -I tools/code_map.py --root PATH --changed src/a.py --changed src/b.py
-python -I tools/code_map.py --root PATH --release
+python -I dev/tools/code_map.py --root PATH
+python -I dev/tools/code_map.py --root PATH --changed src/module.py
+python -I dev/tools/code_map.py --root PATH --changed src/a.py --changed src/b.py
+python -I dev/tools/code_map.py --root PATH --release
 ```
 
 The default is a filesystem map. `--changed` compares functions, including
