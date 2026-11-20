@@ -92,3 +92,39 @@ D1-1 to D1-4 touch disjoint files and may land in any order. Code review once af
 **Roadmap entries.** D1 settles "Narrowings from the layout move", the `file=` clause of "Windows", and "The history freeze in a live repository". No GitHub issue is touched; nobody closes or comments on one without the Maintainer's word.
 
 **Not checked.** No code or test was run for this plan. Not run: any freeze, record, join or signing; the Windows node of D1-3; whether `git clone` leaves out refs that point at trees (assumed from Git's default); whether the ceremony's scan digest still agrees in the layout transition (read: the transition supplies the scan, `tests/_gate_preflight.py` `_layout_stage` and `release/repin.py` around line 3014); macOS. **Does any rule weaken or disappear?** No: D1 scans more, asserts more, and accepts one spelling on one host.
+
+## Plan review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-20
+
+Reviewed commit: bd11372cb8c9ced611380b238a04ecd48807c813
+
+**Obligation**: the usual plan review the heavy tier requires.
+**Tier**: Internal
+**Findings**: raised
+
+The plan restores two narrowed checks, lets the release check read Windows paths, and documents the clone freeze, in four disjoint chunks a low-tier model can follow. I read the code at every cited place; I ran nothing.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The history supports the narrower claim: before the move only the old bootstrap test folder was excluded, and `scripts/` tools were scanned; the move put them at `tests/` (`git show c139612b -M`). The restored scan checks at least what it did before. -- `git log -S_SCAN_NEW_FILE_EXCLUDED`, `tests/_gate_preflight.py:1346`
+2. **Best alternative.** Scanning every new test was the other option; the plan's exclusion of `test_*.py` and fixtures matches the old behavior. -- `tests/_gate_preflight.py:1442`
+3. **What would show it wrong.** Forward test: an added tool file under the tests folder with `import subprocess` gives no hit. The plan's new node covers it and fails at the starting commit. The `record <n>:` text is printed on this path from either caller. -- `install/_scaffold/upgrade.py` lines 251, 320, 4141, 4655
+
+**Findings**
+
+1. **Blocking.** Two runs have no owner: the Mac run of D1-1's nine files, and D2's Windows measurements. Nothing in `dev/PLANNING.md` names either. The ceremony files fail 249 of 286 here, so the new node's own result may exist only on the Mac. Exact words below.
+2. Non-blocking. D1-3's Windows spelling also lets through a drive-letter path inside the tree and mixed separators. The classname comparison stays the authority; the Security Review should judge it, and "one spelling" understates it.
+3. Non-blocking. D1-4's paragraph needs the clone fully prepared before the freeze: a fresh clone lacks `refs/cairn/gate-anchor` (`dev/rules/protected-surfaces.md`), and a ref added after the freeze makes the join refuse.
+4. Non-blocking. The `_scan_range` docstring (line 1423) still names three roots; update it. The D1-3 nodes should start from the `evidence` fixture and rewrite the report, as `test_report_refusals` does.
+5. Non-blocking, for the Maintainer. D2 makes six plans; the Decision named five.
+
+The cut loses no accepted item: B2a, B2d, B2e and the tag check sit in D2's list.
+
+**Not covered**: no test run; the Windows `file=` spelling and clone behavior are unmeasured. Elapsed about 30 minutes; tokens unknown.
+
+**Verdict**: REVISE
+
+### Exact words closing finding 1
+
+Add to "Verification", after "Hosts": "**Owners.** The Mac run of D1-1's nine files is the Maintainer's, taken by the Mac session that takes the re-anchor plan; D1's closeout records that run's failures by test id and message, or states it was not run. If the new node cannot run on the Windows Server machine, the closeout says so. The D2 measuring list is copied into `dev/PLANNING.md` section 1, under 'Windows', with the Maintainer's launch of a Mac session that reaches `cairn-windows` listed under 'Waiting on you'. D1 does not reach `ready-to-archive` until both edits are committed."
+
+Add to finding 3's chunk (Detail D4), at the end of the paragraph: "Before freezing, fetch `refs/cairn/gate-anchor` into the clone if the record needs it; no ref may be added after the freeze."
