@@ -55,7 +55,7 @@ Two medium-tier agents (Claude Sonnet 5.5) inventoried both repositories, read-o
 
 I found no rule for any of the three in Cairn's guide, entry file or testing module.
 
-**Deleting tests saves upkeep, not time.** modflow_tools' first cut took a run from 213 to 196 seconds; its plan says deletion "gives the maintainability gain but little speed". Days later its test code had grown 3.5% while the package shrank. A keep rule has to act when a test is written.
+**Deleting tests saves upkeep, not time.** modflow_tools' first cut took a run from 213 to 196 seconds; its plan says deletion "gives the maintainability gain but little speed". Its roadmap (2026-11-18) records test code growing 3.5% over a stretch in which the package lost about 8,600 lines. A keep rule has to act when a test is written.
 
 ## Options
 
