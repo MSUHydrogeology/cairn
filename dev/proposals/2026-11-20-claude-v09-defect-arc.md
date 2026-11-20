@@ -110,3 +110,34 @@ Any clean-means test fails, or a plan needs a second signing.
 ## Assurance path
 
 **Assurance path**: high-assurance. Plans B to E alter what the installer engine, the session reader, the security audit and protected tests do or accept.
+
+## Review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-20
+
+```
+Reviewed commit: 76347908193838c31861e1b71cb06d2630d8435a
+```
+
+**Tier**: usual
+**Findings**: raised (non-blocking only)
+**Verdict**: ACCEPT
+
+**Elapsed**: about 10 minutes
+**Tokens**: unknown
+
+The proposal tries to turn the roadmap's "Defects first" list into five reviewable plans and one signing, so v0.9 starts clean. I think it does.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Every open defect issue (#93, #95 to #102) and every bullet of roadmap section 1 appears in the appendix; the other open issues are listed as left alone -- `gh issue list`, `dev/PLANNING.md` lines 40-53, appendix.
+2. **Best alternative?** Doing nothing leaves `check_cairn.py` failing; I ran it and it reports five issues, as the proposal says. One plan per issue costs more review -- `python tests/check_cairn.py`.
+3. **What would show it wrong?** An upgrade of a test tree from 0.7.0 that still leaves the security verification unable to run, or a plan that needs a second signing -- the clean-means paragraph.
+
+I spot-checked the code claims: `session.py:1264`, `:186-190`, the seven keys at `run_security_verification.py:136`, and `upgrade.py:4364` all match, as do the `bootstrap\` lines 202, 280 and 281 of `docs/quickstart.md`.
+
+**Findings**
+
+1. Non-blocking. Plan D lists about six pieces (B3a, B3b, the Windows measure-and-repair group, B2b, the tag check, the freeze), and plan B lists seven issues. The proposal never says how they fit five chunks each. Each plan should show its grouping at plan review.
+2. Non-blocking. The Decision summary uses terms a scientist must translate: "re-anchor", "installer engine", "dispatcher". One plain sentence on what the signing protects would let him choose without help.
+3. Non-blocking. Choice 1 defers #94, which he asked for in v0.9. The text says so; the Decision should quote it.
+
+**Not covered**: I ran no upgrade, test or Windows check. I did not read the individual issue threads beyond titles. I did not read the re-anchor proposal or the runbook, so the signing order is checked only against the proposal's own text.
