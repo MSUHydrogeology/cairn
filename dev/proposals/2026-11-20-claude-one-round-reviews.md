@@ -1,7 +1,7 @@
 # One round of review at each stage, and a closing test for each blocking finding
 
 **Author**: Claude Sonnet 5.5
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it changes governing doctrine under `docs/methodology/` and lowers a Security Review limit.
 **Plan review**: required(Internal + Internal Security Review) — about 30 edits in 16 files; the plan changes a Security limit.
@@ -146,3 +146,33 @@ The proposal tries to stop paying for a second reader of each fix, by making the
 - Non-blocking. 1,833 words against the 1,000 target; the Wang study is cited from an abstract only (disclosed).
 
 **Not covered:** the 16 files' line numbers beyond those I opened; the 2,000-word cap arithmetic; whether tests or tools match the changed phrases.
+
+## Review -- Claude Opus 5.5, Security Review -- 2026-11-20
+
+```
+Reviewed commit: cd503a53bf6063522960d995337632063606491c
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: about 8 minutes
+**Tokens**: unknown
+
+At its strongest, the proposal swaps a second reader of each fix for a check written by someone other than the fixer, seen failing first. For security that keeps the independence that matters, if the check cannot be changed by the fixer.
+
+**Foundations**
+1. **Should this happen as framed?** Yes. The further-pass path stays: Maintainer authorization plus a specific question, or newly changed material -- D1; `dev/modules/security-review.md:84-88`.
+2. **Best alternative.** Keep two Security passes, the change named by option B. Only 3 of 24 Security return visits asked for more work -- appendix line 38.
+3. **What would show it wrong.** At the v0.9 recount (D6), a security defect after archive traced to a fix no Security reviewer read -- Signals.
+
+**Does any rule weaken or disappear?** Yes, openly: the second Security pass (`security-review.md:84`) and the second look at a fix larger than a failing test (`dev/agent_collaboration.md:365`). The cap path to the Maintainer survives.
+
+**Findings**
+- **Blocking.** S1 says the implementer "supplies only results", but nothing stops the implementer from editing the reviewer's test until it passes. Add to D2 after "records both results with commit ids": "The implementer runs the test exactly as the review gives it; a changed test counts as a decline."
+- **Blocking (concur with the usual review).** A declined Security finding is closed by its implementer alone. Apply the usual review's sentence; it covers this.
+- Non-blocking. D4's limited brief can hide how an addition meets unchanged guards. Add: "A Security reviewer may also read any file the addition touches."
+- Non-blocking. S2's "reverting the fix fails it again" has no owner; D2 records only before and after runs.
+
+**Not covered:** the appendix's 16-file line table; the counts (not re-run); the Wang study; the three Security return visits that asked for more work.
