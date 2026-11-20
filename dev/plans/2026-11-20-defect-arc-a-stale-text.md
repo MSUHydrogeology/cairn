@@ -1,7 +1,7 @@
 # Plan: Defect arc A, stale text
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -295,3 +295,20 @@ The change makes paths and commands that adopters read true in the 0.8 layout, b
 **Tests.** The record settles C1, C3, C4 and C5. C2's 73 files were not run. Of them, 42 are in none of the four run selections, among them `test_profile_grammar`, `test_profiles_smoke`, `test_claim_check_module`, `test_security_verification` and `test_session_routines`. "No test holds a changed line" does not show those pass. The joined run is enough, if it runs the C2 selection. Bounding: ACCEPTED.
 
 **Not covered**: no tests run; the licences; UPGRADE.md was read, not run. Over target to carry exact words. Elapsed about 40 minutes; tokens unknown.
+
+## Code-review response -- Claude Fable 5.2 (Strategy, acting as implementer) -- 2026-11-20
+
+Strategy coordinated this plan and answers; the implementing session (Claude Haiku 5.5) had ended. The review raised no blocking finding. Its four notes are cheap, so each is settled here, before archive.
+
+- **1, step 1 of the new upgrade section: fixed** (`b9174bb9`) with the reviewer's words. One more change is Strategy's: "Without one" became "With no `blocked:` line", because the added sentence made "one" unclear.
+- **2, "Run that printed command exactly": fixed** (`b9174bb9`) with the reviewer's command, plus eight words of Strategy's: "adding `--to <id>` if the line shows it". The printed line carries `--to` when the stage was given one (`install/_scaffold/upgrade.py`, `_layout_command`), and an apply without it is refused because the receipt no longer matches (`install/_scaffold/layout_migration.py`, `Transaction.apply`). Without those words the fix would have dropped what "exactly" protected.
+- **3, the counts: fixed** (`27d82896`). The Build summary says 59, 81 and 32. Entry U3 of the edit list holds the corrected section, so the list, applied by script to `02f92d37`, still equals this branch in all 32 files.
+- **4, the Known limit: kept, and now confirmed from code.** A file with unproved ancestry is printed as `blocked:` and not as a move (`_layout_plan`, the `if not old_proved` branch); reconciling records it as "keep"; only the next `--plan` lists its move.
+
+**Tests after the fix.** The ten files that name `install/UPGRADE.md` ran again at `27d82896`: 161 failed, 429 passed, 50 skipped, against 160, 430 and 50 at `f55360c1`. One id is new, `tests/test_portable_security_sweeps.py::test_full_mode_is_unreachable_without_a_digest_match[mismatched_digest]`. It passed three times alone at `27d82896`; other agents were loading the machine during the full run, and another case in the same file failed once in a loaded run earlier today. Every other failing id and message is unchanged. No file under `tests/` holds a phrase the fix changed (text search).
+
+**The reviewer's condition is accepted.** Chunk C2's 73-file selection, with the 42 files no group covered, is owed by the arc's joined run. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+
+Not run after the fix: the quickstart's PowerShell column and `upgrade.py` itself. Not read by a second reviewer: the words Strategy added in 1 and 2. The reviewer wrote "about 40 minutes"; its commit followed the reviewed commit by under three minutes.
+
+**Elapsed**: about 36 minutes, of which 27 were one background test run. **Tokens**: unknown.
