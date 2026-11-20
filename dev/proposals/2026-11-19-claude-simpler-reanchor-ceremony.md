@@ -84,3 +84,33 @@ A candidate whose pinned file differs from the reader's digest passes; `--check-
 ## Assurance path
 
 **Assurance path**: high-assurance. The change alters what the signing ceremony accepts. Obtain the usual review and a Security Review before the rule changes.
+
+## Review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-20
+
+```
+Reviewed commit: 8b5ed6400c4d963790506e31b7ee24113bbbb10c
+```
+
+**Tier**: usual
+**Findings**: raised (one blocking)
+**Verdict**: REVISE
+
+**Elapsed**: about 12 minutes
+**Tokens**: unknown
+
+The proposal tries to let the next signing pass a history in which Cairn rewrote its own lock many times, and to let an agent find setup errors before the Maintainer starts. The aim is sound.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. `check_stop_records` runs unconditionally (`release/repin.py:2559`, called at 3003), and I counted 29 lock commits in the range -- `git log --oneline e5b7fd0a..6620faa5 -- dev/.cairn/cairn-lock.yml`.
+2. **Best alternative?** Doing nothing leaves the anchor on the old layout. Routing each rewrite through the apply prompts is worse. Checking the end state is the better design -- Rationale; `repin.py:1574` (only `apply-reviewed-pin` writes records).
+3. **What would show it wrong?** A pinned file one byte off the reader's digest that still passes, or a `--check-only` exit 0 followed by a refusal before the first prompt -- promises (b), (c).
+
+**Findings**
+
+1. **Blocking.** Part 2 contradicts itself. The first prompt is the pasted launcher digest (`repin.py:2890`), which comes before the stop-record check (3003). The key probe (`key_checks`, 3004) comes before the two scans and the report binding (3014-3045). So "every check before the key probe" leaves out the scans and report, and "reaches its first prompt" says nothing about them. Replace the first two sentences of Part 2 with: "`ceremony --check-only` makes every check the real run makes except the key probe (`key_checks`, which reads the key file) and the typed answers: the record and its digests, the values file's checkout equal to the trusted checkout, that checkout at the record commit, the report binding, the dispositions and both scans. It computes the launcher digest itself and compares it with the record. It exits 0 only if the real run would reach its last prompt before signing."
+2. Non-blocking. "Not checked" can be answered by reading: line 3003 is unconditional, so an ordinary ceremony refuses 29 lock rewrites too, and promise (d) keeps that. Say so, so the Maintainer knows the ordinary path stays unusable here.
+3. Non-blocking. "Independent reader", "candidate" and "pinned" are not defined; the Decision summary needs one plain line each.
+4. Non-blocking. The card is well aimed, but the proposal never says the Maintainer's hash comparison is among three named digests; list them.
+
+**Not covered**: no test, ceremony or repin run; I did not judge the Security questions (end-state check against the per-commit check, key exposure, the five preflight answers), which the next pass owns. Line 3353 cited for `--first-run` is the `if`; the refusal is on 3354.
