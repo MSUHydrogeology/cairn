@@ -50,7 +50,7 @@ awaiting-review <-> revising -> awaiting-decision
 
 Each status names **who holds it next**. A review moves a proposal to
 `revising`; the author's response carries it to `awaiting-decision`. One usual
-proposal review and response suffice.  In the usual proposal
+proposal review and response suffice, unless the Maintainer adds scope (`dev/agent_collaboration.md` > "Review rules").  In the usual proposal
 review, consider whether the Maintainer could explain the choice
 without a live translation. This is a reading judgment, not a checklist or
 score.
@@ -172,7 +172,8 @@ The first plan opening archives the accepted proposal under the existing rule;
 later unchanged authorized work remains linked to that immutable source and
 does not need a new Decision. Preserve all accepted outcomes and checks. Do not
 split work into plans by default; one plan may include dependent chunks that
-deliver one independently finishable outcome. Its required implementation,
+deliver one independently finishable outcome in at most five chunks; larger
+work becomes several plans. Its required implementation,
 reviews, checks and archive must not wait on another unfinished plan. Keep
 routine human operations as separately owned, evidenced waits, never as final
 plan tasks. Failed required checks remain implementation work.
