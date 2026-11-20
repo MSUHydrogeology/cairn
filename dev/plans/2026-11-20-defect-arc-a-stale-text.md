@@ -9,7 +9,7 @@
 
 ## Build summary
 
-After this plan, the quickstart's Windows steps work and list `RULES.md`; text that named the pre-0.8 folders names the real ones; the goodnight prune command is given for bash and for PowerShell; session start says what to run when `python` is not found; `python tests/check_cairn.py` exits 0 on a fresh clone; and `install/UPGRADE.md` describes the 0.7.0 to 0.8 layout move and the line-ending trap. The change is 55 exact replacements (77 applications) in 30 files, one changelog line and a refreshed install lock. No code, rule or status changes.
+After this plan, the quickstart's Windows steps work and list `RULES.md`; text that named the pre-0.8 folders names the real ones; the goodnight prune command is given for bash and for PowerShell; session start says what to run when `python` is not found; `python tests/check_cairn.py` exits 0 on a fresh clone; and `install/UPGRADE.md` describes the 0.7.0 to 0.8 layout move and the line-ending trap. The change is 59 exact replacements (81 applications) in 32 files, one changelog line and a refreshed install lock. No code, rule or status changes.
 
 ## Source proposal
 

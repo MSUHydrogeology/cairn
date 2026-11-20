@@ -944,19 +944,24 @@ installer checks each old copy against that history, and a shallow clone
 cannot supply it.
 
 1. `python install/scaffold.py upgrade --target <repo> --plan` lists each move
-   as `action: old -> new`. It writes nothing. A line that starts `blocked:`
-   (for example "unproved ancestry") means the installer could not match an
-   old copy to a Cairn release: do step 2 first. Without one, go to step 3.
+   as `action: old -> new`. It writes nothing. A `blocked:` line that says
+   "unproved ancestry" means the installer could not match an
+   old copy to a Cairn release: do step 2 first. Any other `blocked:` line
+   names its own problem; fix that first. With no `blocked:` line, go to
+   step 3.
 2. `upgrade --target <repo> --stage --reconcile-layout <REV>` compares the old
    copies with the Cairn revision `<REV>` (the release the project was
    installed from, for example its tag) and prints `Apply to the same project
-   with --apply --migration-receipt <digest>`. Run that printed command
-   exactly; it ends with `Layout reconciliation complete.` Then run `--plan`
+   with --apply --migration-receipt <digest>`. Run
+   `upgrade --target <repo> --apply --migration-receipt <digest>` with that
+   digest, adding `--to <id>` if the line shows it; it ends with
+   `Layout reconciliation complete.` Then run `--plan`
    again.
 3. `upgrade --target <repo> --stage` stages the move and prints the same kind
    of `Apply to the same project ...` line.
-4. Run that printed command exactly. It ends with `Layout migration
-   complete.`
+4. Run `upgrade --target <repo> --apply --migration-receipt <digest>` with
+   that digest, adding `--to <id>` if the line shows it. It ends with
+   `Layout migration complete.`
 5. Now follow [The workflow](#the-workflow).
 
 If a run stops partway, the next `upgrade` command says where the unfinished
