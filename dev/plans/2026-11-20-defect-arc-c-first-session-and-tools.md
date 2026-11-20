@@ -1,7 +1,7 @@
 # Plan: Defect arc C, first session and tools
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -37,23 +37,24 @@ Proposed paths:
 1. **#96 will not change the Pulse's UNKNOWN.** `coverage.usage` is PARTIAL only when `project_usage.aggregates` holds a row for the tool (`pulse.py`, `build_pulse`). `_project_export` keeps only events that are `proven` and `current_local_verified` (`meter.py`, near line 3717). Claude events are built with neither: the reader never sets them, and its test fixture calls the folder "not-proof". So Claude stays UNKNOWN even when every record type is accepted. C3 delivers what the proposal names (usage-free types stop raising `unsupported_record`). Whether Claude usage should count toward a project is a trust decision, not made here (question below). Measured on this machine's current log (counts only): 1 file, 7,895 records, 17 record types; 13 are outside the adapter's allowed set; one of them is not among the 18 the issue lists, so a closed list goes stale. None carries a `usage` key. All 1,837 assistant usage records parse. The reporter's 10 rejections do not reproduce here.
 2. **#91 part 2.** Only the pre-commit classifier tests the execute bit (`_classify_existing_precommit`). The post-commit path uses `os.access`, which works on Windows. The four tests the issue names exist nowhere in the tree or in `templates/` (searched by name): they are not Cairn's.
 3. **#101.** The dispatcher never runs the audit, so "the dispatcher record carries the threshold" does not apply. The audit's own pass line and summary carry it.
-4. **#99.6, why an adopter's audit sees Cairn's tools.** It does not. `run_bandit_pass` scans only `python_package`, and `run_adopted_executable_gate` checks hashes, not code. The twelve findings came from the adopter's own whole-tree test. Cairn already allows the same `exec` findings in its own gate (`ALLOWLIST` in `release/security_check.py`); adopters have no such list. Nothing in the audit changes for this.
+4. **#99.6, why an adopter's audit sees Cairn's tools.** It does not. `run_bandit_pass` scans only `python_package`, and `run_adopted_executable_gate` checks hashes, not code. The twelve findings came from the adopter's own whole-tree test. Cairn already allows the same `exec` findings, and the twelfth (`pulse.py`, B314), in its own gate (`ALLOWLIST` in `release/security_check.py`); adopters have no such list. Nothing in the audit changes for this.
 5. **`.gitignore`.** Git's `check-ignore` is not an allowed form of the pinned Git helper, which this plan does not change, so a small text matcher decides (Detail D3).
-6. **Comments.** Taken, comment text only: `session.py` line 127 (both copies), `intent.py` line 56 (both), `measurements.py` line 19. Left: comments in frozen files not otherwise edited (`claim_check.py`, `content_scan.py`, `content_scan_runner.py`, `run_portable_security_sweeps.py`, `run_security_verification.py`, `api_access_security.py`; each would add a signing HOLD for a comment). Home: plan D, which edits frozen files. Docstrings and strings that name old folders stay, because changing them can alter recorded baselines.
+6. **Comments.** Taken, comment text only: `session.py` line 127 (both copies), `intent.py` line 56 (both), `measurements.py` line 19. Left: comments in frozen files not otherwise edited (`measurements.py` is the one exception: the HOLD is taken because the comment misleads adopters) (`claim_check.py`, `content_scan.py`, `content_scan_runner.py`, `run_portable_security_sweeps.py`, `run_security_verification.py`, `api_access_security.py`; each would add a signing HOLD for a comment). Home: plan D, which edits frozen files. Docstrings and strings that name old folders stay, because changing them can alter recorded baselines.
 
 **Protected files and the reason the Maintainer will see at the signing.**
 - `templates/skills/_lib/session.py` and `dev/tools/session.py` (interpreter-binding reader, byte copies; not frozen): display and read-only listing fixes, and one fewer write; no check widened.
 - `templates/modules/team-gated/_intent/conflict.py` and `dev/tools/_intent/conflict.py` (frozen, HOLD): the pre-commit installer stops calling Windows shell hooks non-executable; POSIX unchanged.
 - `templates/modules/team-gated/run_security_audit.py` (frozen, HOLD): the audit takes an adopter-set threshold from one closed-format file; default unchanged; unknown input degrades.
 - `meter.py` (both): usage-free records stop marking Claude logs incomplete; a usage-bearing record of an unknown type still does.
-- `intent.py`, `measurements.py`, `python-security.md`: comment or prose only.
+- `intent.py`, `python-security.md`: comment or prose only.
+- `templates/modules/default-on/measurements.py` (frozen, HOLD): one comment names `dev/tools/`; no code changes.
 - `dev/.cairn/cairn-lock.yml`: four records refreshed by the repository's own tool (C5).
 
-**Staleness (read, not run).** Nothing under `install/_scaffold/` changes, so the AST baseline stays valid. The gate manifest freezes two files changed here; the verifier will show two HOLDs for the Maintainer. The install lock goes stale after C1 to C3 and is refreshed in C5.
+**Staleness (read, not run).** Nothing under `install/_scaffold/` changes, so the AST baseline stays valid. The gate manifest freezes three files changed here: `conflict.py`, `run_security_audit.py` and `measurements.py` (listed there as `scripts/measurements.py`); the verifier will show three HOLDs. Reason for the third: one comment now names `dev/tools/`; no code changes. Not run. The install lock goes stale after C1 to C3 and is refreshed in C5.
 
 **Reuse.** `encode_display`, `_assert_not_linked`, `_write_replacing` (kept); `run_bandit_pass` and `_run_tool` (extended, not duplicated). Searched `dev/tools` and `templates` for `check-ignore`, `min_severity` and `usage` readers: none does these jobs.
 
-**Question for the Maintainer.** Should Claude usage count toward a project by trusting the project folder a log sits in? Today the meter refuses on purpose, so Claude stays UNKNOWN. Default: no change now; decide in the tightening or v0.10.
+**Question for the Maintainer.** After C3 the Pulse still shows Claude usage as UNKNOWN and the goodnight report still has no Claude numbers, because the meter never ties a Claude record to this project: it does not trust the folder a log sits in. Should it? Yes counts Claude usage once the folder matches the project; no keeps today's strict refusal. Default: no change now; decide in the tightening or v0.10.
 
 ### Documentation / doctrine surface
 
@@ -77,13 +78,13 @@ C1 to C4 touch disjoint files and can land in any order. Code review once after 
 
 **C2.** `_classify_existing_precommit` (both copies) tests the execute bit only when `os.name != "nt"`. Git for Windows runs hooks through its own shell and Windows files have no bit. POSIX stays bit-for-bit (a plain `os.access` would change it). **Permanent**, `tests/test_intent_precommit_classify.py`, through `intent.py install-precommit`: a shell hook with mode 0o644 is refused (exit 4, file unchanged) and the message says `non-executable` on POSIX and `foreign` on Windows; fails before the fix on Windows. The label is the reported promise, so the test pins it. The four named tests are recorded as not Cairn's, with the search as evidence; closing the issue is the Maintainer's.
 
-**C3.** In the Claude branch of `read_records` (both copies), a non-assistant record sets `unsupported_record` only when it is not one of the four existing names and `_record_carries_usage(record)` is true: a `usage` key at top level or inside a dict `message`. Else it is skipped silently. An assistant record with unreadable usage still sets `invalid_record`. **Permanent**, `tests/test_meter_usage_free_records.py`, through `read_records`, hand-written records only (Detail D6): usage-free types leave `issues == []` and the event; an unknown type with `usage` raises `unsupported_record`; a bad assistant usage raises `invalid_record`. **Developmental, this machine only, nothing copied:** `read_records` over the current log reports `unsupported_record` at the starting commit and not after; delete the script.
+**C3.** In the Claude branch of `read_records` (both copies), a non-assistant record sets `unsupported_record` only when it is not one of the four existing names and `_record_carries_usage(record)` is true: a `usage` key in any dict anywhere in the record (Detail D6). Else it is skipped silently. An assistant record with unreadable usage still sets `invalid_record`. **Permanent**, `tests/test_meter_usage_free_records.py`, through `read_records`, hand-written records only (Detail D6): usage-free types leave `issues == []` and the event; an unknown type with `usage` raises `unsupported_record`; a bad assistant usage raises `invalid_record`. **Developmental, this machine only, nothing copied:** `read_records` over the current log reports `unsupported_record` at the starting commit and not after; delete the script.
 
-**C4.** `run_bandit_pass(pkg, repo_root)` keeps its signature. It loads the optional policy file (Detail D7); prints the threshold line first; if both minimums are `low` (or no file), runs today's argv and today's verdict unchanged. Otherwise it adds `-f json` and classifies the parsed findings: a finding fails when severity and confidence are each at or above the minimum; an unknown level fails. Below-threshold findings are printed (the JSON) and counted. Clean-below-threshold returns tier 0 with status `bandit:clean-below-threshold`; every non-default status gets the suffix ` [threshold: ...]`, so the summary shows it. A bad policy file, unparseable output, code 0 with findings, code 1 without, or any code other than 0 or 1 is DEGRADED (20). No flag, no environment variable. **Permanent**, `tests/test_security_audit_threshold.py`: the cases in Detail D7, stubbing `_run_tool` as `tests/test_security_stack.py` does; one real-Bandit case skipped when Bandit is absent. The existing audit tests stay untouched and must pass.
+**C4.** `run_bandit_pass(pkg, repo_root)` keeps its signature. It loads the optional policy file (Detail D7); prints the threshold line first; if both minimums are `low` (or no file), runs today's argv and today's verdict unchanged. Otherwise it adds `-f json` and classifies the parsed findings: a finding fails when severity and confidence are each at or above the minimum; an unknown level fails. Below-threshold findings are printed (the JSON) and counted. Clean-below-threshold returns tier 0 with status `bandit:clean-below-threshold`; every non-default status that is not DEGRADED gets the suffix ` [threshold: ...]`, so the summary shows it; DEGRADED statuses carry no suffix. A bad policy file, unparseable output, code 0 with findings, code 1 without, or any code other than 0 or 1 is DEGRADED (20). No flag, no environment variable. **Permanent**, `tests/test_security_audit_threshold.py`: the cases in Detail D7, stubbing `_run_tool` as `tests/test_security_stack.py` does; one real-Bandit case skipped when Bandit is absent. The existing audit tests stay untouched and must pass.
 
 **C5.** `measurements.py` line 19 names `dev/tools/`. One Fixed and one Added changelog line (extend an Unreleased entry on the same topic if one exists). Scoped `upgrade --finalize` over `dev/tools/session.py`, `dev/tools/_intent/conflict.py`, `dev/tools/meter.py`, `dev/tools/intent.py`; `verify_integrity` reports OK for all recorded files; the lock commits alone. Twins stay byte-identical (checked by `cmp`).
 
-**Security (re-answered).** S1: the policy file, the log records and the `.gitignore` are adopter-supplied; each reader has a closed shape, a size cap and refusal (D7), and never echoes a raw value. S2: negative controls are the `!` line, the unknown-type record with usage, the bad usage record, and each policy refusal. S3: `session-start`, `install-precommit`, `meter.py refresh`, and `run_security_audit.py` fire the checks. S4: no default lands on more authority; a malformed policy degrades, an unknown level fails, and no check accepts more by default. S5: someone who writes the policy file can lower what fails; every result prints the threshold and counts below-threshold findings. A tool that lies about a usage field is out of scope.
+**Security (re-answered).** S1: the policy file, the log records and the `.gitignore` are adopter-supplied; each reader has a closed shape and refusal, and none echoes a raw value; only the policy file gets a size cap (D7), and the `.gitignore` reader gets no new size cap. S2: negative controls are the `!` line, the unknown-type record with usage, the bad usage record, and each policy refusal. S3: `session-start`, `install-precommit`, `meter.py refresh`, and `run_security_audit.py` fire the checks. S4: no default lands on more authority; a malformed policy degrades, an unknown level fails, and no check accepts more by default. S5: someone who writes the policy file can lower what fails; every result prints the threshold and counts below-threshold findings. A tool that lies about a usage field is out of scope.
 
 ## Scope delta
 
@@ -91,7 +92,7 @@ C1 to C4 touch disjoint files and can land in any order. Code review once after 
 
 ## Verification
 
-**Selector** (`C:\ProgramData\Anaconda3\python.exe tests/tier_inventory.py for <paths>` at `02f92d37`, before any new test file): C1 42 files, C2 23, C3 8, C4 5, C5 7; each of C1 to C4 adds one. For each chunk run its selected files once at the starting commit and keep each failure's test id and message; run them again after; a failure is a host failure only if both are on the first list. C1 is over the 40-file guard. Do not split the run: run the guarding files (`test_session_routines`, `test_session_kernel`, `test_session_failsafe`, `test_session_writes_contained`, `test_session_binding_gate_and_printing_hold`, `test_session_binding_untracked`, `test_skills_self_heal`, `test_first_session_report`, `test_status_vocabulary_advisory`, `test_next_session_local_note`, and the new file) and leave the broad selection to the arc's joined run.
+**Selector** (`C:\ProgramData\Anaconda3\python.exe tests/tier_inventory.py for <paths>` at `02f92d37`, before any new test file): C1 42 files, C2 23, C3 8, C4 5, C5 7; each of C1 to C4 adds one. For each chunk run its selected files once at the starting commit and keep each failure's test id and message; run them again after; a failure is a host failure only if both are on the first list. One exception, by design: `test_session_failsafe.py::test_interpreter_resolved_from_local_env_and_reported` expects a backslash path, so on Windows it fails before C1 (the line shows `\x5c`) and after (it shows `/`), with different text. It is frozen and not edited: treat it as a host failure by id, and name it in the code review. Add `tests/security/test_git_interpreter_binding_portable.py`, `tests/test_security_lint.py` and `tests/test_skills_install.py` to C1's guarding files. C1 is over the 40-file guard. Do not split the run: run the guarding files (`test_session_routines`, `test_session_kernel`, `test_session_failsafe`, `test_session_writes_contained`, `test_session_binding_gate_and_printing_hold`, `test_session_binding_untracked`, `test_skills_self_heal`, `test_first_session_report`, `test_status_vocabulary_advisory`, `test_next_session_local_note`, `tests/security/test_git_interpreter_binding_portable.py`, `tests/test_security_lint.py`, `tests/test_skills_install.py`, and the new file) and leave the broad selection to the arc's joined run.
 
 **Hosts.** This Windows machine: all new tests, C1 (paths, README, `.gitignore`) and C2. Its Linux subsystem (development checks only): C1, C2 and C3 once for the POSIX branches, and C4 if Bandit is installed there; Bandit is not installed on the Windows machine (measured), so the real-Bandit case may wait for the joined run. Canonical runtime (`dev/rules/certifying-runs.md`, Python 3.13): nothing here certifies; the full run waits for the arc's joined run.
 
@@ -188,3 +189,40 @@ Agreed with usual findings 1, 2 and 4 to 7, including no suffix on DEGRADED. Che
 **S2 (add to D7's permanent cases).** "Capture stdout: with no file, and with a file setting both minimums to `low`, the first `[bandit]` line is the matching step 2 text and the status has no suffix; with `medium`/`low` the first line names both minimums and every returned status ends with the suffix." Add to the `python-security.md` text: "A Bandit status in the summary with no `[threshold: ...]` suffix means the default: any finding fails."
 
 **S3 (replace D6's helper sentence).** "`_record_carries_usage(record)`: walk the record without recursion (a list used as a stack, over dict values and list items); return True if any dict has the key `usage`." Add the fixture `{"type": "future-record-type", "data": {"message": {"message": {"usage": {}}}}}`, expecting `unsupported_record`. In the developmental check: if `unsupported_record` still appears after C3, stop and report the record-type counts to the Maintainer; do not narrow the walk.
+
+## Plan response -- Claude Sonnet 5.5 (`claude-sonnet-5-5`, for the author) -- 2026-11-20
+
+Both reviews said REVISE. Every blocking finding is applied with its reviewer's words; where the two touch the same point, the Security Review governs. Status is now `ready-to-implement`.
+
+**Usual review**
+
+1. Blocking (A): accepted, taking A's words and keeping the `measurements.py` edit in this plan (not moving it to plan D). Staleness sentence replaced; the exception is added in Scope item 6.
+2. Blocking (B): accepted; added to Verification after the host-failure sentence, and the three files are in the guarding list.
+3. Blocking (C): replaced by S1, not applied. Not carried over from C: `_DuplicateKey`, the `f.read(4097)` rule, and the `lstat` `OSError` wording; S1's backstop covers the exception classes.
+4. Non-blocking (D): applied; the Question paragraph is replaced.
+5. Non-blocking (E): applied; added to the `python-security.md` text in Detail D7.
+6. Non-blocking, twelfth finding: named in Scope item 4 and in the D7 module-page text.
+7. Non-blocking: declared-exception comment added to D7's test cases; no suffix on DEGRADED statuses (C4 and D7 step 8); the real-log check runs from a scratch folder, printing integers and issue names (D6).
+
+**Security Review**
+
+1. Blocking (S1): accepted, in Detail D7 after step 6.
+2. Blocking (S2): accepted, at the end of D7's permanent cases and the module-page text.
+3. Blocking (S3): accepted; D6's helper sentence is replaced, the fixture and the stop rule added.
+4. Non-blocking (leading spaces): no change asked.
+5. Non-blocking (size cap): the Security answer S1 now says only the policy file gets a size cap.
+
+**Consistency changes**
+
+- Protected list: `measurements.py` now has its own "(frozen, HOLD)" line.
+- Detail D7 "Policy file": `_REPO_ROOT` became `repo_root` (S1 finding 1).
+- C3 acceptance: the usage test now reads "any dict anywhere in the record" (S3 made the old wording false).
+- C4 acceptance and D7 step 8: DEGRADED statuses carry no suffix.
+- Module-page word target: "about 120" became "about 165" words.
+- S2's "every returned status ends with the suffix" is read as the non-DEGRADED statuses.
+
+**Left for the code review**: nothing. Could not apply exactly: nothing.
+
+Not checked: no code or test run; no Bandit run; whether `pulse.py` B314 is the one the allow-list names, beyond the usual review's citation.
+
+**Elapsed**: about 20 minutes. **Tokens**: unknown.

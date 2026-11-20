@@ -58,23 +58,24 @@ In `_classify_existing_precommit` (both `conflict.py` files), `if not (hook_file
 
 Both `meter.py` copies. Add, next to the other small helpers before `read_records`, a function with no vendor word in its name (so the neutrality lint needs no marker):
 
-`_record_carries_usage(record)`: `message = record.get("message")`; return `"usage" in record or (isinstance(message, dict) and "usage" in message)`.
+`_record_carries_usage(record)`: walk the record without recursion (a list used as a stack, over dict values and list items); return True if any dict has the key `usage`.
 
 In the Claude branch (the `if tool == "claude":` block that begins `if kind != "assistant":`), change the inner test to: `if kind not in {"user", "system", "progress", "file-history-snapshot"} and _record_carries_usage(record):` then `issues.add("unsupported_record")`; the `continue` stays. The Codex branch and its `unsupported_record` are not touched.
 
 Fixtures, written by hand in `tests/test_meter_usage_free_records.py`, one assistant record shaped like the one in `tests/integration/test_meter.py::claude()` (copy its key names, not its values) plus:
 - Usage-free, parametrized: `{"type": "queue-operation"}`, `{"type": "attachment"}`, `{"type": "api-request"}`, `{"type": "last-prompt"}`, `{"type": "future-record-type"}`, and one with no `type` key at all. Expect `issues == []` and one event.
 - `{"type": "future-record-type", "message": {"usage": {}}}` and `{"type": "future-record-type", "usage": {}}`: expect `"unsupported_record"` in `issues`.
+- `{"type": "future-record-type", "data": {"message": {"message": {"usage": {}}}}}`: expect `"unsupported_record"`.
 - An assistant record whose `message.usage.output_tokens` is `-1`: expect `"invalid_record"` and an event whose kinds are all unknown.
 - The four existing names: expect `issues == []`.
 
-Developmental check on real logs (this machine, counts only, script deleted afterwards): load `dev/tools/meter.py`, feed the lines of the current project log to `read_records("claude", lines)`, print only `len(events)` and `issues`. Starting commit: `unsupported_record` is listed. After C3: it is not, and `invalid_record` is listed only if some assistant usage fails to parse (the measurement before the plan: none).
+Developmental check on real logs (this machine, counts only, script deleted afterwards; run it from a scratch folder outside the repository and print only integers and issue names): load `dev/tools/meter.py`, feed the lines of the current project log to `read_records("claude", lines)`, print only `len(events)` and `issues`. Starting commit: `unsupported_record` is listed. After C3: it is not, and `invalid_record` is listed only if some assistant usage fails to parse (the measurement before the plan: none). If `unsupported_record` still appears after C3, stop and report the record-type counts to the Maintainer; do not narrow the walk.
 
 ## D7. Audit threshold (C4)
 
 File: `templates/modules/team-gated/run_security_audit.py` (no copy exists under `dev/tools`; Cairn does not install this module). Prose: `templates/modules/team-gated/python-security.md`, a new subsection "Setting a severity threshold" after "Exit contract".
 
-**Policy file.** Path `_REPO_ROOT / "dev" / ".cairn" / "python-security.json"`. Optional; absent means default. Adopter-owned: it is not in the apparatus set, so the integrity preflight does not hash it. Shape:
+**Policy file.** Path `repo_root / "dev" / ".cairn" / "python-security.json"`. Optional; absent means default. Adopter-owned: it is not in the apparatus set, so the integrity preflight does not hash it. Shape:
 
 ```
 {"schema": "cairn-python-security-policy/1", "min_severity": "medium", "min_confidence": "low"}
@@ -90,6 +91,8 @@ File: `templates/modules/team-gated/run_security_audit.py` (no copy exists under
 5. `schema` missing or wrong: "the schema value must be cairn-python-security-policy/1".
 6. Unknown key: "an unknown key was found: " plus the key run through `escape_controls` and cut to 40 characters. A level that is not one of the three words: "min_severity must be one of low, medium, high" (or `min_confidence`).
 
+Paths: the file is `repo_root / "dev" / ".cairn" / "python-security.json"`, `repo_root` being the argument (`main` passes `_REPO_ROOT`). Levels are accepted only if `isinstance(value, str) and value in ("low", "medium", "high")`. Backstop: any exception other than `AuditDegraded` raised inside `load_bandit_policy` becomes `AuditDegraded` with the reason 'it cannot be read'; any exception inside step 5's parse and ranking gives `bandit:unparseable`, DEGRADED. A severity or confidence that is not a string ranks 99. Add two permanent cases: `{"schema": ..., "min_severity": ["high"]}` gives `AuditDegraded`; output `"[" * 4000` gives `bandit:unparseable`.
+
 Every message is the prefix `the python-security policy file dev/.cairn/python-security.json cannot be used: `, the reason, then `. Fix the file, or delete it to restore the default (any finding fails). The audit will not pick a threshold for you.` No raw value other than the escaped, cut key name is echoed.
 
 **Pass flow** in `run_bandit_pass` (rename today's body `_run_bandit_default`, unchanged; keep the one public signature):
@@ -100,11 +103,11 @@ Every message is the prefix `the python-security policy file dev/.cairn/python-s
 5. Classify: code not 0 or 1 gives `bandit:error`, DEGRADED. `json.loads(run.stdout)`; not an object with a list `results` of objects: `bandit:unparseable`, DEGRADED. Rank `LOW`=1, `MEDIUM`=2, `HIGH`=3; a missing or other value ranks 99 so it fails. `failing` = findings whose `issue_severity` rank and `issue_confidence` rank are both at least the minimums. Code 0 with any finding, or code 1 with none: `bandit:inconsistent`, DEGRADED.
 6. Print `[bandit] <N> finding(s) at or above the threshold (these fail the audit); <M> below it (printed above; they do not fail the audit).`
 7. No findings: `bandit:clean`, tier 0. Any failing: `bandit:findings`, tier 10. Only below: `bandit:clean-below-threshold`, tier 0.
-8. Every status from this path (non-default only) ends with ` [threshold: severity>=<S>, confidence>=<C>]`.
+8. Every status from this path (non-default only) that is not DEGRADED ends with ` [threshold: severity>=<S>, confidence>=<C>]`; DEGRADED statuses carry no suffix.
 
-Permanent test cases (stub `_run_tool` with hand-written JSON; the stub records the argv): no file gives no `json` in argv and today's verdict; medium/low with one LOW and one MEDIUM fails with count 1 and 1; high/low with LOW and MEDIUM passes below-threshold and the summary status carries the suffix; medium/high with MEDIUM severity and LOW confidence passes, with HIGH confidence fails; `UNDEFINED` severity fails; each refusal of step 2 to 6 (symlink skipped where links cannot be made) gives `AuditDegraded`; unparseable output, code 0 with a finding, code 1 with none, and code 2 are DEGRADED. Real Bandit, skipped when `_HAS_BANDIT` is false: a one-file package with an `assert`, passes under `high` and fails by default.
+Permanent test cases (stub `_run_tool` with hand-written JSON; the stub records the argv): no file gives no `json` in argv and today's verdict; medium/low with one LOW and one MEDIUM fails with count 1 and 1; high/low with LOW and MEDIUM passes below-threshold and the summary status carries the suffix; medium/high with MEDIUM severity and LOW confidence passes, with HIGH confidence fails; `UNDEFINED` severity fails; each refusal of step 2 to 6 (symlink skipped where links cannot be made) gives `AuditDegraded`; unparseable output, code 0 with a finding, code 1 with none, and code 2 are DEGRADED. Real Bandit, skipped when `_HAS_BANDIT` is false: a one-file package with an `assert`, passes under `high` and fails by default. Stubbed tests carry the "Declared exception (internal hook)" comment, as `tests/test_security_stack.py` does. Capture stdout: with no file, and with a file setting both minimums to `low`, the first `[bandit]` line is the matching step 2 text and the status has no suffix; with `medium`/`low` the first line names both minimums and every returned status ends with the suffix.
 
-**`python-security.md` text** (about 120 words, plain): where the file lives and its three keys; that a finding fails when severity and confidence are both at or above the minimums; that the default is unchanged; that the audit prints the threshold at the top of the Bandit section and in the summary, prints every finding, and counts those below; that a bad file stops the audit with exit 20; that the audit scans only `python_package`, so Cairn's own tools under `dev/tools` are not re-scanned (they are hash-checked), and that a whole-tree scan of your own will show Cairn's deliberate `exec` of verified bytes, which Cairn allows in its own release gate.
+**`python-security.md` text** (about 165 words, plain): where the file lives and its three keys; that a finding fails when severity and confidence are both at or above the minimums; that the default is unchanged; that the audit prints the threshold at the top of the Bandit section and in the summary, prints every finding, and counts those below; that a bad file stops the audit with exit 20; that the audit scans only `python_package`, so Cairn's own tools under `dev/tools` are not re-scanned (they are hash-checked), and that a whole-tree scan of your own will show Cairn's deliberate `exec` of verified bytes, and one XML parse in `pulse.py` (B314), which Cairn allows in its own release gate. Unlike the gate scripts, this file is not hash-checked by the lock; the printed threshold is how a change is seen. A Bandit status in the summary with no `[threshold: ...]` suffix means the default: any finding fails.
 
 ## D8. Comments (C1, C2, C5)
 
