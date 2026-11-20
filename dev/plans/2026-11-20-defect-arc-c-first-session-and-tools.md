@@ -54,7 +54,7 @@ Proposed paths:
 
 **Reuse.** `encode_display`, `_assert_not_linked`, `_write_replacing` (kept); `run_bandit_pass` and `_run_tool` (extended, not duplicated). Searched `dev/tools` and `templates` for `check-ignore`, `min_severity` and `usage` readers: none does these jobs.
 
-**Question for the Maintainer.** After C3 the Pulse still shows Claude usage as UNKNOWN and the goodnight report still has no Claude numbers, because the meter never ties a Claude record to this project: it does not trust the folder a log sits in. Should it? Yes counts Claude usage once the folder matches the project; no keeps today's strict refusal. Default: no change now; decide in the tightening or v0.10.
+**Question for the Maintainer.** After C3 the Pulse still shows Claude usage as UNKNOWN and the goodnight report still has no Claude numbers, because the meter never ties a Claude record to this project: it does not trust the folder a log sits in. Should it? Yes counts Claude usage once the folder matches the project; no keeps today's strict refusal. Default: no change now; decide in the tightening or v0.10. **Answered 2026-11-20:** "Yes, both CLAUDE and Antigravity should count." A separate proposal carries that change, with its own Security Review; this plan is unchanged, and #96 stays open until the proposal lands.
 
 ### Documentation / doctrine surface
 
