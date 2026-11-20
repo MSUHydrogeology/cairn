@@ -1,0 +1,104 @@
+# Plan: Defect arc B, upgrading
+
+**Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
+**Status**: awaiting-plan-review
+**Plan review**: required(Internal + Internal Security Review)
+**Opened**: 2026-11-20
+**Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
+**In brief**: Fix the defects adopters met when upgrading to 0.8: a Windows clone fails with the wrong error, the security check stops working after the layout move, and a deleted wrapper file cannot be retired.
+
+## Build summary
+
+After this plan, an upgrade from 0.7.0 or 0.8.0 tells the truth when it stops: a Windows clone with changed line endings and a shallow clone each get their own message. The layout move no longer leaves lock keys that disable the security verification, and one new command, `upgrade --heal-layout`, repairs trees that already have them and fixes the `claim_check_command` setting. One new command, `upgrade --retire-wrapper`, retires the record of a vendor wrapper (such as `CLAUDE.md`) that the adopter deleted on purpose. The installer says what to do when the harness folder is missing. Cairn's own repository gains a root `.gitattributes`. The change is in the installer engine; five chunks.
+
+## Source proposal
+
+The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defect arc.", chat, 2026-11-20). Plan B is its upgrading part: #95, #99.1, #99.3, #99.4, #100, #102, #98.3, and the engine-file comments of #99.5. This plan executes it and reopens nothing. It takes a usual review and a Security Review, at plan stage and again at code stage.
+
+## Scope
+
+**Result.** An upgrade from 0.7.0 or 0.8.0 runs to the end on a test tree, and `run_security_verification.py local` is not left unable to run by it.
+
+Proposed paths:
+- `.gitattributes`
+- `tests/test_retire_wrapper.py`
+
+| Item | Chunk | Entry point |
+|---|---|---|
+| #95 parts 1 and 2 (clone error, `.gitattributes`); #98.3 | C1 | `scaffold.py upgrade`, `scaffold.py install` |
+| #99.1 lock keys | C2 | `upgrade --stage/--apply`, `--heal-layout` |
+| #99.3 shallow; #99.4 stale hash; engine comments; `test_command` | C3 | `upgrade --plan --to` |
+| #100 token | C4 | `upgrade --heal-layout` |
+| #102 wrapper; #95 part 3 note; notes, changelog, own lock | C5 | `upgrade --retire-wrapper`, `verify_integrity` |
+
+**Where the code differs from the defaults** (read, not run):
+1. #99.1: the layout stage reads `layout_base_commit` and `layout_ancestry` from old-path records on its next stage (`_layout_plan`), so the keys must stay there. Only the final stage stops writing them, and the heal skips old-path records.
+2. #100: the layout transaction can only create absent files and rewrite the lock and profile (`Transaction._publish`). It cannot re-render `dev/modules/claim-check.md`. The token and its files are fixed by the heal command, not by the move.
+3. #102: removing the record is not enough. `_compute_upgrade` adds `VENDOR.md` as a new core file when no record has the source `core/VENDOR.md`. So the record stays, with a new optional key, `adopter_deleted` (additive; no schema bump, per `install/UPGRADE.md`, "Adding a lockfile field without bumping the schema").
+4. `templates/skills/_lib/git_read.py` is pinned by hash and is not changed. Shallow detection uses a form it already allows.
+5. Plan A left three things here. **Taken**: 14 comment lines in `install/_scaffold/config.py`, `lockfile.py` and `__init__.py` (C3); the stale `test_command` and header comment in `dev/.cairn/profile.yml` (C3); the re-read of the line-ending note in `install/UPGRADE.md` (C5, after plan A's C5). **Not taken**: the one comment in `install/check_module_body_coverage.py`. It is a frozen gate file (`tests/fixtures/gate_manifest.json`, under its pre-layout path), so a comment edit would add a HOLD at the signing. Home: plan D, which already edits frozen files. Docstrings and strings that name old folders stay; editing them changes the AST baseline.
+6. #99.4 may not reproduce. C3 says what happens in each case.
+
+**Protected files and the reason the Maintainer will see at the signing.**
+- `install/_scaffold/upgrade.py` (engine): the layout move stops writing keys the security verification refuses; new commands repair old trees and retire a deleted wrapper's record.
+- `install/_scaffold/cli.py` (engine): the first-install message says what to do when the harness folder is absent.
+- `install/_scaffold/config.py`, `lockfile.py`, `__init__.py`: comment text only.
+- `install/verify_integrity.py` (frozen in the manifest under its pre-layout path): a missing file is accepted only for a vendor wrapper the adopter retired.
+- `.gitattributes` (new, functional configuration): Windows checkouts keep the LF bytes that Cairn's pinned helper and the gate expect.
+- `dev/.cairn/profile.yml`: Cairn's own test command names the real folder.
+- `dev/.cairn/cairn-lock.yml`: refreshed by the repository's own tool, never by hand.
+No dispatcher, `install/scaffold.py` or `git_read.py` change. `config.py` is cascade-mutable (no HOLD).
+
+**Staleness (read, not run).** Four baselined symbols change: `cmd_upgrade`, `_compute_upgrade`, `_cmd_finalize_lockfile` and `main` in `install/_scaffold/cli.py`. The AST baseline then fails `test_ast_attest` until the Maintainer's baseline operation (`release/AST_BASELINE_RUNBOOK.md`; an agent does not perform it). New functions are allowed. After C5 run the runbook's Step 1 listing: any other CHANGED symbol is implementation work. The manifest and roster already name pre-layout paths. The install lock changes only through `--heal-layout` (C5).
+
+**Reuse.** `_layout_render`, `_commit_lock_and_caches`, `_write_by_replacing`, `_writeset_dirty_collisions`, `_resolve_vendor_wrapper`. Searched `install/_scaffold/` for `shallow`, `adopter`, `retire` and `heal`: nothing does these jobs. `_cmd_remove_retired` is for files Cairn stopped shipping and stays unchanged.
+
+**Length.** The plan is well over the word target, because each change carries its exact condition and text for a low-tier implementer. The code review checks them against the code, not against my reading.
+
+### Documentation / doctrine surface
+
+`install/UPGRADE.md` and `CHANGELOG.md`. No doctrine rule changes.
+
+## Sequence
+
+One review point before the end: after C2 (usual and Security), because C4 builds on the heal command and C2 adds a write route into the lock. Code review once more after C5. C1 to C3 need no earlier chunk. C4 needs C2. C5 needs plan A's C5 committed (it edits the same `install/UPGRADE.md`).
+
+| # | Chunk | Gate | Ships |
+|---|---|---|---|
+| C1 | Windows clone, first-launch text | plan review | `.gitattributes`, `_git_read_binding_refusal`, `cli.py` message (#95, #98.3) |
+| C2 | Lock keys | C1 | prevention, `--heal-layout` (keys) (#99.1) |
+| C3 | Blocks and leftovers | review point 1 | shallow text, stale-hash fix, 14 comments, `profile.yml` (#99.3, #99.4) |
+| C4 | The token | C2 | heal rewrites `claim_check_command` and its files (#100) |
+| C5 | Wrapper route and records | C3, C4, plan A C5 | `--retire-wrapper`, `verify_integrity`, notes, changelog, own lock (#102, #95 note) |
+
+**Plan E depends on C2 and C3** (same function, `_layout_plan`) and must start after this plan's code review. C4 and C5 do not touch the move.
+
+## Acceptance criteria
+
+**C1.** Root `.gitattributes` is a byte copy of `templates/core/gitattributes.txt`. `git ls-files --eol` shows every tracked text file `i/lf` (measured: 1,106), so nothing is renormalized; `git check-attr eol -- templates/skills/_lib/git_read.py` prints `lf`. New `upgrade.py` function `_git_read_binding_refusal() -> str | None`: calls `_git_read_helper()`; returns `None` if it binds. On `RuntimeError` it reads `_cairn_root()/templates/skills/_lib/git_read.py` only after `os.lstat` shows a regular file of at most 262144 bytes, and returns text only (never file bytes). If the bytes with CRLF folded to LF hash to `_GIT_READ_SHA256` (import it from `.lockfile`): "Cairn's copy of templates/skills/_lib/git_read.py has Windows line endings, so the installer cannot trust it. Git did this when it cloned Cairn with core.autocrlf=true. In the Cairn checkout run `git config core.autocrlf false`, delete that file, and run `git checkout -- templates/skills/_lib/git_read.py`. Then run this command again. A new clone made with `git clone -c core.autocrlf=false` also works." Any other cause: "Cairn's copy of templates/skills/_lib/git_read.py does not match the copy this installer is pinned to (it was edited, is a link, or is another version). Restore it from the Cairn release you are installing from, then run this command again." Used in two places: first statement inside `if not _cairn_is_git(cairn_root):` in `_layout_target` (raise `ScaffoldSecurityError`); and before the `--to <ref> needs a git-checkout` error in `cmd_upgrade` (print `error: <text>`, return 1). `_cairn_is_git` and the binding check itself stay unchanged. In `cli.py` `main`, the `skipped-vendor-absent` branch prints two lines: `  Skills fan-out [<tier>] <name>: not linked yet, because the folder <folder> does not exist.` and `    Create it (`mkdir <folder>`) or let your harness create it, then run `python dev/tools/session.py session-start`; that links the skills.` `<folder>` is the posix parent of the row's `path` from `load_vendor_targets` (import from `.install`), for example `.claude`. The first line holds neither "skipped" nor "error". **Permanent tests**, through `scaffold.main(["upgrade", ...])` in `tests/test_upgrade_layout_migration.py`: monkeypatch `upgrade._git_read_helper` to raise and `upgrade._cairn_root` to a folder holding a CRLF copy: exit 2 and the first text. Same with a changed byte: the second text. Update `test_skipped_vendor_absent_is_a_calm_no_action_line` to expect `session-start` and the folder name instead of "no action needed". **Developmental, on this Windows host, deleted before archive:** `git clone -c core.autocrlf=true` of the starting commit gives CRLF and the first text; a clone of the C1 commit gives LF bytes that hash to `_GIT_READ_SHA256`.
+
+**C2.** In the final stage of `_layout_plan` (`comparison is None`), the record built for a moved file drops `layout_ancestry`, `layout_base_commit` and `layout_fork` (constant `_LAYOUT_LOCK_KEYS`). The reconcile branch keeps writing them, and `layout_keep` on the wrapper stays. New `_layout_heal_findings(lock)` returns the records whose `dst` is not an old path of `_LAYOUT_MOVES` and which carry one of the three keys. New `_cmd_heal_layout(target, lock, force)` and flag `--heal-layout`: removes those three keys from exactly those records, writes the lock with `_commit_lock_and_caches`, prints `Removed layout keys from N lock record(s). Commit dev/.cairn/cairn-lock.yml.` and exits 0; with nothing to do prints `Nothing to heal.` and exits 0. Before writing it asks `_writeset_dirty_collisions` about the lock: unsaved edits refuse with exit 1 unless `--force`; `_EditCheckCannotTell` uses `_cannot_tell_refusal("--heal-layout", reason)`. `--to` is refused as `--remove-retired` refuses it. Wiring: add the flag to the mutually exclusive `actions` list, to both `any(...)` tuples in `_layout_command` (`mutable` and the `return None` list; without them the flag runs a layout plan), and to the profile-link refusal tuple. Plain `--plan` ends with one line naming the command when findings exist. **Permanent tests** in `tests/test_upgrade_layout_migration.py`: after stage and apply the moved records carry none of the three keys (update the existing `layout_fork` assertion to check the key is absent and `hash` differs from `base_hash`); a lock with the keys on moved records and on one old-path record is healed so only the moved records change, byte for byte elsewhere; a second run prints `Nothing to heal.`; a dirty lock is refused. The reconcile test (`layout_ancestry` on the old path) stays unchanged. **Developmental:** at the starting commit, a scratch 0.7.0 install taken through both layout stages makes `python dev/tools/run_security_verification.py local` report `unrecognized lockfile-record key(s)`; after C2 it does not.
+
+**C3.** `_cairn_git_is_shallow(root)`: runs `rev-parse --path-format=absolute --git-common-dir` through `_git_read_helper().run_git` (an allowed form), true only if `<that folder>/shallow` is a file; any failure returns false. In `_layout_plan`, where `if not old_proved:` blocks, when `historical is None` and the root is shallow (computed once) the line is `<dst>: unproved ancestry; the Cairn checkout is shallow, so the release this copy came from is not in it`, and one last line is added once: `Fetch the full history in the Cairn checkout (git fetch --unshallow --tags), then run this again.` Otherwise the existing text. #99.4: the reproducing test is a `layout`-fixture variant whose first record has `hash` and `base_hash` set to the digest of the CRLF form of the original bytes while the file holds the original LF bytes: `upgrade --plan --to HEAD`. If it exits 2 with "unproved ancestry" (today's expected result), change `old_proved` to also hold when `verbatim and live.raw == old.raw`, and keep the test as permanent: exit 0, action `copy`. If it already exits 0, change no code, record the evidence, and delete the test. A file whose bytes differ from the release stays blocked. Comments: in the 14 `#` lines of `config.py` (41, 97, 967, 1050, 1158, 1245, 1272, 1321, 1346, 1347, 1353, 1354), `__init__.py` (255) and `lockfile.py` (42), replace the old test folder with `tests/`, the old installer folder with `install/`, and the old script folders with `dev/tools/`. Criterion: `ast.dump(ast.parse(...))` is equal before and after for all three files. `profile.yml`: `test_command: "python -m pytest tests"` and `install/scaffold.py` in the header comment. Its lock token keeps the old value (no template renders it; no command changes it). If a selected test that passed at the start fails on this edit, revert it and report. **Permanent tests**: the shallow text, driven by a shallow clone (`git clone --depth 1`) as the Cairn root; and the stale-hash case.
+
+**C4.** `_layout_heal_findings` also returns tokens: each `(name, value, new)` where `value == "python " + old` for a row of `_LAYOUT_MOVES`, the file `new` has a record, and no record has `old`. `--heal-layout` then sets the token to `"python " + new`. For each non-verbatim record whose saved ancestor (`base_cache`, digest equal to `base_hash`) contains `{{name}}`, it renders that ancestor with `_layout_render` under the old and the new tokens, using the matching `LAYOUT_INSTALLS` row's new source. If the file on disk equals the old rendering (or already the new one), it is rewritten with `_write_by_replacing` and its `hash` set. Otherwise it is kept and named: `kept <dst>: you edited it, so it still names the old path; correct it by hand`. Files first, lock last, so a stop leaves a state that a second run finishes. If `dev/.cairn/profile.yml` also holds the old value, print a note to change it there. The final-stage apply message gains `A setting still names a pre-0.8 path; run upgrade --heal-layout.` when findings exist. **Permanent tests**: token and unedited file corrected, edited file kept and named, second run `Nothing to heal.`, a custom token value untouched.
+
+**C5.** `upgrade --retire-wrapper NAME` (`_cmd_retire_wrapper`). Refuses, exit 1, unless the lock has exactly one record with source `core/VENDOR.md`; exit 2 unless `NAME` is `VENDOR.md`, one of `_KNOWN_VENDOR_WRAPPERS`, or that record's own root-level `dst`; exit 1 if `NAME`, the record's `dst`, or any file `_resolve_vendor_wrapper` finds exists (`os.path.lexists`), or if a link lies above it (`_assert_safe_write`). Otherwise sets `adopter_deleted: true` on that record, writes the lock, and prints `Retired the record of <NAME>: Cairn treats its absence as intended. Commit dev/.cairn/cairn-lock.yml. To bring a wrapper back, restore the file and run upgrade --finalize <NAME>.` Repeating it is exit 0. Honoring the key needs all of: `_compute_upgrade` returns `up-to-date` (`vendor wrapper deleted on purpose`) when the source is `core/VENDOR.md`, the key is `True` and `dst_abs` is absent (placed before the `layout_keep` check); `_cmd_finalize_lockfile` skips such a record and removes the key when the file is present; `_layout_plan` skips its wrapper section for it; `verify_integrity` skips a record with the key, source `core/VENDOR.md` and no file, and says so in its OK line. Other missing files still fail. The review-only text for a missing wrapper and `verify_integrity`'s `missing:` line name the command. **Permanent tests** in `tests/test_retire_wrapper.py`: after retiring, `--plan`, `--finalize` and `verify_integrity` pass; a present modified wrapper still fails; `NAME` of a non-wrapper, a present file, or a lock with no wrapper is refused; a retired record whose file is later restored is checked again. `install/UPGRADE.md`: a subsection after the `RULES.md` one for the command; a `--heal-layout` step in plan A's layout section; the Cairn-checkout note replaced by the new message and the `.gitattributes`; one sentence on shallow clones. `CHANGELOG.md`: one Minor entry. Then `upgrade --heal-layout --target .` on Cairn's own tree, its lock committed alone.
+
+**Security (re-answered).** S1: the checkout's helper bytes, the lock and the saved ancestors come from the thing judged; messages use fixed words and never echo them, and unreadable input is skipped and named. S2: negative controls are the C1 refusals, the C2 old-path record kept, the C4 edited file kept and the C5 refusals. S3: `upgrade --plan`, `--heal-layout`, `--finalize`, `verify_integrity` and `run_security_verification.py local` fire the checks. S4: two routes add authority and are adopter-run: the heal removes only three named keys and rewrites unedited files; the retire sets one key on the wrapper record, only when the file is absent. S5: someone who writes the lock can retire the record of a missing wrapper, which hides only that wrapper.
+
+## Scope delta
+
+**Scope delta**: preserved. Every outcome the proposal assigns to plan B is delivered. The one comment in `install/check_module_body_coverage.py` was never plan B's item.
+
+## Verification
+
+**Selector.** `C:\ProgramData\Anaconda3\python.exe tests/tier_inventory.py for` the paths changed (`upgrade.py`, `cli.py`, `config.py`, `lockfile.py`, `__init__.py`, `verify_integrity.py`, `install/UPGRADE.md`, `dev/.cairn/profile.yml`, `CHANGELOG.md`) selects 102 test files at `3d7f3334`; the new test file adds one. Run them once at the starting commit and keep the failing list. Run them again after C5. A failure is a host failure only if it is on the first list; any other is reported. Never set `CAIRN_FULL_SUITE=1`.
+
+**Hosts.** This Windows machine: the selected tests, the C1 clone checks and the first-launch message (Windows behaviours). Its Linux subsystem (Python 3.14.4; development checks only): the layout, heal and retire tests once, for file modes and links. The one end-to-end check, on either host and not in the permanent tests: upgrade scratch installs from `v0.7.0` and `v0.8.0`, then `run_security_verification.py local` must report no DEGRADED for a lock key. Canonical runtime (`dev/rules/certifying-runs.md`): nothing here certifies. The Python 3.13 full run waits for the arc's joined run.
+
+**Prose gates**, one file per call: `dev/tools/claim_check.py`, `dev/tools/link_check.py`, `tests/check_cairn.py`, and `git diff --check` on each changed `.md`. Then the Step 1 listing of `release/AST_BASELINE_RUNBOOK.md`.
+
+**Issues, for the Maintainer.** Nobody closes or comments on any: #95 (all three parts after C5), #98 (part 3 only), #99 (parts 1, 3, 4 and the engine comments; part 2 is plan A's), #100, #102.
+
+**Not checked.** No code or test was run for this plan. Not measured: Windows behaviour; `--path-format` on a Git older than 2.31; whether a selected test ties `profile.yml` to the lock; whether a release-membership test lists root files, which would need `.gitattributes` named. Other callers of `_git_read_helper` keep the old wording. **Does any rule weaken or disappear?** No: no rule text is edited.
