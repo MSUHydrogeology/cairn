@@ -1,7 +1,7 @@
 # Plan: Defect arc C, first session and tools
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -147,3 +147,44 @@ The plan turns six adopter reports into small edits with exact texts. Most of it
 **D (replace the Question paragraph).** "**Question for the Maintainer.** After C3 the Pulse still shows Claude usage as UNKNOWN and the goodnight report still has no Claude numbers, because the meter never ties a Claude record to this project: it does not trust the folder a log sits in. Should it? Yes counts Claude usage once the folder matches the project; no keeps today's strict refusal. Default: no change now; decide in the tightening or v0.10."
 
 **E (add to the `python-security.md` text in D7).** "Unlike the gate scripts, this file is not hash-checked by the lock; the printed threshold is how a change is seen."
+
+## Security Review -- Claude Opus 5.5 (`claude-opus-5-5`, Security reviewer) -- 2026-11-20
+
+```
+Reviewed commit: b982d307709054f75235703f551d51661deb8b43
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+The plan adds one adopter-set threshold, narrows one completeness flag and changes how paths print, keeping every default as strict as today. Mostly it holds: a bad, empty, unreadable or linked policy file stops the audit (exit 20); no listed value switches Bandit off.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes; the threshold was accepted with "printed on every audit result" -- the proposal's Security Review, finding 3, and its response.
+2. **Best alternative.** Bandit's `-l`/`-i` flags would hide below-threshold findings; keep the printed JSON route -- `run_security_audit.py:860`.
+3. **What would show it wrong.** Block S3's nested-usage fixture leaving `issues == []` after C3.
+
+**Findings**
+
+1. **Blocking.** Exceptions other than `AuditDegraded` escape the loader and the classifier (`main` catches only that, `run_security_audit.py:1856`); a list-valued level fails a set lookup with `TypeError`. D7 also names `_REPO_ROOT` where the loader takes `repo_root`. Block S1; it governs over the usual review's block C.
+2. **Blocking.** The threshold line is S5's only control and no test pins it. Usual review's open point: the default summary may omit the suffix if the line is pinned and the module page says what no suffix means. Block S2.
+3. **Blocking.** C3 checks `usage` at two places only, so a new record type with usage deeper is skipped silently where today it is flagged; the plan's "a usage-bearing record of an unknown type still does" is then false. Block S3.
+4. Non-blocking. C1(c) strips leading spaces, as the existing test does (`session.py:1433`); Git keeps them. No write path is opened.
+5. Non-blocking. S1 claims a size cap on every reader; the `.gitignore` gets none new. Say so.
+
+Agreed with usual findings 1, 2 and 4 to 7, including no suffix on DEGRADED. Checked without findings: `encode_display_path` still ends in `encode_display` (`session.py:196`); the Windows execute-bit skip changes a refusal label only (`conflict.py:643`); no new record is counted (`meter.py:6606`). #96's outcome is delivered once S3 is closed.
+
+**Not covered.** No code, test or Bandit run; linked `dev` or `dev/.cairn` parents; whether Bandit reads a `.bandit` file inside `python_package` (an unprinted knob older than this plan); macOS.
+
+**Elapsed**: about 35 minutes. **Tokens**: unknown.
+
+### Exact words for the Security Review above
+
+**S1 (add to D7, after step 6).** "Paths: the file is `repo_root / "dev" / ".cairn" / "python-security.json"`, `repo_root` being the argument (`main` passes `_REPO_ROOT`). Levels are accepted only if `isinstance(value, str) and value in ("low", "medium", "high")`. Backstop: any exception other than `AuditDegraded` raised inside `load_bandit_policy` becomes `AuditDegraded` with the reason 'it cannot be read'; any exception inside step 5's parse and ranking gives `bandit:unparseable`, DEGRADED. A severity or confidence that is not a string ranks 99. Add two permanent cases: `{"schema": ..., "min_severity": ["high"]}` gives `AuditDegraded`; output `"[" * 4000` gives `bandit:unparseable`."
+
+**S2 (add to D7's permanent cases).** "Capture stdout: with no file, and with a file setting both minimums to `low`, the first `[bandit]` line is the matching step 2 text and the status has no suffix; with `medium`/`low` the first line names both minimums and every returned status ends with the suffix." Add to the `python-security.md` text: "A Bandit status in the summary with no `[threshold: ...]` suffix means the default: any finding fails."
+
+**S3 (replace D6's helper sentence).** "`_record_carries_usage(record)`: walk the record without recursion (a list used as a stack, over dict values and list items); return True if any dict has the key `usage`." Add the fixture `{"type": "future-record-type", "data": {"message": {"message": {"usage": {}}}}}`, expecting `unsupported_record`. In the developmental check: if `unsupported_record` still appears after C3, stop and report the record-type counts to the Maintainer; do not narrow the walk.
