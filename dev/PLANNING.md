@@ -16,6 +16,16 @@ together with any proposal awaiting your Decision.
 
 No Decision is waiting on you. **Waiting on Maintainer**: push `0.9-dev`, so that a session on the Mac can take the [re-anchor plan](plans/2026-11-20-simpler-reanchor-ceremony.md), which is ready to implement and whose tests run only there. The [testing assessment](strategy/2026-11-20-claude-peer-testing-assessment.md)'s main question is answered (2026-11-20), and its LHM worktree finding was passed to the LHM session the same day at your word.
 
+## Parked: the big picture
+
+The Maintainer, 2026-11-20: *"I do want to not lose the big picture."* and *"For now, can we just keep those up on the PLANNING board and we'll pick them up later?"* These wait here until he picks them up. None is authorized work.
+
+- **What would make v0.9 a success.** The [review after v0.8](strategy/2026-11-19-claude-v08-strategic-review.md) suggested an exit test and targets for each change, and left them for him to set. Nothing is set yet.
+- **The defect arc adds things.** Plans B and C add two installer commands, a settings file and new tests. The tightening that follows has to remove more than the arc adds, or v0.9 ends larger than it began. Nobody is counting that yet.
+- **The usage meter's place.** The first drafts of the review said to freeze the meter and take usage from the harness; the revised note dropped that line without saying why. Strategy's position on 2026-11-20: keep it, and make it earn its place. Cost for each step came from the harness all day; only the meter can give a project total across sessions and tools. Open question for him: does he read those totals, in the Pulse or the goodnight report? His answer on Claude and Antigravity usage is in section 1.
+- **Cost data.** He wants it kept: *"We need this data so we can actually see what works to keep costs down."* The running record is [`measurement/agent-step-costs.md`](measurement/agent-step-costs.md). Its first day holds about 4.7 million subagent tokens across 31 runs; the coordinating session's own use is not visible to it.
+- **How the work is run.** Strategy asked whether the arc's day-to-day work should move to its own session, so that one conversation stays on the big picture. Held; until he decides, Strategy reports at milestones.
+
 ## Where Cairn stands
 
 [Cairn 0.8.0 is released](https://github.com/MSUHydrogeology/cairn/releases/tag/v0.8.0)
