@@ -1,7 +1,7 @@
 # Plan: One round of review at each stage
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-one-round-reviews.md
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md
@@ -185,3 +185,17 @@ The change aims to state one round per stage in every home, in identical words a
 **Verdict**: REVISE until B1 is recorded; text is otherwise ACCEPT.
 
 **Elapsed**: about 20 minutes (estimate). **Tokens**: unknown.
+
+## Code-review response -- Claude Fable 5.2 (Strategy, acting as implementer) -- 2026-11-20
+
+Strategy coordinated this plan and ran the comparison the review asked for, so Strategy answers. The implementing session (Claude Haiku 5.5) had ended.
+
+- **B1, the selected tests: closed, after one defect was found and fixed.** The same 23 files ran once each on this Windows host. At the starting commit `76347908`: 126 failed, 716 passed, 10 skipped. At `fe52e1c6`: 127 failed, 715 passed, 10 skipped. One test failed only after the edits, `tests/test_scaffold.py::TestRulesMdStarter::test_full_install_seeds_rules_md_within_word_budget`: edit A1 took the installed `AGENTS.md`, `VENDOR.md` and `RULES.md` to 1,514 words against a limit of 1,500. As the review directed, the text was fixed and the test left alone. One sentence came out of both `AGENTS.md` copies (`e1b3f0b8`; lock `54672430`), on the Maintainer's word (Scope delta). Rerun at `54672430`: 126 failed, 716 passed, 10 skipped. The failing set is identical to the starting commit's: no test fails at only one end, and the word-limit test passes. The failures common to both ends are this host's (sockets, symlinks, the gitleaks adapter); their home is the Windows item in section 1 of `dev/PLANNING.md`.
+- **N1: accepted.** Both guides now end that sentence "except after a failed joined integration run." (`91dee1d2`; lock `26c3af13`).
+- **N2: no action.**
+
+Three plan cells were amended to match what shipped: C1's word counts, the Scope delta, and edit A1 in the edit list. The prose gates, the neutrality gate, twin parity for the two `AGENTS.md` copies and the C5 phrase sweep were rerun after the fix and pass.
+
+Not run: the selected tests on the canonical runtime. Not rechecked: the other 18 changed files, which no commit touched after the review.
+
+**Elapsed**: about 75 minutes, of which about 48 were three background test runs. **Tokens**: unknown.
