@@ -1,7 +1,7 @@
 # Plan: Defect arc A, stale text
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -9,7 +9,7 @@
 
 ## Build summary
 
-After this plan, the quickstart's Windows steps work and list `RULES.md`; text that named the pre-0.8 folders names the real ones; the goodnight prune command is given for bash and for PowerShell; session start says what to run when `python` is not found; `python tests/check_cairn.py` exits 0 on a fresh clone; and `install/UPGRADE.md` describes the 0.7.0 to 0.8 layout move and the line-ending trap. The change is 35 exact replacements (42 applications) in 23 prose files, one changelog line and a refreshed install lock. No code, rule or status changes.
+After this plan, the quickstart's Windows steps work and list `RULES.md`; text that named the pre-0.8 folders names the real ones; the goodnight prune command is given for bash and for PowerShell; session start says what to run when `python` is not found; `python tests/check_cairn.py` exits 0 on a fresh clone; and `install/UPGRADE.md` describes the 0.7.0 to 0.8 layout move and the line-ending trap. The change is 55 exact replacements (77 applications) in 30 files, one changelog line and a refreshed install lock. No code, rule or status changes.
 
 ## Source proposal
 
@@ -19,13 +19,13 @@ The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defec
 
 **Result.** Text an adopter or agent reads no longer sends them to a folder or command that fails. Items settled: #93; #97 fix 1; #98 part 4; the five prose-check failures; #99 part 2 and the stale-path item; the line-ending note for #95.
 
-**Edit list.** The exact Find and Replace text is in `dev/plans/2026-11-20-defect-arc-a-stale-text-edits.md`, about 1,800 words, because a Low-tier implementer must design no wording. I checked each Find occurs exactly once in each target at `fea67042`, and applied the list to a scratch copy of that commit: all 42 applications matched, and `check_cairn.py` printed OK there. Shipped twins get identical text, and no shipped text names a model or vendor.
+**Edit list.** The exact Find and Replace text is in `dev/plans/2026-11-20-defect-arc-a-stale-text-edits.md`, about 2,300 words, because a Low-tier implementer must design no wording. I checked each Find occurs exactly once in each target at `fea67042`, and applied the list to a scratch copy of that commit: all 42 applications matched, and `check_cairn.py` printed OK there. The plan review added 20 entries; the whole list, applied by script to a scratch copy of `3d7f3334`, gives 55 entries and 77 applications, each Find matching once, and `check_cairn.py` prints OK there. Shipped twins get identical text, and no shipped text names a model or vendor.
 
-**Generated files.** The lock `dev/.cairn/cairn-lock.yml` is regenerated, not edited: `upgrade --finalize <paths>` advances four records (both session skills, `dev/modules/coordination-tiers.md`, `dev/plans/_template.md`). Cairn's own installed copies cannot be regenerated from their sources: a scratch `upgrade --plan` lists them review-only. So each takes the same exact edit as its source, as the one-round-reviews plan did. `dev/.cairn/base/` is never touched. `docs/code-map.md` is hand-written, and `sync_doc_snippets.py --check` is clean on the quickstart.
+**Generated files.** The lock `dev/.cairn/cairn-lock.yml` is regenerated, not edited: `upgrade --finalize <paths>` advances seven records (both session skills, `dev/modules/coordination-tiers.md`, `dev/plans/_template.md`, `dev/modules/claim-check.md`, `dev/modules/content-security.md`, `dev/modules/doc-drift-prevention.md`). Cairn's own installed copies cannot be regenerated from their sources: a scratch `upgrade --plan` lists them review-only. So each takes the same exact edit as its source, as the one-round-reviews plan did. `dev/.cairn/base/` is never touched. `docs/code-map.md` is hand-written, and `sync_doc_snippets.py --check` is clean on the quickstart.
 
 **Where the files contradict the brief.** (1) Issue #98 has four parts and #99 has four, so "#98.5" and "#99.5" are the arc's own items, not issue parts; close neither issue from this plan. (2) The shipped plan template already says `dev/tools/board.py`; only Cairn's own copy is stale (edit L19). (3) The PowerShell prune form ends with `Remove-Item Env:CAIRN_HANDOFF_OWNER`, which the issue's form lacks: it keeps the variable set for one run only, as bash does, so the guard keeps its meaning.
 
-**Found, not fixed (Maintainer's call).** Python comments in about 34 files naming old folders go to plans B and C. `docs/DOCUMENTATION_PLAN.md` goes to plan E. Left alone: the licence file's folder names, `cairn/templates/` paths in the documentation-plan module and the contribution templates, a stale `test_command` in `dev/.cairn/profile.yml` (functional, plan B), and `scripts/` names inside the plan template's tooling slot.
+**Found, not fixed.** Python comments in about 34 files naming old folders go to plans B and C, and so does the bash-only hint in the refusal message at `dev/tools/session.py` line 2309 (plan C). `docs/DOCUMENTATION_PLAN.md` goes to plan E. A stale `test_command` in `dev/.cairn/profile.yml` is functional and goes to plan B, whose author was told. The `cairn/templates/` paths in the documentation-plan module and the contribution templates are correct, since a Cairn clone has `templates/`, and stay. The licence file names folders that no longer exist (`dimensions/`, `bootstrap/*.md`, `on-ramp/`, `scripts/`); correcting it is the Maintainer's call and was put to him on 2026-11-20. The plan template's tooling slot and one profile comment, first left alone, are now fixed (T1 to T3, P1).
 
 **Must not change.** What any rule says. Every edit is a path or a command; Security Review is not needed.
 
@@ -37,12 +37,12 @@ Quickstart, upgrade notes, four methodology pages, installed skills and module t
 
 ## Sequence
 
-Low-tier implementer, the model named at spawn, in a worktree the coordinator names, as in the one-round-reviews plan: claim files, apply each edit with `dev/tools/exact_replace.py` (stop on a count other than one), commit once per chunk with explicit paths, never push. Chunks are independent; run in order.
+Low-tier implementer, the model named at spawn, in a worktree the coordinator names, as in the one-round-reviews plan: claim files, apply each edit with `dev/tools/exact_replace.py` (stop on a count other than one), commit once per chunk with explicit paths, never push. Chunks are independent; run in order. Write the text between the fences, with no final newline, to two scratch files outside the repo; run `C:\ProgramData\Anaconda3\python.exe dev/tools/exact_replace.py <target> --old-file <old> --new-file <new>` per target; a count other than one stops.
 
 | # | Chunk | Gate | Ships (edits; issues) |
 |---|---|---|---|
 | C1 | Quickstart | plan review accepted | `docs/quickstart.md` (Q1-Q4; #97) |
-| C2 | Pre-0.8 folder names | C1 | 3 profiles, 2 install and methodology pages, 1 case-study comment, 4 methodology pages, `docs/code-map.md`, both `security-verification.md`, `dev/plans/_template.md` (L1-L19; #97, stale-path item) |
+| C2 | Pre-0.8 folder names | C1 | 3 profiles, 2 install and methodology pages, 1 case-study comment, 4 methodology pages, `docs/code-map.md`, both `security-verification.md`, `dev/plans/_template.md`, three more module pages with their Cairn copies, one profile comment (L1-L19, S1a-S4b, T1-T3, P1; #97, stale-path item) |
 | C3 | Prune command, missing `python` | C2 | both session skills, both `coordination-tiers.md`, `session-routines.md` (R1-R4; #93, #98.4) |
 | C4 | Prose check | C3 | session-start skill pair, `custom_session_routines.md`, the measurement README template, one measurement note (M1-M4; prose-check item) |
 | C5 | Upgrade notes, changelog, lock, tests | C4 | `install/UPGRADE.md` (U1-U4; #99.2, #95 note), `CHANGELOG.md` (CL1), the lock |
@@ -51,13 +51,13 @@ Low-tier implementer, the model named at spawn, in a worktree the coordinator na
 
 **C1.** `git diff -U0` shows only the four Find texts removed and Replace texts added. The PowerShell column names `install\` three times and the commit prompt and `git add` line both list `RULES.md`. Developmental check, deleted afterward: the PowerShell column run once in a scratch folder on this Windows host (profile copy, preview, install) exits 0 and `git status` then shows no untracked `RULES.md`. Not run at opening.
 
-**C2.** The sweep in Verification prints nothing. Twin pairs (`security-verification.md`) have identical added and removed lines. No Replace changes a word other than a path.
+**C2.** Both sweeps in Verification print nothing. Twin pairs (`security-verification.md`) have identical added and removed lines. No Replace changes a word other than a path.
 
 **C3.** `git grep -l -F '$env:CAIRN_HANDOFF_OWNER'` lists the five prune sites. Twin pairs match. The skill still says the agent does not run the prune, and the bash form is unchanged. The session-start skill tells a Windows reader what to run when `python` is not found and where its path is saved. I did not reproduce the message here.
 
-**C4.** `python tests/check_cairn.py` exits 0 on the working tree (exits 1 with five issues today), and again on a fresh clone of the final commit. No Replace names the untracked meter export by a full path.
+**C4.** `python tests/check_cairn.py` exits 0 on the working tree (exits 1 with five issues today), and again on a fresh clone of the final commit: `git clone --no-hardlinks <repo path> <scratch>/fresh`, check out the final commit, run `tests/check_cairn.py` there; delete it. No Replace names the untracked meter export by a full path.
 
-**C5.** `install/UPGRADE.md` has the new section with its known limit, "four sections" (U1, U2) and the Cairn-checkout line-ending note. `CHANGELOG.md` has one entry. After `upgrade --finalize` on the four paths, `install/verify_integrity.py --target .` prints OK for 70 files. The lock is committed alone. The new section was written from `install/_scaffold/upgrade.py` and issue #99, and no upgrade was run; the code reviewer checks it against `_layout_command`. Plan B owes a re-read of the line-ending note, since it changes that error and adds a `.gitattributes`.
+**C5.** `install/UPGRADE.md` has the new section with its known limit, "four sections" (U1, U2) and the Cairn-checkout line-ending note. `CHANGELOG.md` has one entry. After `python install/scaffold.py upgrade --target . --finalize <paths>` on the seven paths, `install/verify_integrity.py --target .` prints OK for 70 files. The lock is committed alone. At archive, CL1's link to this plan is repointed to the plan's archive path. The new section was written from `install/_scaffold/upgrade.py` and issue #99, and no upgrade was run; the code reviewer checks it against `_layout_command`. Plan B owes a re-read of the line-ending note, since it changes that error and adds a `.gitattributes`.
 
 ## Scope delta
 
@@ -67,7 +67,7 @@ Low-tier implementer, the model named at spawn, in a worktree the coordinator na
 
 **Promises.** Readers get correct paths and commands; the prose check passes on a fresh clone. Entry points: `python tests/check_cairn.py` and the edited text.
 
-**Selector.** `C:\ProgramData\Anaconda3\python.exe tests/tier_inventory.py for <the 24 edited paths>` selects 58 test files at `fea67042`; `AGENTS.md` is not edited, so no `--range` is needed. Run those files once at the starting commit and keep the failing list (126 failures preceded one earlier change on this host, one real among them). Run them once more after C5. A failure is a host failure only if it is on the first list; any other is reported. Never set `CAIRN_FULL_SUITE=1`.
+**Selector.** `C:\ProgramData\Anaconda3\python.exe tests/tier_inventory.py for <the 31 edited paths>` selects 86 test files at `3d7f3334` (58 for the 24 paths before the plan review); `AGENTS.md` is not edited, so no `--range` is needed. Run those files once at the starting commit and keep the failing list (126 failures preceded one earlier change on this host, one real among them). Run them once more after C5. Run both times as `C:\ProgramData\Anaconda3\python.exe -m pytest -q -rf --tb=line -p no:cacheprovider <files>`, selector re-run at the starting commit. A failure is a host failure only if its test id and message are both on the first list; a listed id with a new message, or a new id, is reported. Never set `CAIRN_FULL_SUITE=1`.
 
 **Prose gates**, per changed `.md` file after each chunk, one file per call: `dev/tools/claim_check.py`, `dev/tools/link_check.py`, `tests/check_cairn.py`, plus `git diff --check`. Baseline: `claim_check.py` already fails on `dev/modules/security-verification.md` for a missing `run_security_verification.py` (2 flags); that is not new.
 
@@ -78,6 +78,14 @@ git grep -n -E "bootstrap[/\\]|cairn/(dimensions|on-ramp|bootstrap)|python (-I )
 ```
 
 Known positive: add `-c` and `<BASE>` after the pattern; it lists 13 files at `fea67042`. It passes on the scratch copy.
+
+**Module sweep (C2).** Prints nothing:
+
+```
+git grep -n -E "target's .scripts/" -- templates/modules dev/modules
+```
+
+Known positive: it prints 14 lines at `3d7f3334`. It prints nothing on the scratch copy.
 
 **Issues, for the Maintainer.** Nobody closes or comments on any: #93; #97 (fixes 2 and 3 are not in this arc); #98 (part 4 only); #99 (part 2 only); #95 (note only).
 
@@ -174,3 +182,20 @@ Each Find occurs once in each target at the reviewed commit (checked by script).
 **P1** Target: `dev/.cairn/profile.yml`: Find `` lockfile with `python bootstrap/scaffold.py upgrade --init-lock --target .` `` Replace `` lockfile with `python install/scaffold.py upgrade --init-lock --target .` ``. Not tracked in the lock; `bootstrap/scaffold.py` now only prints "Cairn moved" and exits 2.
 
 C5 `--finalize` then covers seven paths: the four named plus `dev/modules/claim-check.md`, `dev/modules/content-security.md`, `dev/modules/doc-drift-prevention.md`.
+
+## Plan response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-20
+
+The review said REVISE. Every finding is accepted, and each blocking one is closed with the reviewer's own words.
+
+1. Blocking, stale `scripts/` text in four module pages, the plan template's tooling slot and a profile comment: accepted. Entries S1a to S4b, T1 to T3 and P1 are in the edit list under C2. The review gave them as short pairs, so each was written out in full and checked. C5's finalize list has seven paths.
+2. Blocking, the order of U3's steps: accepted, with the reviewer's steps 1 to 5, copied by script from the review.
+3. Blocking, four gaps for a low-tier implementer: accepted, each with the reviewer's words: the baseline rule, the `exact_replace.py` command, the finalize command and the fresh-clone check.
+4. CL1's link at archive: accepted; C5 says so.
+
+Found, not fixed, as the review sorted them: the `cairn/templates/` paths are correct and stay; `test_command` goes to plan B, whose author was told; the licence file is the Maintainer's and was put to him.
+
+Checked after folding, by script: the whole list applied to a scratch copy of `3d7f3334` gives 55 entries and 77 applications in 30 files, each Find matching once; `tests/check_cairn.py` prints OK there; both sweeps print nothing. The selector now picks 86 test files for the 31 paths.
+
+Not checked: no test ran, and the quickstart's PowerShell column was not run.
+
+**Elapsed**: about 30 minutes. **Tokens**: unknown. The harness reported 210,989 tokens for the author and 159,834 for the review.

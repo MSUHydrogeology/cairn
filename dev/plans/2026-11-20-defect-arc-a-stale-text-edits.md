@@ -392,6 +392,330 @@ Replace with:
 `python dev/tools/board.py --maintainer` lists
 ```
 
+### Entries added at plan review (finding 1)
+
+The plan review found four shipped module pages, their Cairn copies, the plan template's tooling slot and one profile comment that still name `scripts/` or `bootstrap/`. Entries S1a to S4b, T1 to T3 and P1 follow, in the reviewer's words. They belong to chunk C2.
+
+### S1a
+
+Targets: `templates/modules/default-on/claim-check.md`; `dev/modules/claim-check.md`
+
+Find:
+
+```text
+scaffold installs as `claim_check.py` in the target's `scripts/`
+```
+
+Replace with:
+
+```text
+scaffold installs as `claim_check.py` in the target's `dev/tools/`
+```
+
+### S1b
+
+Targets: `templates/modules/default-on/claim-check.md`; `dev/modules/claim-check.md`
+
+Find:
+
+```text
+writes `claim_check.py` into the target's `scripts/` directory
+```
+
+Replace with:
+
+```text
+writes `claim_check.py` into the target's `dev/tools/` directory
+```
+
+### S1c
+
+Targets: `templates/modules/default-on/claim-check.md`; `dev/modules/claim-check.md`
+
+Find:
+
+```text
+allow.json, scripts/check_cairn.py,
+```
+
+Replace with:
+
+```text
+allow.json, tests/check_cairn.py,
+```
+
+### S1d
+
+Targets: `templates/modules/default-on/claim-check.md`; `dev/modules/claim-check.md`
+
+Find:
+
+```text
+cites Cairn's own `scripts/check_cairn.py`
+```
+
+Replace with:
+
+```text
+cites Cairn's own `tests/check_cairn.py`
+```
+
+### S1e
+
+Targets: `templates/modules/default-on/claim-check.md`; `dev/modules/claim-check.md`
+
+Find:
+
+```text
+on itself: `scripts/check_cairn.py` imports
+```
+
+Replace with:
+
+```text
+on itself: `tests/check_cairn.py` imports
+```
+
+### S2a
+
+Targets: `templates/modules/team-gated/content-security.md`; `dev/modules/content-security.md`
+
+Find:
+
+```text
+in the target's `scripts/` directory.
+```
+
+Replace with:
+
+```text
+in the target's `dev/tools/` directory.
+```
+
+### S2b
+
+Targets: `templates/modules/team-gated/content-security.md`; `dev/modules/content-security.md`
+
+Find:
+
+```text
+writes `content_scan.py` into the target's `scripts/`
+```
+
+Replace with:
+
+```text
+writes `content_scan.py` into the target's `dev/tools/`
+```
+
+### S2c
+
+Targets: `templates/modules/team-gated/content-security.md`; `dev/modules/content-security.md`
+
+Find:
+
+```text
+(installed beside the runner in `scripts/`)
+```
+
+Replace with:
+
+```text
+(installed beside the runner in `dev/tools/`)
+```
+
+### S3a
+
+Targets: `templates/modules/team-gated/doc-drift-prevention.md`; `dev/modules/doc-drift-prevention.md`
+
+Find:
+
+```text
+`scripts/` directory — `link_check.py`
+```
+
+Replace with:
+
+```text
+`dev/tools/` directory — `link_check.py`
+```
+
+### S3b
+
+Targets: `templates/modules/team-gated/doc-drift-prevention.md`; `dev/modules/doc-drift-prevention.md`
+
+Find:
+
+```text
+`scripts/` directory:
+```
+
+Replace with:
+
+```text
+`dev/tools/` directory:
+```
+
+### S3c
+
+Targets: `templates/modules/team-gated/doc-drift-prevention.md`; `dev/modules/doc-drift-prevention.md`
+
+Find:
+
+```text
+When Cairn runs `scripts/check_cairn.py`
+```
+
+Replace with:
+
+```text
+When Cairn runs `tests/check_cairn.py`
+```
+
+### S3d
+
+Targets: `templates/modules/team-gated/doc-drift-prevention.md`; `dev/modules/doc-drift-prevention.md`
+
+Find:
+
+```text
+citations) into the target's `scripts/`.
+```
+
+Replace with:
+
+```text
+citations) into the target's `dev/tools/`.
+```
+
+### S3e
+
+Targets: `templates/modules/team-gated/doc-drift-prevention.md`; `dev/modules/doc-drift-prevention.md`
+
+Find:
+
+```text
+`render_schema_docs.py` under `scripts/`
+```
+
+Replace with:
+
+```text
+`render_schema_docs.py` under `dev/tools/`
+```
+
+### S3f
+
+Targets: `templates/modules/team-gated/doc-drift-prevention.md`
+
+Find:
+
+```text
+docs/methodology/, scripts/check_cairn.py,
+```
+
+Replace with:
+
+```text
+docs/methodology/, tests/check_cairn.py,
+```
+
+### S4a
+
+Targets: `templates/modules/default-on/security-verification.md`; `dev/modules/security-verification.md`
+
+Find:
+
+```text
+`run_security_verification.py` in the target's `scripts/` directory
+```
+
+Replace with:
+
+```text
+`run_security_verification.py` in the target's `dev/tools/` directory
+```
+
+### S4b
+
+Targets: `templates/modules/default-on/security-verification.md`; `dev/modules/security-verification.md`
+
+Find:
+
+```text
+target's `scripts/` directory (copied
+```
+
+Replace with:
+
+```text
+target's `dev/tools/` directory (copied
+```
+
+### T1
+
+Targets: `dev/plans/_template.md`
+
+Find:
+
+```text
+`python scripts/sync_doc_snippets.py`
+```
+
+Replace with:
+
+```text
+`python dev/tools/sync_doc_snippets.py`
+```
+
+### T2
+
+Targets: `dev/plans/_template.md`
+
+Find:
+
+```text
+`python scripts/check_cairn.py`
+```
+
+Replace with:
+
+```text
+`python tests/check_cairn.py`
+```
+
+### T3
+
+Targets: `dev/plans/_template.md`
+
+Find:
+
+```text
+`python scripts/link_check.py`
+```
+
+Replace with:
+
+```text
+`python dev/tools/link_check.py`
+```
+
+### P1
+
+Targets: `dev/.cairn/profile.yml`
+
+Find:
+
+```text
+lockfile with `python bootstrap/scaffold.py upgrade --init-lock --target .`
+```
+
+Replace with:
+
+```text
+lockfile with `python install/scaffold.py upgrade --init-lock --target .`
+```
+
 ## C3: the prune command and a missing `python`
 
 ### R1
@@ -620,16 +944,19 @@ installer checks each old copy against that history, and a shallow clone
 cannot supply it.
 
 1. `python install/scaffold.py upgrade --target <repo> --plan` lists each move
-   as `old -> new`. It writes nothing.
-2. `python install/scaffold.py upgrade --target <repo> --stage` stages the move
-   and prints `Apply to the same project with --apply --migration-receipt
-   <digest>`.
-3. Run that printed command exactly. It ends with `Layout migration complete.`
-4. If some old copies could not be matched to a Cairn release,
-   `upgrade --target <repo> --stage --reconcile-layout <REV>` compares them
-   with the Cairn revision `<REV>` (the release the project was installed
-   from, for example its tag) and prints a second receipt. Apply it the same
-   way; it ends with `Layout reconciliation complete.`
+   as `action: old -> new`. It writes nothing. A line that starts `blocked:`
+   (for example "unproved ancestry") means the installer could not match an
+   old copy to a Cairn release: do step 2 first. Without one, go to step 3.
+2. `upgrade --target <repo> --stage --reconcile-layout <REV>` compares the old
+   copies with the Cairn revision `<REV>` (the release the project was
+   installed from, for example its tag) and prints `Apply to the same project
+   with --apply --migration-receipt <digest>`. Run that printed command
+   exactly; it ends with `Layout reconciliation complete.` Then run `--plan`
+   again.
+3. `upgrade --target <repo> --stage` stages the move and prints the same kind
+   of `Apply to the same project ...` line.
+4. Run that printed command exactly. It ends with `Layout migration
+   complete.`
 5. Now follow [The workflow](#the-workflow).
 
 If a run stops partway, the next `upgrade` command says where the unfinished
