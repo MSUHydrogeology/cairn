@@ -1,28 +1,28 @@
-# After v0.8: prove it and lighten it
+# After v0.8: keep what accumulates in check
 
 **Author**: Claude (Strategy)
 **Model**: Claude Fable 5.2 (`claude-fable-5-2`); evidence sweeps by five Claude Sonnet subagents
 **Date**: 2026-11-19
-**Status**: draft
+**Status**: revised
 **Type**: product-strategy
 **Surfaces this would feed**: the v0.9 and later sections of `dev/PLANNING.md`; the "Still open" list in the guide star; any proposal the Maintainer opens from the moves below.
 **Length**: over the template's 1,500 words, with the Maintainer's permission (chat, 2026-11-19: "Go ahead and write a longer note").
 
 ## Summary
 
-Cairn's core bet is sound, and outside research supports it more strongly than when the guide star was written. The risk is everything around the core. One quantity explains the cost, the test time, the security burden, the platform gaps and the fights over procedure: how much there is.
+Cairn's subject is what happens when software built by agents grows. The Maintainer put it this way on 2026-11-19: Cairn solves "the problems that arise in going from a few vibe coded functions and modules into an entire suite--so that other scientists don't have to". Judged as that, Cairn is working on the right problem, and outside studies now measure the problem directly.
 
 Three claims carry this note.
 
-1. **The valuable part is small and already written.** The practices that no better model or harness will make obsolete are about the science and the human: an expected answer that does not come from the code, a decision the Maintainer can follow, a short record of why, and a plain statement of what was not checked. They take about 1,500 of the 18,400 words of working guidance, and none of the code.
-2. **The rest is perishable, and it grows by a ratchet.** Rules that manage this year's agents age with each model and harness release. Adding one is a local choice; removing one is a project. Most cuts since August have regrown, some within days.
-3. **The evidence that would settle Cairn's value has not been gathered.** No outside user has installed it, and nothing counts the errors it has caught.
+1. **Growth has one shape.** Agents add rules, tests, records and code cheaply and almost never remove any. What piles up is what costs tokens, test time and attention. Cairn and LHM both show it, and so do studies across hundreds of repositories.
+2. **Cairn's answers are the right kind, but a person holds them in place.** A stronger model writes the plan and a cheaper one carries it out. The plan chooses the tests, not the implementer. Review is one pass. The rules every session loads are short. Outside studies support each of these; the one on review rounds is cited in the guide star. But the Maintainer sets each limit by hand, in chat, when it hurts, and the text that states the limits is scattered.
+3. **Two kinds of evidence are missing.** No one outside the Maintainer's own projects has installed Cairn. And nothing yet shows which rules change what agents do.
 
-I recommend that v0.9 be the release that removes. It should settle the defects, lower the cost of a change, prove the first hour on three platforms, offer a small core that sits on any workflow, and turn the agents from elaborating the method to testing it. v0.10 then builds on the scientific core, where Cairn has no competitor. Nothing here is accepted work.
+I recommend that v0.9 set the controls, after it settles the defects: one ladder that says which tests run at each stage, a lifecycle that keeps rules in check, counts that show whether a plan written for a cheaper model is enough, and small trials that test a rule on the model that must obey it. These are also what unattended work needs before it widens. v0.10 then harvests the next stage of guidance from the Maintainer's other projects. Nothing here is accepted work.
 
 ## The question
 
-After v0.8, does Cairn help people ship good scientific code at a cost they will pay? "Good" here means neither polished without end nor generated without checks. What should v0.9 and v0.10 do about the answer?
+After v0.8, does Cairn help people ship good software at a cost they will pay? "Good" here means neither polished without end nor generated without checks. The software is not only scientific models. The Maintainer builds a hydrology model, modflow_tools and Assai, "an agent based lab ecosystem", and wrote on 2026-11-19: "We build software for so many purposes." Cairn's aim, in the same message, is to "capture what's best about agentic coding alongside what's best about a scientist at the helm". What should v0.9 and v0.10 do to serve that?
 
 ## Method
 
@@ -31,20 +31,24 @@ I measured these on 2026-11-19 at tag v0.8.0, on a fresh Windows Server 2022 che
 - a real `solo-greenfield` install into a scratch repository, following `docs/quickstart.md`, then the integrity check, session start, the board and the security dispatcher;
 - read-only scripts over `git log` and the tracked tree: sizes, commits by kind, commits for each proposal and plan, and guidance words at each release tag.
 
-Five Sonnet subagents read Cairn's records and searched outside sources. I mark their figures "reported". For the eight outside studies listed at the end, I read the abstract and the excerpts a search tool returned, not the full text. Six are preprints.
+Five Sonnet subagents read Cairn's records and searched outside sources. I mark their figures "reported". For the nineteen outside studies listed at the end, I read the abstract and the excerpts a search tool returned, not the full text. Twelve are preprints.
+
+After the Maintainer's response on 2026-11-19 I read again the guide star, the collaboration guide from "Review rules" to "Verification", the plan template, the working agreements, the note of 16 November on projects that have grown, the principles for trimming rules, and the shipped rules README and testing module. Figures for LHM are that note's measurements, not mine.
 
 My counts from Git look backward, and I made them with a question in mind. Measurement rule 4 in the guide star warns against exactly that. Treat them as a reason to measure forward, not as a result.
 
-I did not run Cairn's test suite, test macOS or Linux, read the gate code, or look inside LHM or modflow_tools. The shares of code and tests by purpose are classed by file name and are approximate.
+I did not run Cairn's test suite, test macOS or Linux, read the gate code, or look inside LHM, modflow_tools or Assai. The shares of code and tests by purpose are classed by file name and are approximate.
 
-Two results would show this note wrong. The first is a forward record from LHM or modflow_tools showing that the present lifecycle catches scientific errors at a cost per change the Maintainer accepts. The second is an outside adopter who tries both and prefers the full install to the small core.
+Three results would show this note wrong. The first is a trial in which agents with no testing rule run no more tests than agents with one. The second is a forward count in which rules, tests and review turns hold steady with no new control. The third is an outside adopter for whom staged guidance arrives too late, or is declined each time it is offered.
 
 ## What v0.8 got right
 
-The direction since 0.5 has been right. Four results show it.
+The direction since 0.5 has been right. Six results show it.
 
 - Always-loaded rules fell from 6,114 words at 0.5 to 1,588 now.
 - Median proposal length fell from about 10,800 words to 2,500.
+- Guidance now arrives by stage. When an adopter's rules folder passes 5,000 words, session start offers a short guide once and records the answer (`templates/core/dev/rules/README.md`).
+- Plan review checks that each chunk is specified for the model tier that will build it, and the plan names the rule files and the tests that apply.
 - The installer, the integrity check and session start ran correctly on a Windows machine new to Cairn.
 - Security Review of the installer found real defects before release (reported), and the README says plainly what is not yet shown.
 
@@ -67,7 +71,7 @@ The install took 8.3 seconds and wrote 73 files. `install/verify_integrity.py` p
 | Windows, upgrade from a default clone | Fails (issue #95; I did not retest it). |
 | Linux | No release verification. I did not test it. |
 | Usage meter | Reports Claude usage as unknown (issue #96; I did not retest it). |
-| An outside adopter | None yet. |
+| An adopter outside the Maintainer's own projects | None yet. LHM and modflow_tools use Cairn and have filed 31 open issues, #62 to #92 (the 16 November note's count). |
 
 About 3,400 test functions did not catch the quickstart defect. No check runs the documented commands on each platform. One of the first-session defects cannot appear in Cairn's own sessions at all: Cairn's tree lacks two files that every adopter's tree has.
 
@@ -92,7 +96,7 @@ The tiers do not separate cost. Authors proposed the heavy tier for 15 of 28 pro
 
 Since 0.3, 59 to 84% of commits in each release window touched only records. The manual Tokens field read "unknown" in 67 of 67 sampled entries (reported).
 
-A rough model, not a measurement, shows why this matters for tokens. Suppose each commit on a plan is one agent turn. That turn reads the plan (5,000 words), the always-loaded rules (1,600) and a template or guide section (4,000). At about 1.3 tokens a word, 17 turns read about 230,000 tokens of process before any code. Two numbers multiply: the turns, and what each turn loads.
+A rough model, not a measurement, shows why this matters for tokens. If each of 17 commits is one agent turn that reads the plan (5,000 words), the always-loaded rules (1,600) and a template or guide section (4,000), the turns read about 230,000 tokens of process before any code. Two numbers multiply: the turns, and what each turn loads.
 
 ### Cuts regrow
 
@@ -105,184 +109,193 @@ A rough model, not a measurement, shows why this matters for tokens. Suppose eac
 
 The records show the same diagnoses returning (reported): guidance too long eight times since June, test volume seven times, review loops six times. Targets that were set and not measured again include a two-minute inner loop, a ten-minute suite and 3.5 review commits per artifact.
 
-### What the rules cost me
+LHM shows the same pattern (measured by the 16 November note). In three days its always-loaded files fell from 5,211 to 2,691 words while its rules folder grew from 2,327 to 10,523, so total rule text rose 75%. Its test suite holds 12,975 items, about 79% of them added in 47 days. In both projects a limit on the files every session loads was met, and the total still grew. An agent asked to shorten a file tends to move the text.
 
-I worked as an adopter's agent for one session. To write the first, 1,349-word version of this note within the rules, I read 21,962 words of rules, templates and board. Three gates ran in a few seconds. The rules that improved the note were plain language, the word budget and commit by path. The rules that cost effort and changed nothing were a claim on a new file in a solo session, 111 lines of doctrine above the template's rule, and 137 commit subjects printed at session start. This is one session with one model. It is the pattern in small: the durable rules paid, and the perishable ones did not.
+### The answers are scattered
+
+Cairn already holds good answers on testing and on rules. They are hard to find and hard to hand on.
+
+- **What to run when.** In Cairn's own tree a keyword search finds test-running instructions in 16 of 49 governing files: `RULES.md`, `AGENTS.md`, the guide, two templates, the session-end skill, two modules, two rules files and six methodology documents. An adopter receives them in five files. The adopter's guide names three stages Boundary A, B and C. It defines A and C in a clause each and uses B without defining it. The full definitions are in `docs/methodology/plans.md` and `docs/methodology/dual-review.md`, which adopters do not receive.
+- **Which tests to keep.** The testing module is 1,583 words and well grounded. The two team profiles name it; the solo profile does not (a search of `install/profiles/`).
+- **How to keep rules short.** The nine principles for trimming rules are in Cairn's own working agreements (`dev/rules/working-agreements.md`). An adopter receives a five-point guide for a rules folder, offered by the one trigger that exists. I searched the shipped files for four phrases from the working agreement and found none.
+- **Reading before writing.** The shipped plan template is 3,919 words. The opening plan it produces is budgeted at 1,000.
+
+As an adopter's agent for one session, I read 21,962 words of rules, templates and board to write a 1,349-word note within the rules.
 
 ## The diagnosis
 
-### One quantity
+### What accumulates
 
-Each complaint is the same quantity seen from a different side.
+Agents make adding nearly free. Removing stays dear, because someone must judge what is safe to lose. So four stocks grow in any project built this way: rules, tests, records and code. Each cost the Maintainer named is one of them seen from the paying side.
 
 - Token cost is the text an agent loads each turn, times the turns.
-- Test time is the code, times how tightly the tests pin it.
+- Test time is the tests that run, times how often they run.
 - Security burden is the amount of trusted code that writes into another person's repository.
 - Platform cost is the number of lines that touch paths, links and line endings, times three systems.
 - Stale text is the number of places one fact is written.
 - The Maintainer's attention is the number of artifacts, times their steps.
 
-So being nimble is not a property of the process. It is a property of the mass. No rule about speed outruns 180,000 lines of Python and 3.8 million words.
+Outside studies measure the same growth. After projects adopted coding agents, the gain in speed came early and faded, while static-analysis warnings rose about 18% and complexity about 39%, and stayed up [9]. Agents passed over chances to reuse code, and reviewers reacted no worse to that code than to people's [12]. Scoring one change at a time overstated success by up to 20 percentage points against chains of dependent changes [11]. Agents did worse when building on code that agents had written, with the rate of resolved tasks down by as much as 13.1% [13].
 
-### The ratchet
+The two failures the Maintainer wants to avoid are this one failure seen twice. A vibe-coded mess is code and records that pile up with no one selecting. Endless iteration is checks and review rounds that pile up with no rule for stopping.
 
-A ratchet turns one way. Cairn's has three teeth.
+So a growing project needs two acts to be routine: **selecting** what one task reads, changes and runs, and **removing** what no longer earns its place. Cairn's best rules are already acts of selection. The plan names its scope. Its "Rules that apply" line names the rule files. The tests are those that name a changed file. Review is one pass.
+
+### The ratchet, and who holds it
+
+A ratchet turns one way.
 
 **An incident becomes a rule, the rule a test, the test a pin.** Each step looks responsible. Undoing one needs a proposal, a review and sometimes a signing ceremony. Adding is cheap and removing is dear, so the total rises.
 
-**The project is its own laboratory.** Cairn's product is process, so in Cairn's own repository each process hiccup is a product defect and earns a permanent fix. A science repository damps this, because the science has to ship. Cairn's repository is also an unusually heavy case: most of its code is installer and security machinery. That is why light is the stated default, yet most proposals there are heavy. Lessons from the heavy case have been written into the kernel every adopter gets.
+**That is how Cairn learns, and it is the point of the project.** Cairn's repository is far along the growth curve, so it meets these problems first. A rule written there after an incident is a lesson another scientist does not have to pay for. The cost is the missing second half. Without a step that removes, each lesson stays for good. Cairn's repository is also an unusual case: most of its code is an installer and its security machinery, so some of its lessons are ones a science project will never need.
 
-**Agents obey, so the text is the cost.** In a study of repository instruction files, agents followed the instructions, ran more tests and explored more, and cost over 20% more, with no general gain in task success [1]. Its authors conclude that unnecessary requirements make tasks harder. A second study found that a root instruction file went with 29% lower median run time at similar completion [4]. Read together, they favour a short file of what an agent cannot infer. Cairn's guidance tells reviewers to read as if a hidden bug exists, to treat a clean review of complex work with suspicion, and to hold nine lenses in mind. They do. Later rules that say "one pass" or "test only what was written" sit beside those sentences and do not remove them. Part of the fight over procedure is agents faithfully obeying 18,400 words of procedure.
+**Agents obey, so wording is a control.** Left alone, agents repeat work. One study found repeated test runs, near-duplicate scripts and redundant searches in 79 to 98% of tasks, costing up to 23% of the task [18]. Another counted 8.8 test runs for each bug repair on average. Forbidding the runs changed success by 1.25 percentage points and saved 56 to 62% of tokens on one harness [17]. Those were single repairs, so the lesson is that runs should be chosen, not that they should stop. A short rule about what to run therefore pays, as the Maintainer has found. The same obedience makes every stale or doubled sentence costly. Agents given repository instruction files followed them, ran more tests and cost over 20% more, with no general gain in success [1], while a root instruction file went with 29% lower median run time in a second study [4]. Cairn's guidance tells reviewers to read as if a hidden bug exists, to treat a clean review of complex work with suspicion, and to hold nine lenses in mind. Later rules that say "one pass" sit beside those sentences and do not remove them.
 
-The only force working against the ratchet today is the Maintainer, by hand, in chat. The regrowth table shows that force losing ground after most cuts.
+**One person holds the ratchet back.** The working agreements record the Maintainer setting each limit in chat: test only what was written (2026-11-12), tools warn and do not block (2026-08-21, and again 2026-11-13), match security effort to the project's size (2026-11-13), keep rules short (2026-11-16), size a review to the change (2026-11-16). Each was needed because nothing else pushes back, and the regrowth table shows ground lost after most cuts.
 
-### Durable and perishable
+### What kind of rule works
 
-Sort everything Cairn holds into two classes.
+Three results sort rules by kind.
 
-**Durable** rules are about the science and the human. The decision is the Maintainer's, and they must be able to follow it. A check needs an expected answer that does not come from the code. A short record says what was decided and why. A report separates what was measured from what was assumed, and names what was not checked. Credentials, data and publication stay with the human. These would hold for a human contractor, and they will hold for a model in 2030.
+- **Facts beat procedures.** Giving an agent a map from code to its tests cut regressions from 6.08% to 1.82%. Telling it to follow test-driven steps, without the map, raised them to 9.94% [19]. That study is small: 100 tasks and 25.
+- **A person's sentence beats an agent's elaboration.** Guidance a developer wrote in general terms cut cost by up to 42%, about twice the gain from guidance agents wrote from their own traces [18].
+- **Committed rules go with lower quality cost.** In a study of 441 repositories, among those whose first AI tool was an agent, complexity rose 27% where the team had committed its AI configuration and 53% where it had not. The authors call this a hypothesis, since careful teams may differ in other ways. They also found that 73.8% of such files were committed once and never changed [10]. Almost no one maintains their rules, so a method for doing it is a gap in practice generally, not only here.
 
-**Perishable** rules manage this year's agents and fill this year's gaps in harnesses: model tiers, retry limits, pass caps, file claims, session routines, usage meters, token fields, a commit for each step. Both targets are moving. Harnesses now supply on-demand skills, hooks that block an action, a model per subagent, spending caps, usage reports and built-in review (reported). A study of 9,374 agent runs found that the model, not the scaffolding around it, drives outcomes, and that the scaffolding's effect shrinks with each model generation [5].
+A plan is not a standing procedure. It is the process for one task, worked out by a capable model before the work, and reviewed. One study found that planning shifts from making weaker models accurate to making stronger ones cheaper, and that it changes where a run stops [14]. A benchmark of agent teams found mixed models on the best line of cost against accuracy, with the weak link sometimes the planner and sometimes the executor [15]. A third study found that general agents kept the structure of their own declared plan in only 22 to 45% of runs [16]. These support having one tier write for a lower one, and checking that the implementer kept to the plan. They also say what changes as models improve. A study of 9,374 agent runs found that the model, not the scaffolding around it, drives success, and that the scaffolding's effect shrinks with each generation [5]. Its job moves from getting the work right to keeping it cheap and making it stop.
 
-Three studies bear on the durable class. In one, 68 to 80% of two models' failing runs were plausible patches that were wrong in the same way on each repeat, so that agreement between runs looked healthy [3]. A second, on security repairs, found that passing tests and reviewer agents did not intercept the confirmed failures [7]. In an experiment with 78 novice programmers, those made to explain generated code before accepting it failed a later unaided maintenance task 39% of the time, against 77% without that step [2]. These favour an outside expected answer and a human who understands. They do not favour more rounds of agents reviewing agents. Cairn spends the other way round: a plan carries a median nine review commits, while the independent scientific check is template guidance with one example.
-
-The policy follows. Durable rules get investment, stable numbers and a version, as Cairn Plain Language already has. Perishable rules get an expiry date. Wherever a harness or platform does the job, Cairn deletes its own.
+The scientist's half rests on other studies. In one, 68 to 80% of two models' failing runs were wrong in the same way on each repeat, so agreement between runs looked healthy [3]. In another, on security repairs, passing tests and reviewer agents did not intercept the confirmed failures [7]. Of 78 novice programmers, those made to explain generated code before accepting it failed a later unaided task 39% of the time, against 77% without that step [2]. What an agent cannot supply is an expected answer from outside the code and a person who understands the result.
 
 ## Six ideas
 
-### 1. Contracts, not choreography
+### 1. The plan is a loader
 
-The lifecycle prescribes steps: propose, review, decide, plan, review, build, review, verify, archive, each with its own commit. That is choreography. It is the part that ages as agents improve, that harnesses absorb, and that costs a turn for each step.
+The stronger model decides once what the cheaper one reads, changes and runs, and where it stops. The plan template already has all four: "Rules that apply", Scope, Verification and Acceptance criteria. Plan review already checks that each chunk is specified for its tier, "with no design left to the implementer". Treat this as the centre of the method. Every part of it is a selection from a growing pile, made by the model best able to make it.
 
-A contract states what must be true at the end and leaves the path to the agent. For a change that touches a scientific assumption, done could mean four things:
+Give it a signal. The retry rule already defines two events: a retry at the same tier, and a rerun one tier up. Count them for each chunk. Few means the plan was enough, and its detail can be thinned as models improve. Many means the plan left design to the implementer, or the tier floor is wrong. I found no place where those events are recorded so that they can be counted. A keyword search of the 28 plans archived from 10 to 19 November finds 13 that mention the low tier and two that mention an escalation.
 
-1. a decision note of 200 words or fewer that the Maintainer accepted, giving the claim, the assumption and the feared mistake;
-2. an independent check whose expected answer was written before the result was seen, which fails when the feared mistake is made on purpose and passes on the real code;
-3. one fresh reader who tried to break it and recorded the command and its output;
-4. a plain report of what was measured, what was assumed and what was not checked.
+The criteria also tell the agent where to stop. One study found capable agents reaching the correct code and then overwriting it [8].
 
-Nothing there counts commits or requires a plan file. Two ordering rules survive: the human decides before work that cannot be undone, and the expected answer is written before the run.
+### 2. One ladder for tests
 
-A contract also tells the agent where to stop. One study found capable agents reaching the correct code and then overwriting it [8]. Iteration past done is not free.
+The Maintainer asked for "rules for what to run at each stage". The rules exist. They need one home and plain names. Each rung below is drawn from text Cairn already has.
 
-### 2. Two questions in place of the tiers
+| When | What runs | Who chooses | What it shows |
+|---|---|---|---|
+| Building a chunk | the tests the plan names for the changed files, and scratch probes | the plan, from the map of files to tests | the chunk meets its criterion |
+| Plan complete | the permanent tests of each changed promise, once, on the committed revision | the plan | the promises hold |
+| Code review | committed evidence, and one fresh probe for a named doubt | the reviewer | someone else tried to break it |
+| Connected plans complete | one joined integration selection | the arc owner | the pieces work together |
+| Session end | the fast smoke run, if the project has one | the handoff owner | nothing obvious is broken |
+| Release | the whole suite and the security families, once on each certifying host | the release operator | the tree is certified |
+| A model run | a named run that answers a stated question | the plan and the Maintainer | an answer about the model; it is not a test |
 
-Ask of any change: **could we undo it**, and **would we notice if it were wrong?**
+Three things would make the ladder better than the present text. Give each rung a time budget and its command, so the cheap rung is the easy one to run; Cairn's own suite already asks for an explicit override before a broad run (`tests/conftest.py`). Have the plan write the exact command for each chunk, so a low-tier implementer never chooses. Invest in the map from a changed file to its tests, since a map is the kind of guidance that worked in the study above [19]. The ladder replaces the names Boundary A, B and C in adopter text. By the swap rule it should shrink the text, not add to it.
 
-| | We would notice | We would not notice |
-|---|---|---|
-| **We can undo it** | Make the change with its test. One commit. | Add the independent check. |
-| **We cannot undo it** | Decision note, human decision, one fresh review. | All of these. |
+### 3. Rules are tests in prose
 
-"Cannot undo" covers leaked data, lost work, a release and a published result. "Would not notice" is the scientist's own risk: a sign, unit, index or boundary error that still runs and gives a plausible number. Security Review is the bottom row where the loss is data, credentials or another person's machine.
+The Maintainer's comparison carries a full lifecycle. The testing module already gives tests each item on the left. The shipped rules guide gives rules the first, second and last on the right.
 
-A scientist can use this table without reading a lifecycle. It also answers what may run unattended: the top-left cell.
+| A test has | A rule should have |
+|---|---|
+| a promise it guards, named in the file | the decision or incident it came from, in the person's wording |
+| a tier, set by where it lives | an "Applies when" line and a route that says when it is read |
+| a time budget for the run | a word budget for what one kind of task reads |
+| a failing case that proves it can fail | a case where an agent without the rule goes wrong |
+| a review of the slowest at each release | a review of the longest and the never-listed at each release |
+| deletion when no promise needs it | a dated line when it leaves |
 
-### 3. A layer, not a framework
+Four additions follow from the table.
 
-General spec-and-plan frameworks are crowded, with star counts reported from 50,000 to 290,000, and harnesses are building the same steps in. None targets scientists. Cairn's lifecycle competes there with one maintainer. Cairn's scientific layer competes with no one.
+- **Admit by kind.** A rule states a fact the agent cannot infer, a limit or a decision reserved for a person, or a procedure. Facts and limits enter in the person's wording. A standing procedure must show that it changes what agents do.
+- **Budget the route, not the file.** A cap on the always-loaded files was met at Cairn and at LHM while the total grew. Budget what one kind of task must read, such as a light change or a plan chunk. The "Rules that apply" line already names the route.
+- **Count what is listed.** From now on, a rule file that no plan lists through a whole release is a candidate to merge or retire, like a test that never runs. The count comes from a header line, not from prose.
+- **Review at each release**, as the testing module asks for the slowest tests.
 
-So offer the core as a layer that sits on whatever workflow a scientist already uses: a harness's plan mode, another framework, or none. The request changes from "switch your workflow" to "add a few files". Package it on open standards only: a short `AGENTS.md` and a handful of skills under `.agents/skills/`. A skill loads on demand, so it costs one line of context until used. Cairn already ships two. The present lifecycle remains as an optional layer for teams that want it, Cairn among them.
+Ship this with the nine trimming principles, which adopters do not yet receive.
 
-### 4. Expectation first
+### 4. Controls that report
 
-The cheapest independent check is the scientist's own expectation, written before the run. An example of the form: "drawdown at 100 metres after one day should be near half a metre, from the Theis solution with these values." It takes two minutes. It is independent of the code and of the model's reading of the task. It uses the one thing the agent lacks. It also builds the understanding that the comprehension floor protects.
+Each limit today is a number someone remembers: a word cap, one review pass, a ten-minute suite. A control also needs a signal that says when to tighten or loosen. v0.8 built the mechanism once: session start reads an "Offered when" line and offers the rules-folder guide when the folder passes 5,000 words. Use the same reader for correction, not only for new modules. Candidates, each a condition a tool can read from the project's own files: the suite's recorded time passes its budget; a rule file goes unlisted through a release; review commits for a plan pass the target. Add one at a time and record whether the offer was accepted, as the 16 November note advises. Correction then becomes routine and stops depending on one person noticing.
 
-Make it Cairn's signature move. Build v0.10 around a small library of such checks: an analytical solution, a conservation law, convergence under refinement, a unit round trip, reference data with a tolerance, and the deliberate fault that proves a check can fail.
+### 5. Several laboratories
 
-### 5. A record that pays rent
+Cairn, LHM, modflow_tools and Assai differ in kind: a method with an installer, a legacy model, a new library and an agent-based ecosystem. That spread is an asset. The 16 November note set the rule for modules: harvest what two projects converged on, and let a module with one project's evidence wait for a second. Apply the same rule to the text every adopter receives. A lesson from one project stays in that project's rules folder. Assai matters most for the Maintainer's point that Cairn is not only for models. A lesson that holds in a model and in an agent ecosystem is a lesson about software built by agents.
 
-The promise was that a colleague next spring can find why. That is a promise about finding, not about keeping. An essay on generated code names the two losses a decision record guards against: shared understanding and stated intent [6]. Apply plain-language rule 1 to each record: who reads it, and to do what?
+### 6. The scientist's half
 
-| Record | Reader | Keep |
-|---|---|---|
-| Decision note | a colleague, or a paper's reviewer | yes, short and indexed |
-| Check | the people and machines that run it | yes, as code |
-| Review | the author, once | the two lines that changed the decision |
-| Plan | the implementer, during the work | no; Git history holds it |
+The agent brings speed and breadth. The scientist brings the expected answer and the judgment of what matters. Three practices keep that half strong.
 
-Archive the decision, not the deliberation.
+- **Expectation first.** The scientist writes the expected result before the run, with its source: "drawdown at 100 metres after one day should be near half a metre, from the Theis solution with these values." It takes two minutes, it is independent of the code, and it builds the understanding that the comprehension floor protects. The testing module already says to state expected behaviour before results. Make it the first line of any change that touches a calculation.
+- **Two questions for a person's attention.** Could we undo it, and would we notice if it were wrong? The working agreements already send work that can be undone to the lighter lane. The second question is the scientist's own risk: a sign, unit or index error that still runs and gives a plausible number. A change that would not be noticed needs an independent check. The same two questions say what may run unattended.
+- **A record with a second job.** An essay on generated code names the two losses a decision record guards against: shared understanding and stated intent [6]. A table drawn from decision notes (change, assumption, check, source of the expected answer, result) is a verification statement for a paper's methods section. I assume journals increasingly ask for one. I did not check.
 
-Then give the record a second job that the scientist already owes. A table drawn from decision notes (change, assumption, check, source of the expected answer, result) is a verification statement for a paper's methods section. When a reviewer asks how the authors know the generated code is right, there is a table. I assume journals increasingly ask this. I did not check, and the adopter interview should.
-
-### 6. Security by subtraction
-
-The threat (reported) is a supply chain: Cairn installs instructions and Python that other people's agents load. That risk grows with the amount installed. The pins, the signing ceremony, the integrity check and the release records exist to make a large installer trustworthy. At this release the ceremony stopped three times and was deferred.
-
-Economy of mechanism, already cited under anchor 17, says the strongest control is fewer trusted lines. A person can verify a core of a few Markdown files by reading it in ten minutes. It needs no installer, no upgrade engine and no lockfile, because its upgrade is a diff of a few files. So secure and nimble are not a trade here: one move buys both.
-
-Keep fail-closed containment wherever code still writes into an adopter's tree. For Cairn's own release, weigh replacing pins and ceremony with a human-read diff of the protected files since the last tag. I have not read the gate code, so that is a question for the review of the open re-anchor proposal, not a finding.
+The same economy applies to security. At this release the signing ceremony stopped three times and was deferred. Economy of mechanism, already cited under anchor 17, says the strongest control is fewer trusted lines. For the open re-anchor proposal, weigh a human-read diff of the protected files against more ceremony. I have not read the gate code, so that is a question for its review, not a finding.
 
 ## Options
 
-1. **Continue the v0.9 board as written.** It has fourteen rows: one settles defects, two seek outside evidence, and most of the rest add a tool, module or rule. Its case is real. The lifecycle lets one person direct three vendors' agents on one tree, review has found real defects, and artifacts did shrink. But that capacity has mostly produced more apparatus.
-2. **Stop and wait for an outside adopter.** This is honest, but it leaves the known defects and the daily cost in place.
-3. **Consolidate: remove, prove, then build on the scientific core.** I recommend this one.
+1. **Continue the v0.9 board as written.** Its theme is monitoring, outside evidence and autonomy. Its case is real: the dashboard answers a stated need, and the release module and test records are guidance harvested from adopters. Its weakness is order. Unattended work comes before the controls that make it safe to leave.
+2. **Cut Cairn to a small core for everyone.** This treats the guidance for grown projects as weight, when it is the product. A small start already exists as the first stage of staged guidance, and the evidence above favours committed rules over none.
+3. **Set the controls, then widen.** I recommend this one.
 
 ## Recommendation
 
-### v0.9: the release that removes
+### v0.9: set the controls
 
 Do these in order. Each makes the next cheaper.
 
-1. **Settle the defects**, as already directed, including issues #97 and #98.
-2. **Lower the cost of a change before making other changes.** Give the light lane three commits. At archive, report each change's commits, review commits and Maintainer decisions from Git, with no hand-filled field. Delete the Tokens, Elapsed and benefit-versus-cost fields. Keep archives out of agent searches: in my test a one-line ignore file removed a cached duplicate from this harness's search results. Hold the top of the board to ten plain lines.
-3. **Prove the first hour on three platforms.** At each release, run the documented first-run and upgrade commands on macOS, Windows PowerShell and Linux. Let that define multi-host verification, in place of three full-suite runs.
-4. **Offer the small core** beside the present profiles, with the two questions as its triage. Take the usage meter and its companion tools out of the default install, freeze work on them, and take usage from the harness where it reports it.
-5. **Turn the agents on the method.** Build a seeded-fault trial: a small hydrology model with known solutions, about twenty realistic scientific faults, and three set-ups (a short instruction file, the small core, full Cairn). Declare the faults, the analysis and what counts as inconclusive before the first run. Record which faults each set-up catches and what it costs. Report by set-up and never rank models. The trial tests the six failure signs the board already lists, needs no human subjects, and can be rerun on each new model. From now on, log each real error that a review or check catches in LHM and modflow_tools, one line each. Run the adopter interview on the small core.
-6. **Decide the re-anchor question** with subtraction on the table, and cut the release to five human operations.
-7. **Ship one dashboard tab**, the development view.
+1. **Settle the defects**, as already directed, including issues #97 and #98. Add the documented first-run and upgrade commands to each host's release verification. That check would have caught #97.
+2. **Write the test ladder** (idea 2) as one table in the guide every adopter gets, and point the other files at it.
+3. **Write the rule lifecycle** (idea 3) into the rules-folder guide, with the trimming principles. Apply it first to Cairn's own 18,400 words.
+4. **Count the plan's events** (idea 1): retries and moves up a tier for each chunk, and from Git the commits, review commits and Maintainer decisions for each plan. Keep the proposal and the plan, and lower the number of turns around them. The hand-filled Tokens field read "unknown" in every sampled entry, and the board already ties its retirement to the meter comparison.
+5. **Run the first rule trials.** Take four or five cases from battles already fought: the whole suite run on each chunk, a rule file rewritten wholesale, accepted scope quietly dropped, a review that will not close. Run each on the low-tier model, with the rule and without it. Declare the cases, the count and what is inconclusive before the first run. Report by case and never rank models. The first trial tests the Maintainer's own observation about tests, and the outside studies predict it will hold. A rule that changes nothing goes to the release review. The trials cost a handful of headless sessions for each case and need the Maintainer's go-ahead.
+6. **Keep the rows that harvest from adopters**: the release module, test records once LHM's measurement is in, the adopter interview, the outside trial and verification on three hosts.
+7. **Ship one dashboard tab**, the development view, and show the counts from step 4 on it.
 
-Leave out of v0.9: the budget guard, drain mode, the release module, test records, the four-view pilot, four more tabs and a new dimension axis. Harness spending caps cover the first, where a harness has them. A smaller suite removes the need for the fourth.
+I would place four rows after the controls, or in v0.10: the budget guard and unattended loop, roadmap draining, the four-view comparison and the new dimension axis. An unattended agent needs the ladder, the route and the stopping criteria to be mechanical first.
 
-**Suggested exit test.** Shipped lines and guidance words both fall. A light change measures at three commits. The first-hour check passes on three platforms. One outside adopter completes three changes. The seeded-fault trial has a recorded result.
+**Suggested exit test.** The ladder and the lifecycle each have one home, and shipped guidance words fall. Plan events are counted through one release. The first-run check passes on three hosts. At least one rule trial has a recorded result. One adopter outside the Maintainer's projects completes three changes.
 
-**Suggested targets, for the Maintainer to set.** A light change takes 3 commits, 1 review and at most 1 Maintainer decision. A plan takes 8 commits and 4 review commits. The certifying run takes 20 minutes. The small core stays under 3,000 words. The per-change targets count events, not words, as measurement rule 1 asks: a cap on one file moved text to another, as the regrowth table shows.
+**Suggested targets, for the Maintainer to set.** A light change takes 3 commits, 1 review and at most 1 Maintainer decision. A plan takes 8 commits and 4 review commits. The certifying run takes 20 minutes. These count events, not words, as measurement rule 1 asks.
 
-### Two standing rules that cost nothing
+### v0.10: the next stage, harvested
 
-- **The two-repository rule.** A rule enters the kernel only if a science repository needed it. A lesson from Cairn's own development goes to Cairn's own `dev/rules/`.
-- **Expiry.** A rule added after an incident names the incident and lapses at the next release unless renewed. At each major model release, rerun the seeded-fault trial with one rule removed. If the result does not move, delete the rule. Procedure then earns its place by measurement, which settles more than arguing with agents does.
-
-### v0.10: the scientific core
-
-- the independent-check library and its skill;
-- a worked example from a real project;
-- issue #19 expressed as check presets;
-- the verification table for papers;
+- one page that says what a project needs at each size, with the trigger that offers each piece;
+- the second and third triggers (idea 4);
+- the modules that two projects converged on: releases, and test records if LHM's saving is real;
+- the scientist's half: the independent-check library and its skill, issue #19 expressed as check presets, a worked example from a real project, and the verification table;
+- the first release review of rules, with trial results;
 - the January evaluation of Cairn Plain Language;
-- the first round of rule removal by trial;
-- the lifecycle repackaged as an optional layer;
-- hooks offered as thin, optional adapters for the few bright lines.
+- Assai's frictions folded back as LHM's are, if the Maintainer wants that.
 
 ### 1.0
 
-Declare it on evidence: two outside adopters, a stated comparison against the lighter baseline, a core with stable numbered rules, and a release the Maintainer can cut in thirty minutes. For a scientist who maintains software, the natural form is a methods paper. Publishing a measurement needs the Maintainer's Decision.
+Declare it on evidence: each shipped lesson held in two projects, one adopter outside them, rule trials rerun on a new model generation, and a release the Maintainer can cut in thirty minutes. Cairn's own record is rare evidence: 7,303 commits on 73 active days, with each decision kept. Most published studies score single tasks, and the few that follow a project through time find the growth described above. A methods paper on what a project needs as it grows would fill that gap. Publishing a measurement needs the Maintainer's Decision.
 
 ### Pace
 
-Cairn has 7,303 commits on 73 active days, a median of 54 a day, and five releases in the thirty days after 0.4. Each release asks adopters to follow an 8,300-word upgrade guide. The standing direction of 2026-07-22 puts science projects first. Let v0.9 land when its exit test passes, not on a date.
+Cairn made five releases in the thirty days after 0.4, and each asks adopters to follow an 8,300-word upgrade guide. The standing direction of 2026-07-22 puts science projects first. Let v0.9 land when its exit test passes, not on a date.
 
 ## Risks
 
-- **A smaller default drops a safeguard that mattered.** The seeded-fault trial and the outside adopter are the tests, and the layers remain.
-- **A contract without steps lets an agent skip the thinking.** The decision note and the fresh review stay as obligations wherever a change cannot be undone.
-- **Leaning on harness features invites churn.** The usage meter stopped reading one harness's logs when that harness added eighteen record types (issue #96). Require only open standards, and keep adapters optional and thin.
-- **The lifecycle may be what makes three-vendor work possible.** Keep it as a layer, and measure before removing anything from LHM or modflow_tools.
-- **The seeded-fault trial is synthetic.** Pair it with real adopters.
+- **Controls become more apparatus.** Each one here reuses something the project already produces: the "Rules that apply" line, the retry rule, Git and the one trigger reader. A new tool still needs its own go-ahead under the standing direction.
+- **A word budget is a measure of prose.** Measurement rule 1 warns that such a measure becomes the target. Use the route budget as a limit, checked by listing the files a task reads, and never as a score.
+- **Gathering the test text into one ladder could drop a rule.** The review question for functional prose, "Does any rule weaken or disappear?", is the guard.
+- **Rule trials are small and synthetic.** An agent in a trial is not an agent in a long session. Pair the trials with the counts from real work.
+- **The lessons come from one Maintainer's projects.** LHM, modflow_tools and Assai share one person's habits. The outside adopter is the check.
+- **A plan thinned too early.** Thin a plan's detail only when the count of retries shows the lower tier no longer needs it.
 
 ## Open questions
 
-1. Is v0.9 the release that removes, with the listed rows left out?
-2. Which per-change targets does the Maintainer set?
-3. Does the small core sit beside the smallest profile, or replace it?
-4. Is the usage meter frozen now, and later retired or kept as an opt-in?
-5. Is 1.0 declared on evidence, and is a paper its form?
-6. Who is the second outside adopter?
+1. Does v0.9 open with the test ladder and the rule lifecycle, after the defects?
+2. Which rows wait for the controls: the budget guard and unattended loop, roadmap draining, the four-view comparison, the dimension axis?
+3. May the first rule trial run, on which low-tier model, and with what spending limit?
+4. Which per-change targets does the Maintainer set?
+5. Is Assai run under Cairn, and may its frictions be folded back?
+6. Is 1.0 declared on evidence, and is a paper its form?
 
 ## Outside sources
 
-I read the abstract of each and the excerpts a search tool returned, not the full text. Sources 1, 2, 3, 5, 7 and 8 are preprints and not peer reviewed. Source 4 is a repository deposit whose review status I did not see. Source 6 is a magazine essay.
+I read the abstract of each and the excerpts a search tool returned, not the full text. Sources 1, 2, 3, 5, 7, 8, 11, 14, 15, 16, 18 and 19 are preprints and not peer reviewed. Source 4 is a repository deposit whose review status I did not see. Source 6 is a magazine essay. Sources 9, 10, 12, 13 and 17 appeared in conference proceedings or a journal.
 
 1. Gloaguen et al. (2026), *Evaluating AGENTS.md: Are Repository-Level Context Files Helpful for Coding Agents?* [doi:10.48550/arxiv.2602.11988](https://doi.org/10.48550/arxiv.2602.11988)
 2. Sankaranarayanan (2026), *Mitigating "Epistemic Debt" in Generative AI-Scaffolded Novice Programming using Metacognitive Scripts.* [doi:10.48550/arxiv.2602.20206](https://doi.org/10.48550/arxiv.2602.20206)
@@ -292,3 +305,14 @@ I read the abstract of each and the excerpts a search tool returned, not the ful
 6. Storey (2026), *From Technical Debt to Cognitive and Intent Debt.* ACM Queue. [doi:10.1145/3807966](https://doi.org/10.1145/3807966)
 7. Bai et al. (2026), *When Passing Tests Hides Vulnerabilities: An Empirical Study of Silent Failures in Agentic Systems.* [doi:10.2139/ssrn.7269655](https://doi.org/10.2139/ssrn.7269655)
 8. Kim et al. (2026), *Coherence Collapse: Diagnosing Why Code Agents Fail After Reaching the Right Code.* [doi:10.48550/arxiv.2603.24631](https://doi.org/10.48550/arxiv.2603.24631)
+9. Agarwal, He and Vasilescu (2026), *AI IDEs or Autonomous Agents? Measuring the Impact of Coding Agents on Software Development.* MSR. [doi:10.1145/3793302.3793589](https://doi.org/10.1145/3793302.3793589)
+10. Denisov-Blanch et al. (2026), *A Few Pages of Markdown: Committed AI Configuration and Lower Quality Cost after Coding-Agent Adoption.* ASE. [doi:10.1145/3832783.3837546](https://doi.org/10.1145/3832783.3837546)
+11. Shastry et al. (2026), *Beyond Isolated Tasks: A Framework for Evaluating Coding Agents on Sequential Software Evolution.* [doi:10.48550/arxiv.2604.03035](https://doi.org/10.48550/arxiv.2604.03035)
+12. Huang et al. (2026), *More Code, Less Reuse: Investigation on Code Quality and Reviewer Sentiment towards AI-generated Pull Requests.* MSR. [doi:10.1145/3793302.3793622](https://doi.org/10.1145/3793302.3793622)
+13. Patel et al. (2026), *Is Agent Code Less Maintainable Than Human Code?* EMNLP. [doi:10.18653/2026.emnlp-main.2528](https://doi.org/10.18653/2026.emnlp-main.2528)
+14. Fan et al. (2026), *An Empirical Study of Harness Design for Coding Agents.* [doi:10.48550/arxiv.2609.20804](https://doi.org/10.48550/arxiv.2609.20804)
+15. Jiang et al. (2026), *Specialize Roles, Mix Deployments: Pushing the Cost-Accuracy Frontier of LLM Agent Teams.* [doi:10.48550/arxiv.2606.20629](https://doi.org/10.48550/arxiv.2606.20629)
+16. Oota et al. (2026), *Do LLM Agents Execute the Plans They Declare? From Planning-Mode Declaration to Pattern-Specific Execution.* [doi:10.48550/arxiv.2609.38108](https://doi.org/10.48550/arxiv.2609.38108)
+17. Lin et al. (2026), *To Run or Not to Run: Analyzing the Cost-Effectiveness of Code Execution in LLM-Based Program Repair.* Proceedings of the ACM on Software Engineering. [doi:10.1145/3832113](https://doi.org/10.1145/3832113)
+18. Hu et al. (2026), *Analyzing and Mitigating Cost-Inefficient Behaviors in Coding Agents.* [doi:10.48550/arxiv.2609.30725](https://doi.org/10.48550/arxiv.2609.30725)
+19. Alonso, Yovine and Braberman (2026), *TDAD: Test-Driven Agentic Development - Reducing Code Regressions in AI Coding Agents via Graph-Based Impact Analysis.* [doi:10.48550/arxiv.2603.17973](https://doi.org/10.48550/arxiv.2603.17973)
