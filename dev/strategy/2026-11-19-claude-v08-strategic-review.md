@@ -18,7 +18,7 @@ Three claims carry this note.
 2. **Cairn's answers are the right kind, but a person holds them in place.** A stronger model writes the plan and a cheaper one carries it out. The plan chooses the tests, not the implementer. Review is one pass. The rules every session loads are short. Outside studies support each of these; the one on review rounds is cited in the guide star. But the Maintainer sets each limit by hand, in chat, when it hurts, and the text that states the limits is scattered.
 3. **Two kinds of evidence are missing.** No one outside the Maintainer's own projects has installed Cairn. And nothing yet shows which rules change what agents do.
 
-I recommend that v0.9 set the controls, after it settles the defects: one ladder that says which tests run at each stage, a lifecycle that keeps rules in check, counts that show whether a plan written for a cheaper model is enough, and small trials that test a rule on the model that must obey it. These are also what unattended work needs before it widens. v0.10 then harvests the next stage of guidance from the Maintainer's other projects. Nothing here is accepted work.
+I recommend that v0.9 set the controls, after it settles the defects: one ladder that says which tests run at each stage, a lifecycle that keeps rules in check, counts that show whether a plan written for a cheaper model is enough, and small trials that test a rule on the model that must obey it. These are also what unattended work needs before it widens. The release should become the point of removal: archived plans retire to the release tag once the proposal carries the outcome. v0.10 then harvests the next stage of guidance from the Maintainer's other projects. Nothing here is accepted work.
 
 ## The question
 
@@ -33,7 +33,7 @@ I measured these on 2026-11-19 at tag v0.8.0, on a fresh Windows Server 2022 che
 
 Five Sonnet subagents read Cairn's records and searched outside sources. I mark their figures "reported". For the nineteen outside studies listed at the end, I read the abstract and the excerpts a search tool returned, not the full text. Twelve are preprints.
 
-After the Maintainer's response on 2026-11-19 I read again the guide star, the collaboration guide from "Review rules" to "Verification", the plan template, the working agreements, the note of 16 November on projects that have grown, the principles for trimming rules, and the shipped rules README and testing module. Figures for LHM are that note's measurements, not mine.
+After the Maintainer's response on 2026-11-19 I read again the guide star, the collaboration guide from "Review rules" to "Verification", the plan template, the working agreements, the note of 16 November on projects that have grown, the principles for trimming rules, and the shipped rules README and testing module. Figures for LHM are that note's measurements, not mine. For idea 7, a read-only script measured the two archives, what cites them and which commits edited them.
 
 My counts from Git look backward, and I made them with a question in mind. Measurement rule 4 in the guide star warns against exactly that. Treat them as a reason to measure forward, not as a result.
 
@@ -165,7 +165,7 @@ A plan is not a standing procedure. It is the process for one task, worked out b
 
 The scientist's half rests on other studies. In one, 68 to 80% of two models' failing runs were wrong in the same way on each repeat, so agreement between runs looked healthy [3]. In another, on security repairs, passing tests and reviewer agents did not intercept the confirmed failures [7]. Of 78 novice programmers, those made to explain generated code before accepting it failed a later unaided task 39% of the time, against 77% without that step [2]. What an agent cannot supply is an expected answer from outside the code and a person who understands the result.
 
-## Six ideas
+## Seven ideas
 
 ### 1. The plan is a loader
 
@@ -227,9 +227,32 @@ The agent brings speed and breadth. The scientist brings the expected answer and
 
 - **Expectation first.** The scientist writes the expected result before the run, with its source: "drawdown at 100 metres after one day should be near half a metre, from the Theis solution with these values." It takes two minutes, it is independent of the code, and it builds the understanding that the comprehension floor protects. The testing module already says to state expected behaviour before results. Make it the first line of any change that touches a calculation.
 - **Two questions for a person's attention.** Could we undo it, and would we notice if it were wrong? The working agreements already send work that can be undone to the lighter lane. The second question is the scientist's own risk: a sign, unit or index error that still runs and gives a plausible number. A change that would not be noticed needs an independent check. The same two questions say what may run unattended.
-- **A record with a second job.** An essay on generated code names the two losses a decision record guards against: shared understanding and stated intent [6]. A table drawn from decision notes (change, assumption, check, source of the expected answer, result) is a verification statement for a paper's methods section. I assume journals increasingly ask for one. I did not check.
+- **A record with a second job.** An essay on generated code names the two losses a decision record guards against: shared understanding and stated intent [6]. A table drawn from proposal closeouts (change, assumption, check, source of the expected answer, result) is a verification statement for a paper's methods section. I assume journals increasingly ask for one. I did not check.
 
 The same economy applies to security. At this release the signing ceremony stopped three times and was deferred. Economy of mechanism, already cited under anchor 17, says the strongest control is fewer trusted lines. For the open re-anchor proposal, weigh a human-read diff of the protected files against more ceremony. I have not read the gate code, so that is a question for its review, not a finding.
+
+### 7. The proposal is the history; the plan retires
+
+The Maintainer's view (chat, 2026-11-19): "Once we are done with plans at a release they are generally done. But the proposal is the project history." The record agrees (measured from Git, looking backward).
+
+| | Archived plans | Archived proposals |
+|---|---|---|
+| Files | 210 | 217 |
+| Words | 2.02 million, 53% of tracked Markdown | 1.34 million, 35% |
+| Median length | 4,805 words | 3,260 words |
+| Commits since 0.7 that edited one after archive | 21, all to 7 plans opened in the 0.8 window | 1 |
+
+No plan from an earlier release was edited. The method already calls an archived plan "a file that is about to stop being read" (`docs/methodology/plans.md`) and requires each lasting item to have a home outside it. All 210 are in the v0.8.0 tag, so removing them from the tree loses nothing and can be undone.
+
+One gap comes first. Of the 26 proposals archived in the 0.8 window, the 17 that a plan cites all end at their Decision, and their outcome is written only in the plan's closeout. Eight of the nine with no plan end with their own implementation record. Remove the plans and most of the history loses its ending. Three rules close the gap and add no record.
+
+1. Append the closeout to the source proposal, as a light proposal already does. It says what shipped, which checks ran and their results, anything dropped with the Maintainer's quoted allowance, and each deferral's home.
+2. From then on the board and the changelog cite the proposal, not the plan.
+3. After a release tag, remove each archived plan that the tag holds and whose work has no open board row. The folder's README says which tag holds them.
+
+Offered to adopters, this is a step of the release module. It makes the release the point where each stock lets go: plans retire, the slowest tests are reviewed and the unlisted rules are reviewed.
+
+The cost in Cairn's own tree comes once. Outside the archives, 295 citations in 37 files name the plans archive: 132 in the changelog, 59 in measurement records and 40 on the board. The shipped claim and stem checkers resolve a plan's name to its archived file. Two generators of 665 lines, named in the gate manifest, list both archives to exempt records older than today's schema; I did not read how the gate uses them. Archived proposals cite plans 186 times, and those links would dangle. The median archived plan is nearly five times today's opening budget, so the archive also holds 210 examples of the old length. I assume agents meet them when they search. I did not measure that.
 
 ## Options
 
@@ -248,7 +271,7 @@ Do these in order. Each makes the next cheaper.
 3. **Write the rule lifecycle** (idea 3) into the rules-folder guide, with the trimming principles. Apply it first to Cairn's own 18,400 words.
 4. **Count the plan's events** (idea 1): retries and moves up a tier for each chunk, and from Git the commits, review commits and Maintainer decisions for each plan. Keep the proposal and the plan, and lower the number of turns around them. The hand-filled Tokens field read "unknown" in every sampled entry, and the board already ties its retirement to the meter comparison.
 5. **Run the first rule trials.** Take four or five cases from battles already fought: the whole suite run on each chunk, a rule file rewritten wholesale, accepted scope quietly dropped, a review that will not close. Run each on the low-tier model, with the rule and without it. Declare the cases, the count and what is inconclusive before the first run. Report by case and never rank models. The first trial tests the Maintainer's own observation about tests, and the outside studies predict it will hold. A rule that changes nothing goes to the release review. The trials cost a handful of headless sessions for each case and need the Maintainer's go-ahead.
-6. **Keep the rows that harvest from adopters**: the release module, test records once LHM's measurement is in, the adopter interview, the outside trial and verification on three hosts.
+6. **Keep the rows that harvest from adopters**: the release module, test records once LHM's measurement is in, the adopter interview, the outside trial and verification on three hosts. Put the closeout on the proposal now, since that step removes nothing, and make plan retirement (idea 7) a step of the release module.
 7. **Ship one dashboard tab**, the development view, and show the counts from step 4 on it.
 
 I would place four rows after the controls, or in v0.10: the budget guard and unattended loop, roadmap draining, the four-view comparison and the new dimension axis. An unattended agent needs the ladder, the route and the stopping criteria to be mechanical first.
@@ -292,6 +315,7 @@ Cairn made five releases in the thirty days after 0.4, and each asks adopters to
 4. Which per-change targets does the Maintainer set?
 5. Is Assai run under Cairn, and may its frictions be folded back?
 6. Is 1.0 declared on evidence, and is a paper its form?
+7. Do archived plans retire at each release, once the proposal carries the closeout? Are the 210 now in the tree removed in one step, or by release?
 
 ## Outside sources
 
