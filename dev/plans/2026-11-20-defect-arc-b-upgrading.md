@@ -102,3 +102,49 @@ One review point before the end: after C2 (usual and Security), because C4 build
 **Issues, for the Maintainer.** Nobody closes or comments on any: #95 (all three parts after C5), #98 (part 3 only), #99 (parts 1, 3, 4 and the engine comments; part 2 is plan A's), #100, #102.
 
 **Not checked.** No code or test was run for this plan. Not measured: Windows behaviour; `--path-format` on a Git older than 2.31; whether a selected test ties `profile.yml` to the lock; whether a release-membership test lists root files, which would need `.gitattributes` named. Other callers of `_git_read_helper` keep the old wording. **Does any rule weaken or disappear?** No: no rule text is edited.
+
+## Plan review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`, usual reviewer) -- 2026-11-20
+
+```
+Reviewed commit: 02f92d370067ce5ba2d9d1b5ad62d554abeaccda
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+
+The plan turns five upgrade defects into small, tested engine changes. The design holds: the three layout keys are dropped where written, `adopter_deleted` is the smallest way to keep a retired wrapper from being re-added (`upgrade.py:1054`), and each added command earns its place. Four gaps would make a low-tier implementer invent or stall.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Every proposal item for plan B is carried; the two commands deliver "heal" and "documented route" -- appendix rows #99.1, #102; `upgrade.py:4395`.
+2. **Best alternative.** Treating an absent wrapper like `RULES.md` (`upgrade.py:979`) is smaller but lets `verify_integrity` pass silently; the explicit key keeps a reviewable lock edit -- `verify_integrity.py:462`.
+3. **What would show it wrong.** After C2, a 0.7.0 scratch install still prints `unrecognized lockfile-record key(s)`; or `--retire-wrapper` then `--stage` re-adds `VENDOR.md` -- the C2 and C5 permanent tests.
+
+**Does any rule weaken or disappear?** No.
+
+**Findings**
+
+1. **Blocking.** The 102-file run cannot execute: `tests/conftest.py` refuses over 40 files. Words: block V below.
+2. **Blocking.** C5 never says how `--retire-wrapper NAME` is wired, and C2's `--plan` line has no text. Words: block W.
+3. **Blocking.** C1's test edit would fail. The test is in `tests/test_first_session_report.py`, and it reads only lines containing "Skills fan-out", so `session-start` on the second line is never seen. Words: block X.
+4. **Blocking.** C3's `old_proved` clause crashes when `old` is `None`. Words: block Y.
+5. Non-blocking. The shallow test needs `git clone --depth 1 file://<path>`; a plain path ignores `--depth`.
+6. Non-blocking, for the Security pass. `verify_integrity` should skip a record only when its `dst` has no `/`; the binding check should use `_GIT_READ_MAX_BYTES`, not a literal.
+7. Non-blocking. The `test_command` default (leave the lock token) is right: no code reads it, and changing it edits a protected lock. It is the plan's call, not the Maintainer's; the plan raises no question.
+8. Non-blocking. Keep one plan. The review point after C2 is the right place and enough, since only C4 builds on C2.
+
+**Not covered.** I ran no test, installer command or Windows check. I did not trace `_layout_render` returns of `None` in C4, whether a root `.gitattributes` trips a release-membership test, or `--path-format` on old Git. Over the 300-word target because of four blocking findings.
+
+**Elapsed**: about 40 minutes. **Tokens**: unknown.
+
+### Exact words for the plan review above
+
+**V (replace the whole Selector paragraph).** "**Selector.** `tests/conftest.py` refuses any one run over 40 test files, so the 102-file selection is not run here; the arc's joined run owns it. Each chunk makes one pytest call of at most 40 files: the tests it adds or edits plus `tests/tier_inventory.py for` the one engine file it changes. C1: `install/_scaffold/cli.py` (15 files) plus `tests/test_upgrade_layout_migration.py` and `tests/test_first_session_report.py`. C2, C3 and C4: `install/_scaffold/upgrade.py` (38 files). C5: `install/verify_integrity.py` (18 files) plus `tests/test_retire_wrapper.py`, `tests/test_upgrade_layout_migration.py` and `tests/test_upgrade_side_door_parity.py`. C3's comment edits run no selection (the AST-equality check covers them); for `profile.yml` run `tests/test_intents_tool.py`, `tests/test_security_verification.py` and `tests/test_session_writes_contained.py`, the three of its 65 selected files that build paths from the repository root (found by grep). Before C1, make each call at the starting commit with `-rf` and keep every failing test id with its first message line. After a chunk, a failure is a host failure only if the same id and the same message are on that list; any other is reported. Left to the joined run: the 102-file selection, the Python 3.13 run, and `tests/test_ast_attest.py` (red until the Maintainer's baseline step)."
+
+**W (add to C5, after its first sentence; and to C2 after "Plain `--plan`").** C5: "Wire it as C2 wires `--heal-layout`: `p.add_argument("--retire-wrapper", default=None, metavar="NAME")`; append `--retire-wrapper` to `actions` when `args.retire_wrapper` is set, as `--adopt-module` is; add `args.retire_wrapper` to both `any(...)` tuples in `_layout_command` and to the profile-link refusal condition; refuse `--to` as `--remove-retired` does. Dispatch it right after the `--finalize` branch of `cmd_upgrade`, with the lock already read, and ask `_writeset_dirty_collisions` about the lock as C2 does." C2: "Plain `--plan`, after the model-selection lines, prints when findings exist: `Run python install/scaffold.py upgrade --target <repo> --heal-layout to remove lock keys the security verification refuses.`"
+
+**X (replace C1's test sentence).** "In `tests/test_first_session_report.py`, change `test_skipped_vendor_absent_is_a_calm_no_action_line` so each `Skills fan-out` line for `claude-code` holds `.claude` and neither "skipped" nor "error", and the whole output holds `session-start`. In `main`, find the row with `row["target"] == name`."
+
+**Y (replace the `old_proved` change).** "`old_proved = old is not None and rec is not None and ((rec.get("base_hash") or rec.get("hash")) == _layout_digest(old.raw) or (verbatim and live.raw == old.raw))`."
