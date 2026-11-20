@@ -100,3 +100,50 @@ C1 to C4 touch disjoint files and can land in any order. Code review once after 
 **Issues, for the Maintainer.** Nobody closes or comments on any: #98 (parts 1, 2), #91 (part 2), #96 (partly), #101, #99 (part 6, answered).
 
 **Not checked.** No code or test was run for this plan; Bandit's JSON output was not run; the message texts were not run in PowerShell; macOS; whether protected session tests pin a printed path. **Does any rule weaken or disappear?** No rule text is edited.
+
+## Plan review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`, usual reviewer) -- 2026-11-20
+
+```
+Reviewed commit: d4a90f7622d939c3d7327f3f5f23d7d52aa64e3e
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+
+The plan turns six adopter reports into small edits with exact texts. Most of it holds: the twelve path sites count correctly, every twin pair is byte-identical, the selector counts reproduce, and the C3 fixtures behave as the companion says on synthetic records. Three gaps would stall or mislead a low-tier implementer.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. #96's accepted wording is delivered (the `unsupported_record` trigger goes); Claude stays UNKNOWN because its events are never proven -- `meter.py:3717`, `6624`.
+2. **Best alternative.** Bandit's own `-ll`/`-ii` flags are simpler but hide below-threshold findings, which the proposal's S5 wants printed; keep the JSON route -- `run_security_audit.py:853`.
+3. **What would show it wrong.** A 4,000-byte policy file of `[` crashes the audit with a traceback instead of exit 20 -- the new C4 case in block C.
+
+**Does any rule weaken or disappear?** No.
+
+**Findings**
+
+1. **Blocking.** Three frozen files change, not two: the gate manifest also freezes `measurements.py` as `scripts/measurements.py`, contradicting item 6's own rule. Words: block A.
+2. **Blocking.** C1's baseline rule cannot work for one test. `test_session_failsafe.py:356` expects a backslash path in the `interpreter:` line, so on Windows it fails before and after C1 with different text. The ten guarding files also omit the binding-reader and lint tests. Words: block B.
+3. **Blocking.** D7's loader leaves exception classes open. Measured: `json.loads('[' * 4000)` raises `RecursionError`, not `ValueError`. Words: block C.
+4. Non-blocking. The #96 question is not plain; say what stays UNKNOWN. Block D.
+5. Non-blocking. The policy file is not hash-covered, which `python-security.md` says policy inputs are. Block E.
+6. Non-blocking. "The same `exec` findings" omits the twelfth, `pulse.py` B314 (also allowed in `security_check.py:220`). Name it in the prose.
+7. Non-blocking. Stubbed audit tests carry the "Declared exception (internal hook)" comment, as `test_security_stack.py` does. State whether the threshold suffix goes on DEGRADED statuses (this review suggests no). The C3 real-log check runs from a scratch folder outside the repository, printing integers and issue names only.
+
+**Not covered.** No test, audit or Bandit run; Windows prints; macOS; the manifest's old-path keys beyond the three hashes; whether the Security pass accepts the threshold line missing from the default summary. Over target: three blocking findings.
+
+**Elapsed**: about 45 minutes. **Tokens**: unknown.
+
+### Exact words for the plan review above
+
+**A (replace the Staleness sentence "The gate manifest freezes two files changed here; the verifier will show two HOLDs for the Maintainer.").** "The gate manifest freezes three files changed here: `conflict.py`, `run_security_audit.py` and `measurements.py` (listed there as `scripts/measurements.py`); the verifier will show three HOLDs. Reason for the third: one comment now names `dev/tools/`; no code changes. Not run." In item 6, after "Left: comments in frozen files not otherwise edited", add "(`measurements.py` is the one exception: the HOLD is taken because the comment misleads adopters)". Or move `measurements.py` to plan D and delete it from item 6, the Protected list, C5 and D8.
+
+**B (add to Verification, after "a failure is a host failure only if both are on the first list.").** "One exception, by design: `test_session_failsafe.py::test_interpreter_resolved_from_local_env_and_reported` expects a backslash path, so on Windows it fails before C1 (the line shows `\x5c`) and after (it shows `/`), with different text. It is frozen and not edited: treat it as a host failure by id, and name it in the code review. Add `tests/security/test_git_interpreter_binding_portable.py`, `tests/test_security_lint.py` and `tests/test_skills_install.py` to C1's guarding files."
+
+**C (add to D7 step 4).** "Catch `ValueError` and `RecursionError` around the parse. The repeated-key hook raises a private `_DuplicateKey(ValueError)`, caught first, giving 'a key is repeated'. Step 1 covers `FileNotFoundError` only; any other `OSError` from `lstat` gives 'it cannot be read'. Read with `f.read(4097)`, never `read_bytes()`. Add one permanent case: 4,000 `[` characters gives `AuditDegraded`."
+
+**D (replace the Question paragraph).** "**Question for the Maintainer.** After C3 the Pulse still shows Claude usage as UNKNOWN and the goodnight report still has no Claude numbers, because the meter never ties a Claude record to this project: it does not trust the folder a log sits in. Should it? Yes counts Claude usage once the folder matches the project; no keeps today's strict refusal. Default: no change now; decide in the tightening or v0.10."
+
+**E (add to the `python-security.md` text in D7).** "Unlike the gate scripts, this file is not hash-checked by the lock; the printed threshold is how a change is seen."
