@@ -58,8 +58,13 @@ runs cost machine time, not tokens, and are listed separately.
 | | Security Review | High | 151,767 | 7 | revise, 2 blocking |
 | | fold of both reviews, by a fresh agent | Medium | 82,907 | 1 | ready to implement |
 | Plan B, upgrading | helper: a scratch upgrade check as a script, run twice | Medium | 98,840 | 6 | defect shown from 0.7.0 |
+| | implementation, chunks C1 and C2 | Low | 190,900 | 23 | done |
+| Plan C, first session and tools | implementation, chunks C1 and C2 | Low | 170,999 | 27 | C1 done; C2 written and tested, left uncommitted |
+| Plan D1, gate narrowings | implementation, four chunks | Low | 192,331 | 19 | done |
+| | usual code review | Medium | 102,189 | 2 | accept, 3 notes |
+| | Security Review of the code | High | 126,389 | 4 | accept, 4 notes |
 
-Total for the day so far: 5,615,383 tokens across 37 subagent runs (the last six rows were added in the evening; the implementers of plans B, C and D1 are not in yet). Plan A's
+Total for the day so far: 6,398,191 tokens across 42 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -93,6 +98,17 @@ Measured:
 - **Plan D1 cost 650,177 tokens to plan** (author, two reviews, fold), for four
   small chunks. Both reviews said revise; the Security Review again raised
   blocking findings the usual review had not.
+- **Plan D1 from opening to merge: 1,071,086 tokens in seven runs, and 1 hour
+  54 minutes by commit times**, for four small chunks (about 100 changed lines
+  of code and tests). Planning and its two reviews took 61 percent of the
+  tokens, building 18 percent, the two code reviews 21 percent.
+- **Building cost less than planning.** Three low-tier implementers used
+  171,000 to 192,000 tokens each for two to four chunks; the plans they built
+  from cost 241,000 to 309,000 each to write.
+- **Where a test runs decides what it can show.** One 17-file group fails 103
+  of 1,151 tests on the Windows Server machine before any change, and 1 of
+  1,151 in its Linux subsystem. On Linux a real failure stands out; on
+  Windows it has to be found by comparing two long lists.
 - **An agent's own "elapsed" figure is not data.** Four agents wrote an elapsed
   time into their records this evening, and the harness timed the same runs:
   40 minutes written against 3 measured, 30 against 6, 25 against 7, and 10
