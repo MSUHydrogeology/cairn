@@ -392,3 +392,22 @@ The implementer's four choices and its added function stand; both reviews found 
 **Left as found.** `profile.yml` line 4 already names `install/scaffold.py`, so the criterion's header requirement held. Line 5 still says "see BOOTSTRAP.md Act II-2", a file that is not in the repository. The criterion says nothing about that wording, so I did not change it.
 
 **Not run.** The 102-file selection, the Linux runs, the tier-inventory groups, `tests/test_ast_attest.py`, the scratch upgrade checks, and any release, signing or baseline command. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record, chunk C5 -- Claude Haiku 5.5 (Implementation, Low) -- 2026-11-20
+
+**Commits**
+- `21667cd9` C5: `upgrade --retire-wrapper`, `_wrapper_retired` and its consult points, the `verify_integrity` side, `tests/test_retire_wrapper.py`.
+- `09e1828b` C5: `install/UPGRADE.md` (retire subsection, heal step, shallow sentence, line-ending paragraph); one `CHANGELOG.md` entry.
+- `076cb6b4` C5: Cairn's own lock, refreshed by `--heal-layout`; nothing else.
+
+**Tests.** `tests/test_retire_wrapper.py` (new, 10 nodes). Written before the engine change: 7 failed (the flag did not exist), and the 3 tampered-lock controls passed. After it: all 10 pass.
+
+**Whole-file run**: the three files in one call: 22 failed, 112 passed, 5 skipped. All 22 failure lines (id and message) are in `base-B5.txt`.
+
+**Heal on Cairn's own tree**: printed `Removed layout keys from 35 lock record(s). Commit dev/.cairn/cairn-lock.yml.`, exit 0. `verify_integrity` then reported OK. The lock diff is 105 deleted lines and no added ones.
+
+**Differences and wording chosen** (the plan gave none): every exit 1 and 2 refusal text; the review-only hint; the `--retire-wrapper` help text; the dirty-lock refusal (bypassed by `--force`, as C2 does); the OK line's file count leaves out the retired record. Code choices: `_wrapper_record_fits` split out of `_wrapper_retired`; `--finalize` drops `adopter_deleted` when the file is back; the retired check in `_compute_upgrade` runs before the renamed-wrapper resolution; the controls also assert on `_compute_upgrade` output, since `--plan` prints no up-to-date rows.
+
+**Not run**: the 102-file selection; the Linux runs; the scratch 0.7.0 and 0.8.0 upgrades; the `release/AST_BASELINE_RUNBOOK.md` Step 1 listing; the tier-inventory groups; `tests/test_ast_attest.py`; any release, signing or baseline command.
+
+**Elapsed**: unknown. **Tokens**: unknown.
