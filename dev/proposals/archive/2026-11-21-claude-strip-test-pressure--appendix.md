@@ -1,6 +1,6 @@
 # Appendix: what became of each sentence
 
-This is the appendix of `dev/proposals/2026-11-21-claude-strip-test-pressure.md`. It records, for every row of the reader's inventory in the files that were edited, what the row became: `kept` under section C, `rule A`, `rewritten`, `removed`, or `undecided`. The row numbers are the inventory's. Five agents made the edits, one group of files each, on 2026-11-21; their tables follow as they wrote them. Rows in the security modules, the protected-surfaces rule and the testing module were not edited and are not listed.
+This is the appendix of `dev/proposals/archive/2026-11-21-claude-strip-test-pressure.md`. It records, for every row of the reader's inventory in the files that were edited, what the row became: `kept` under section C, `rule A`, `rewritten`, `removed`, or `undecided`. The row numbers are the inventory's. Five agents made the edits, one group of files each, on 2026-11-21; their tables follow as they wrote them. Rows in the security modules, the protected-surfaces rule and the testing module were not edited and are not listed.
 
 ## After the five groups
 
