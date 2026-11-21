@@ -1,7 +1,7 @@
 # Plan: A simple usage meter
 
 **Source proposal**: dev/proposals/archive/2026-11-21-claude-simple-meter.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/custom_session_routines.md, dev/rules/development-environment.md
@@ -102,3 +102,58 @@ I checked by script, not by running any test: the detail file's sorted lists cov
 - N5. A run killed by `session.py` leaves its lock, so the next session-end sees `ledger_busy` for up to 15 minutes. Say so in the README sentence.
 
 **Not covered**: running any test, real machines, the Security Review questions, the gate manifest's contents beyond its named lines.
+
+## Plan review -- Claude Opus 5.5 (Security Review) -- 2026-11-21
+
+```
+Reviewed commit: 9f64b9ffb3ee0d88f74bfe74c22cd24a43019787
+```
+
+**Obligation**: clears the Internal Security Review of the plan, and is the protected-surfaces review of the pinned rows it removes.
+**Tier**: Internal Security Review
+**Findings**: raised (3 blocking, 4 non-blocking)
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: both promises live in code that stays, but three write and error paths need exact words -- `dev/tools/meter.py` lines 7404 to 7427; detail D.
+2. **Best alternative.** None simpler; a Mac-and-Linux-only descriptor write would close B2's race but brings back a second path -- proposal E; detail D.
+3. **What would show it wrong.** Two runs holding the lock, a traceback naming a log, or a summary landing outside a project after a folder is swapped for a link -- detail D5, D7; `test_meter.py` lines 5718 to 5753.
+
+**Agreement.** I agree with the usual review's findings. My B1 governs D5 and the lock half of its B1 and N5.
+
+**Who holds the promises after the build.** Consent: `_fixed_user_home`, `_read_consent` with `validate_config_bytes`, the `enabled` check before any log or ledger is opened, `_scan_approved_sources` over the listed roots, `_read_project_claims` over the listed projects. Counts only: `read_records`, `_claim_snapshot`, `_new_ledger`/`_load_ledger`, `_project_export_bytes`, `_closed_refresh_receipt`. Three deleted functions carried part: `_capture_project_claims` (usual B2), `_private_regular_file` (the consent size bound, N1), and `_run_windows_refresh`'s wide `except` (B3).
+
+**The lock (the owner's answer).** Two runs can write at once: two runs taking over the same old lock; a busy run whose `finally` removes the holder's lock, as D5 reads; a manual run past 15 minutes. Worst outcome, by reading the code, not by running it: the last rename wins, the other run's events and cursors are dropped together, the next run reads them again, and the summary can briefly match the other ledger. No double count, no text, no write outside the listed places: within S4.
+
+**Pinned rows.** The 35 `nt` rows and 42 of the 48 `posix` rows go rightly. The six `test_posix_project_export_detects_substitution_before_publication` rows go rightly only if B2 is accepted. The `dev-link` and `measurement-link` cases guard "never through a link" and must run on every host (A2 says so).
+
+**Link races.** Reading: a log swapped for a link after the walk is read, but only its counts leave, so this is within S5. Writing: see B2.
+
+**`release/security_check.py`.** Only allowance removed: its one meter entry (line 215) excuses the one `exec` (line 5932).
+
+**Blocking**
+
+- **B1. Lock takeover and removal are unspecified.** Replace D5 with the words below.
+- **B2. A race can put the summary outside the project.** If `dev` or `dev/measurement` is swapped for a link after the check, the rename replaces any `meter.json` the user can write elsewhere, the consent file included. The proposal lists "a summary found outside a project" as a sign it is wrong, and its `lost` list does not name write re-checks. Add the Scope delta line below, or keep a Mac-and-Linux descriptor write.
+- **B3. A traceback can print a log path.** Add the D13 words below.
+
+**Non-blocking**
+
+- N1. Consent and ledger: read at most the limit plus one byte from one open.
+- N2. Windows: skip only symlink and mount-point reparse tags (`st_reparse_tag`); other tags would drop logs without a reason.
+- N3. A killed run leaves `.meter-*.tmp` in `dev/measurement`, which Git does not ignore (`git check-ignore`); the next run removes it.
+- N4. Optional: open a leaf with `getattr(os, "O_NOFOLLOW", 0)`; C1 then allows it.
+
+**Not covered**: running anything, real machines, the gate manifest, Windows reparse-tag behaviour on a real profile.
+
+### Exact words
+
+**D5.** "**Lock.** `ledger.lock` in `~/.cairn/meter/`, made with `O_CREAT | O_EXCL` and holding 32 random hex characters this run writes. If it exists and its modification time is under 900 seconds old (or more than 60 seconds ahead), `ledger_busy`. Otherwise the run reads its token, reads it again, and removes it only if unchanged; then it makes it afresh with `O_EXCL`, and a failed make is `ledger_busy`. In a `finally`, a run removes `ledger.lock` only if it made it and the file still holds its token. Two runs can still both take over one old lock; then the last rename wins and the other run's counts are read again next run."
+
+**Scope delta (B2), disposition accept, Maintainer's word needed.** "The re-checks before publishing a summary go with the descriptor walks (E). An account that can write the project and swaps `dev` or `dev/measurement` for a link between the check and the rename can put a summary of counts in another folder the user can write, replacing a `meter.json` there."
+
+**D13.** "`main` catches every `Exception` around each command and prints only the closed receipt (`unavailable`, `unavailable`) or, for the bare status, `unavailable`; no traceback, path or system text is printed."
