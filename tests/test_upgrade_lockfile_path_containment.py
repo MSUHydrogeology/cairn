@@ -514,6 +514,7 @@ def test_apply_refuses_a_staged_upgrade_that_holds_a_link(world, where):
     """`--apply` read the staged copy through whatever the link named and wrote it
     over a project file -- or into the saved ancestors -- saying `Applied 1 file(s)`."""
     notes = world.project / "docs" / "notes.md"
+    notes.parent.mkdir(parents=True, exist_ok=True)
     notes.write_text(BENIGN_NOTES, encoding="utf-8")
     stage = _plant_stage(world)
     try:
