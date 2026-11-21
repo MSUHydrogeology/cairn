@@ -124,7 +124,7 @@ _DISPLAY_SYNTAX_CHARS = frozenset(
 #: and `_ASCII_GUARD` -- duplicated deliberately, because the board must not
 #: import the *conditional* content scanner at runtime (it is not installed in
 #: every adopter tree).  The duplication is admitted only with the **one-way**
-#: drift guard in `bootstrap/tests/test_session_kernel.py`
+#: drift guard in `tests/test_session_kernel.py`
 #: (`TestDirectionalDriftGuard`): the board may escape
 #: more than the scanner flags, and may never emit raw a code point the scanner
 #: recognizes.  So a newly added printable invisible reddens that test until this
@@ -224,6 +224,14 @@ def encode_display(value: str) -> str:
         else:
             out.append(char)
     return "".join(out)
+
+
+def encode_display_path(value) -> str:
+    """Windows folders are separated by a backslash that the encoder would print as ``\\x5c``, which cannot be pasted back; on POSIX a backslash in a name stays escaped."""
+    text = str(value)
+    if os.sep == "\\":
+        text = text.replace("\\", "/")
+    return encode_display(text)
 
 
 def _decode_child_output(value: bytes | str) -> str:
@@ -655,8 +663,8 @@ def _assert_within(path: Path, base: Path) -> None:
         resolved.relative_to(base.resolve())
     except ValueError:
         raise LifecycleError(
-            f"refusing to write outside {encode_display(str(base))}: "
-            f"{encode_display(str(path))}"
+            f"refusing to write outside {encode_display_path(base)}: "
+            f"{encode_display_path(path)}"
         )
 
 
@@ -694,7 +702,7 @@ def _assert_not_linked(dst: Path, root: Path) -> None:
     try:
         rel = dst.relative_to(root)
     except ValueError:
-        raise LifecycleError(_OUTSIDE_REFUSAL + encode_display(str(dst))) from None
+        raise LifecycleError(_OUTSIDE_REFUSAL + encode_display_path(dst)) from None
     folder = root
     for part in rel.parts[:-1]:
         folder = folder / part
@@ -983,7 +991,7 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
         raise LifecycleError(f"Git interpreter binding could not be inspected: {encode_display(str(exc))}") from exc
     if not stat.S_ISREG(cfg_stat.st_mode):
         raise LifecycleError("Git interpreter binding is not a regular file; refusing to run a sub-tool")
-    shown_cfg = encode_display(str(cfg))   # a folder name may be someone else's choice
+    shown_cfg = encode_display_path(cfg)   # a folder name may be someone else's choice
 
     try:
         data = json.loads(cfg.read_text(encoding="utf-8"))
@@ -1016,7 +1024,7 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     interp = Path(value)
     # `value` is the binding's own text and only C0 controls and DEL were
     # rejected above, so everything printed from it goes through the encoder
-    shown_interp = encode_display(str(interp))
+    shown_interp = encode_display_path(interp)
     if not interp.is_absolute():
         raise LifecycleError(f'{shown_cfg}: "interpreter" must be an absolute path.')
     if ".." in interp.parts:
@@ -1042,7 +1050,7 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
         _warn_stale_once(
             f'{shown_cfg}: recorded interpreter "{shown_interp}" no longer exists -- your '
             f"environment was likely rebuilt.  Using the current interpreter "
-            f"({encode_display(sys.executable)}) for this run.  {_REBIND_REMEDY}"
+            f"({encode_display_path(sys.executable)}) for this run.  {_REBIND_REMEDY}"
         )
         return sys.executable, "fallback-stale"
     if not interp.is_file() or not os.access(interp, os.X_OK):
@@ -1261,7 +1269,7 @@ def _in_flight_items(root: Path) -> List[Tuple[str, str, str]]:
         if not base.is_dir():
             continue
         for path in sorted(base.glob("*.md")):
-            if path.name != "_template.md":
+            if path.name != "_template.md" and path.name.lower() != "readme.md":
                 items.append((kind, path.name, _status_of(path)))
     return items
 
@@ -1372,14 +1380,14 @@ def _assert_fanout_contained(dst: Path, target: Path) -> None:
         if ancestor.is_symlink():
             raise LifecycleError(
                 "refusing skills fan-out through a symlinked parent: "
-                + encode_display(str(ancestor))
+                + encode_display_path(ancestor)
             )
     final = dst.parent.resolve() / dst.name
     try:
         final.relative_to(tr)
     except ValueError:
         raise LifecycleError(
-            "refusing skills fan-out outside the repo: " + encode_display(str(final))
+            "refusing skills fan-out outside the repo: " + encode_display_path(final)
         )
 
 
@@ -1390,6 +1398,31 @@ _GITIGNORE_READ_ONLY = (
     "refusing to change .gitignore: it is read-only, which is the owner's mark "
     "that no tool should edit it; make it writable, or add this line yourself: "
 )
+
+
+def _gitignore_covers(text: str, entry: str) -> bool:
+    """Whether the ``.gitignore`` *text* already ignores the folder *entry*
+    through a broader rule, such as ``.claude/`` for ``.claude/skills/``.
+
+    A plain text match, with no Git call. Any ``!`` line makes it answer no,
+    because a later negation may re-include the folder. A wildcard rule such
+    as ``.c*/`` is not recognized and gets no credit here."""
+    lines = [ln.strip() for ln in text.splitlines()]
+    if any(ln.startswith("!") for ln in lines):
+        return False
+    parts = entry.strip("/").split("/")
+    covers = set()
+    for i in range(1, len(parts) + 1):
+        prefix = "/".join(parts[:i])
+        covers.add(prefix)
+        if i < len(parts):
+            covers.add(prefix + "/*")
+            covers.add(prefix + "/**")
+    for ln in lines:
+        if ln and not ln.startswith("#"):
+            if ln.lstrip("/").rstrip("/") in covers:
+                return True
+    return False
 
 
 def _seed_skill_gitignore(root: Path, entry: str) -> None:
@@ -1432,6 +1465,8 @@ def _seed_skill_gitignore(root: Path, entry: str) -> None:
     norm = entry.rstrip("/")
     if norm in {ln.strip().rstrip("/") for ln in text.splitlines()}:
         return
+    if _gitignore_covers(text, entry):
+        return
     if existed and not os.access(gitignore, os.W_OK):
         # a rename needs only a writable folder, so it would replace the file
         # anyway; the owner's read-only mark is respected instead
@@ -1457,7 +1492,7 @@ def _heal_skill_symlink(dst: Path, canonical: Path) -> str:
         return "relinked"
     if dst.exists():
         _warn(
-            f"{encode_display(str(dst))} exists as a non-symlink; leaving it untouched "
+            f"{encode_display_path(dst)} exists as a non-symlink; leaving it untouched "
             "(remove it to enable the skills symlink)."
         )
         return "exists-nonsymlink"
@@ -1526,7 +1561,7 @@ def _heal_skill_copy(dst: Path, canonical: Path, target: Path) -> str:
         copied += 1
     if quarantined:
         _warn(
-            f"copy-fallback divergence under {encode_display(str(dst))}: "
+            f"copy-fallback divergence under {encode_display_path(dst)}: "
             f"{encode_display(', '.join(quarantined))} "
             "differed from the canonical .agents/skills/ source; each was "
             "quarantined to *.diverged.bak and the canonical bytes regenerated. "
@@ -1660,7 +1695,7 @@ def cmd_session_start(args: argparse.Namespace) -> int:
 
     # Make the (otherwise hidden) interpreter trust root visible.
     _emit_section("resolved project interpreter")
-    _emit(f"interpreter: {encode_display(interpreter)}  (from {interp_source})")
+    _emit(f"interpreter: {encode_display_path(interpreter)}  (from {interp_source})")
     _emit("session-start gather complete.")
     return 0
 
@@ -1780,7 +1815,7 @@ class HandoffLock:
             f"{encode_display(str(agent))}, pid {encode_display(str(holder_pid))} on "
             f"{encode_display(str(holder_host))}) -- refusing a concurrent handoff to "
             "protect the single-owner roadmap-scrub invariant. If you are "
-            f"certain the holder is dead, remove {encode_display(str(self.path))} manually and retry."
+            f"certain the holder is dead, remove {encode_display_path(self.path)} manually and retry."
         )
 
     def heartbeat(self) -> None:
@@ -2306,11 +2341,14 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
     # control).  Refuse non-interactively -- never block on input.
     if not _designation_marker_present(root):
         raise LifecycleError(
-            "refusing the full handoff: no maintainer-designation marker. Set "
-            "CAIRN_HANDOFF_OWNER=1 (or create dev/.cairn/handoff-owner) to run "
-            "as the designated single owner. This is an anti-accidental-run "
-            "gate, not an authorization control -- run with --dry-run to "
-            "preview the manifest first."
+            "refusing the full handoff: no maintainer-designation marker. To run "
+            "it as the designated single owner, set CAIRN_HANDOFF_OWNER=1 for one "
+            "command. In bash or zsh: CAIRN_HANDOFF_OWNER=1 python dev/tools/session.py "
+            "session-end --handoff. In PowerShell: $env:CAIRN_HANDOFF_OWNER = '1'; "
+            "python dev/tools/session.py session-end --handoff; "
+            "Remove-Item Env:CAIRN_HANDOFF_OWNER. Or create the file "
+            "dev/.cairn/handoff-owner. This is an anti-accidental-run gate, not an "
+            "authorization control -- run with --dry-run to preview the manifest first."
         )
 
     interpreter, _ = _resolve_interpreter(root)

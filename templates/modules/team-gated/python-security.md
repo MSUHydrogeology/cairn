@@ -155,6 +155,32 @@ A `NOT APPLICABLE` injection pass (content-security not installed) and an
 egress-off `UNAVAILABLE` pip-audit are printed as their own lines and map to
 `5` (incomplete) — never a silent clean `0`.
 
+### Setting a severity threshold
+
+The adopter can set a Bandit threshold in an optional JSON file named
+`python-security.json`, in the `.cairn` folder under `dev`. The adopter owns it. Its keys are `schema` (required; the value must be
+`cairn-python-security-policy/1`), `min_severity` and `min_confidence`. Each
+minimum is `low`, `medium` or `high`, and each defaults to `low`. Any other key
+is refused.
+
+A finding fails only when its severity and its confidence are both at or above
+the two minimums. With no file, or with both minimums set to `low`, nothing
+changes: any finding fails.
+
+The audit prints the threshold at the top of the Bandit section and in the
+summary. It prints every finding and counts those below the threshold. A file
+that cannot be used makes the Bandit pass degraded, and the audit exits `20`.
+
+The audit scans only `python_package`. Cairn's own tools under `dev/tools` are
+hash-checked, not re-scanned. A whole-tree scan of your own project will show
+Cairn's deliberate `exec` of verified bytes, and one XML parse in `pulse.py`
+(Bandit B314), which Cairn allows in its own release gate.
+
+Unlike the gate scripts, this file is not hash-checked by the lock. The printed
+threshold is how a change to it is seen. A clean or findings Bandit status with no
+`[threshold: ...]` suffix means the default: any finding fails. A degraded status
+never carries the suffix and never passes.
+
 ### `python_package` — single contained package (v1)
 
 `python_package` is **one repo-relative package directory**. The orchestrator

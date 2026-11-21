@@ -16,7 +16,7 @@ import types
 from dataclasses import dataclass
 from pathlib import Path
 
-#: The Cairn repo root (this file lives in ``<cairn>/scripts/``).
+#: The Cairn repo root (this file lives in ``<cairn>/dev/tools/``).
 _CAIRN_ROOT = Path(__file__).resolve().parents[2]
 _REPO_ROOT = _CAIRN_ROOT
 

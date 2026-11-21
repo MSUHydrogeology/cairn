@@ -1,7 +1,7 @@
 # Plan: Defect arc C, first session and tools
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -19,11 +19,7 @@ The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defec
 
 **Result.** A first session on a fresh Windows install shows true orientation text, and the two tools do what their issues ask without widening any check.
 
-Proposed paths:
-- `tests/test_session_first_session.py`
-- `tests/test_intent_precommit_classify.py`
-- `tests/test_meter_usage_free_records.py`
-- `tests/test_security_audit_threshold.py`
+New test files, all of which now exist: `tests/test_session_first_session.py`, `tests/test_intent_precommit_classify.py`, `tests/test_meter_usage_free_records.py` and `tests/test_security_audit_threshold.py`.
 
 | Item | Chunk | Entry point |
 |---|---|---|
@@ -226,3 +222,195 @@ Both reviews said REVISE. Every blocking finding is applied with its reviewer's 
 Not checked: no code or test run; no Bandit run; whether `pulse.py` B314 is the one the allow-list names, beyond the usual review's citation.
 
 **Elapsed**: about 20 minutes. **Tokens**: unknown.
+
+## Implementation record, chunks C3 to C5 -- Claude Haiku 5.5 (Implementation, Low) -- 2026-11-20
+
+**Result**: C3, C4 and C5 are built and committed on `arc-c-impl`. Each new test failed for its stated reason before the fix and passes after it. No failure in an existing run is outside the baseline list. Nothing was pushed or merged.
+
+**Commits**
+- `c13e8844`: C3, usage-free records, both `meter.py` copies and the new test file.
+- `8caaffeb`: C4, audit threshold, `run_security_audit.py`, the module page and the new test file.
+- `1c28278a`: C5, the comment in `measurements.py` and two changelog lines.
+- `c9e9e87d`: C5, the lock refreshed by the scoped `--finalize`, alone.
+
+**New tests**
+- `tests/test_meter_usage_free_records.py`: before the fix, 6 failed (the usage-free cases raised `unsupported_record`) and 8 passed. After it, 14 passed.
+- `tests/test_security_audit_threshold.py`: before the fix, 19 failed, 4 passed and 2 skipped. After it, 23 passed and 2 skipped. The skips are the symlink case (this host cannot make links) and the real-Bandit case (Bandit is not installed).
+
+**Existing runs**
+- `tests/integration/test_meter.py`: 37 failed, 311 passed, 203 skipped. All 37 failure ids are on the BASE list. The BASE file covered eight files, so only the ids were compared.
+- `tests/test_security_stack.py -k "audit or bandit"`: 21 passed, 2 skipped, 0 failed.
+
+**Checks**
+- `cmp` on the two `meter.py` copies: identical.
+- `measurements.py` ast dump, before and after: equal.
+- `verify_integrity` before the finalize: four modified files, exactly the four named. After it: OK for 70 recorded files.
+- `git diff --check` clean. `claim_check`, `link_check` and `check_cairn` pass on each changed `.md` file.
+
+**Where the code differs from the plan**
+1. The module page does not cite the adopter's policy file as a path. `claim_check` flags it as unresolved, because it is an adopter file not on the exempt list. The page names the file and folder in words.
+2. A bad policy file makes the Bandit pass DEGRADED and the audit exits 20. The audit still runs its other passes. The page says that, not "stops the audit".
+3. Repeated-key detection uses a private `ValueError` subclass. The plan leaves that mechanism open.
+4. The non-default path repeats the two-line Bandit-installed check. `_run_bandit_default` is unchanged.
+5. The module-page subsection runs about 200 words, not 165.
+6. The changelog Fixed line covers C1 and C3, as the brief says. C2 (the execute bit) is not mentioned.
+
+**Not run**: the real-log check (the coordinator's), the Linux subsystem, any whole selection, pip-audit, and the real-Bandit case.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Coordinator record, chunks C1 and C2, and verification of all five -- Claude Fable 5.2 (Strategy) -- 2026-11-20
+
+All five chunks are built. One developmental criterion is not met and waits on the Maintainer (C3, below). No test fails only after the change, on either host, once unstable tests are rerun alone.
+
+**C1 and C2.** Their implementer (Claude Haiku 5.5) stopped before writing a record; this is from its report and the commits. C1, `703c1655`: the README skip, `encode_display_path` at twelve sites (twelve uses and the definition, by text search), `_gitignore_covers`, the handoff text and the `session.py` comment; twins identical (`cmp`). Of its eight new nodes, five failed before the fix and all pass after. C2 was written and tested by the implementer and committed by Strategy at `c68cc6be`, after checking the diff against Detail D5 and D8; the new node failed before with "looks non-executable" and passes after. Strategy read the handoff refusal in bash and in PowerShell in a scratch clone: exit 1 with Detail's text in both, both command forms it gives run, and with the variable set the gate opens.
+
+**C3, criterion not met.** The count-only check on this machine's log (17 record types; structure and counts only; the script is deleted) still reports `unsupported_record` after C3. The 12 usage-free types that are not on the reader's list (6,761 records) no longer raise it. One type does: 60 of 522 `attachment` records carry a `usage` value, a finished sub-agent's total tokens, tool count and duration. Detail D6 says to stop and report this and not to narrow the rule. It is reported to the Maintainer. Home: `dev/PLANNING.md` on `0.9-dev`, "Waiting on you" and section 1, "The rest of #96".
+
+**Tests, Windows Server host**, each group before (`ecc1a913`) and after, compared by id and message. C1's guarding files: the same 67 failures, 8 more passes. C2's group: 162 failed before, 161 after; 4 ids failed only after and 5 only before, in two test files this host runs unstably, and all 4 pass alone at the tip and at the start. C3: 105 before, 104 after, none new. C4: 5 and 4, none new. C5: 129 and 128, none new.
+
+**Tests, Linux subsystem (Python 3.14.4, a development check).** C1's files: 327 passed before and 334 after, no failure. C2's group: 1 failed and 2,063 passed before. The first run after the change tested an uncommitted copy of the tree, and ten gate-manifest tests that compare the tree with Git failed there; all ten pass on Windows in the committed tree. The Linux groups for C2 to C5 are being rerun at exact commits, and the response records them.
+
+Also fixed in this commit and the one before it: the plan's and Detail's `Proposed paths` lines, now that the files exist, and the changelog's Fixed line, which left out C2 (`CHANGELOG.md`).
+
+Not run: the real-Bandit case (Bandit is on neither host); the 42-file selection for C1; Python 3.13 and the canonical runtime. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+
+**Elapsed**: 2 hours 35 minutes from the first implementer's start (18:58) to this record, by the host clock. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`, usual reviewer) -- 2026-11-20
+
+```
+Reviewed commit: aefe4246783a5a41ac7fd495679cd627c65705fb
+Range: ecc1a913..aefe4246 on arc-c-impl
+```
+
+**Obligation**: Internal code review (heavy tier; a Security Review follows)
+**Findings**: raised (none blocking)
+**Verdict**: ACCEPT
+
+The change does what it says. Session start, the hook, the meter and the lock all match Detail. One line in the audit threshold path prints Bandit's output a second time.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Twelve sites use `encode_display_path` (counted, `dev/tools/session.py`); Detail's unchanged lines are unchanged; the two session copies and the two tool pairs are byte-identical (`cmp`); `verify_integrity --target .` reports OK for 70 files; the lock commit holds four hash lines.
+2. **Best alternative.** None simpler. The JSON route keeps below-threshold findings visible (`run_security_audit.py:951`).
+3. **What would show it wrong.** I tried 11 hand-written meter records (nested lists, a non-dict `usage`, a 100,000-deep record, a wide record) and 19 policy files (missing, folder, oversize, repeated key, list, null, NaN, control characters in a key). Every result matched Detail; finding 1 is the only departure from the intended design.
+
+**Findings**
+
+1. Non-blocking, for the Security Review to weigh. `run_bandit_pass` calls `print(run.stdout)` (line 1001). `_run_tool` has already printed that output through `escape_controls` (line 790), so the JSON appears twice and the second copy is raw. I could not make it unsafe: valid JSON cannot hold a raw control character, and `json.dumps` escapes DEL (measured). It rests on Bandit emitting JSON that way, and Bandit is not installed here. Delete the line; the summary's "printed above" is already true.
+2. Non-blocking. `load_bandit_policy` calls `path.lstat()` outside its `try`, so on POSIX a `NotADirectoryError` would escape. Unreachable in practice: the lockfile load needs `dev/.cairn` first. Move the call inside the `try`, with `except FileNotFoundError: return default` nested.
+3. Non-blocking. The changelog says the meter no longer marks "usage-free" records. Say "Claude records that carry no `usage` field", since attachments with one are still flagged.
+4. Non-blocking. `test_session_failsafe.py::test_interpreter_resolved_from_local_env_and_reported` (frozen) can no longer pass on Windows. I ran it: it now fails on the `/` path. It needs a home (the Maintainer's signing, or the joined run's list).
+5. Non-blocking. Records that carry usage under another key (`usageMetadata`) are now skipped silently. The plan accepted this.
+
+**The criterion not met.** The code is right and the criterion's expectation is stale. The plan-time count looked at two places; the Security Review then widened the walk to any dict, and the 60 `attachment` records carry `usage` deeper. Flagging them fails closed and follows D6 and the S3 fixture. The instruction (stop, report, do not narrow) was followed. It is the Maintainer's call, as the roadmap says.
+
+**Implementers' choices.** All six are sound: the repeated-key subclass, the module page naming the file in words, the DEGRADED wording, the repeated installed-check and the longer page. None needs the author.
+
+**Tests.** None removed. The new ones go through public entry points and each fails under its fault (C2's node needs Windows). The pinned threshold lines are wording pins, but plan S2 asks for them. **Does any rule weaken or disappear?** No.
+
+**Bounding**: ACCEPTED, after challenging each chunk's mapped test and the C4 parse path. One omission stays open and has a home: no host has run real Bandit (it is on neither), so the JSON parse is tested only against hand-written output. The joined run owns it.
+
+**Not covered.** The Linux reruns, any full selection, the gate manifest, macOS, and a real Bandit run. This pass runs over the 300-word target.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+No blocking finding, so no replacement block is owed. The non-blocking edits are the ones named in findings 1 to 3.
+
+## Code review -- Claude Opus 5.5 (`claude-opus-5-5`, Security Review) -- 2026-11-20
+
+```
+Reviewed commit: d30179a205f6b7d40de178c624a172ed02b7e7f0
+Range: ecc1a913..aefe4246 on arc-c-impl (the code; d30179a2 adds only the usual review)
+```
+
+**Obligation**: Internal Security Review (heavy tier, code stage)
+**Findings**: raised (none blocking)
+**Verdict**: ACCEPT
+
+The change adds one adopter-set lowering knob and narrows one completeness flag, and keeps every default as strict as before. As built, no path I tried passes the audit or counts usage that the old code refused.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Every policy refusal raises `AuditDegraded`, which `main` turns into `bandit:degraded`, exit 20 (`run_security_audit.py:2017`). The threshold prints first on stdout and in the summary suffix (`:963`, `:1004`).
+2. **Best alternative.** None safer. Bandit's own `-l`/`-i` flags would hide the findings below the threshold.
+3. **What would show it wrong.** I wrote 22 policy files by hand (BOM, NaN, `"HIGH"`, `"high "`, null, a list, 4,000 `[`, nested repeats, a key holding ESC and U+202E), 12 Bandit outputs (lower-case, missing or null levels, trailing text, 100,000 `[`), 10 meter records plus a record nested 200,000 deep and an 8 MB-class wide one, 17 `.gitignore` texts and 4 paths. Every result was a refusal, a failure or `DEGRADED`, or matched Detail. The 200,000-deep record gives `invalid_record` at parse time. The walk took 0.5 s on 3 MB, the same order as the parse.
+
+**Findings**
+
+1. Non-blocking. I agree with usual finding 1. Bandit's JSON escapes all non-ASCII text, so the raw second copy is safe only because Bandit formats it that way. That copy breaks `_run_tool`'s fourth promise (`:708`). Delete `print(run.stdout)`. The file already takes a HOLD here.
+2. Non-blocking. I agree with usual finding 2. The code does not keep the backstop wording of the accepted S1. On POSIX this is unreachable, because the lockfile read needs `dev/.cairn` first. My code governs: block X1.
+3. Non-blocking. The module page says that a status with no suffix "means the default". A DEGRADED status from a threshold file has no suffix either; it fails, so nothing is let through. Words: block X1.
+4. Non-blocking. I agree with usual findings 3 to 5. Records that carry usage under another key, such as `usageMetadata`, are now skipped silently. No number moves today, because Claude stays UNKNOWN. The counting proposal's Security Review must re-weigh this signal.
+5. Non-blocking, already accepted at plan stage. `_gitignore_covers` strips leading spaces, so ` .claude/` counts as cover. Git keeps leading spaces, so Git does not treat that line as cover. A nested `.claude/.gitignore` holding `!skills/` beats either line, so that file was never a protection. No write path is new.
+
+**Checked without findings.** `encode_display_path` still escapes ESC and bidi characters, and on Windows no name can hold a backslash, so a `\` in the output still starts an escape. The Windows hook skip changes a refusal label only: `hooks.py:444` refuses everything except `absent` and `sentinel`. The `continue` in the meter is unchanged, so no new record is counted. Twins match (`cmp`), and `verify_integrity` reports OK for 70 files. S1 to S5 hold, with findings 2 and 3 as their only gaps.
+
+**The criterion not met.** I agree with the usual review: the code is right and the expectation is stale. The stop-and-report instruction was followed. Do not exempt `attachment` by type name, because that reopens the plan-stage S3 gap. Any reading of those sub-agent totals belongs in the counting proposal.
+
+**Implementers' choices.** All six are sound. The repeated-key subclass also refuses a repeat inside a nested object (measured).
+
+**Tests.** No caller-visible fault lost its test. The threshold-line pins are the S2 control. **Does any rule weaken or disappear?** No. The page states the new knob and that it lowers what fails.
+
+**Bounding**: ACCEPTED. The only open item has a home: no host ran real Bandit, and the joined run owns that check.
+
+**Not covered.** Real Bandit; POSIX branches, a FIFO swapped in for the policy file, and macOS; the link case (not made here); gate-manifest failures; a `.bandit` file inside `python_package`; and Bandit's `errors` list, ignored on both paths as before.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+### Block X1 -- exact code and words for findings 2 and 3
+
+Finding 2, in `load_bandit_policy`, replace
+
+```
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        return default
+    try:
+```
+
+with
+
+```
+    try:
+        try:
+            path.lstat()
+        except FileNotFoundError:
+            return default
+```
+
+Finding 3, in `python-security.md`, replace "A Bandit status in the summary with no `[threshold: ...]` suffix means the default: any finding fails." with "A clean or findings Bandit status with no `[threshold: ...]` suffix means the default: any finding fails. A degraded status never carries the suffix and never passes."
+
+## Code-review response -- Claude Fable 5.2 (Strategy, coordinating) -- 2026-11-20
+
+Both code reviews accepted the change with no blocking finding. Every small finding is fixed or has a home inside this arc; none is deferred beyond it. One gap that neither review saw was found afterwards and is fixed too.
+
+- **Usual 1, Security 1, a second and raw print of Bandit's output: fixed** at `70e957e1`. The line is deleted; the tool runner already prints that output once, with control characters escaped.
+- **Usual 2, Security 2, an error could escape the threshold loader: fixed** at `70e957e1`, with the Security Review's code.
+- **Security 3, the module page on a status with no suffix: fixed** at `70e957e1`, with its words.
+- **Usual 3, the changelog said "usage-free": fixed** at `70e957e1`.
+- **Usual 4, one frozen session test cannot pass on Windows: given a home.** This plan leaves the frozen file alone, as reviewed. It is finding (l) under "Windows" in section 1 of `dev/PLANNING.md`, for plan D2, which repairs this arc's Windows test failures.
+- **Usual 5, Security 4, usage kept under another key name is skipped without a flag: given a home**, under "The rest of #96" in the same section, for the separate proposal and its Security Review.
+- **Security 5, leading spaces in an ignore line: no change.** Accepted at plan stage; the review found no new write path.
+
+**Found after the reviews: two new test files had no tier.** `tests/test_intent_precommit_classify.py` and `tests/test_meter_usage_free_records.py` were not listed in `tests/test_tiers.json`, so `tests/contract/test_test_tiers.py::test_every_cairn_test_file_is_in_exactly_one_tier` failed after the change. This plan's test groups did not run it: the selector lists the tests that name a changed file, and no test names a file that is new. The coordinator found it while checking plan B, which had the same gap. Fixed at `046e0219`: both join the integration tier, and `tests/tier_inventory.py check` reports ok. Home for the cause: `dev/PLANNING.md`, the tightening's inputs.
+
+**The criterion that is not met.** Both reviews found the code right and C3's expectation out of date. It stays an unmet accepted check, so it is the Maintainer's: "Waiting on you" in `dev/PLANNING.md`. This plan is not archived until he answers.
+
+**Checked after the fixes, Windows Server machine.** The six test files that name the changed files, at `70e957e1`: 8 failed, 412 passed, against 4 failed before the fixes. The four more are all in `tests/test_security_stack.py`, which this host runs unstably when busy; all four pass alone, twice. The two test files that name the tier list, at `046e0219`: the same 11 failures as at the start. `install/verify_integrity.py --target .` reports OK for 70 files.
+
+**Checked in the Linux subsystem (Python 3.14.4, a development check), at exact commits.** Each group at the start (`ecc1a913`) and at `70e957e1`, compared by test id and message.
+
+- C1's files: 327 passed before, 334 after, none failed.
+- C2's group: the same 1 failure before and after; 2,063 passed before, 2,064 after.
+- C3's group: none failed before, 1 after. C4's group: the same 1 failure. C5's group: 1 failed before, 3 after.
+- The three tests that failed only after the change (one in C3's group, two in C5's) pass alone at `046e0219` and at the start. They failed while two Linux test streams ran at once, which was the coordinator's doing; they are in the two files that time their own subprocesses.
+- `tests/contract/test_test_tiers.py` at `046e0219`: 40 passed.
+
+**Not run.** Real Bandit (on neither host), the loader's POSIX branches under a hostile file, and the canonical runtime. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+
+Status: `ready-to-archive`. The archive waits on the Maintainer's answer, and the merge into `0.9-dev` follows plan B's.
+
+**Elapsed**: 1 hour 43 minutes from the first code review's commit (21:38) to this response, by commit times; most of it was test runs. **Tokens**: the two code reviews 157,867 and 144,982; the coordinating session's own use is not visible to it.

@@ -53,7 +53,7 @@ def _load_engine():
             f"intent engine package not found at {engine_dir} — refusing to run "
             f"(the _intent/ package must be installed beside intent.py)"
         )
-    # Fail-closed containment (parity with bootstrap/scaffold.py's launcher): the
+    # Fail-closed containment (parity with install/scaffold.py's launcher): the
     # engine must be a REAL directory inside this file's own directory — refuse a
     # symlinked or out-of-tree _intent/, so the loader never executes code from
     # outside the installed tool dir and never trusts sys.path.
