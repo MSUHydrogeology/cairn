@@ -215,3 +215,28 @@ elif role in {"cairn", "config", *private_roles} and owner_bytes != user_sid:
 **Differences from the plan.** None.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-21
+
+Reviewed commit: ea0a2a2f0144235fa44b32a08d63f419687284f6
+Range: f7c4498af5073e604907e1e21a1e0cf865f759c1 (merge-base with `0.9-dev`) to ea0a2a2f0144235fa44b32a08d63f419687284f6
+
+**Obligation**: the usual code review
+**Tier**: Internal
+**Findings**: none blocking
+
+**Foundations**:
+
+1. **Does it do what it claims?** Yes. The condition in `check_acl` matches the plan's Scope character for character. Role `profile` now accepts the user, SYSTEM or Administrators as owner. Roles `cairn`, `config` and the five private roles still accept only the user. Role `ancestor` is untouched and still accepts the user, SYSTEM, Administrators and TrustedInstaller -- `git diff` of `dev/tools/meter.py`, five lines, `check_acl`.
+2. **Best alternative.** None simpler; the Maintainer chose "Fix the meter" -- the plan's Source proposal.
+3. **What would show it wrong.** The test is the Security Review's block word for word. Too strict: the user, SYSTEM and Administrators cases would fail. Too loose: the other-account and TrustedInstaller cases would fail (`ancestor=True` would admit TrustedInstaller). I ran it once: `1 passed, 554 deselected in 2.92s`. That it fails without the change is the record's claim; I did not re-run it, but the old line raises for a SYSTEM owner on the first case -- `tests/integration/test_meter.py` last test.
+
+**Findings**
+
+1. Non-blocking: the README sentence was added inside an existing long line, so the paragraph is not rewrapped. It is true of what shipped (roles `cairn`, `config`) -- `dev/measurement/README.md`.
+
+Also checked: the copies match (`cmp` printed nothing); the lock commit holds one file, the lock; `verify_integrity.py --target .` reports OK; the changelog line is true. No rule weakens beyond the plan; no frozen file changed. The gate-manifest HOLD and the real machine are left to Strategy, as the record says.
+
+**Verdict**: ACCEPT
+
+Not covered: the Security Review questions, the rest of `test_meter.py`, the real machine. Elapsed time: unknown. Tokens: unknown.
