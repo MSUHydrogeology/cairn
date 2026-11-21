@@ -800,9 +800,12 @@ def _native_meter_setup(root, native_git_exe, *, git_mode="ordinary",
     runtime_meter = runtime_tools / "meter.py"
     runtime_git = runtime_tools / "git_read.py"
     shutil.copyfile(METER, runtime_meter)
+    runtime_pulse = runtime_tools / "pulse.py"
     shutil.copyfile(ROOT / "dev" / "tools" / "git_read.py", runtime_git)
+    shutil.copyfile(ROOT / "dev" / "tools" / "pulse.py", runtime_pulse)
     for original, copied in ((METER, runtime_meter),
-                             (ROOT / "dev" / "tools" / "git_read.py", runtime_git)):
+                             (ROOT / "dev" / "tools" / "git_read.py", runtime_git),
+                             (ROOT / "dev" / "tools" / "pulse.py", runtime_pulse)):
         assert hashlib.sha256(original.read_bytes()).digest() == hashlib.sha256(
             copied.read_bytes()).digest()
     if meter_overrides:
@@ -1558,6 +1561,21 @@ def test_windows_native_claude_resume_and_identity_on_a_spaced_root(
     assert "resume_failed_file_replaced" in replaced_ledger["coverage"]["reasons"]
     assert replaced["generation"] == second["generation"] + 1
     assert replaced["offset"] > prior_offset
+
+    nested = setup["source"] / "session-alpha" / "subagents"
+    nested.mkdir(parents=True)
+    for index in range(12):
+        (nested / (f"{index:02d}-" + "n" * 40 + ".meta.json")).write_bytes(b"{}")
+    assert os.stat(nested).st_size > 0
+    (nested / "agent-nested.jsonl").write_bytes(assistant("native-nested-first"))
+    os.link(source, native_windows_root / "task-output-second-name")
+    with source.open("ab") as handle:
+        handle.write(assistant("native-crlf-linked"))
+    before = {event["event_key"] for event in json.loads(ledger_path.read_bytes())["events"]}
+    receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
+    _native_meter_receipt(receipt, "ok", "none")
+    after = [event["event_key"] for event in json.loads(ledger_path.read_bytes())["events"]]
+    assert len(after) == len(set(after)) == len(before) + 2
 
 
 @WINDOWS_ONLY
