@@ -1,7 +1,7 @@
 # Plan: Defect arc C, first session and tools
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -382,3 +382,35 @@ with
 ```
 
 Finding 3, in `python-security.md`, replace "A Bandit status in the summary with no `[threshold: ...]` suffix means the default: any finding fails." with "A clean or findings Bandit status with no `[threshold: ...]` suffix means the default: any finding fails. A degraded status never carries the suffix and never passes."
+
+## Code-review response -- Claude Fable 5.2 (Strategy, coordinating) -- 2026-11-20
+
+Both code reviews accepted the change with no blocking finding. Every small finding is fixed or has a home inside this arc; none is deferred beyond it. One gap that neither review saw was found afterwards and is fixed too.
+
+- **Usual 1, Security 1, a second and raw print of Bandit's output: fixed** at `70e957e1`. The line is deleted; the tool runner already prints that output once, with control characters escaped.
+- **Usual 2, Security 2, an error could escape the threshold loader: fixed** at `70e957e1`, with the Security Review's code.
+- **Security 3, the module page on a status with no suffix: fixed** at `70e957e1`, with its words.
+- **Usual 3, the changelog said "usage-free": fixed** at `70e957e1`.
+- **Usual 4, one frozen session test cannot pass on Windows: given a home.** This plan leaves the frozen file alone, as reviewed. It is finding (l) under "Windows" in section 1 of `dev/PLANNING.md`, for plan D2, which repairs this arc's Windows test failures.
+- **Usual 5, Security 4, usage kept under another key name is skipped without a flag: given a home**, under "The rest of #96" in the same section, for the separate proposal and its Security Review.
+- **Security 5, leading spaces in an ignore line: no change.** Accepted at plan stage; the review found no new write path.
+
+**Found after the reviews: two new test files had no tier.** `tests/test_intent_precommit_classify.py` and `tests/test_meter_usage_free_records.py` were not listed in `tests/test_tiers.json`, so `tests/contract/test_test_tiers.py::test_every_cairn_test_file_is_in_exactly_one_tier` failed after the change. This plan's test groups did not run it: the selector lists the tests that name a changed file, and no test names a file that is new. The coordinator found it while checking plan B, which had the same gap. Fixed at `046e0219`: both join the integration tier, and `tests/tier_inventory.py check` reports ok. Home for the cause: `dev/PLANNING.md`, the tightening's inputs.
+
+**The criterion that is not met.** Both reviews found the code right and C3's expectation out of date. It stays an unmet accepted check, so it is the Maintainer's: "Waiting on you" in `dev/PLANNING.md`. This plan is not archived until he answers.
+
+**Checked after the fixes, Windows Server machine.** The six test files that name the changed files, at `70e957e1`: 8 failed, 412 passed, against 4 failed before the fixes. The four more are all in `tests/test_security_stack.py`, which this host runs unstably when busy; all four pass alone, twice. The two test files that name the tier list, at `046e0219`: the same 11 failures as at the start. `install/verify_integrity.py --target .` reports OK for 70 files.
+
+**Checked in the Linux subsystem (Python 3.14.4, a development check), at exact commits.** Each group at the start (`ecc1a913`) and at `70e957e1`, compared by test id and message.
+
+- C1's files: 327 passed before, 334 after, none failed.
+- C2's group: the same 1 failure before and after; 2,063 passed before, 2,064 after.
+- C3's group: none failed before, 1 after. C4's group: the same 1 failure. C5's group: 1 failed before, 3 after.
+- The three tests that failed only after the change (one in C3's group, two in C5's) pass alone at `046e0219` and at the start. They failed while two Linux test streams ran at once, which was the coordinator's doing; they are in the two files that time their own subprocesses.
+- `tests/contract/test_test_tiers.py` at `046e0219`: 40 passed.
+
+**Not run.** Real Bandit (on neither host), the loader's POSIX branches under a hostile file, and the canonical runtime. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+
+Status: `ready-to-archive`. The archive waits on the Maintainer's answer, and the merge into `0.9-dev` follows plan B's.
+
+**Elapsed**: 1 hour 43 minutes from the first code review's commit (21:38) to this response, by commit times; most of it was test runs. **Tokens**: the two code reviews 157,867 and 144,982; the coordinating session's own use is not visible to it.
