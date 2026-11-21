@@ -1,7 +1,7 @@
 # Count Claude usage toward a project
 
 **Author**: Claude (Strategy), drafted by Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it changes what the meter accepts as proof that usage belongs to a project
 **Plan review**: required(Internal + Internal Security Review)
@@ -227,5 +227,28 @@ One consequence the folded text makes visible, my reading and not measured: the 
 Also changed by me before review: one measurement, that repeats of a message always carried equal usage.
 
 Not checked by anyone: Antigravity's files; a resumed session's log; a run of the changed meter on a real log, which waits for the Maintainer's leave.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Decision -- Maintainer (scribed by Claude Fable 5.2) -- 2026-11-21
+
+**Tier**: heavy
+
+**ACCEPTED.** Asked "Usage-counting proposal (heavy tier): let the meter count Claude usage toward a project, sub-agents included. My picks: Antigravity gets a count-only look first, on your Mac with the re-anchor; work folders inside the project count; no per-run table for now; build it in v0.9 so issue #96 closes; rebuild the meter's ledger from the logs still on disk. Do you accept it?", the Maintainer chose, from the answers offered (2026-11-21):
+
+> "Accept, your picks (Recommended)"
+
+Just before, about the Antigravity part, he had written (chat, 2026-11-21):
+
+> "I don't have Antigravity on this machine--it's on my Mac. Can we implement this there later? Along with that reanchor?"
+
+What that settles:
+
+- **Choice 1: (a).** One count-only look at Antigravity's saved files first. It happens on his Mac, in the session that runs the re-anchor, and nothing is built for Antigravity before it.
+- **Choice 2: (a).** A record from a work folder inside the project counts.
+- **Choice 3: (a).** No table for each agent run for now.
+- **Choice 4: (a).** Built in v0.9.
+- **Choice 5: (a).** The meter's ledger is rebuilt from the logs still on disk.
+- **Tier.** Heavy, as proposed.
 
 **Elapsed**: unknown. **Tokens**: unknown.
