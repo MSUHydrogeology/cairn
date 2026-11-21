@@ -2,7 +2,7 @@
 # Plan: Defect arc E, the documentation plan moves
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -448,5 +448,27 @@ The release name: the printed line, a comment in the installer, the new test's d
 **Cairn's own tree.** `verify_integrity` still reports OK (70 files); no lock refresh was needed. `claim_check`, `link_check` and `check_cairn` pass on `install/UPGRADE.md` and `CHANGELOG.md`; `git diff --check` is clean.
 
 **Not rerun, with its home.** The 39-file group for `install/_scaffold/upgrade.py` and the wider C1, C2 and C4 selections (home: the joined run and the Mac suite before the cut); the `ast_step1` listing (the installer's symbols changed only in a string constant and a comment); the Python 3.13 run on Linux and the macOS run.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation closeout -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+All four criteria held once the code reviews' fixes were in.
+
+- **C1.** A new install writes `dev/DOCUMENTATION_PLAN.md` and nothing under `docs/`, and the shipped texts name the new place.
+- **C2.** `upgrade --documentation-plan-moved` records a finished move by changing one field of one lock record. Every refusal writes nothing.
+- **C3.** Cairn's own file was moved with `git mv`, and its live files name the new place.
+- **C4.** The upgrade notes and the printed lines give the upgrading agent five numbered steps. The reviewed plan had three; the Maintainer's later words made it five, with the links corrected by the agent and no code for them. Cairn's own lock was refreshed alone. The instructions check passed twice with a fresh low-tier agent, the second time on the final wording.
+
+Found on the way and fixed: an allow-list entry the first build agent had dropped; an ordinary test that wrote into `docs/` without making it; four places in the protected hostile-data test, now pointed into `dev/scratch/` on the Maintainer's word; the step that bounds what the agent may edit, with the Security Review's text; one changelog clause; and the release's name, 0.8.1.
+
+The branch merged into `0.9-dev` at `aa44d9b6` with no conflict. On the merged tree `install/verify_integrity.py --target .` reports OK for 70 files and the tier check passes for 141 test files.
+
+Tests. At the build, four groups ran before and after on two hosts: 5.4 hours of machine time. For the response's fixes, two test files ran once on each host: 176 passed in the Linux subsystem, where the six cases that had failed now pass; 137 passed and 39 skipped on Windows, which cannot make links.
+
+Not run: the 39-file group at the final commit, the 68-file selection for the first chunk beyond its ten named tests, a run under Python 3.13 on Linux, and anything on the Mac. Home: the certification, by the Maintainer's standing direction on testing of 2026-11-21 (`dev/PLANNING.md`, "Where Cairn stands"): "Just do all of the changes we need. Then run the fewest tests possible to make sure it was right. Then we re-anchor, certify on all three platforms, and cut."
+Not taken, with the reviewer's leave or a reason: `test_the_report_helper_never_raises` still calls a private helper, because `--plan` alone does not isolate that the report never raises; a second lock record that differs only in letter case is left as the Security Review left it.
+Remaining: the Maintainer's baseline step for the installer symbols this plan changed, and two protected tests at the signing. Home: `dev/PLANNING.md`, section 1, "What the one signing will show".
+Remaining: removing `upgrade --documentation-plan-moved` and its tests in the release that stops supporting upgrades from 0.8 installs; the Maintainer names that release. Home: `dev/PLANNING.md`, section 1, the entry on the documentation plan.
 
 **Elapsed**: unknown. **Tokens**: unknown.
