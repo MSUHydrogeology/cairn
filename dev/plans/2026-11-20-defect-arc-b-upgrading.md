@@ -1,7 +1,7 @@
 # Plan: Defect arc B, upgrading
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: revising-code
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -347,3 +347,28 @@ Range `ecc1a913..2e8cf4f9` on `arc-b-impl`, chunks C1 and C2 only; code unchange
 **Bounding**: ACCEPTED for C1 and C2 once finding 1 closes.
 
 **Not covered.** No link or file-mode case (Linux not run), Git before 2.31, `--migration-receipt` with `--heal-layout`. The plan has no fenced chunk, so there is no Waiting line to check. Over the word target, because each Security question gets its evidence. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Code-review response, review point after C2 -- Claude Fable 5.2 (Strategy, acting as implementer) -- 2026-11-20
+
+Strategy coordinates this plan and answers; the implementing session for C1 and C2 (Claude Haiku 5.5) had ended. One finding was blocking. It is closed with the reviewer's own clause and test.
+
+Usual review:
+
+- **1, blocking: closed** (`074b74fd`). The "has Windows line endings" text now needs a CRLF pair in the helper's bytes. The reviewer's test `test_exact_copy_is_not_called_line_endings` is added unchanged. The Security Review reproduced the fault and adopted the same fix.
+- **2, no test reads the real helper path: fixed** (`074b74fd`). One node checks that the path the refusal reads holds the pinned helper. It tests a private function, and is kept because no public entry can show a drifted path; the final code review may strike it.
+- **3, untested cases: fixed** (`074b74fd`, `3bfe64ce`). One parametrized node covers an oversize helper, a missing one and a link to a CRLF copy (skipped where links cannot be made). One node drives the `--to` use and expects exit 1 with the first text.
+- **4, the root `.gitattributes` on Cairn's own tree: no change in this plan.** Measured: `upgrade --plan` on Cairn's own tree lists three blocked core additions and one blocked module file at the starting commit, and four and one at this branch's tip. Cairn's own lock advances file by file with `--finalize`, so nothing stops. Whether Cairn adopts those files into its own lock is a separate question. Home: `dev/PLANNING.md` on `0.9-dev`, section 1, "Cairn's own install lists blocked additions".
+
+Security Review:
+
+- **1: the same finding, closed as above.**
+- **2, the plain `open()` in `_git_read_plain_bytes`: declined.** The exposure needs someone who can already write the Cairn checkout, and so the installer itself, and the read only chooses between two fixed texts. The review calls the fix optional.
+- **3, `--force`, or a project with no Git above it, skips the unsaved-edit check: no change.** The other commands behave the same, and a check that cannot tell still refuses.
+
+The implementer's four choices and its added function stand; both reviews found them sound. The four nodes that answer findings 2 and 3 are Strategy's and have had no review; the final code review reads them.
+
+**Tests after the fix.** Windows Server host, the whole of `tests/test_upgrade_layout_migration.py` at `074b74fd`: 12 passed, 2 skipped (links), 1 failed with the same id and message as at the starting commit; the `--to` node passes at `3bfe64ce`. Not run yet after the fix: the Linux subsystem, where the link case can run, and the 17-file and 38-file groups. They run again after C5.
+
+**Disposition**: chunks C3 to C5 may proceed.
+
+**Elapsed**: seven minutes from the Security Review's commit (20:47) to the last fix commit (20:54), by commit times. **Tokens**: unknown.
