@@ -405,3 +405,14 @@ Elapsed time: unknown. Tokens: unknown.
 
 - lines 257, 417 and 525: `target = world.project / "docs" / "profile-copy.yml"` becomes `target = world.project / "dev" / "profile-copy.yml"`.
 - line 338: `target = world.project / "docs" / "linked-agents.md"` becomes `target = world.project / "dev" / "linked-agents.md"`.
+
+### Security Review addendum: the scratch folder for the protected test -- Claude Opus 5.5 -- 2026-11-21
+
+The Maintainer named the place (chat, 2026-11-21): "Should that path actually be dev/scratch/linked_profile.yml or whatever?" These lines replace the lines given for finding 2 above.
+
+**Judgment.** Sound, and better than `dev/`: the target is a file the project holds but does not track, which is what the scratch folder is for. Every install writes that folder (`install/_scaffold/config.py` lines 565-566, core rows), and each of the six cases runs on a real install (the `world` fixture). Nothing before any of the six refusals reads that folder: `install/_scaffold/upgrade.py` never names `scratch`; `_layout_command` reads only the fixed `_LAYOUT_MOVES` names; `--init-lock` refuses the profile link, or the `AGENTS.md` link, before it maps a file; `--plan`, `--stage` and both adoptions refuse the profile link before `_compute_upgrade`. That folder's Git ignore rule does not matter here: the refusals look at the link, not at Git, and the snapshots read the disk. Each case still pins the file refused (`PROFILE_REL` or `AGENTS.md`) and the link remedy, so none can pass for another reason. Not run: this host has no link rights, so the six skip.
+
+**Exact lines**, one change per line, no folder made:
+
+- lines 257, 417 and 525: `target = world.project / "docs" / "profile-copy.yml"` becomes `target = world.project / "dev" / "scratch" / "profile-copy.yml"`.
+- line 338: `target = world.project / "docs" / "linked-agents.md"` becomes `target = world.project / "dev" / "scratch" / "linked-agents.md"`.
