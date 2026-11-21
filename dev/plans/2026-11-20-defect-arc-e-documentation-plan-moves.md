@@ -224,3 +224,35 @@ Security Review:
 Code against brief: none differed. The command reads both places with no `single_link`, since it only reads.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Plan amendment review -- Claude Opus 5.5 -- 2026-11-21
+
+**Prior reviewed commit**: 54a0928a2e210545ddc6f0f15dfbb9cfa5cfe33b
+**Replacement commit**: e190b86acbfe654d6d88b52a27457272dde8d561
+**Affected cells and dependencies**: Build summary, Scope, Acceptance criteria, Scope delta, Verification, Detail D1, Detail D2, Detail D3, Detail D5, Detail D6, C2, C4
+**Obligation**: Internal Security Review
+**Verdict**: REVISE
+
+**Foundations**
+1. **Should this happen as framed?** Yes. Traced through `cmd_upgrade`, the command's only write is the lock, through `_commit_lock_and_caches` with no caches; no lock path reaches a write. -- `install/_scaffold/upgrade.py` lines 2223-2293, 4756-4815.
+2. **Best alternative.** None smaller: `--retire-wrapper` already has this one power. -- `_cmd_retire_wrapper`.
+3. **What would show it wrong.** A second record already at `dev/DOCUMENTATION_PLAN.md` (finding 3), or a project that passes the instructions check without moving (finding 1).
+
+**Checked.** Every helper in D2 reads only fixed paths. `_read_regular_bytes` refuses links, folders and special files, and does not hang on a pipe. The gap between the reads and the lock write cannot write an owner's file; a later swap is caught by the hash. The report line and refusals print fixed text, except M9's guard text (residual named). Both checks still judge the record at every step. All first-round findings are closed or fall away as the response says. S1 to S4 hold; S5 holds after finding 2.
+
+**Findings**
+1. **Blocking.** The instructions check passes on a project that never moved the file: `verify_integrity` passes with the record still at `docs/` (my reasoning from the code, not run). Exact words below.
+2. Non-blocking. M12 says "because it was edited" and sends the owner to `--finalize`, which accepts whatever bytes are there, a planted file included. Words below.
+3. Non-blocking. If another record already names `dev/DOCUMENTATION_PLAN.md`, the command makes a duplicate destination, and the security verification then degrades with no message. Add to D2 step 1: "If any other record's `dst` is `_DOCPLAN_NEW`: print M3, return 1." Add a D5 row.
+4. Non-blocking. The cannot-tell refusal has no D5 row. An `OSError` or `ValueError` from step 2 or the lock write gives a traceback. Catch both with ScaffoldSecurityError as M9, as `_layout_command`'s caller does.
+5. Non-blocking. D5 makes a Git repository "only in the unsaved-edits test", yet both order rows commit. Name them too.
+
+**Not covered.** No test or probe was run. I did not re-read C1, C3, D4, D7, the edited tests or the shipped texts, and I did not trace `_writeset_dirty_collisions` or `_read_layout_state`.
+
+Elapsed time: unknown. Tokens: unknown.
+
+### Exact words
+
+**1. Verification, "The instructions check"**: replace "It must finish the move so that `python install/verify_integrity.py --target <project>` passes." with "It passes only if, at the end, `dev/DOCUMENTATION_PLAN.md` exists, `docs/DOCUMENTATION_PLAN.md` does not, the lock's one documentation-plan record names `dev/DOCUMENTATION_PLAN.md`, `git status --porcelain -- dev/.cairn/cairn-lock.yml` prints nothing, and `python install/verify_integrity.py --target <project>` exits 0; otherwise it fails."
+
+**2. Detail D2, M12**: replace "The file differs from the version the lockfile recorded, because it was edited. Run python install/scaffold.py upgrade --target <repo> --finalize dev/DOCUMENTATION_PLAN.md, then do step 3." with "The file differs from the version the lockfile recorded. If the changes are yours, run python install/scaffold.py upgrade --target <repo> --finalize dev/DOCUMENTATION_PLAN.md, then do step 3; if not, restore the file from a copy you trust."
