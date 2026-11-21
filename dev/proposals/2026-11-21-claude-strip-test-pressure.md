@@ -223,3 +223,37 @@ What this records, plainly:
 - **If he redirects,** every edit is a commit on the development branch and can be taken back.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Read of the whole diff -- Claude Sonnet 5.5 (Reviewer) -- 2026-11-21
+
+```
+Reviewed commit: 38f5ba2b
+```
+
+**Range read**: `git diff 328325bb..HEAD`, 31 files of prose plus the appendix; every removed line read.
+
+**Verdict**: ACCEPT. No blocking finding; two small wording mismatches, below.
+
+**What I checked, by the brief's nine points**
+
+1. **Kept list.** Every honesty sentence, the review rules on declining a blocking finding and sending it to the Maintainer, "unsupported assertion", known-positive controls, the claim check and Security Review sentences are still there. The only removed honesty lines ("a missing smoke is unavailable, not passed") belonged to the goodnight smoke run, which the proposal removes.
+2. **Untouched files.** `git diff --stat` names no `security` file, no `protected-surfaces.md`, no `certifying-runs.md`, no `testing-discipline.md`.
+3. **Pressure left.** I searched the 31 files for: Bounding, WIDER RUN, joined integration, tier_inventory, Not run, smoke, before and after, second host, failing test, widen, mutation, positive/negative control, rerun. What remains is on the kept list or is a permitted case.
+4. **Agreement.** The rule is in full once in each collaboration copy and in `plans.md`, word for word; `AGENTS.md` has the short form. The section headings the pointers name all exist.
+5. **Reads.** No half sentence, empty list item or rewrapped paragraph found. Slot and `{{` counts are unchanged in every file; `git diff --check` is clean.
+6. **Copies.** All pairs identical before are identical now; the changed lines of the collaboration file and both templates match between trees.
+7. **Words.** 1577 of 2000 and 1478 of 1500.
+8. **Tests.** The three files: 49 passed, 0 failed.
+9. **Beyond the proposal.** Nothing weakens beyond sections A to C.
+
+**Non-blocking findings**
+
+- **N1.** The two files that define a defect repair still say "failing-test reproduction", while both session-start copies now say "a test or a direct check".
+- **N2.** `plans.md` and `dual-review.md` still say a new security check "needs a demonstrated failing case"; the collaboration file says one planted bad input, run once. They agree in effect.
+
+**Not covered.** I did not read the appendix row by row, or the pressure that the diff left alone in the 26 files it never touched. I did not search the whole repository for sentences in files outside the diff. Elapsed and tokens: unknown.
+
+### Exact fixes (optional)
+
+- `docs/methodology/lifecycle.md`: "(i) a failing-test reproduction," becomes "(i) a reproduction by a test or a direct check,".
+- `docs/methodology/plans.md`: "(a failing-test" becomes "(a test or direct-check".
