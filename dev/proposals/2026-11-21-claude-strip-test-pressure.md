@@ -1,7 +1,7 @@
 # Take the pressure to test out of Cairn's texts
 
 **Author**: Claude Fable 5.2 (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -17,11 +17,15 @@
 
 **The change.** One short rule on tests replaces them. Each of the 675 is then rewritten to agree with it, or removed. The same edit goes into every copy that ships to projects.
 
-**What does not change.** When the whole suite runs for certification. Who reviews what, the Security Review included. The rule that a protected test is cut only through a Security Review. Checks of a model result against the world. Sentences that tell an agent to run a check tool, such as the claim check or the security verification. The duty to say plainly what was not checked.
+**What does not change.** When the whole suite runs for certification. Who reviews what, the Security Review included. Every sentence of the security modules and of the rule on protected surfaces. Checks of a model result against the world. Sentences that tell an agent to run a check tool, such as the claim check or the security verification. Sentences that keep people honest: a claim of tested, checked or covered is made only when it is true, a failing check is not weakened to make it pass, and what was not checked is said plainly.
+
+**Left for your word.** The module on how a project tests its own science code, in both copies (46 sentences each). Your words were about Cairn's own work, and a reviewer asked that you decide whether that page changes too. It is not edited in this pass.
 
 **What it costs.** A defect that a wider run would have caught is now found at certification, which is later. Fewer tests get written, so a later change can break something no test watches. The texts change in 57 files at once.
 
 **Not in this proposal.** The test runner's own limit of 40 files is in a protected file. Lowering it is the next proposal.
+
+**One thing still gets a run.** A new security check is shown once to refuse one bad input planted for the purpose. A check that silently lets everything through looks exactly like one that works, so words alone cannot show it.
 
 ## Context
 
@@ -29,22 +33,22 @@ Measured on 2026-11-21 by a reader agent, with exact lines: 675 entries in 57 of
 
 ## Proposal
 
-**A. The rule on tests,** stated once in each file that needs it, in these words: "Run the fewest tests that show the change is right, once: the tests written for it, and at most a handful that can see it. Make no run before the change to compare with, no second host unless the code is specific to that host, and no wide run because a large file was touched. A direct check that proves the point replaces the tests. The whole suite runs at certification, before a release is cut. More than this needs the Maintainer's word."
+**A. The rule on tests,** stated once in each file that needs it, in these words: "Run the fewest tests that show the change is right, once: the tests written for it, and at most five test files that can see it. Make no run before the change to compare with, no second host unless the code is specific to that host, and no wide run because a large file was touched. A direct check that proves the point replaces the tests. Something that would fail if the change were wrong must be read, run or checked once. The whole suite runs at certification, before a release is cut. More than this needs the Maintainer's word." Where another text differs, this rule governs. A run that a plan names for a security requirement still stands.
 
 **B. What each kind of sentence becomes.**
 1. *Asks for a run, picks tests by file, or asks for before and after or two hosts:* replaced by rule A where the file states its rule on tests; removed elsewhere.
 2. *Asks for a new test:* a test is added only for a behaviour that no existing test covers, and then one. A fix needs none if an existing test would have caught the fault.
-3. *A reviewer asks:* a review says what it read and what it checked directly. It does not ask for more runs, more tests, a control or a record of them. Where a changed behaviour has no test at all, it may name one. It names tests the change does not need. A blocking finding is closed by exact words or code; a failing test is given only when words cannot show the fault, and it is run once after the fix and deleted.
+3. *A reviewer asks:* a review says what it read and what it checked directly. It does not ask for more runs, more tests, a control or a record of them. Where a changed behaviour has no test at all, it may name one. It names tests the change does not need. A blocking finding is closed by exact words or code; a failing test is given only when words cannot show the fault. The reviewer shows it failing; the implementer runs it once, unchanged, after the fix, and a changed test counts as a decline. This does not bind a Security Review, which may ask for one run or one planted case on the point it raises.
 4. *A run as the only evidence:* evidence is what was read, reasoned or checked directly. A run is one kind and is not required.
-5. *A control:* a new security check says in writing how it could fail. A run that makes it fail is made only when a Security Review asks for it. Existing controls stay.
+5. *A control:* existing controls and the tests that hold them stay. A new security check, or a change to what one accepts, is shown once to refuse one planted bad input, with the command and result recorded; the planted case need not be kept as a test.
 6. *A list of what was not run:* one line says what was not checked. Tests that were not run need no list and no home; they wait for certification.
-7. *Other:* decided one by one, each recorded.
+7. *Other:* decided one by one. Every row's outcome, of every kind, is recorded in this proposal's appendix: kept under C, replaced by rule A, rewritten, or removed.
 
-**C. Kept as they are:** the items under "What does not change" above.
+**C. Kept as they are, whatever their kind.** Section C wins over section B. Kept: the items under "What does not change" above; every sentence of the security modules (the files with `security` in their names under `dev/modules/` and `templates/modules/`) and of the protected-surfaces rule; a sentence that names a test as a guard; a sentence that says a claim of tested, checked or covered may be made only when it is true, or that an unsupported assertion does not clear a review; a sentence that keeps existing refusals, checks or negative controls, or says a failing check may not be weakened; a sentence that says a pass by finding nothing needs a known-positive case; and the review rules on declining a blocking finding and sending it to the Maintainer (`dev/agent_collaboration.md`, "Review rules", and its shipped twin), changed only as disposition 3 says.
 
-**D. Where.** Every file the inventory names: `AGENTS.md`, `RULES.md`, the files under `dev/rules/`, the collaboration file, the plan and proposal templates, the testing module and the other modules, the session skills, the published pages under `docs/methodology/`, and each shipped copy under `templates/`. Where two copies are identical today they stay identical.
+**D. Where.** Every file the inventory names: `AGENTS.md`, `RULES.md`, the files under `dev/rules/`, the collaboration file, the plan and proposal templates, the modules other than the security modules and the testing module, the session skills, the published pages under `docs/methodology/`, and each shipped copy under `templates/`. Where two copies are identical today they stay identical. The testing module is left as it is in both trees until the Maintainer says whether it changes (Scope delta).
 
-**E. How.** Agents make the edits by exact replacement, never rewrapping, working from the inventory's rows, and record for each row what it became. Cairn's own lock is refreshed by the installer afterwards, alone in its commit. There is no plan.
+**E. How.** Agents make the edits by exact replacement, never rewrapping, working from the inventory's rows, and record for each row what it became. A fresh reviewer then reads the whole diff against section C before it merges, and a Security reviewer reads the changed review rules. Cairn's own lock is refreshed by the installer afterwards, alone in its commit. There is no plan.
 
 ## Rationale
 
@@ -66,7 +70,7 @@ It worked when the same reader search, run again, finds in the edited files only
 
 ### Tests required
 
-None is added. The three test files that compare copies are run once: `tests/contract/test_verification_boundaries.py`, `tests/contract/test_writing_rules_ship.py` and `tests/test_review_stance_in_shipped_files.py`.
+None is added. The three test files that compare copies are run once; they show that each pair of copies still agrees, not that the words are right, which is the diff reader's job: `tests/contract/test_verification_boundaries.py`, `tests/contract/test_writing_rules_ship.py` and `tests/test_review_stance_in_shipped_files.py`.
 
 ### Examples / smoke checks
 
@@ -74,10 +78,10 @@ None is added. The three test files that compare copies are run once: `tests/con
 
 #### Security preflight
 
-- **S1.** This changes what the method asks of agents, not a check that decides anything. No input is supplied by a party being judged.
-- **S2.** The checks it relies on are the three copy-comparison tests, which fail when a pair drifts.
+- **S1.** This changes what the method asks of agents. After it, an author's own reasoning can stand as evidence, so the party judged supplies it; section C keeps the sentence that an unsupported assertion does not clear a review, and the reviewer still checks.
+- **S2.** The three copy-comparison tests fail when a pair drifts. They do not judge the words; the diff reader does.
 - **S3.** Agents edit the texts; the reader search and the three tests run after.
-- **S4.** If an edit goes wrong it leaves a sentence still asking for a test, which is today's state, or removes one on the kept list, which the reviews of the diff are asked to look for.
+- **S4.** If an edit goes wrong it leaves a sentence still asking for a test, which is today's state, or removes one on the kept list, which the diff reader and the Security reader named in section E look for.
 - **S5.** What still gets through: a change that needed a wider run and did not get one. Certification is the backstop, and it is later.
 
 ### Independent scientific check
@@ -90,7 +94,9 @@ Certification finds several defects that one small test would have caught. A sec
 
 ## Scope delta
 
-**Scope delta**: preserved
+**Scope delta**: degraded
+
+- The testing module, in both copies, is not edited in this pass. **disposition**: held for the Maintainer. The usual review found that his words were about Cairn's own work and that this page guides a project's tests of its own science code. It is asked of him on the roadmap; nothing is conceded.
 
 ## Assurance path
 
@@ -174,3 +180,27 @@ The proposal's strongest form: Cairn's texts out-vote any one rule on tests, so 
 **Y.** Replace disposition 5 with: "5. *A control:* existing controls and the tests that hold them stay. A new security check, or a change to what one accepts, is shown once to refuse one planted bad input, with the command and result recorded; the planted case need not be kept as a test."
 
 **Z.** In disposition 3, replace the last sentence with: "A blocking finding is closed by exact words or code; a failing test is given only when words cannot show the fault. The reviewer shows it failing; the implementer runs it once, unchanged, after the fix, and a changed test counts as a decline. This does not bind a Security Review, which may ask for one run or one planted case on the point it raises."
+
+## Response -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+Both reviews are folded once, in place. Status is now `awaiting-decision`.
+
+Usual review:
+1. Finding 1 (honesty and guard sentences would be deleted): taken, with the Security Review's block X, which holds the reviewer's sentence.
+2. Finding 2 (rule A has no floor; "a handful" is vague): taken, in section A.
+3. Finding 3 (the testing module, a premise for the Maintainer): the module is taken out of this pass and asked of him; see Scope delta.
+4. Non-blocking (a), the session-end row: it is removed, and the appendix records it. (b), where "other" rows are recorded: the appendix, for every row. (c), what the copy tests show: taken, in Evidence and S2.
+
+Security Review:
+1. S1 (C must win over B): taken, block X replaces section C. Its question, keep the security modules whole or strip them row by row: whole.
+2. S2 (a written account is not enough for a security check): taken, block Y replaces disposition 5.
+3. S3 (disposition 3 dropped the decline guards): taken, block Z.
+4. Non-blocking (a), preflight S1: reworded. (b), who reads the diff: section E names a diff reader and a Security reader.
+
+### Withdrawn / superseded commitments
+
+- Disposition 5 as first written, a written account in place of a run. Withdrawn: one planted bad input is run once.
+- "A handful" of tests. Replaced by "at most five test files".
+- Editing the testing module in this pass. Held for the Maintainer.
+
+**Elapsed**: unknown. **Tokens**: unknown.
