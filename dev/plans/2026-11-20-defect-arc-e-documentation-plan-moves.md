@@ -2,7 +2,7 @@
 # Plan: Defect arc E, the documentation plan moves
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -319,3 +319,40 @@ Elapsed seconds, Windows before and after (two groups at once): C1 1062 and 970,
 - Cairn's own tree: `verify_integrity` reports OK (70 files) after the lock refresh. The prose gates (`claim_check`, `link_check`, `check_cairn`, `git diff --check`) pass on `install/UPGRADE.md`, `dev/PLANNING.md` and this plan.
 
 **Not run, with its home.** The 68-file C1 selection beyond the ten named tests, the Python 3.13 run on Linux, the link variants of the containment test on Windows, and the macOS run: all on the roadmap's joined run (`dev/PLANNING.md`, "What the joined run owes", plan E). The protected-file fix awaits the Maintainer. The AST baseline and the signing hashes stay with the Maintainer's baseline and signing steps.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-21
+
+Reviewed commit: b09b55ee83e69930d2e8250bcee5bd56780af86c; range `bd8fd8c9..b09b55ee`.
+
+**Obligation**: the usual code review; the Security Review follows
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**
+1. **Should this happen as framed?** Yes. The recording step writes one lock field, uses only fixed paths, and the five steps come from one constant. -- `install/_scaffold/upgrade.py` `_cmd_documentation_plan_moved`, `_DOCPLAN_STEPS`.
+2. **Best alternative.** None smaller: no code edits links, as the Maintainer asked. -- `git diff bd8fd8c9..HEAD --stat` (one new command, one report helper).
+3. **What would show it wrong.** Odd locks and trees. I ran 10 cases of my own through `scaffold.main` on a `git archive` copy: a junction as `docs`, as `dev` and as the new file; a list-valued `dst`; a missing `dst`; `dst` as `../evil.md`; a list `hash`; a 200 MB file; a second run; a record at the new place with an old copy. Each gave the expected exit, no traceback, and no write but the one `dst`. Mixed with `--plan`, `--apply`, `--heal-layout` or `--finalize` it refuses. The new test file passed (24 passed, 3 skipped, links unavailable here).
+
+**Central claim.** It holds. `_compute_upgrade`, `_apply_upgrade`, `_layout_plan`, `layout_catalog.py` and `verify_integrity.py` are unchanged; `verify_integrity` reports OK (70 files) and `tier_inventory.py check` passes. Cairn's lock is refreshed in two commits holding only the lock. Both allow-list files change one `target`, no wider than before. Messages differ from Detail only in the five-step wording, which the record explains with the Maintainer's words (they are on the roadmap).
+
+**Findings**
+1. **Blocking (needs the Maintainer's allowance).** Six protected cases fail. They fail in setup, before any link exists (`FileNotFoundError` on `docs/`), so they test nothing now. **Option (a) is sound**: it recreates the original state (a folder holding one target file, linked from inside the project), so every case checks the same refusal, and none can pass for another reason. Option (b) would put stray files into an installed folder (`dev/modules`), which changes what "inside the project" means. In an outside copy with (a), the six now reach the link call and skip (no link rights here); I did not run Linux. Exact lines are below.
+2. **Blocking.** The changelog says "nothing you wrote is edited". The five steps have the upgrading agent edit your own files' links. Replace that clause with "the command edits none of your files; the printed steps have your agent correct links in the files you wrote".
+3. Non-blocking. Step 2 does not say how to tell a Cairn-installed file: add "(the files listed in `dev/.cairn/cairn-lock.yml`)". The wording test would then need the constant, `install/UPGRADE.md` and the test list changed together.
+4. Non-blocking. The docstring of `test_the_steps_read_the_same_everywhere` still says it "is expected to fail until C4"; delete the sentence. `test_the_report_helper_never_raises` calls a private helper; the same promise is kept by `--plan` and could use it. The plan's body still says "three steps"; the record states the change.
+
+**Tests.** Two protected tests edited: the stance sentinel (one path) and the below-linked-parent case, which now links `dev/modules` and still refuses the same thing. No removed caller-visible fault. The new tests guard external promises; the file runs about 106 s (install per test), acceptable. **Does any rule weaken or disappear?** No: the placement paragraph keeps "a domain's governance lives with the domain" and adds that `docs/` holds only what describes the software; the three other-project mentions are unchanged.
+
+**Bounding**: heavy tier, so the Security Review follows. I ran no Linux, macOS or Python 3.13 run, no link-rights case, and not the 68-file C1 selection. I did not read the 134 archived files or judge the printed `{exc}` text (left to the Security Review).
+
+Elapsed time: unknown. Tokens: unknown.
+
+**Verdict**: REVISE
+
+### Exact lines for finding 1, option (a)
+
+In `tests/test_upgrade_refuses_hostile_project_data.py`, directly after each of the four lines `target = world.project / "docs" / "profile-copy.yml"` (lines 257, 417, 525) and `target = world.project / "docs" / "linked-agents.md"` (line 338), add at the same indent:
+
+```
+        target.parent.mkdir(exist_ok=True)
+```
