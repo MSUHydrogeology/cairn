@@ -252,3 +252,17 @@ What that settles:
 - **Tier.** Heavy, as proposed.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Decision, release and scope -- Maintainer (scribed by Claude Fable 5.2) -- 2026-11-21
+
+**Changed: the release that carries this work, and when Antigravity is built.** The Maintainer had written that the defect fixes will be cut as v0.8.1. Strategy then asked "Is counting Claude usage part of v0.8.1?" and recommended that it ship in v0.9. He wrote (chat, 2026-11-21):
+
+> "Yes. Claude and Antigravity are part of v0.8.1. Excluding them was a defect. I use all three every day. The same way that excluding Windows and Linux certification was a defect."
+
+What that settles:
+
+- **Choice 4 is now v0.8.1.** Counting Claude usage is built for the defect-fix release, not for v0.9.
+- **Antigravity is part of v0.8.1 too.** Choice 1 (a) stands as the order of work: one count-only look at Antigravity's saved files comes first, on his Mac, and a reader is planned from what the look finds. What changes is that this happens before v0.8.1 is cut.
+- **Choices 2 and 3 stand.** Choice 5 stands under the question recorded on the roadmap: the meter cannot rebuild its record from old logs, and whether the restart is accepted is still his to say.
+
+**Elapsed**: unknown. **Tokens**: unknown.
