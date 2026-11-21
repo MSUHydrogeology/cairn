@@ -1,7 +1,7 @@
 # Plan: Defect arc H, the meter reads a real Claude log folder
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -17,7 +17,7 @@ The accepted defect arc takes in defects found since.
 
 ## Scope
 
-All in `dev/tools/meter.py`: `_enumerate_windows_jsonl`, `_WindowsApprovedLineStream.__iter__`, and the merge loop of `read_records`.
+All in `dev/tools/meter.py`: `_enumerate_windows_jsonl`, `_WindowsApprovedLineStream.__iter__`, and the merge loop of `read_records`. The Mac and Linux walk (`_enumerate_jsonl`) has no size or link test on a log, so only (d) reaches those platforms.
 
 **(a) Sizes.** The size comparison applies to files only; identity and directory flag stay for every entry:
 
@@ -25,15 +25,40 @@ All in `dev/tools/meter.py`: `_enumerate_windows_jsonl`, `_WindowsApprovedLineSt
 or (not directory and info["size"] != row["size"])
 ```
 
-**(b) First readings.** When a sub-folder's handle is added, record its reading so `verify` can look it up: `snapshots[child] = info` beside `all_handles.append(child)`.
+**(b) First readings.** When a sub-folder's handle is added, record its reading so `verify` can look it up: `snapshots[child] = info` beside `all_handles.append(child)`. A folder that changes during the walk or the reads still refuses the refresh: `verify` compares its write time and ignores only the access time, which the walk's own reading changes. One cost: a log created in a sub-folder while a refresh runs now refuses that refresh, as one created in the log folder itself already did.
 
-**(c) Two names.** The walk accepts a file with `info["links"] != 1` unless it already met the same `info["identity"]` (a `seen` set), which raises `Unavailable("source_read_unavailable")` as today. The reader's `before["links"] != 1` test in `_WindowsApprovedLineStream.__iter__` is removed; its directory and volume tests stay. A refused file cannot reach the reader: the walk raises, so the refresh stops before any read, and `_check_stream_identity` refuses any stream whose volume and file id differ from the walk's record.
+**(c) Two names.** `seen = set()` before the loop. In the file branch, the link test becomes:
 
-*For Security Review.* The old refusal guarded against one file read twice under two names. Kept: one file is never read twice in one walk; a second name outside the folder gives a reader no content the log does not already hold; the owner and access-list tests are untouched. The `hardlink` case (both names inside the folder) is still refused.
+```python
+if info["links"] != 1:
+    if info["identity"] in seen:
+        raise Unavailable("source_read_unavailable")
+    api.check_acl(child, user_sid, "profile")
+seen.add(info["identity"])
+```
 
-**(d) Reply times.** In the merge loop of `read_records`, when `tool == "claude"` and a later record of one event key has a different time, keep the earliest, leave the time known, add no `ambiguous_time`. Only while one log file is read; copies in two files (`_merge_event_batches`) keep today's rule; Codex is unchanged. Limit: a reply whose records fall in two refreshes meets `_merge_retained_event`, which still marks differing times `ambiguous_time`, so it loses its time. Not widened here.
+So a file with a second name is read once, and only if it also passes the stricter `profile` access test, which refuses any other account's right to write it. The reader's `before["links"] != 1` test in `_WindowsApprovedLineStream.__iter__` is removed; its directory and volume tests stay. A refused file cannot reach the reader: the walk raises, so the refresh stops before any read. What still ties the file that is read to the file the walk accepted: `_check_stream_identity` (volume and file id, at open and at close), the reader's own `ancestor` access test, and the walk's `verify` after all reads.
 
-**Reuse.** Searched `tests/integration/test_meter.py` for `hardlink`, `ambiguous_time`, `claude()`: T1 and T2 reuse the native fixture; the one time test is Codex and stays.
+*For Security Review.* The old refusal did two things. It kept one file from being read twice under two names: kept, by `seen`. And it was the only thing that stopped another account from planting, inside the log folder, a name for a file the user owns but that account can write: kept, by the `profile` test. A second name outside the folder gives a reader no content the log does not already hold. The owner and access-list tests on every file are untouched. The `hardlink` case (both names inside the folder) is still refused. A second name in another approved folder is read twice, and `_merge_event_batches` keeps one event for each key. Measured on the Windows Server machine with the meter's own `check_acl`, reading no file's data: all 16 logs with two names, and all 120 with one, pass the `profile` test.
+
+**(d) Reply times.** In the merge loop of `read_records`, around the call `_merge_normalized_event(merged[key], event)`:
+
+```python
+earlier = None
+if tool == "claude":
+    first, second = merged[key]["observed_at"], event["observed_at"]
+    if first is not None and second is not None and first != second:
+        earlier = min(first, second, key=datetime.fromisoformat)
+_merge_normalized_event(merged[key], event)
+if earlier is not None:
+    merged[key]["observed_at"] = earlier
+    merged[key]["time_coverage"] = "known"
+    merged[key]["reasons"] = sorted(set(merged[key]["reasons"]) - {"ambiguous_time"})
+```
+
+Times are compared as instants, not as text. An unknown time against a known one still loses the time, as today. Only while one log file is read; copies in two files (`_merge_event_batches`) keep today's rule; Codex is unchanged. Limit: a reply whose records fall in two refreshes meets `_merge_retained_event`, which still marks differing times `ambiguous_time`, so it loses its time. Not widened here. Nobody who cannot already write the log can use the rule to move usage to another day: only records in the one file read are compared.
+
+**Reuse: no new test.** Both tests below are existing tests, changed. So no Windows-only test is added, and the list of such tests in `tests/security_manifest.py`, its count and its fingerprint do not change.
 
 **Doctrine surface.** `dev/measurement/README.md` only. Not here: the `F:` drive access rights.
 
@@ -41,27 +66,49 @@ or (not directory and info["size"] != row["size"])
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
-| C1 | Tests first (fail), then (a) to (d), shipped copy, README, changelog | one code review | fixed meter, three tests |
+| C1 | Fixture fix and the two changed tests first (they fail), then (a) to (d), shipped copy, README, changelog | one code review | fixed meter, two changed tests |
 
 ## Acceptance criteria
 
-- **T1 (Windows, native).** A log folder with a sub-folder holding a log and enough long-named entries that `os.stat(<sub-folder>).st_size > 0` (asserted). A real refresh answers `ok` and counts the nested log.
-- **T2 (Windows, native).** A log with a second name outside the log folder (`os.link`). A real refresh answers `ok` and counts the log once.
-- **T3 (every platform).** One Claude reply in three records, one usage, three times (`claude()` helper): one event, time known and the earliest, no `ambiguous_time`.
+- **The native test (Windows only).** `test_windows_native_claude_resume_and_identity_on_a_spaced_root` in `tests/integration/test_meter.py` gains a last stage, after its `resume_failed_file_replaced` assertions, that gives its log folder the shape of a real one:
+
+```python
+    nested = setup["source"] / "session-alpha" / "subagents"
+    nested.mkdir(parents=True)
+    for index in range(12):
+        (nested / (f"{index:02d}-" + "n" * 40 + ".meta.json")).write_bytes(b"{}")
+    assert os.stat(nested).st_size > 0
+    (nested / "agent-nested.jsonl").write_bytes(assistant("native-nested-first"))
+    os.link(source, native_windows_root / "task-output-second-name")
+    with source.open("ab") as handle:
+        handle.write(assistant("native-crlf-linked"))
+    before = {event["event_key"] for event in json.loads(ledger_path.read_bytes())["events"]}
+    receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
+    _native_meter_receipt(receipt, "ok", "none")
+    after = [event["event_key"] for event in json.loads(ledger_path.read_bytes())["events"]]
+    assert len(after) == len(set(after)) == len(before) + 2
+```
+
+  The sub-folder reports a size that is not zero (asserted, so the test fails if it stops exercising the point), the nested log is counted, and the log with a second name outside the folder is read once. Before the change this last refresh answers `unavailable`. If the folder's size is zero on the test machine, use more or longer names; do not drop the assertion.
+- **The time test (every platform).** `test_same_message_twice_in_one_session_is_one_proven_event` in `tests/test_meter_claude_usage.py` reads three copies of one reply with one usage and three times, the earliest second in order. It keeps its three assertions and adds three: `time_coverage` is `known`, `observed_at` is the earliest time, and `ambiguous_time` is not among the reasons.
 - The existing `hardlink` case passes, unedited.
-- **Fixture defect, found now.** `_native_meter_setup` copies `meter.py` and `git_read.py` but not `pulse.py`, which `meter.py` loads at import (`_load_shared_pulse`), so every native case fails with `pulse-module-unavailable`. The build copies `dev/tools/pulse.py` there too, with its byte check. A defect fix, not new scope.
+- **Fixture defect, found while this plan was written.** `_native_meter_setup` copies `meter.py` and `git_read.py` but not `pulse.py`, which `meter.py` loads at import (`_load_shared_pulse`), so every native case fails with `pulse-module-unavailable`. The build copies `dev/tools/pulse.py` there too, with its byte check. A defect fix, not new scope.
 
-Also: `cp dev/tools/meter.py templates/skills/_lib/meter.py`, then `cmp` prints nothing; Cairn's lock by `install/scaffold.py upgrade --target . --finalize <paths>`, alone in its commit; `Fixed` lines under `## Unreleased` in `CHANGELOG.md`; the test file's gate-manifest hash is the Maintainer's signing line.
+Also: `cp dev/tools/meter.py templates/skills/_lib/meter.py`, then `cmp` prints nothing; Cairn's lock by `install/scaffold.py upgrade --target . --finalize dev/tools/meter.py dev/measurement/README.md`, alone in its commit; `Fixed` lines under `## Unreleased` in `CHANGELOG.md`; the gate-manifest hash of `tests/integration/test_meter.py` is one line at the Maintainer's signing, already owed from the usage-counting plan and plan G.
 
-`dev/measurement/README.md`, after "the project's remote checks out.", add: "On Windows a log may have a second name (the Claude desktop app keeps one per background sub-agent); the Meter reads it once. A Claude reply logged in several pieces is dated by its earliest piece, unless the pieces fall in two refreshes."
+`dev/measurement/README.md`, after "the project's remote checks out.", add: "On Windows a log may have a second name (the Claude desktop app keeps one for each background sub-agent); the Meter reads it once, and only when no other account may write it. A Claude reply logged in several pieces is dated by its earliest piece, unless the pieces fall in two refreshes."
 
 ## Verification
 
-Write T1 to T3 first and run them once (they fail); change the code; run them once with `hardlink` (they pass), on Windows with `C:\ProgramData\Anaconda3\python.exe -m pytest tests/integration/test_meter.py -q -k "test_windows_native_meter_source_metadata_mutations and hardlink"` plus the T1 to T3 node ids. Nothing else is run; no stash.
+Put the fixture fix in and change the two tests first, and run them once (they fail for their own reasons); change the code; run them once more with the `hardlink` case (they pass), on Windows:
 
-**Measured now.** The `hardlink` case, run once here, failed with `pulse-module-unavailable` (the fixture defect). T1 and T2 run here after the fix.
+`C:\ProgramData\Anaconda3\python.exe -m pytest tests/integration/test_meter.py tests/test_meter_claude_usage.py -q -k "test_windows_native_claude_resume_and_identity_on_a_spaced_root or (test_windows_native_meter_source_metadata_mutations and hardlink) or test_same_message_twice_in_one_session_is_one_proven_event"`
 
-**Strategy's checks, not the build's.** After the merge, a real refresh on the Windows Server machine; at the v0.8.1 cut, the Mac check against a real log.
+Nothing else is run; no stash.
+
+**Measured when the plan was written.** The `hardlink` case, run once on the Windows Server machine, failed with `pulse-module-unavailable` (the fixture defect). Whether the native tests run on that machine once the fixture copies `pulse.py` is not yet known. If they cannot, the build stops and reports, and the native test runs at certification on the Windows machine.
+
+**Strategy's checks, not the build's.** After the merge, a real refresh on the Windows Server machine gets past the walk and the reader. At the v0.8.1 cut, the Mac check against a real log. The build agent must not attempt either, and must not run the meter on real data.
 
 ## Plan review -- Reviewer (usual) -- 2026-11-21
 
@@ -136,3 +183,23 @@ Reviewed commit: 085e30d1f063b9f03cd559a5306385aa3c6473b6
 **Not covered**: real logs and their access lists (privacy rule), so I did not confirm real second-name logs pass `profile`; the `F:` drive refusal; I ran no test.
 
 Elapsed time: unknown. Tokens: unknown.
+
+## Plan response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-21
+
+Both reviews are folded once, in place. Status is now `ready-to-implement`.
+
+Usual review:
+1. Finding 1 ((d) in words only; text order is not time order): taken, with its code.
+2. Finding 2 (the native tests have no recipe): taken, as exact code. Its question, one new native test or two: neither. The recipe is a last stage of the existing native Claude test, so no test is added.
+3. Finding 3 (a new Windows-only test must join the list in `tests/security_manifest.py`): settled by adding none. A new row would also change that list's count and fingerprint, and the line that `tests/test_security_check.py` quotes from it: three frozen files for one test.
+4. Non-blocking 4 to 7: taken ((c) as code; the Mac and Linux walk; equal usage in the time test; the build must not attempt Strategy's checks).
+
+Security Review:
+1. Finding 1 (a planted second name): taken, in its words. A file with a second name must also pass the `profile` access test. Its question, whether real logs pass that test: measured, all 16 logs with two names on the Windows Server machine pass it, with the meter's own `check_acl` and no file's data read.
+2. Non-blocking 2 to 4: taken into (b), (c) and (d).
+
+Changed in this fold beyond the findings, for the code review to judge: both tests are existing tests, changed, where the plan first named three new ones. The time test becomes `test_same_message_twice_in_one_session_is_one_proven_event`, whose two copies carried one time; that is why the usage-counting plan's tests did not see the fault.
+
+Not run for this response: any test.
+
+**Elapsed**: unknown. **Tokens**: unknown.
