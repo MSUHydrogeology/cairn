@@ -24,6 +24,8 @@ One Decision is waiting on you: the [consumer proposal](proposals/2026-11-20-cla
   At the v0.9 signing, the review page's line scan will not look at six files that are new since the last signed version (2,532 lines; listed in section 1, "Narrowings from the layout move"). Before you sign, choose one: read them yourself; have a fresh Security Review agent read them and report to you; or sign without. Strategy recommends the agent's read. Nothing waits on this before the signing.
 - **Waiting on Maintainer**: accept plan C's meter fix as built?
   Plan C's fix for #96 does what the issue names, but its own check on a real log is not met: the meter still reports an incomplete reading for a session that used sub-agents, because 60 records carry a sub-agent's usage summary it cannot read (section 1, "The rest of #96"). Choose: accept the fix as built and put reading those summaries into the proposal on counting Claude and Antigravity usage (Strategy recommends this); or hold plan C until the meter can read them. Both code reviews of plan C found the code right and the check's expectation out of date; the Security Review says reading those summaries belongs in that proposal. Plan C cannot be archived until you say.
+- **Waiting on Maintainer**: correct the layout trial's draft page
+  The draft page for modflow_tools is ready. It asks up to an hour of you, at a time you choose: read it, correct it as a description of your project without opening code, answer two yes-or-no questions, and pick one of three small tasks. Say when you are ready and the session hands you the page; the clock starts then. Nothing else waits on this. Detail: the v0.9 subsection "A trial of the layout page".
 
 ## Parked: the big picture
 
@@ -97,7 +99,7 @@ Maintainer, chat, 2026-11-20: *"You have pointed out how many rules we have all-
 
 - **The trial.** An agent drafts one page for modflow_tools with three lists: what each code folder holds, each class that holds state (what a program stores while it runs), and each central tool (one function or file that does a common job for the whole project). The Maintainer corrects the page as a description of his project. The trial records how long that took him and how many entries he changed. It also gives one agent a small task with the page and another the same task without it, and counts the new copies of a central tool each one writes. It ships nothing.
 - **Its stop rule.** If he cannot correct the page without reading code, or correcting it takes him over an hour, the check and the restructuring guidance are not built, and the proposal returns to him.
-- **Next step.** The [trial's plan](plans/2026-11-20-layout-page-trial.md) has had its one review and is being carried out. Its first step, an agent's draft of the page from the code, is under way and needs nothing from the Maintainer. The second step waits for him: up to an hour to correct the draft. Owner: the Maintainer. It restarts when he says he is ready to correct the page.
+- **Next step.** The [trial's plan](plans/2026-11-20-layout-page-trial.md) has had its one review and is being carried out. Its first step is done: an agent drafted the page from the code, in 871 words. The second step waits for the Maintainer: up to an hour to correct the draft. Owner: the Maintainer. It restarts when he says he is ready to correct the page (asked under "Waiting on you").
 
 ### 2. Cairn's own releases: simpler, and verified on three hosts
 
