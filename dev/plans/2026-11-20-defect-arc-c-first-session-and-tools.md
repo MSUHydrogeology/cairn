@@ -317,3 +317,68 @@ The change does what it says. Session start, the hook, the meter and the lock al
 **Elapsed**: unknown. **Tokens**: unknown.
 
 No blocking finding, so no replacement block is owed. The non-blocking edits are the ones named in findings 1 to 3.
+
+## Code review -- Claude Opus 5.5 (`claude-opus-5-5`, Security Review) -- 2026-11-20
+
+```
+Reviewed commit: d30179a205f6b7d40de178c624a172ed02b7e7f0
+Range: ecc1a913..aefe4246 on arc-c-impl (the code; d30179a2 adds only the usual review)
+```
+
+**Obligation**: Internal Security Review (heavy tier, code stage)
+**Findings**: raised (none blocking)
+**Verdict**: ACCEPT
+
+The change adds one adopter-set lowering knob and narrows one completeness flag, and keeps every default as strict as before. As built, no path I tried passes the audit or counts usage that the old code refused.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Every policy refusal raises `AuditDegraded`, which `main` turns into `bandit:degraded`, exit 20 (`run_security_audit.py:2017`). The threshold prints first on stdout and in the summary suffix (`:963`, `:1004`).
+2. **Best alternative.** None safer. Bandit's own `-l`/`-i` flags would hide the findings below the threshold.
+3. **What would show it wrong.** I wrote 22 policy files by hand (BOM, NaN, `"HIGH"`, `"high "`, null, a list, 4,000 `[`, nested repeats, a key holding ESC and U+202E), 12 Bandit outputs (lower-case, missing or null levels, trailing text, 100,000 `[`), 10 meter records plus a record nested 200,000 deep and an 8 MB-class wide one, 17 `.gitignore` texts and 4 paths. Every result was a refusal, a failure or `DEGRADED`, or matched Detail. The 200,000-deep record gives `invalid_record` at parse time. The walk took 0.5 s on 3 MB, the same order as the parse.
+
+**Findings**
+
+1. Non-blocking. I agree with usual finding 1. Bandit's JSON escapes all non-ASCII text, so the raw second copy is safe only because Bandit formats it that way. That copy breaks `_run_tool`'s fourth promise (`:708`). Delete `print(run.stdout)`. The file already takes a HOLD here.
+2. Non-blocking. I agree with usual finding 2. The code does not keep the backstop wording of the accepted S1. On POSIX this is unreachable, because the lockfile read needs `dev/.cairn` first. My code governs: block X1.
+3. Non-blocking. The module page says that a status with no suffix "means the default". A DEGRADED status from a threshold file has no suffix either; it fails, so nothing is let through. Words: block X1.
+4. Non-blocking. I agree with usual findings 3 to 5. Records that carry usage under another key, such as `usageMetadata`, are now skipped silently. No number moves today, because Claude stays UNKNOWN. The counting proposal's Security Review must re-weigh this signal.
+5. Non-blocking, already accepted at plan stage. `_gitignore_covers` strips leading spaces, so ` .claude/` counts as cover. Git keeps leading spaces, so Git does not treat that line as cover. A nested `.claude/.gitignore` holding `!skills/` beats either line, so that file was never a protection. No write path is new.
+
+**Checked without findings.** `encode_display_path` still escapes ESC and bidi characters, and on Windows no name can hold a backslash, so a `\` in the output still starts an escape. The Windows hook skip changes a refusal label only: `hooks.py:444` refuses everything except `absent` and `sentinel`. The `continue` in the meter is unchanged, so no new record is counted. Twins match (`cmp`), and `verify_integrity` reports OK for 70 files. S1 to S5 hold, with findings 2 and 3 as their only gaps.
+
+**The criterion not met.** I agree with the usual review: the code is right and the expectation is stale. The stop-and-report instruction was followed. Do not exempt `attachment` by type name, because that reopens the plan-stage S3 gap. Any reading of those sub-agent totals belongs in the counting proposal.
+
+**Implementers' choices.** All six are sound. The repeated-key subclass also refuses a repeat inside a nested object (measured).
+
+**Tests.** No caller-visible fault lost its test. The threshold-line pins are the S2 control. **Does any rule weaken or disappear?** No. The page states the new knob and that it lowers what fails.
+
+**Bounding**: ACCEPTED. The only open item has a home: no host ran real Bandit, and the joined run owns that check.
+
+**Not covered.** Real Bandit; POSIX branches, a FIFO swapped in for the policy file, and macOS; the link case (not made here); gate-manifest failures; a `.bandit` file inside `python_package`; and Bandit's `errors` list, ignored on both paths as before.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+### Block X1 -- exact code and words for findings 2 and 3
+
+Finding 2, in `load_bandit_policy`, replace
+
+```
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        return default
+    try:
+```
+
+with
+
+```
+    try:
+        try:
+            path.lstat()
+        except FileNotFoundError:
+            return default
+```
+
+Finding 3, in `python-security.md`, replace "A Bandit status in the summary with no `[threshold: ...]` suffix means the default: any finding fails." with "A clean or findings Bandit status with no `[threshold: ...]` suffix means the default: any finding fails. A degraded status never carries the suffix and never passes."
