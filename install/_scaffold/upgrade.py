@@ -918,6 +918,10 @@ def _compute_upgrade(
             continue
         verbatim = bool(rec.get("verbatim"))
         src_rel = rec["src"]
+        if _wrapper_retired(rec, lock.get("files", []), target):
+            plans.append(FilePlan(dst, "up-to-date", None,
+                                  "vendor wrapper deleted on purpose", None, None))
+            continue
         # Renamed vendor wrapper (#45): the lockfile records the thin
         # wrapper under its canonical dst ``VENDOR.md`` (``write_install_
         # lockfile`` does not resolve the rename), but an adopter renames it
@@ -1043,9 +1047,12 @@ def _compute_upgrade(
                 ancestor_reason = (
                     "saved ancestor differs only in line endings (core.autocrlf?); "
                     "see UPGRADE.md (review-only diff)")
+            wrapper_hint = (
+                f"; if you deleted it on purpose, run upgrade --retire-wrapper {dst}"
+                if ours_bytes is None and src_rel == "core/VENDOR.md" else "")
             plans.append(FilePlan(
                 dst, "review-only", None,
-                ("file missing on disk; " + ancestor_reason
+                ("file missing on disk; " + ancestor_reason + wrapper_hint
                  if ours_bytes is None else ancestor_reason),
                 theirs_raw, cache_rel if isinstance(cache_rel, str) else None,
                 ancestor_evidence={
@@ -1087,7 +1094,10 @@ def _compute_upgrade(
             # A missing destination still owes manual reconciliation. Carry
             # the checked ancestor identity so apply can bind recovery to it.
             plans.append(FilePlan(
-                dst, "review-only", None, "file missing on disk",
+                dst, "review-only", None,
+                "file missing on disk" + (
+                    f"; if you deleted it on purpose, run upgrade --retire-wrapper {dst}"
+                    if src_rel == "core/VENDOR.md" else ""),
                 theirs_raw, cache_rel, ancestor_evidence=evidence))
             continue
         # Size the ancestor sides for the merge view only: base under the OLD
@@ -1849,6 +1859,42 @@ def _linked_vendor_wrapper_names(target: Path, mapped_dsts: set[str]) -> list[st
     reading it, and nothing here reads through one.  Names only."""
     return [name for name in _KNOWN_VENDOR_WRAPPERS
             if name not in mapped_dsts and (target / name).is_symlink()]
+
+
+#: Root names that are never a vendor wrapper, whatever a lockfile record says.
+_NOT_A_VENDOR_WRAPPER = ("AGENTS.md", "CHANGELOG.md", "RULES.md", "NOTICE.md")
+
+
+def _wrapper_record_fits(rec: dict[str, Any], files: list[Any]) -> bool:
+    """The part of the retired-wrapper rule that reads only the lockfile: *rec*
+    is the one ``core/VENDOR.md`` record, is not verbatim, and its ``dst`` is a
+    root-level ``.md`` name that Cairn does not ship as its own file. Repeated
+    inline in ``install/verify_integrity.py``; change both together."""
+    if rec.get("src") != "core/VENDOR.md" or rec.get("verbatim"):
+        return False
+    if sum(1 for other in files if isinstance(other, dict)
+           and other.get("src") == "core/VENDOR.md") != 1:
+        return False
+    dst = rec.get("dst")
+    return (isinstance(dst, str) and dst.endswith(".md") and "/" not in dst
+            and "\\" not in dst and dst not in _NOT_A_VENDOR_WRAPPER)
+
+
+def _wrapper_retired(rec: dict[str, Any], files: list[Any], target: Path) -> bool:
+    """One rule decides whether a lockfile record is a vendor wrapper the adopter
+    deleted on purpose (``upgrade --retire-wrapper``). All must hold:
+    ``adopter_deleted`` is true; the record fits (`_wrapper_record_fits`); and
+    ``lstat`` of its ``dst`` says the file is absent. ``verify_integrity``
+    repeats this inline; change both together."""
+    if rec.get("adopter_deleted") is not True or not _wrapper_record_fits(rec, files):
+        return False
+    try:
+        os.lstat(target / rec["dst"])
+    except FileNotFoundError:
+        return True
+    except OSError:
+        return False
+    return False
 
 
 def _find_manifest_path(target: Path) -> tuple[Path, bool] | None:
@@ -2994,6 +3040,10 @@ def _cmd_finalize_lockfile(
         dst_rel = _disk_dst(target, rec, mapped)
         if dst_rel is None:
             continue
+        if _wrapper_retired(rec, files, target):
+            continue  # a wrapper the adopter deleted on purpose stays retired
+        if "adopter_deleted" in rec and os.path.lexists(target / dst_rel):
+            rec.pop("adopter_deleted")  # the file is back: it is checked again
         orig_dst = rec["dst"]  # lockfile-recorded dst, pre rename-resolution
         if dst_rel != orig_dst:
             rec["dst"] = dst_rel
@@ -4501,7 +4551,8 @@ def _layout_plan(target: Path, source: SourceRevision,
     # Keep the existing wrapper, including a known renamed or recorded custom
     # wrapper. Adopt its observed bytes without rebasing its existing ancestor.
     wrapper = next((row for row in files.values() if row["src"] == "core/VENDOR.md"), None)
-    if wrapper is not None and tx.actions:
+    if (wrapper is not None and tx.actions
+            and not _wrapper_retired(wrapper, list(files.values()), target)):
         recorded = wrapper["dst"]
         if "/" in recorded:
             raise ScaffoldSecurityError("the existing vendor wrapper is not a root file")
@@ -4695,6 +4746,68 @@ def _cmd_heal_layout(target: Path, lock: dict[str, Any], force: bool) -> int:
     return 0
 
 
+def _cmd_retire_wrapper(target: Path, lock: dict[str, Any], name: str, force: bool) -> int:
+    """`upgrade --retire-wrapper NAME`: record that the adopter deleted the vendor
+    wrapper on purpose. Sets ``adopter_deleted`` on the one ``core/VENDOR.md``
+    record and writes the lockfile only. The record stays, so the wrapper is not
+    planned back in as a new core file. Repeating it is exit 0."""
+    files = lock.get("files") or []
+    wrappers = [rec for rec in files
+                if isinstance(rec, dict) and rec.get("src") == "core/VENDOR.md"]
+    if len(wrappers) != 1:
+        print("error: --retire-wrapper needs exactly one lockfile record for "
+              f"core/VENDOR.md; {_LOCKFILE_REL} has {len(wrappers)}. "
+              "Nothing was changed.", file=sys.stderr)
+        return 1
+    rec = wrappers[0]
+    dst = rec.get("dst")
+    root_dst = isinstance(dst, str) and "/" not in dst and "\\" not in dst
+    if name != "VENDOR.md" and name not in _KNOWN_VENDOR_WRAPPERS and not (
+            root_dst and name == dst):
+        print("error: --retire-wrapper takes the vendor wrapper's file name: "
+              "VENDOR.md, a known wrapper name, or the name the lockfile records. "
+              "Nothing was changed.", file=sys.stderr)
+        return 2
+    if not _wrapper_record_fits(rec, files):
+        print("error: --retire-wrapper refuses: the wrapper's lockfile record is not "
+              "a root-level Markdown record of its own that Cairn does not ship. "
+              "Nothing was changed.", file=sys.stderr)
+        return 1
+    mapped = {row.get("dst") for row in files if isinstance(row, dict)}
+    names = {name, dst, _resolve_vendor_wrapper(target, mapped, include_directories=True)}
+    names.discard(None)
+    try:
+        for candidate in sorted(names):
+            _assert_safe_write(target / candidate, target)
+    except ScaffoldSecurityError:
+        print("error: --retire-wrapper refuses: a link lies above the wrapper's "
+              "name. Nothing was changed.", file=sys.stderr)
+        return 1
+    present = sorted(candidate for candidate in names
+                     if os.path.lexists(target / candidate))
+    if present:
+        print("error: --retire-wrapper refuses: a wrapper file is present ("
+              + ", ".join(present) + "). Only a deleted wrapper can be retired. "
+              "Nothing was changed.", file=sys.stderr)
+        return 1
+    if not force:
+        try:
+            dirty = _writeset_dirty_collisions(target, [_LOCKFILE_REL])
+        except _EditCheckCannotTell as exc:
+            print(_cannot_tell_refusal("--retire-wrapper", exc.reason), file=sys.stderr)
+            return 1
+        if dirty:
+            print("error: refusing --retire-wrapper: the lockfile has unsaved edits; "
+                  "commit them or pass --force", file=sys.stderr)
+            return 1
+    rec["adopter_deleted"] = True
+    _commit_lock_and_caches(target, lock, [])
+    print(f"Retired the record of {name}: Cairn treats its absence as intended. "
+          f"Commit {_LOCKFILE_REL}. To bring a wrapper back, restore the file and "
+          f"run upgrade --finalize {name}.")
+    return 0
+
+
 def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
     """Dispatch the receipt before ordinary cleanup, apply or profile self-heal."""
     pending = _layout_pending(target)
@@ -4702,7 +4815,8 @@ def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
         print(f"An unfinished layout transaction is at {_LAYOUT_RECEIPT}. "
               "Resume with --apply --migration-receipt and the digest printed at stage time.")
         mutable = any((args.apply, args.init_lock, args.finalize, args.adopt_collisions,
-                       args.adopt_module, args.remove_retired, args.heal_layout))
+                       args.adopt_module, args.remove_retired, args.heal_layout,
+                       args.retire_wrapper))
         return 2 if mutable else 0
     if args.migration_receipt:
         raw, saved = _load_layout_receipt(target, args.migration_receipt)
@@ -4732,7 +4846,7 @@ def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
         print(message)
         return 0
     if any((args.init_lock, args.finalize, args.adopt_collisions, args.adopt_module, args.remove_retired,
-            args.heal_layout)):
+            args.heal_layout, args.retire_wrapper)):
         return None
     if args.reconcile_layout is not None:
         source = SourceRevision(cairn_root, _resolve_layout_revision(cairn_root, "HEAD"))
@@ -4831,6 +4945,10 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                         "layout_fork) that an older layout move left on moved "
                         "records; the security verification refuses them. Commit "
                         "the lockfile afterwards.")
+    p.add_argument("--retire-wrapper", default=None, metavar="NAME",
+                   help="Record that you deleted the vendor wrapper NAME (such as "
+                        "CLAUDE.md) on purpose, so Cairn treats its absence as "
+                        "intended. Commit the lockfile afterwards.")
     p.add_argument("--adopt-module", default=None, metavar="NAME",
                    help="Record an already-on-disk opt-in module NAME into the "
                         "lockfile so it 3-way-merges on later upgrades (#49). "
@@ -4870,6 +4988,8 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     ) if on]
     if args.adopt_module:
         actions.append("--adopt-module")
+    if args.retire_wrapper:
+        actions.append("--retire-wrapper")
     if len(actions) > 1:
         print(f"error: {', '.join(sorted(actions))} are mutually exclusive; "
               "run one upgrade action at a time.", file=sys.stderr)
@@ -4919,7 +5039,8 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     # `--adopt-collisions` through `_compute_upgrade`), so a link at its name or
     # above it is refused before either reads, as on `--plan`, `--stage`,
     # `--apply` and `--init-lock`.
-    if args.adopt_module or args.adopt_collisions or args.remove_retired or args.heal_layout:
+    if (args.adopt_module or args.adopt_collisions or args.remove_retired or args.heal_layout
+            or args.retire_wrapper):
         refused = _refuse_if_linked(
             target, _PROFILE_REL, f"the profile {_PROFILE_REL}")
         if refused is not None:
@@ -4981,6 +5102,19 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         only = set(args.finalize_paths) if args.finalize_paths else None
         return _cmd_finalize_lockfile(
             target, lock, only=only, force=args.force, templates_root=templates_root)
+
+    if args.retire_wrapper:
+        if args.to is not None:
+            print("error: --retire-wrapper runs against the running target "
+                  "tree; --to is not supported (run scaffold from the target "
+                  "tree).", file=sys.stderr)
+            return 2
+        try:
+            return _cmd_retire_wrapper(target, lock, args.retire_wrapper, args.force)
+        except ScaffoldSecurityError as exc:
+            print("error: upgrade --retire-wrapper refused (containment): "
+                  f"{exc}", file=sys.stderr)
+            return 2
 
     if args.heal_layout:
         if args.to is not None:
