@@ -1,7 +1,7 @@
 # Plan: Defect arc I, the meter does not judge a project's folders
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: revising-plan
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -165,3 +165,15 @@ I agree with both blocking findings of the usual review and its five other notes
 **Not covered:** no test run; the meter not run; the test file not read; `_verified_project_remote` and `_claim_snapshot` not read beyond their callers.
 
 Elapsed time: unknown. Tokens: unknown.
+
+## Implementation closeout -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+Not built. Both plan reviews were done, and before the plan was revised the Maintainer chose a wider change in its place.
+
+He wrote (chat, 2026-11-21): "The meter is literally just measuring a folder and writing a file inside of our measurement folder, right? There's no reason it needs elaborate permission checks, just read the right location for each agent". Asked whether to replace this plan with the simple meter now, before certification, he wrote: "Yes, simplify now. That is way too much for a log that doesn't actually do anything." The simple meter removes the test this plan would have taken off a project's folders, together with the rest of the meter's permission checks. Its accepted proposal is `dev/proposals/2026-11-21-claude-simple-meter.md` until its plan opens, and under `dev/proposals/archive/` after.
+
+What the two reviews found passes to that work where it still applies: the walk to a project covers every folder above it; `dev/rules/development-environment.md` states a rule that goes; and the stand-in used by the test of access roles has no access entry.
+
+Nothing is owed under this plan. No code or test was changed for it.
+
+**Elapsed**: unknown. **Tokens**: unknown.
