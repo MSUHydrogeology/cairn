@@ -80,7 +80,7 @@ Mirror plan B's `--heal-layout`, point by point:
 New helper `_documentation_plan_move_lines(target) -> list[str]`. It never raises, whatever the lock holds. It reads the lock with `read_lockfile(target)`; returns `[]` on any `OSError`, `ScaffoldSecurityError` or `ValueError`, or when the lock is missing. It reads `files` only when it is a list and skips any record that is not an object, as D2 step 1 does. When exactly one record has `src == _DOCPLAN_SRC` and its `dst == _DOCPLAN_OLD`, it returns these lines, and otherwise `[]`:
 
 ```
-The documentation plan moves to dev/ in 0.9. To move it, run these steps in order:
+The documentation plan moves to dev/ in 0.8.1. To move it, run these steps in order:
 <STEPS, three lines>
 Links in your own files are not changed: search them for docs/DOCUMENTATION_PLAN.md and point each at dev/DOCUMENTATION_PLAN.md.
 ```
