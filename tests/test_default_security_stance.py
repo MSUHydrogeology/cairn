@@ -30,7 +30,7 @@ NO_PRESET_MODULE_SENTINELS = {
     "claim-check": "dev/tools/claim_check.py",
     "fold-back-ledger": "dev/.cairn/cairn_foldback.md",
     "incident-trackers": "dev/tools/evolution_infer.py",
-    "documentation-plan": "docs/DOCUMENTATION_PLAN.md",
+    "documentation-plan": "dev/DOCUMENTATION_PLAN.md",
     "content-security": "dev/tools/content_scan.py",
     "security-verification": "dev/tools/run_security_verification.py",
     "python-security": "dev/tools/run_security_audit.py",

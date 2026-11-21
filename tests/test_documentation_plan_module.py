@@ -2,7 +2,7 @@
 (Proposal D: fold-back-documentation-plan).
 
 Promises:
-- A default install places the documentation-plan doctrine and the forkable DOCUMENTATION_PLAN.md at the docs root.
+- A default install places the documentation-plan doctrine and the forkable DOCUMENTATION_PLAN.md under dev/.
 - A pinned modules list without documentation-plan installs neither file.
 - The installed forkable uses adopter-relative paths and leaks no cairn/ framework path prefix.
 - Every AGENTS.md section a shipped file cites exists in a fresh install's AGENTS.md.
@@ -13,7 +13,7 @@ Covers:
 * Install path: a default scaffold installs both the module
   doctrine + the forkable at the canonical destinations
   (`dev/modules/documentation-plan.md` +
-  `docs/DOCUMENTATION_PLAN.md`).
+  `dev/DOCUMENTATION_PLAN.md`).
 * Content fidelity: the forkable carries the four-layer vision
   (entry / governing / deliberation / descriptive), the decision
   procedure, voice rules, and uses adopter-relative paths only
@@ -56,7 +56,7 @@ TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 
 MODULE = "documentation-plan"
 MODULE_DOC_DST = "dev/modules/documentation-plan.md"
-FORKABLE_DST = "docs/DOCUMENTATION_PLAN.md"
+FORKABLE_DST = "dev/DOCUMENTATION_PLAN.md"
 
 pytestmark = pytest.mark.skipif(
     not TEMPLATES_ROOT.exists(), reason="Cairn templates not available",
@@ -162,7 +162,7 @@ class TestForkableContent:
             "cairn/scripts/",
         ):
             assert leaked not in text, (
-                f"forkable docs/DOCUMENTATION_PLAN.md leaks "
+                f"forkable dev/DOCUMENTATION_PLAN.md leaks "
                 f"cairn-framework-internal path prefix {leaked!r} -- "
                 f"adopters do not have a `cairn/` directory at their "
                 f"tree root (Antigravity P1)"

@@ -66,12 +66,12 @@ how something is built or organized**.  The layer has two ranges:
   * `dev/proposals/_template.md` and `dev/plans/_template.md`
     govern proposal / plan structure and live in those
     directories.
-  * **This file** (`docs/DOCUMENTATION_PLAN.md`) governs
-    documentation placement and lives in `docs/`.  Organizing
-    documentation is the documentation domain's own concern --
-    so its governance map is domain-local.  This file's own
-    placement in `docs/` is therefore *derived* from the vision,
-    not an unexplained exception to it.
+  * **This file** (`dev/DOCUMENTATION_PLAN.md`) governs
+    documentation placement and lives in `dev/`.  Where documents
+    go is an operating question for the people and agents who write
+    them, so this file's domain is the project's operating files
+    and the rule above holds: it lives with them, and `docs/` holds
+    only what describes the software.
 
 When a project publishes a general methodology explanation, keep it
 with the project's descriptive documentation.
@@ -122,7 +122,7 @@ question -- *what is it doing?*
   root (`AGENTS.md`).
 * **Prescribing how *one domain* is organized** -> the
   governing layer's domain-local range, **in that domain**
-  (`tests/TEST_PLAN.md`, this file in `docs/`, the
+  (`tests/TEST_PLAN.md`, this file in `dev/`, the
   `_template.md` files in `dev/proposals/` and `dev/plans/`).
 * **Deliberating what to build, or how the team decides** -> the
   **deliberation layer**, `dev/`.
@@ -174,7 +174,7 @@ navigate *to* as a starting point.  The UPPERCASE set, repo-wide:
 * **Root governing** -- `AGENTS.md`, the vendor-addendum file
   (`CLAUDE.md` / `GEMINI.md` / ...).
 * **Roadmap boards** -- `dev/PLANNING.md`.
-* **Domain-governance maps** -- `docs/DOCUMENTATION_PLAN.md`,
+* **Domain-governance maps** -- `dev/DOCUMENTATION_PLAN.md`,
   `tests/TEST_PLAN.md`.
 
 Everything else is lowercase: the process-doctrine essays
