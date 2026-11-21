@@ -1,6 +1,6 @@
 # Detail for plan C of the defect arc: exact conditions, texts and fixtures
 
-This file is part of `dev/plans/2026-11-20-defect-arc-c-first-session-and-tools.md`. It exists because the plan must leave no design to a low-tier implementer, and the exact texts would push the plan far over its word target. Line numbers are at `02f92d37`; find each site by the function name and text given, not by the number alone. Where a shipped file has a twin, edit both and compare with `cmp` afterwards.
+This file is part of `dev/plans/archive/2026-11-20-defect-arc-c-first-session-and-tools.md`. It exists because the plan must leave no design to a low-tier implementer, and the exact texts would push the plan far over its word target. Line numbers are at `02f92d37`; find each site by the function name and text given, not by the number alone. Where a shipped file has a twin, edit both and compare with `cmp` afterwards.
 
 ## D1. README (C1)
 

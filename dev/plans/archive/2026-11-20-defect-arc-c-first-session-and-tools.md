@@ -1,7 +1,7 @@
 # Plan: Defect arc C, first session and tools
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -13,7 +13,7 @@ After this plan, session start on a fresh Windows install lists no README as ope
 
 ## Source proposal
 
-The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defect arc.", chat, 2026-11-20). Plan C is its first-session and tools part: #98 parts 1 and 2, #91 part 2, #96, #99 part 6 with #101, and three defects found since (the roadmap's "Add any defect found since"). This plan executes it and reopens nothing. It takes a usual review and a Security Review, at plan stage and again at code stage. Exact message texts, algorithms and fixtures are in the companion file `dev/plans/2026-11-20-defect-arc-c-first-session-and-tools-detail.md` ("Detail" below), so a low-tier implementer has no design to invent. The companion is part of the plan.
+The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defect arc.", chat, 2026-11-20). Plan C is its first-session and tools part: #98 parts 1 and 2, #91 part 2, #96, #99 part 6 with #101, and three defects found since (the roadmap's "Add any defect found since"). This plan executes it and reopens nothing. It takes a usual review and a Security Review, at plan stage and again at code stage. Exact message texts, algorithms and fixtures are in the companion file `dev/plans/archive/2026-11-20-defect-arc-c-first-session-and-tools-detail.md` ("Detail" below), so a low-tier implementer has no design to invent. The companion is part of the plan.
 
 ## Scope
 
@@ -414,3 +414,34 @@ Both code reviews accepted the change with no blocking finding. Every small find
 Status: `ready-to-archive`. The archive waits on the Maintainer's answer, and the merge into `0.9-dev` follows plan B's.
 
 **Elapsed**: 1 hour 43 minutes from the first code review's commit (21:38) to this response, by commit times; most of it was test runs. **Tokens**: the two code reviews 157,867 and 144,982; the coordinating session's own use is not visible to it.
+
+## The Maintainer's answer on the unmet check -- recorded for Strategy by Claude Sonnet 5.5 -- 2026-11-21
+
+One accepted check of this plan was not met (the meter's check on a real log, criterion C3), so the plan could not be archived without him. Asked: "Plan C fixed what issue #96 names, but one of its own checks is not met: on a real log the meter still flags a session that used sub-agents. Both code reviewers found the code right and that check's expectation out of date. The usage-counting proposal you just accepted handles the sub-agent part. Do you accept plan C as built?", the Maintainer chose, from the answers offered (2026-11-21): "Accept as built (Recommended)".
+
+This settles two things. The plan is archived as built. Reading sub-agent usage belongs to the usage-counting proposal, accepted the same day (`dev/proposals/2026-11-21-claude-usage-counting.md`).
+
+## Implementation closeout -- Claude Sonnet 5.5 (for Strategy) -- 2026-11-21
+
+Four of the five criteria held as written. The fifth, C3's check on a real log, is not met and the Maintainer accepted the plan as built (section above). Written from the plan's own records and Git.
+
+- **C1.** Session start no longer lists README files, prints paths with forward slashes on Windows, leaves `.gitignore` alone when `.claude/` already covers the skills folder, and names both shell forms in the handoff refusal. Five of eight new tests failed before the fix and all pass after.
+- **C2.** The hook installer no longer calls a Windows shell hook non-executable. Its new test failed before the fix and passes after.
+- **C3, not met.** Twelve record types without usage no longer raise `unsupported_record`. On this machine's log, 60 of 522 `attachment` records carry a `usage` value (a finished sub-agent's totals), so the flag still appears. Both code reviews found the code right and the expectation stale; the Maintainer accepted it.
+- **C4.** The audit reads an optional threshold file, prints the threshold on every result, and behaves as before with no file. 23 tests pass and 2 are skipped.
+- **C5.** The comment, the two changelog lines and Cairn's own lock are done; the lock check reports OK for 70 files.
+
+Found on the way and fixed: the code reviews' small findings, at `70e957e1` (a doubled print of Bandit's output, an error that could escape the loader, two wordings); two new test files with no tier, at `046e0219`.
+
+The branch merged into `0.9-dev` at `88165470`; the installer refreshed Cairn's lock at `92fad349`. On that merged tree with plan B, the seven test files holding both plans' new tests and the tier test gave 121 passed and 2 skipped in the Linux subsystem. On the Windows Server machine they gave 107 passed, 8 skipped and 8 failed; each of the 8 also fails at the starting commit.
+
+Not run: the 42-file selection for C1, real Bandit, the threshold loader's POSIX branches, and Python 3.13. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+Not covered: three frozen files the Maintainer will see at the signing (the intent tool's `conflict.py`, `run_security_audit.py`, `measurements.py`). Home: `dev/PLANNING.md`, section 1, "What the one signing will show".
+Remaining: one frozen session test that cannot pass on Windows. Home: `dev/PLANNING.md`, section 1, "Windows", finding (l), for plan D2.
+Remaining: usage kept under another field name is skipped without a flag. Home: `dev/proposals/2026-11-21-claude-usage-counting.md`.
+
+Dispositions: no follow-up of this plan is deferred without a home above.
+
+**Benefit versus cost**: unknown -- first sessions on Windows show true text and two tools do what their issues ask; no adopter has run it yet. Cost: 8 agent runs; the figures the harness reported sum to 1,373,975 (the cost record's eight rows for this plan), which measures how large each agent's context grew, not what it used (`dev/measurement/agent-step-costs.md`, "What the harness figure is"). Strategy's own use is unknown.
+
+**Elapsed**: 8 hours 11 minutes from the plan's opening commit (2026-11-20 16:41) to the merge (2026-11-21 00:52), by commit times. **Tokens**: as stated above.
