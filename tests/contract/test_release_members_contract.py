@@ -240,6 +240,49 @@ def test_report_refusals(evidence, fault: str):
     assert "FAIL" in result.stderr
 
 
+@pytest.mark.skipif(os.name == "nt",
+                    reason="on Windows the backslash spelling is accepted; the next test covers it")
+def test_backslash_file_field_is_refused_off_windows(evidence):
+    root, report, start = evidence
+    suite = _xml()
+    suite[0].set("file", "tests\\test_security_lint.py")
+    ET.ElementTree(suite).write(report, encoding="utf-8")
+    result = _check(root, report, start)
+    assert result.returncode == 1, result.stderr
+    assert "invalid test-file identity" in result.stderr
+
+
+@pytest.mark.skipif(os.name != "nt",
+                    reason="pytest writes a backslash file= path only on Windows")
+def test_backslash_file_field_is_accepted_on_windows(evidence):
+    root, report, start = evidence
+    suite = _xml()
+    suite[0].set("file", "tests\\test_security_lint.py")
+    ET.ElementTree(suite).write(report, encoding="utf-8")
+    result = _check(root, report, start)
+    assert result.returncode == 0, result.stderr
+
+
+def test_file_field_naming_another_file_is_refused(evidence):
+    root, report, start = evidence
+    suite = _xml()
+    suite[0].set("file", "tests/test_security_marker.py".replace("/", os.sep))
+    ET.ElementTree(suite).write(report, encoding="utf-8")
+    result = _check(root, report, start)
+    assert result.returncode == 1, result.stderr
+    assert "test file and classname identities disagree" in result.stderr
+
+
+def test_dotdot_in_a_windows_file_field_is_refused(evidence):
+    root, report, start = evidence
+    suite = _xml()
+    suite[0].set("file", "tests/../tests/test_security_lint.py".replace("/", os.sep))
+    ET.ElementTree(suite).write(report, encoding="utf-8")
+    result = _check(root, report, start)
+    assert result.returncode == 1, result.stderr
+    assert "not a canonical relative path" in result.stderr
+
+
 @pytest.mark.parametrize("value", [None, [], {}, [VICTIM, VICTIM], ["../outside.py"],
                                        ["missing.py"], [123], "wrong-type"])
 def test_invalid_required_configuration_fails(evidence, value):
