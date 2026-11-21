@@ -27,6 +27,7 @@
     },
     "CHANGELOG.md": {
       "paths": [
+        "docs/DOCUMENTATION_PLAN.md",
         "dev/NEXT_SESSION.md",
         "templates/core/dev/NEXT_SESSION.md",
         "dev/reflections/next-session.md",
@@ -71,8 +72,19 @@
         "docs/style.md"
       ]
     },
+    "dev/PLANNING.md": {
+      "paths": [
+        "docs/DOCUMENTATION_PLAN.md"
+      ]
+    },
+    "dev/DOCUMENTATION_PLAN.md": {
+      "paths": [
+        "docs/DOCUMENTATION_PLAN.md"
+      ]
+    },
     "install/UPGRADE.md": {
       "paths": [
+        "docs/DOCUMENTATION_PLAN.md",
         "dev/reflections/next-session.md",
         "dev/NEXT_SESSION.md",
         "dev/collaboration_agreement.md",
@@ -115,6 +127,7 @@
     },
     "docs/methodology/consolidation-review.md": {
       "paths": [
+        "docs/DOCUMENTATION_PLAN.md",
         "bootstrap/fidelity-check.md",
         "bootstrap/tests/",
         "bootstrap/_scaffold/_guard.py",
@@ -273,6 +286,7 @@
     },
     "templates/modules/default-on/documentation-plan.md": {
       "paths": [
+        "docs/DOCUMENTATION_PLAN.md",
         "docs/developer/"
       ]
     },

@@ -1,4 +1,3 @@
-<!-- claim-check-allow: docs/DOCUMENTATION_PLAN.md -->
 # Cairn — development board
 
 This board lists the work left and its next step. The Maintainer reads the
