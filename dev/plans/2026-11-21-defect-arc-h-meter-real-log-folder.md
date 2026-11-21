@@ -219,3 +219,29 @@ Not run for this response: any test.
 Home: Strategy's checks after merge, and certification on a Windows machine whose test folder passes the access tests.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Strategy's direct checks before code review -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+The Windows-only tests cannot run on this machine, so Strategy checked (a) to (d) directly, on the branch at `5aa8f5ce`. All four behave as the plan says.
+
+**Why the native tests fail here** (two causes found, one not). Under the default temp folder the first refresh answers `unavailable`: an app-capability identifier holds full control of `AppData`, which the meter's access test refuses on the way to the test's folder (read with `Get-Acl`). From a temp folder on a path the meter accepts, the same refresh answers `git_parser_failed`. The meter's own Git helper reads a made-up project's remote correctly from such a path with the machine's real Git, so that cause lies in the tests' stand-in Git, and it is not found. It is not the project's folder on the `F:` drive: the tests work in a temp folder on `C:`.
+
+**Five planted cases, through the real `_enumerate_windows_jsonl` and the real Windows calls,** on made-up files in a throw-away folder on a path the meter accepts. Run once with the meter of `0.9-dev` and once with this branch's:
+
+| Case | Before | After |
+|---|---|---|
+| A sub-folder that reports 4,096 bytes, holding a log | refused, `source_changed` | accepted, 2 logs |
+| A log with a second name outside the folder | refused, `source_read_unavailable` | accepted, 1 log |
+| A log with both names inside the folder | refused, `source_read_unavailable` | refused, `source_read_unavailable` |
+| A log with a second name that the Users group may write | refused, `source_read_unavailable` | refused, `unavailable` |
+| A log with one name that the Users group may write | accepted | accepted |
+
+The fourth row is the planted bad input for the new access test: it is refused. The fifth is not changed by this plan and is shown for comparison. The cases use plain folders: a folder made by Python's `tempfile.mkdtemp` carries an access list of its own, which the walk refuses.
+
+**A real refresh with this branch's meter on the Windows Server machine** (reason codes and code locations only). It gets through the walk and the reader over 137 log files, with no `source_changed`, no `source_read_unavailable` and no failed lookup. Its only refusals are the access test on the project's folders on `F:`, and the receipt is `project_remote_unavailable`, which is the Maintainer's to settle.
+
+**Reply times on a real log.** Two refreshes with this branch's meter around a short stretch of one session: 1 reply, written as 2 records with different times. The meter recorded 1 event with its time known and no `ambiguous_time`, and its token totals by kind equal an independent count (output 1,202; cache read 548,108). A longer stretch, with sub-agent runs in it, is checked after the code reviews.
+
+Not checked: the native test's new last stage and the `hardlink` case as tests, which have not passed anywhere since the change; the Mac and Linux paths.
+
+**Elapsed**: unknown. **Tokens**: unknown.
