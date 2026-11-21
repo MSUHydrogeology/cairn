@@ -1,7 +1,7 @@
 # A consumer: a removal pass after each release, and plans that retire
 
 **Author**: Claude (Strategy), drafted by Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the pass removes tests and rules, some beside security guards; it changes the release process and files the gate manifest names; and one page protects a guard from removal.
 **Plan review**: required(Internal + Internal Security Review)
@@ -229,5 +229,22 @@ Security Review:
 What this changes for the Maintainer: the pass now decides alone only about ordinary tests. A rule in the governing files leaves only through a proposal he decides, and a security test only through a Security Review. His three choices are unchanged.
 
 Not checked by anyone: the note's outside studies, and the cost of the seeded-fault check.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Decision -- Maintainer (scribed by Claude Fable 5.2) -- 2026-11-21
+
+**Tier**: heavy
+
+**ACCEPTED.** Asked "Consumer proposal (heavy tier): after each release, an agent pass removes tests and rules that no longer earn their place. You never see a list, only three numbers: the gate's test run time, what left, and what came back. One page in your words says what must never be removed. My picks: remove the 208 archived plans in one step (they stay readable at the release tag); a 20-minute limit for the gate's main test run (it took 61 at 0.8); the pass replaces the rules-and-tests part of the release sweep. Do you accept it?", the Maintainer chose, from the answers offered (2026-11-21):
+
+> "Accept, your picks (Recommended)"
+
+What that settles:
+
+- **Choice 1: (a).** The archived plans are removed in one step at the first pass, after each proposal that cites one gets a line naming the tag and path where the plan can be read.
+- **Choice 2: 20 minutes** for the gate's main test run. The pass works toward it.
+- **Choice 3: (a).** The pass takes over the rules-and-tests part of the seventh release sweep.
+- **Tier.** Heavy, as proposed.
 
 **Elapsed**: unknown. **Tokens**: unknown.
