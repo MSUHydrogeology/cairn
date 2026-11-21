@@ -109,3 +109,47 @@ You cannot judge the trial page, or correcting it takes over an hour. The check'
 ## Assurance path
 
 **Assurance path**: high-assurance. Outcome A changes what the installer puts in a project, and outcome C changes a tool adopters run.
+
+## Review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`) -- 2026-11-20
+
+```
+Reviewed commit: 947d3d3cc97ce7d675275eab758ab2d3829e1ffb
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes for A, B and F, which are text and a trial; C and E are not yet specified well enough to build -- findings 1 to 3 below; `dev/tools/code_map.py` (1,210 lines, similarity-based, no page reader), `docs/code-map.md`.
+2. **Best alternative.** A hand-edited page with plan lines and the trial, and no check until the trial shows the page is useful; doing nothing leaves the account by hand -- the `git`/`_git` search below (seven non-test homes).
+3. **What would show it wrong.** Forward test: an agent given the page and one without it each write the same small task, and the first still adds a new copy of a central tool -- no such test is in F.
+
+The proposal tries to give the scientist one page he can correct as a description of the project, and to make agents call central tools instead of writing copies. The trial-first order is sound.
+
+**Findings**
+
+1. **Blocking.** The check has no one who runs it. S3 says the implementer runs `code_map.py` "as one of the plan's verification commands", but no outcome puts it there, and the Context says none of 25 recent plans cites the code map. The module is also team-gated. Closing words below, block 1.
+2. **Blocking.** E relies on "the check confirms each function is otherwise unchanged", a tool feature that C's four warnings do not list. E is set to Internal plan review only, though it would be a new claim adopters rely on. Closing words, block 2.
+3. **Blocking.** The trial has no stop result: "Signals" names an hour of correcting, but nothing says that stops C and E. F also cannot show agents stop writing one-offs, the thing the Maintainer wants. Closing words, block 3.
+4. **Blocking (weakens a rule).** Taking over "Critical Helper Homes" would drop its "Limits and preserving checks" column and its warnings that verbatim shipped copies are intentional and readers must not merge on name similarity (`dev/architecture_review.md`). Closing words, block 4.
+5. Non-blocking. A "word for word" copy warning will fire on every intended twin (`session.py`, `code_map.py`, `prose_diff.py` each ship a byte-identical copy); add to C: "a copy in a file the page lists as an intended twin draws no warning."
+6. Non-blocking. The doctrine list omits `tests/security/test_code_map.py` (names the install copy and the owner-home guard), `tests/security_manifest.py`, `tests/fixtures/gate_manifest.json`, `dev/.cairn/cairn-lock.yml`, and says nothing of how installed projects already holding an edited rubric get the page (`tests/test_upgrade.py` treats it as adopter-owned). Security Review should take this.
+7. Non-blocking. Commit `52cc8095` is a repeated clock workaround inside one test file; a page of folders, state and central tools would not have caught it. The seven `git` copies are the better example.
+8. Non-blocking. The v0.9 row for the code-map comparison pilot overlaps C and is not named.
+9. Non-blocking, the Decision summary. He would ask what "promise", "promise test", "fold" and choice 2(c) ("if its language can be described by hand") mean; E's timing is in no choice. Length: about 1,750 words against 1,000; cut first the Context bullets (the note holds them), then "Why heavy", which repeats the header.
+
+**Checked myself**: seven `git`/`_git` functions in seven non-test files (match); `meter.py` 7,322 lines (match); `dev/tools` holds 23 `.py` files, not 22; README presence for six folders (consistent with 2 of 12). `HandoffLock` also stores its root. Not checked: the 70 classes, 12-to-22 copy groups, the 195 failures, all outside studies, and tier correctness beyond heavy being defensible for A and C.
+
+**Not covered**: security answers S1 to S5 (for the Security pass), no test run.
+
+### Closing words for the blocking findings (review of 2026-11-20)
+
+1. Add to B: "When the project has a layout page, the plan's verification field lists `code_map.py --changed <files>` as a required command, and the code reviewer quotes its report in the review." Replace S3 with: "The plan lists it; the implementer runs it; the code reviewer quotes it."
+2. Add to C: "In E's plans, a move check reports each function whose body differs after a move." Change the Plan review line to: "required(Internal + Internal Security Review) for the plans that build A, C and E's move check; required(Internal) for B, F and the rest of E."
+3. Add to F: "Stop rule: if the Maintainer cannot correct the page without reading code, or correcting it takes over an hour, C and E are not built and the proposal returns to him. The trial also gives one agent the same small task with the page and one without, and counts new copies of a central tool in each."
+4. Add to A: "`dev/architecture_review.md` keeps its Critical Helper Homes table and the notes on intended copies until the page's central-tool entries each carry a limits-and-preserving-checks field covering every row."
