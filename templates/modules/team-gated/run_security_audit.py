@@ -850,7 +850,168 @@ def run_injection_pass(repo_root: Path, lock: dict) -> tuple[str, int]:
     return f"content-scan:{code}", _AGG_DEGRADED      # 2 scan-fail / 3 stale
 
 
+# --------------------------------------------------------------------------
+# Bandit threshold: an optional file the adopter owns (no file = default)
+# --------------------------------------------------------------------------
+
+_POLICY_SCHEMA = "cairn-python-security-policy/1"
+_POLICY_PATH_PARTS = ("dev", ".cairn", "python-security.json")
+_POLICY_MAX_BYTES = 4096
+_POLICY_LEVELS = ("low", "medium", "high")
+_POLICY_KEYS = ("schema", "min_severity", "min_confidence")
+#: Bandit writes LOW / MEDIUM / HIGH. A value it does not name ranks 99 and fails.
+_BANDIT_RANK = {"LOW": 1, "MEDIUM": 2, "HIGH": 3}
+_UNRANKED = 99
+
+
+class BanditPolicy(NamedTuple):
+    min_severity: str
+    min_confidence: str
+    from_file: bool
+
+
+class _DuplicateKey(ValueError):
+    """A JSON object in the policy file repeats a key."""
+
+
+def _reject_duplicate_keys(pairs):
+    obj = {}
+    for key, value in pairs:
+        if key in obj:
+            raise _DuplicateKey(key)
+        obj[key] = value
+    return obj
+
+
+def _policy_refusal(reason: str) -> AuditDegraded:
+    return AuditDegraded(
+        "the python-security policy file dev/.cairn/python-security.json "
+        "cannot be used: " + reason + ". Fix the file, or delete it to restore "
+        "the default (any finding fails). The audit will not pick a threshold "
+        "for you.")
+
+
+def load_bandit_policy(repo_root: Path) -> BanditPolicy:
+    """Read the optional threshold file. A missing file gives the default.
+
+    Every refusal raises AuditDegraded. Any other exception raised here is
+    refused as 'it cannot be read'."""
+    default = BanditPolicy("low", "low", False)
+    path = repo_root.joinpath(*_POLICY_PATH_PARTS)
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        return default
+    try:
+        if path.is_symlink() or not path.is_file():
+            raise _policy_refusal(
+                "it is not a regular file (a link, folder or special file)")
+        if path.stat().st_size > _POLICY_MAX_BYTES:
+            raise _policy_refusal("it is larger than 4096 bytes")
+        with path.open("rb") as handle:
+            raw = handle.read(_POLICY_MAX_BYTES + 1)
+        if len(raw) > _POLICY_MAX_BYTES:
+            raise _policy_refusal("it is larger than 4096 bytes")
+        try:
+            data = json.loads(raw.decode("utf-8"),
+                              object_pairs_hook=_reject_duplicate_keys)
+        except _DuplicateKey:
+            raise _policy_refusal("a key is repeated") from None
+        except (ValueError, RecursionError):
+            raise _policy_refusal("it is not valid UTF-8 JSON") from None
+        if not isinstance(data, dict):
+            raise _policy_refusal("it is not a JSON object")
+        if data.get("schema") != _POLICY_SCHEMA:
+            raise _policy_refusal(
+                "the schema value must be " + _POLICY_SCHEMA)
+        for key in data:
+            if key not in _POLICY_KEYS:
+                raise _policy_refusal(
+                    "an unknown key was found: " + escape_controls(key)[:40])
+        levels = {}
+        for key in ("min_severity", "min_confidence"):
+            value = data.get(key, "low")
+            if not (isinstance(value, str) and value in _POLICY_LEVELS):
+                raise _policy_refusal(
+                    key + " must be one of low, medium, high")
+            levels[key] = value
+        return BanditPolicy(levels["min_severity"], levels["min_confidence"], True)
+    except AuditDegraded:
+        raise
+    except Exception as exc:
+        raise _policy_refusal("it cannot be read") from exc
+
+
+def _bandit_rank(value) -> int:
+    if isinstance(value, str):
+        return _BANDIT_RANK.get(value, _UNRANKED)
+    return _UNRANKED
+
+
 def run_bandit_pass(pkg: Path, repo_root: Path) -> tuple[str, int]:
+    """Bandit over the validated python_package, under the adopter's threshold.
+
+    With no policy file, or one whose two minimums are both low, this is the
+    default pass. Otherwise a finding fails only when its severity and its
+    confidence are each at or above the minimums; the threshold is printed
+    first and every non-DEGRADED status says what it was."""
+    policy = load_bandit_policy(repo_root)
+    if policy.from_file:
+        print(f"[bandit] threshold in force: severity at least "
+              f"{policy.min_severity} and confidence at least "
+              f"{policy.min_confidence}, set in dev/.cairn/python-security.json. "
+              "A finding below it is printed but does not fail the audit.")
+    else:
+        print("[bandit] threshold in force: any finding fails (default; no "
+              "dev/.cairn/python-security.json).")
+    if policy.min_severity == "low" and policy.min_confidence == "low":
+        return _run_bandit_default(pkg, repo_root)
+    if shutil.which("bandit") is None and \
+            importlib.util.find_spec("bandit") is None:
+        print("\n[bandit] NOT INSTALLED -- cannot run the static-analysis pass.",
+              file=sys.stderr)
+        return "tool-absent", _AGG_DEGRADED
+    argv = [sys.executable, "-I", "-m", "bandit", "-r", "-f", "json",
+            *_safe_target_args([pkg])]
+    run = _run_tool(argv, label="bandit")
+    code, status = run.code, run.status
+    if status == "tool-absent":
+        return "tool-absent", _AGG_DEGRADED
+    if status != "ran":
+        return f"bandit:{status}", _AGG_DEGRADED
+    if code not in (0, 1):
+        return "bandit:error", _AGG_DEGRADED
+    try:
+        data = json.loads(run.stdout)
+        results = data.get("results") if isinstance(data, dict) else None
+        if not isinstance(results, list) or \
+                not all(isinstance(item, dict) for item in results):
+            raise ValueError("no results list")
+        ranked = [(_bandit_rank(item.get("issue_severity")),
+                   _bandit_rank(item.get("issue_confidence")))
+                  for item in results]
+    except Exception:
+        return "bandit:unparseable", _AGG_DEGRADED
+    if (code == 0 and ranked) or (code == 1 and not ranked):
+        return "bandit:inconsistent", _AGG_DEGRADED
+    sev_min = _BANDIT_RANK[policy.min_severity.upper()]
+    conf_min = _BANDIT_RANK[policy.min_confidence.upper()]
+    failing = sum(1 for sev, conf in ranked if sev >= sev_min and conf >= conf_min)
+    below = len(ranked) - failing
+    print(run.stdout)
+    print(f"[bandit] {failing} finding(s) at or above the threshold (these fail "
+          f"the audit); {below} below it (printed above; they do not fail the "
+          "audit).")
+    suffix = (f" [threshold: severity>={policy.min_severity}, "
+              f"confidence>={policy.min_confidence}]")
+    if failing:
+        return "bandit:findings" + suffix, _AGG_FINDINGS
+    if ranked:
+        return "bandit:clean-below-threshold" + suffix, _AGG_CLEAN
+    return "bandit:clean" + suffix, _AGG_CLEAN
+
+
+def _run_bandit_default(pkg: Path, repo_root: Path) -> tuple[str, int]:
     """bandit over the validated python_package (Crit #2 trusted boundary)."""
     if shutil.which("bandit") is None and \
             importlib.util.find_spec("bandit") is None:
