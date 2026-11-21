@@ -149,3 +149,45 @@ The proposal's strongest form: no host you use is left out, and the join, not pr
 - **3.** Add to choice 2(a): "A waiver is the Maintainer's own words, quoted in the release notes; the join has no waiver option and still refuses." Add to 2(b): "A machine that is down then stops the release."
 - **4.** Add "4. *First release.* (a) v0.8.1, as you wrote on 2026-11-21; Linux and Windows must pass first. (b) The release after, so v0.8.1 is not held." and, in the summary, "I read your words as v0.8.1."
 - **5.** Add to E: "The Mac's full run, with the 16 excluded files, stays the certifying run."
+
+## Review -- Claude Opus 5.5 -- 2026-11-21
+
+```
+Reviewed commit: 49e1315b06b16164f4f1b1018631072057ed3796
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the join is the only place that can refuse a missing host, and every record outcome is already checked strictly. -- `release/security_check.py` lines 332-383, 732-773.
+2. **Best alternative.** Whole set over native-only, as the usual review says. Doing nothing leaves the 0.8 waiver as the precedent. -- same file, lines 464-474.
+3. **What would show it wrong.** A Mac record relabelled as Linux passes the join. Today only the Mac-only outcomes could tell the two apart. -- lines 324-329 (Mac and Linux share the tag `posix`).
+
+The strongest form: no host goes unchecked, and code, not prose, refuses. I agree with usual findings 2, 3, 4 and 8. My words govern finding 1 (B1 below) and raise finding 9 to blocking (B5).
+
+**Findings**
+
+- **B1. Blocking. A Mac-only test could skip on every host.** A record names its host family (`posix` or `nt`), not the machine. A Mac-only test is skipped wherever its tag differs from the host's, and the Mac's tag is `posix`. So without new words the Mac could skip it too. Also, a Mac-only test that passes on Linux is not Mac-only.
+- **B2. Blocking. S2 overstates the guard.** The policy id is a hash pinned in the same file, so whoever moves a test recomputes it (`tests/security_manifest.py` lines 656, 687). The real guards are the gate signing, which covers that file (`tests/fixtures/gate_manifest.json` line 7674), and the protected-surfaces rule (line 43). That rule does not clearly say that moving a test between classes is a cut.
+- **B3. Blocking. A two-way check is easy to leave in place.** The sweep check compares `loaded[0]` with `loaded[1]` only (lines 2626-2630). A third record would go unchecked.
+- **B4. Blocking. A two-record join must not survive as a fallback.** If it did, the script itself would be the waiver.
+- **B5. Blocking. Where Python 3.13 comes from.** That interpreter writes the evidence the join trusts. On this VM, Git came from checksum-verified upstream source (`dev/rules/development-environment.md` line 169). Choice 1(a) names no source.
+- N1. Non-blocking. S5 is incomplete. The Linux record is written on a VM that other projects share and is carried to the Mac, so the steps add a writer and a transfer. Its file mode is 0600 (line 668).
+
+S1, S3 and S4 hold (lines 748-761, 2591-2593, 329).
+
+**Not covered**: no tests run; the join tests in `tests/test_security_check.py`, the Windows record and the plan for the Windows checks were not read; the PLANNING quotes were taken from the usual review.
+
+### Exact words (Security Review)
+
+- **B1.** Replace the usual review's sentence for finding 1 with: "A Mac-only test must pass on the Mac and be skipped, never absent and never passed, on Linux and Windows. The Mac's record carries both the POSIX and the Mac-only duties." Add to Tests required: "a Mac-only test skipped on the Mac; a Mac-only test that passed on Linux."
+- **B2.** Replace S2's second sentence with: "Moving a test into the Mac-only class is a cut of a native-only ID: it needs a Security Review and the Maintainer's re-signing of the gate manifest, and the release's record states the class counts."
+- **B3.** Add to A: "Every comparison between records, including the history-sweep policy and runner hashes, covers all three." Add to Tests required: "a Linux record whose sweep policy or runner hash differs."
+- **B4.** Add to choice 2(a): "The two-record join is removed, not kept beside the three-record one."
+- **B5.** Add to choice 1(a): "built from the official python.org source, checked against its published checksum, as Git was."
