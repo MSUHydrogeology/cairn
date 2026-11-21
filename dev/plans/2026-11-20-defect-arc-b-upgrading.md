@@ -1,7 +1,7 @@
 # Plan: Defect arc B, upgrading
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -318,3 +318,32 @@ def test_exact_copy_is_not_called_line_endings(layout, capsys, monkeypatch, tmp_
     assert GIT_READ_CRLF not in error
     assert GIT_READ_OTHER in error
 ```
+
+## Code review, review point after C2 -- Claude Opus 5.5 (`claude-opus-5-5`) (Security Review) -- 2026-11-20
+
+```
+Reviewed commit: 2e8cf4f9b72eb2ae0405d48c1668d9870d34e948
+```
+
+Range `ecc1a913..2e8cf4f9` on `arc-b-impl`, chunks C1 and C2 only; code unchanged since `df96fe64`.
+**Obligation**: Internal Security Review (heavy tier, review point after C2).
+
+**Verdict: REVISE**, on the usual review's finding 1 alone. This pass adds no blocking finding. C1 and C2 add one lock-writing route and one diagnosis, and neither widens what a tampered lock or helper can do.
+
+**Foundations**
+1. **Should this happen as framed?** Yes. The heal drops three named keys from non-old-path records and writes only the lock, after the lock and profile link refusals and the record-shape check. -- `upgrade.py` 4545-4577, 4790-4823; `_commit_lock_and_caches(target, lock, [])`.
+2. **Best alternative.** None safer. The heal needs no new authority: it removes only keys the verification refuses. -- `_layout_heal_findings`; repository-wide grep for the three keys.
+3. **What would show it wrong.** I gave the heal two malformed locks, a forged `hash`, an unknown key, `--to` and `--plan`, and gave the diagnosis an exact helper copy. Only the exact copy misbehaved. -- probe tests in a `git archive` copy; the real `_git_read_helper_path()` binds there.
+
+**Findings**
+1. **Blocking: I agree with the usual review's finding 1, its fix and its test.** A tampered helper cannot be called "line endings": the pinned bytes hold no CR, and the diagnosis never runs the file.
+2. Non-blocking. `_git_read_plain_bytes` opens with `open()`, so a link swapped in after the `lstat` walk is followed, and a FIFO would hang. Only someone who can already edit the installer could do this, and the read only picks a fixed text. Optional: open as `lockfile.py` 89-91 does.
+3. Non-blocking. `--force`, or no Git above the project, skips the unsaved-edit check, as on the other commands. Unable to tell refuses.
+
+**Checked, holds.** Malformed locks exit 2 with no traceback. A forged `hash` and an unknown key survive the heal. The heal leaves old-path records alone, so `layout_ancestry: unknown` still blocks a merge (`upgrade.py` 4351). No moved record's key is read later; no move keeps its path (47 moves). A pending transaction refuses. The folder name comes from Cairn's `vendor_targets.yml`. Messages echo no lock, helper or path. S1-S3 and S4's heal half hold for C1 and C2. S4's file half and S5 wait for C4 and C5.
+
+**Tests.** Removed checks pinned removed behaviour; I agree with the usual review.
+
+**Bounding**: ACCEPTED for C1 and C2 once finding 1 closes.
+
+**Not covered.** No link or file-mode case (Linux not run), Git before 2.31, `--migration-receipt` with `--heal-layout`. The plan has no fenced chunk, so there is no Waiting line to check. Over the word target, because each Security question gets its evidence. **Elapsed**: unknown. **Tokens**: unknown.
