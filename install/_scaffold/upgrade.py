@@ -19,8 +19,11 @@ path is confirmed within the Cairn root before it executes.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import os
 import re
 import secrets
+import stat
 import sys
 import unicodedata
 from pathlib import Path
@@ -79,6 +82,7 @@ from .layout_catalog import (
     ONBOARDING_GUIDES,
     SELF_HOST_UNLISTED,
 )
+from . import lockfile as _lockfile
 from .lockfile import (
     _BASE_CACHE_REL,
     _LIVING_STATE_DSTS,
@@ -89,6 +93,8 @@ from .lockfile import (
     _cairn_commit,
     _cairn_provenance,
     _cairn_version,
+    _GIT_READ_MAX_BYTES,
+    _GIT_READ_SHA256,
     _git_read_helper,
     _git_read_version,
     _resolve_commit_oid,
@@ -160,6 +166,72 @@ def _cairn_is_git(cairn_root: Path) -> bool:
         return False
     return (r.state == "completed" and r.returncode == 0
             and r.stdout.strip() == b"true")
+
+
+_GIT_READ_CRLF_TEXT = (
+    "Cairn's copy of templates/skills/_lib/git_read.py has Windows line endings, "
+    "so the installer cannot trust it. Git did this when it cloned Cairn with "
+    "core.autocrlf=true. In the Cairn checkout run `git config core.autocrlf "
+    "false`, delete that file, and run `git checkout -- "
+    "templates/skills/_lib/git_read.py`. Then run this command again. A new clone "
+    "made with `git clone -c core.autocrlf=false` also works."
+)
+_GIT_READ_OTHER_TEXT = (
+    "Cairn's copy of templates/skills/_lib/git_read.py does not match the copy "
+    "this installer is pinned to (it was edited, is a link, or is another "
+    "version). Restore it from the Cairn release you are installing from, then "
+    "run this command again."
+)
+
+
+def _git_read_helper_path() -> str:
+    """The pinned Git reader's path, built as ``lockfile._git_read_helper`` builds it."""
+    return os.path.abspath(os.path.join(
+        os.path.dirname(_lockfile.__file__), "..", "..", "templates", "skills",
+        "_lib", "git_read.py"))
+
+
+def _git_read_plain_bytes(path: str) -> bytes | None:
+    """The file's bytes when no part of *path* is a link and the file is a
+    regular file of at most ``_GIT_READ_MAX_BYTES``; otherwise ``None``, read
+    nothing. A missing file counts as not regular."""
+    current = os.path.splitdrive(path)[0] + os.sep
+    info = None
+    try:
+        for part in path[len(current):].split(os.sep):
+            if not part:
+                continue
+            current = os.path.join(current, part)
+            info = os.lstat(current)
+            attrs = getattr(info, "st_file_attributes", 0)
+            if (stat.S_ISLNK(info.st_mode)
+                    or attrs & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)):
+                return None
+        if info is None or not stat.S_ISREG(info.st_mode):
+            return None
+        if info.st_size > _GIT_READ_MAX_BYTES:
+            return None
+        with open(path, "rb") as handle:
+            raw = handle.read(_GIT_READ_MAX_BYTES + 1)
+    except OSError:
+        return None
+    return None if len(raw) > _GIT_READ_MAX_BYTES else raw
+
+
+def _git_read_binding_refusal() -> str | None:
+    """None when the pinned Git reader binds; otherwise the fixed text that
+    says why. Never returns file bytes."""
+    try:
+        _git_read_helper()
+    except RuntimeError:
+        pass
+    else:
+        return None
+    raw = _git_read_plain_bytes(_git_read_helper_path())
+    if raw is not None and hashlib.sha256(
+            raw.replace(b"\r\n", b"\n")).hexdigest() == _GIT_READ_SHA256:
+        return _GIT_READ_CRLF_TEXT
+    return _GIT_READ_OTHER_TEXT
 
 
 def _commit_has_path(cairn_root: Path, commit: str, rel_path: str) -> bool:
@@ -4165,6 +4237,9 @@ def _layout_target(cairn_root: Path, to_ref: str | None, *,
             if not remaining:
                 return None
             if not _cairn_is_git(cairn_root):
+                refusal = _git_read_binding_refusal()
+                if refusal is not None:
+                    raise ScaffoldSecurityError(refusal)
                 raise ScaffoldSecurityError(
                     "use a Cairn Git checkout with the legacy installer history to "
                     "verify these old copies: " + ", ".join(remaining))
@@ -4774,6 +4849,10 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
             return 2
 
     if args.to is not None and not _cairn_is_git(cairn_root):
+        refusal = _git_read_binding_refusal()
+        if refusal is not None:
+            print(f"error: {refusal}", file=sys.stderr)
+            return 1
         print("error: --to <ref> needs a git-checkout Cairn source; a "
               "packaged release can upgrade only to the currently-running "
               "tree (omit --to).", file=sys.stderr)

@@ -1,0 +1,30 @@
+# Line endings. Text files are stored and checked out with LF on every machine,
+# so a Windows checkout matches the repository and Cairn's recorded file hashes.
+# Cairn installs this file only when the project has none, and never replaces
+# yours. Edit the project choices below.
+* text=auto eol=lf
+
+# Windows scripts keep CRLF. Name only paths Cairn does not install, because
+# Cairn records the hash of each installed file's LF bytes.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files are never converted.
+*.png binary
+*.jpg binary
+*.gif binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tif binary
+*.nc binary
+*.h5 binary
+*.npy binary
+
+# Project choices: Cairn cannot know your paths. Uncomment and edit.
+# Data and evidence that must stay byte for byte (raw instrument output):
+# *.csv -text
+# *.dat -text
+# Files a Windows tool requires with CRLF:
+# *.sln text eol=crlf
+# *.reg text eol=crlf

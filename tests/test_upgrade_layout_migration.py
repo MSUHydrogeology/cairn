@@ -12,6 +12,7 @@ import pytest
 
 from install import scaffold
 from install._scaffold import layout_migration as migration
+from install._scaffold import upgrade
 
 
 LOCK = "dev/.cairn/cairn-lock.yml"
@@ -224,3 +225,38 @@ def test_packaged_source_only_needs_history_for_legacy_paths(layout, capsys):
     _put(target, LOCK, json.dumps(lock).encode("utf-8"))
     assert _upgrade(layout, "--plan") == 0
     assert not (target / RECEIPT).exists()
+
+
+GIT_READ_CRLF = (
+    "Cairn's copy of templates/skills/_lib/git_read.py has Windows line endings, "
+    "so the installer cannot trust it. Git did this when it cloned Cairn with "
+    "core.autocrlf=true. In the Cairn checkout run `git config core.autocrlf "
+    "false`, delete that file, and run `git checkout -- "
+    "templates/skills/_lib/git_read.py`. Then run this command again. A new clone "
+    "made with `git clone -c core.autocrlf=false` also works."
+)
+GIT_READ_OTHER = (
+    "Cairn's copy of templates/skills/_lib/git_read.py does not match the copy "
+    "this installer is pinned to (it was edited, is a link, or is another "
+    "version). Restore it from the Cairn release you are installing from, then "
+    "run this command again."
+)
+
+
+@pytest.mark.parametrize("edited", (False, True), ids=("crlf-copy", "edited-copy"))
+def test_unbound_git_reader_names_its_cause(layout, capsys, monkeypatch, tmp_path, edited):
+    helper = Path(__file__).resolve().parents[1] / "templates/skills/_lib/git_read.py"
+    raw = helper.read_bytes().replace(b"\n", b"\r\n")
+    if edited:
+        raw += b"# edited\r\n"
+    copy = tmp_path / "git_read.py"
+    copy.write_bytes(raw)
+
+    def unbound():
+        raise RuntimeError("Git read helper binding failed")
+
+    monkeypatch.setattr(upgrade, "_git_read_helper", unbound)
+    monkeypatch.setattr(upgrade, "_git_read_helper_path", lambda: str(copy))
+    assert _upgrade(layout, "--plan") == 2
+    error = capsys.readouterr().err
+    assert (GIT_READ_OTHER if edited else GIT_READ_CRLF) in error

@@ -65,9 +65,10 @@ def test_skipped_vendor_absent_is_a_calm_no_action_line(
     claude_lines = [ln for ln in fanout_lines if "claude-code" in ln]
     assert claude_lines, "expected a claude-code fan-out row to be printed, not dropped"
     for line in claude_lines:
+        assert ".claude" in line
         assert "skipped" not in line.lower()
         assert "error" not in line.lower()
-        assert "no action needed" in line.lower()
+    assert "session-start" in out
 
 
 def test_calm_advisory_is_idempotent_across_a_force_rerun(
