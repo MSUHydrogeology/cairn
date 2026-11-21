@@ -165,7 +165,8 @@ def test_layout_migration_resumes_on_either_side_of_lock(layout, capsys, monkeyp
     records = {row["dst"]: row for row in scaffold.read_lockfile(target)["files"]}
     assert records[NEW[1]]["hash"] == _digest(FORK)
     assert records[NEW[1]]["base_hash"] == _digest(LATEST[1])
-    assert records[NEW[1]]["layout_fork"] is True
+    for key in ("layout_ancestry", "layout_base_commit", "layout_fork"):
+        assert key not in records[NEW[1]]
     assert records["CLAUDE.md"]["hash"] == _digest(b"@AGENTS.md\nProject wrapper\n")
 
 
@@ -260,3 +261,50 @@ def test_unbound_git_reader_names_its_cause(layout, capsys, monkeypatch, tmp_pat
     assert _upgrade(layout, "--plan") == 2
     error = capsys.readouterr().err
     assert (GIT_READ_OTHER if edited else GIT_READ_CRLF) in error
+
+
+def _keyed_moved_record(old_rev: str) -> dict:
+    return {"src": "skills/_lib/board.py", "dst": NEW[0], "verbatim": True,
+            "base_hash": _digest(LATEST[0]), "hash": _digest(LATEST[0]),
+            "layout_ancestry": "verified", "layout_base_commit": old_rev,
+            "layout_fork": False}
+
+
+def test_heal_layout_removes_keys_from_moved_records_only(layout, capsys):
+    _, target, old_rev = layout
+    _put(target, NEW[0], LATEST[0])
+    lock = scaffold.read_lockfile(target)
+    lock["files"].append(_keyed_moved_record(old_rev))
+    for row in lock["files"]:
+        if row["dst"] == OLD[0]:
+            row.update(layout_ancestry="verified", layout_base_commit=old_rev, layout_fork=False)
+    _put(target, LOCK, json.dumps(lock).encode("utf-8"))
+    _commit(target, "lock with layout keys on a moved record and an old path")
+    expected = scaffold.read_lockfile(target)
+    for row in expected["files"]:
+        if row["dst"] == NEW[0]:
+            for key in ("layout_ancestry", "layout_base_commit", "layout_fork"):
+                row.pop(key)
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    assert "Removed layout keys from 1 lock record(s). Commit dev/.cairn/cairn-lock.yml." \
+        in capsys.readouterr().out
+    assert scaffold.read_lockfile(target) == expected
+    records = {row["dst"]: row for row in scaffold.read_lockfile(target)["files"]}
+    assert records[OLD[0]]["layout_base_commit"] == old_rev
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    assert "Nothing to heal." in capsys.readouterr().out
+
+
+def test_heal_layout_refuses_a_dirty_lock(layout, capsys):
+    _, target, old_rev = layout
+    _put(target, NEW[0], LATEST[0])
+    lock = scaffold.read_lockfile(target)
+    lock["files"].append(_keyed_moved_record(old_rev))
+    _put(target, LOCK, json.dumps(lock).encode("utf-8"))
+    before = (target / LOCK).read_bytes()
+
+    assert _upgrade(layout, "--heal-layout") == 1
+    assert (target / LOCK).read_bytes() == before
+    assert "unsaved edits" in capsys.readouterr().err

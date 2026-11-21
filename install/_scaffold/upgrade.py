@@ -4192,6 +4192,9 @@ def _self_heal_profile_config(target: Path, lock: dict[str, Any]) -> bool:
 
 
 _LAYOUT_MOVES = tuple(row for row in LAYOUT_INSTALLS if row[1:3] != row[4:6])
+# Keys the layout move used to leave on moved records; the security verification
+# refuses them, so the final stage no longer writes them.
+_LAYOUT_LOCK_KEYS = ("layout_ancestry", "layout_base_commit", "layout_fork")
 _LAYOUT_NEW_ROWS = {(owner, new_src, new_dst, verbatim)
                     for owner, _, _, verbatim, new_src, new_dst in _LAYOUT_MOVES}
 
@@ -4467,9 +4470,8 @@ def _layout_plan(target: Path, source: SourceRevision,
         if cache is not None:
             path, raw = cache
             tx.write(path.relative_to(target).as_posix(), raw, 0o644, absent=True)
-        entry = {**rec, **entry, "layout_base_commit": source.oid,
-                 "layout_ancestry": rec.get("layout_ancestry", "verified"),
-                 "layout_fork": action == "fork"}
+        entry = {key: value for key, value in {**rec, **entry}.items()
+                 if key not in _LAYOUT_LOCK_KEYS}
         files[dst] = entry
         if new_dst != dst:
             tx.retire[dst] = new_dst
@@ -4540,6 +4542,41 @@ def _layout_guard(force: bool, after: bool, tx: LayoutTransaction) -> None:
                                     + "; commit them or pass --force")
 
 
+def _layout_heal_findings(lock: dict[str, Any]) -> list[dict[str, Any]]:
+    """Lock records that carry a layout-move key and whose ``dst`` is not an
+    old path of ``_LAYOUT_MOVES`` (an old-path record is left for the reconcile)."""
+    old_paths = {row[2] for row in _LAYOUT_MOVES}
+    return [rec for rec in lock.get("files") or []
+            if rec.get("dst") not in old_paths
+            and any(key in rec for key in _LAYOUT_LOCK_KEYS)]
+
+
+def _cmd_heal_layout(target: Path, lock: dict[str, Any], force: bool) -> int:
+    """`upgrade --heal-layout`: remove the layout-move keys from the records
+    that carry them, so the security verification accepts the lockfile."""
+    findings = _layout_heal_findings(lock)
+    if not findings:
+        print("Nothing to heal.")
+        return 0
+    if not force:
+        try:
+            dirty = _writeset_dirty_collisions(target, [_LOCKFILE_REL])
+        except _EditCheckCannotTell as exc:
+            print(_cannot_tell_refusal("--heal-layout", exc.reason), file=sys.stderr)
+            return 1
+        if dirty:
+            print("error: refusing --heal-layout: the lockfile has unsaved edits; "
+                  "commit them or pass --force", file=sys.stderr)
+            return 1
+    for rec in findings:
+        for key in _LAYOUT_LOCK_KEYS:
+            rec.pop(key, None)
+    _commit_lock_and_caches(target, lock, [])
+    print(f"Removed layout keys from {len(findings)} lock record(s). "
+          f"Commit {_LOCKFILE_REL}.")
+    return 0
+
+
 def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
     """Dispatch the receipt before ordinary cleanup, apply or profile self-heal."""
     pending = _layout_pending(target)
@@ -4547,7 +4584,7 @@ def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
         print(f"An unfinished layout transaction is at {_LAYOUT_RECEIPT}. "
               "Resume with --apply --migration-receipt and the digest printed at stage time.")
         mutable = any((args.apply, args.init_lock, args.finalize, args.adopt_collisions,
-                       args.adopt_module, args.remove_retired))
+                       args.adopt_module, args.remove_retired, args.heal_layout))
         return 2 if mutable else 0
     if args.migration_receipt:
         raw, saved = _load_layout_receipt(target, args.migration_receipt)
@@ -4572,7 +4609,8 @@ def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
         print("Layout reconciliation complete." if comparison else
               "Layout migration complete. Run --stage for ordinary upgrades.")
         return 0
-    if any((args.init_lock, args.finalize, args.adopt_collisions, args.adopt_module, args.remove_retired)):
+    if any((args.init_lock, args.finalize, args.adopt_collisions, args.adopt_module, args.remove_retired,
+            args.heal_layout)):
         return None
     if args.reconcile_layout is not None:
         source = SourceRevision(cairn_root, _resolve_layout_revision(cairn_root, "HEAD"))
@@ -4666,6 +4704,11 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                         "that differs, or that git's last commit does not "
                         "hold, is kept and named. `--plan` shows first what "
                         "it would do.")
+    p.add_argument("--heal-layout", action="store_true",
+                   help="Remove the lock keys (layout_ancestry, layout_base_commit, "
+                        "layout_fork) that an older layout move left on moved "
+                        "records; the security verification refuses them. Commit "
+                        "the lockfile afterwards.")
     p.add_argument("--adopt-module", default=None, metavar="NAME",
                    help="Record an already-on-disk opt-in module NAME into the "
                         "lockfile so it 3-way-merges on later upgrades (#49). "
@@ -4701,6 +4744,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         ("--apply", args.apply),
         ("--adopt-collisions", args.adopt_collisions),
         ("--remove-retired", args.remove_retired),
+        ("--heal-layout", args.heal_layout),
     ) if on]
     if args.adopt_module:
         actions.append("--adopt-module")
@@ -4753,7 +4797,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     # `--adopt-collisions` through `_compute_upgrade`), so a link at its name or
     # above it is refused before either reads, as on `--plan`, `--stage`,
     # `--apply` and `--init-lock`.
-    if args.adopt_module or args.adopt_collisions or args.remove_retired:
+    if args.adopt_module or args.adopt_collisions or args.remove_retired or args.heal_layout:
         refused = _refuse_if_linked(
             target, _PROFILE_REL, f"the profile {_PROFILE_REL}")
         if refused is not None:
@@ -4815,6 +4859,19 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         only = set(args.finalize_paths) if args.finalize_paths else None
         return _cmd_finalize_lockfile(
             target, lock, only=only, force=args.force, templates_root=templates_root)
+
+    if args.heal_layout:
+        if args.to is not None:
+            print("error: --heal-layout runs against the running target "
+                  "tree; --to is not supported (run scaffold from the target "
+                  "tree).", file=sys.stderr)
+            return 2
+        try:
+            return _cmd_heal_layout(target, lock, args.force)
+        except ScaffoldSecurityError as exc:
+            print("error: upgrade --heal-layout refused (containment): "
+                  f"{exc}", file=sys.stderr)
+            return 2
 
     if args.remove_retired:
         if args.to is not None:
@@ -5040,4 +5097,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
               "the exact bytes you review.")
     for line in model_selection_notice_lines(target):
         print(line)
+    if _layout_heal_findings(lock):
+        print("Run python install/scaffold.py upgrade --target <repo> --heal-layout "
+              "to remove lock keys the security verification refuses.")
     return 0
