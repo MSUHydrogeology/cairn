@@ -6497,6 +6497,24 @@ def _merge_event_batches(batches):
     return list(merged.values())
 
 
+def _record_carries_usage(record):
+    """Return True if any dict inside the record has a `usage` key.
+
+    Walks without recursion: a list is used as a stack over dict values and
+    list items, so a deeply nested record cannot exhaust the call stack.
+    """
+    pending = [record]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, dict):
+            if "usage" in item:
+                return True
+            pending.extend(item.values())
+        elif isinstance(item, list):
+            pending.extend(item)
+    return False
+
+
 def read_records(tool, lines, *, config=None, source_aliases=(), source_root=None,
                  windows_api=None, windows_user_sid=None):
     """Normalize a bounded source batch without exposing raw IDs or paths.
@@ -6604,7 +6622,8 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                 continue
             if tool == "claude":  # vendor-ok: producer assistant usage shape
                 if kind != "assistant":
-                    if kind not in {"user", "system", "progress", "file-history-snapshot"}:
+                    if kind not in {"user", "system", "progress", "file-history-snapshot"} \
+                            and _record_carries_usage(record):
                         issues.add("unsupported_record")
                     continue
                 message = record["message"]
