@@ -41,3 +41,20 @@ No secrets or personal data appear; the only name is yours, in three copyright l
 ## What I did not check
 
 I ran no test. I loaded both versions of `security_manifest.py` in a scratch folder to compare their lists and ran its two validators, which passed. I did not read `git_read.py`, `conftest.py`, `release/security_check.py` or `tests/verify_counts.py`, so I accept on trust that the Git reader runs no project programs and that `tests/README.md` correctly says the count check runs no commands. I did not reproduce the signing page.
+
+## Follow-up: are other new files shown at the signing? -- Claude Opus 5.5 -- 2026-11-21
+
+**Answer.** Four of the eight are scanned on the page; the four under `templates/` are scanned nowhere. The page names every changed path as `added`, but for this layout move the scan comes from `LAYOUT_SCAN_SOURCE` in `release/repin.py`. It scans a new file only if its old path was scanned before (lines 202-204: sensitive, or under `scripts/` or `bootstrap/`), or if it is new under `install/` or `release/` (line 205). `templates/` meets neither. The page prints only a count of scanned paths, not their names (`release/reanchor.sh` line 754), and its heading names `dev/tools/` (line 749), which this move does not scan.
+
+| File | Where it is shown |
+|---|---|
+| `install/scaffold.py` | scanned: moved from sensitive `bootstrap/scaffold.py` (`install/_scaffold/layout_catalog.py` line 156) |
+| `install/_scaffold/layout_catalog.py`, `layout_migration.py` | scanned (line 205); the 36 top-level names I checked are also declared in `tests/fixtures/scaffold_ast_known_new.json` |
+| `release/check_release_test_members.py` | scanned: moved from `scripts/` (catalog line 148) |
+| `templates/skills/_lib/pulse.py` | named only; byte-identical to `dev/tools/pulse.py`, read above |
+| `templates/modules/default-on/measurements.py` (304 lines), `token_budget.py` (113), `verify_counts.py` (221) | named only, not scanned |
+| 11 new `tests/**/test_*.py` modules | named only, by design (runbook row E7) |
+
+**What to do.** Have an agent read the three `default-on` files, 638 lines, as the six were. They ship to adopters and differ from Cairn's own copies in `tests/`, which are scanned (the shipped `measurements.py` adds 74 lines and drops 115). The pulse copy needs nothing more.
+
+**Not determined without the ceremony.** That the real scan matches this reading of the code; which class the new manifest gives the template files; whether the page heading should be corrected, a wording change in a frozen file.
