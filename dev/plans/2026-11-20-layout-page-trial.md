@@ -122,3 +122,19 @@ Two additions of mine, for gaps the closing words left. If every task is dropped
 Not checked by anyone: whether a 900-word page with 20 entries a list can describe a project of this size; the trial itself will show it.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record, C1 -- Claude Fable 5.2 (Strategy, running the session) -- 2026-11-20
+
+C1 is done and its five checks hold. C2 now waits for the Maintainer's hour. This record holds numbers and general words only.
+
+- **Copy.** Made from the project's committed files; the commit is recorded in the trial folder only. 1,375 files were exported and 715 kept. That project's Git reports the trial folder as ignored, and its own status is unchanged.
+- **A choice beyond the plan's words.** The plan says to delete the hand-kept account from the copy. The session removed more, for the same purpose: everything under that project's planning folder except its tests, the agent rule files at its root, and every path whose name says architecture (660 files in all), because plans and notes may restate the account. A search of the copy for a path naming architecture finds none.
+- **Draft** (Claude Opus 5.5, high tier, reading only the copy): 871 words; 24 folders, 16 state classes, 20 central tools; the counting script finds no line outside the format. The limits cut 8 entries, listed beside the draft. The agent reported that for 2 tools it found no test by name, and that about half its test locations rest on a name search alone.
+- **Tasks** (Claude Sonnet 5.5, medium tier, reading only the copy): three tasks, 194 words, and a key kept apart for the session. The draft did not exist when the tasks were written: its folder was empty then. The tools behind the three tasks are used by 11, 5 and 12 other files. The agent reported four departures from its instructions: a helper script written beside the copy and then deleted, one listing of a folder outside the copy, its own read-only scan script, and one process listing. The copy was unchanged afterwards.
+- **Check against the hand-kept account** (Claude Sonnet 5.5, reading only the draft and a copy of the account): counts for all three lists are written. They are kept apart in the trial folder and recorded here at the closeout, because the plan says the Maintainer does not see them before he corrects the page.
+- **Counting script.** The scratch script that "Counts" calls for is in the trial folder. It checked the draft's format, and it will count added, removed and changed entries after the correction.
+- **Cost, as the harness reported:** draft 133,527 tokens, 7 minutes; tasks 114,176 tokens, 4 minutes; check 68,119 tokens, under 1 minute.
+
+Not done: nobody has checked the draft against the code. That is what the correction is for.
+
+**Elapsed**: 9 minutes from the copy to the last count, by file times. **Tokens**: 315,822 in three agent runs; the coordinating session's own use is not visible to it.
