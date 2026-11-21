@@ -279,14 +279,14 @@
     {
       "base_hash": "sha256:8510bf0b8a405adef1611b9255ace0c1987b0a499d0007a1a7dfc093dbf2a924",
       "dst": "dev/tools/claim_check.py",
-      "hash": "sha256:8510bf0b8a405adef1611b9255ace0c1987b0a499d0007a1a7dfc093dbf2a924",
+      "hash": "sha256:542d2db92f1ccc88b62be0bbd148f72c8efc94a40f0ddbb849b724ba989a8be3",
       "src": "modules/default-on/claim_check.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:8ab87d1b562e8a54bf552e1e93f0bd9b33d9cc3ec1bbeafb1933bdeaa30149c3",
       "dst": "dev/tools/content_scan.py",
-      "hash": "sha256:8ab87d1b562e8a54bf552e1e93f0bd9b33d9cc3ec1bbeafb1933bdeaa30149c3",
+      "hash": "sha256:6c164e45d8cb6a38ccf20fdbcb18cba679fcd013a53a1d7001e8a8d19dc5f7eb",
       "src": "modules/team-gated/content_scan.py",
       "verbatim": true
     },
@@ -314,7 +314,7 @@
     {
       "base_hash": "sha256:19aff8e43b6554416f92cc6d519201121ccf7ca9d533b320616bb7f71bb57dcb",
       "dst": "dev/tools/content_scan_runner.py",
-      "hash": "sha256:19aff8e43b6554416f92cc6d519201121ccf7ca9d533b320616bb7f71bb57dcb",
+      "hash": "sha256:aba653af42389bfa65154471db5ca4324b5af535474c37bdb127eca72bbc3116",
       "src": "modules/team-gated/content_scan_runner.py",
       "verbatim": true
     },
@@ -335,7 +335,7 @@
     {
       "base_hash": "sha256:e3ae4cc8caa3f2d4fd24b2da7dbaa91b92d5dad24a5163481153a411057c24ab",
       "dst": "dev/tools/run_portable_security_sweeps.py",
-      "hash": "sha256:05b69dae8a19a458a4b5d5fc2e04d2e6ce798dba1b599ab7830710de3e126742",
+      "hash": "sha256:c5b02b313527909ea55e72cbbcbfdd5957c3b6a96dbe4e4e89b151ae2eaeaad5",
       "src": "modules/team-gated/run_portable_security_sweeps.py",
       "verbatim": true
     },
