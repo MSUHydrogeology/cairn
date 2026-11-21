@@ -245,3 +245,30 @@ The fourth row is the planted bad input for the new access test: it is refused. 
 Not checked: the native test's new last stage and the `hardlink` case as tests, which have not passed anywhere since the change; the Mac and Linux paths.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-21
+
+Reviewed range: `02dfe045e669ecc326ec129b7b25ba6aa6f01bc9` (merge base with `0.9-dev`) to `d8f675d5485494eff768d8903cd6351504f0ae9d`; code ends at `fb400b49`.
+
+**Obligation**: usual code review. Status left as is for the Security Review pass.
+
+**Verdict**: ACCEPT. Conditions (a) to (d) are as the plan states and nothing else in `meter.py` changed. No blocking finding.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the diff of `dev/tools/meter.py` is 22 lines, in the three named places only -- `git diff 02dfe045 HEAD -- dev/tools/meter.py`.
+2. **Best alternative.** None simpler; changing two existing tests instead of adding three keeps the frozen files untouched -- `git diff --stat` on `tests/security_manifest.py` and `tests/test_security_check.py` is empty.
+3. **What would show it wrong.** A Windows run where the fixture's first refresh answers `ok` and the new last stage fails; Strategy's real refresh -- plan "Strategy's direct checks".
+
+**Findings**
+
+1. Non-blocking: the time test fails if (d) is wrong either way. The three copies are dated 12:00:02, 12:00:00 and 12:00:05; keeping the first (02), the last (05) or losing the time all fail an assertion. It does not test text order against instant order (an offset time); the `fromisoformat` key is read, not run on such a case.
+2. Non-blocking: the native stage fails if (a) or (b) is wrong (refresh not `ok`) or (c) refuses the second name. It would not catch a file read twice, since `_merge_event_batches` keeps one event per key. Reading twice is covered by `seen` in code and by Strategy's planted case 3, not by a test.
+3. Non-blocking: the native stage cannot run on this machine; it and `hardlink` have passed nowhere since the change. The `hardlink` case is unedited (not in the diff). Strategy's planted cases cover (a) to (c) through the real walk; they do not cover (b)'s "folder changes during a refresh" cost.
+4. The fixture fix copies `pulse.py` with the same byte check; nothing else in the set-up changed. Copies: `cmp` prints nothing; the lock commit holds only `dev/.cairn/cairn-lock.yml`; `verify_integrity.py` reports OK. README and changelog lines match what shipped. The record says what was and was not run.
+
+I ran the time test once: passed.
+
+**Not covered**: the Windows-only tests; Security Review questions; real logs; the Mac and Linux paths.
+
+Elapsed time: unknown. Tokens: unknown.
