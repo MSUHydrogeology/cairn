@@ -101,8 +101,9 @@ runs cost machine time, not tokens, and are listed separately.
 | | follow-up: the three shipped module files read | High | 88,087 | 2 | sign as they are; one thing to settle |
 | Plan E, the documentation plan moves | amendment review closed and four chunks built, by the plan's first agent (stopped by Strategy) | Medium | unknown | unknown | built; no record written |
 | Usage counting | plan written from a brief, by the plan's agent | Medium | 291,357 | 11 | opened; one question |
+| | usual plan review | Medium | 184,915 | 5 | revise, 2 blocking |
 
-Total for the day so far: 11,604,442 tokens across 77 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 11,789,357 tokens across 78 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
