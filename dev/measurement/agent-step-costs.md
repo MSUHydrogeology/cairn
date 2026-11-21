@@ -97,11 +97,19 @@ runs cost machine time, not tokens, and are listed separately.
 | | limited Security Review of the revision | High | 137,943 | 3 | revise, 1 blocking |
 | Plan C, first session and tools | answer recorded, closeout and archive, by the plan's agent | Medium | 104,776 | 1 | archived |
 | Six unsigned files | Security read for the Maintainer | High | 172,475 | 5 | sign as they are |
+| | follow-up: which other new files the signing page scans | High | 157,743 | 4 | four are scanned nowhere |
+| | follow-up: the three shipped module files read | High | 88,087 | 2 | sign as they are; one thing to settle |
+| Plan E, the documentation plan moves | amendment review closed and four chunks built, by the plan's first agent (stopped by Strategy) | Medium | unknown | unknown | built; no record written |
+| Usage counting | plan written from a brief, by the plan's agent | Medium | 291,357 | 11 | opened; one question |
 
-Total for the day so far: 11,067,255 tokens across 74 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 11,604,442 tokens across 77 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
+
+Plan E's first build agent was stopped by Strategy on 2026-11-21, after it had built all
+four chunks. The harness gave no figure for it, so its row says unknown and it is not in
+the total.
 
 **Test runs (machine time on a Windows Server host, no tokens).** A selection of
 23 test files for a rule-text change: 16 to 17 minutes a run, three runs. Plan
