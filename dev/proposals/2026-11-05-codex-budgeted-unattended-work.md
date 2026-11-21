@@ -138,7 +138,7 @@ records and cannot substitute for the accepted local contract.
 
 Put deliberation and decisions in `dev/`, cross-cutting prescription in the
 governing layer or shipped drain step as applicable, and software description in
-`docs/`, following `docs/DOCUMENTATION_PLAN.md`. The later plan must identify
+`docs/`, following `dev/DOCUMENTATION_PLAN.md`. The later plan must identify
 the actual shipped and self-hosted consumers and any doctrine rate-limit gate.
 The single-item override belongs in the launched path of the shipped and
 self-hosted session-start drain instructions; their ordinary attended path stays

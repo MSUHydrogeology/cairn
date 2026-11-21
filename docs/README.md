@@ -62,5 +62,5 @@ New to Cairn? Start with the [quickstart](quickstart.md).
 * [Release process](../release/RELEASE_PROCESS.md) -- how a Cairn release is cut.
 * [Skills compatibility](skills-compatibility.md) -- which agents can run
   Cairn's skills.
-* [Documentation plan](DOCUMENTATION_PLAN.md) -- where each kind of document
+* [Documentation plan](../dev/DOCUMENTATION_PLAN.md) -- where each kind of document
   belongs.

@@ -6,14 +6,14 @@
 
 **Selected when:** default-on — kept by every deployment that may want
 disciplined placement decisions for its documentation and doctrine
-artifacts. The cost is one forkable file (`docs/DOCUMENTATION_PLAN.md`)
+artifacts. The cost is one forkable file (`dev/DOCUMENTATION_PLAN.md`)
 the adopter customizes once, plus three small cross-reference lines
 the module merges into the core templates. The payoff is structural:
 the "where does this new doc go?" question has an *algorithmic*
 answer, and the doctrine-vs-description boundary stays load-bearing
 instead of eroding.
 **Adds to:** a forkable placement-decision procedure at
-`docs/DOCUMENTATION_PLAN.md` (installed by the scaffold; the adopter
+`dev/DOCUMENTATION_PLAN.md` (installed by the scaffold; the adopter
 customizes the worked examples for their own tier vocabulary), plus
 three short cross-reference lines that land in the adopter's
 `AGENTS.md` (the `documentation-discipline` slot) and in the
@@ -36,7 +36,7 @@ A **placement-decision procedure + cross-reference plumbing** that
 makes the procedure discoverable from the surfaces an author hits
 when adding new content. The module ships:
 
-* The **forkable procedure** at `docs/DOCUMENTATION_PLAN.md` --
+* The **forkable procedure** at `dev/DOCUMENTATION_PLAN.md` --
   installs from the scaffold into the adopter's tree once. The
   adopter customizes the worked examples (their own file inventory,
   their own tier vocabulary, their own AGENTS-vs-agent_collaboration
@@ -65,7 +65,7 @@ becomes the right next step).
 
 When the project begins writing code, or when an existing project adopts
 Cairn, describe its actual practices in a human-facing style guide. Use your
-installed `docs/DOCUMENTATION_PLAN.md` to choose its descriptive home. Keep
+installed `dev/DOCUMENTATION_PLAN.md` to choose its descriptive home. Keep
 a short, actionable agent version in project-owned rules and route it from
 `RULES.md`; if that router is absent, use the project-conventions section of
 `AGENTS.md` until it exists. Record existing practice before inventing rules;
@@ -85,7 +85,7 @@ reference / developer` for the descriptive layer; a different
 deployment might use `getting-started / how-to / explanation /
 reference` from the Diátaxis framework, or any other split). The
 adopter customizes the descriptive-layer tier names in the
-installed `docs/DOCUMENTATION_PLAN.md` to match their own
+installed `dev/DOCUMENTATION_PLAN.md` to match their own
 `docs/` structure.
 
 ## Adds to
@@ -115,7 +115,7 @@ helper integration lands.
 ### Block 1: `AGENTS.md` -- slot `documentation-discipline`
 
 > This deployment uses a **placement-decision procedure** for
-> documentation and doctrine: see [`docs/DOCUMENTATION_PLAN.md`](docs/DOCUMENTATION_PLAN.md)
+> documentation and doctrine: see [`dev/DOCUMENTATION_PLAN.md`](dev/DOCUMENTATION_PLAN.md)
 > for the four-layer vision (entry / governing / deliberation /
 > descriptive), the routing rules, and the `AGENTS.md` ↔
 > `agent_collaboration.md` boundary doctrine. When adding new
@@ -125,7 +125,7 @@ helper integration lands.
 ### Block 2: `dev/proposals/_template.md` -- slot `documentation-tier-home`
 
 > **Doc tier home rule** -- route doc and doctrine changes by layer
-> per [`docs/DOCUMENTATION_PLAN.md`](docs/DOCUMENTATION_PLAN.md):
+> per [`dev/DOCUMENTATION_PLAN.md`](dev/DOCUMENTATION_PLAN.md):
 > cross-cutting prescription → governing layer (`AGENTS.md`);
 > deliberation about what to build → deliberation layer (`dev/`);
 > description of the software as it is → descriptive layer (`docs/`).
@@ -135,7 +135,7 @@ helper integration lands.
 ### Block 3: `dev/plans/_template.md` -- slot `documentation-tier-home`
 
 > **Doc tier home rule** -- route doc and doctrine changes by layer
-> per [`docs/DOCUMENTATION_PLAN.md`](docs/DOCUMENTATION_PLAN.md):
+> per [`dev/DOCUMENTATION_PLAN.md`](dev/DOCUMENTATION_PLAN.md):
 > cross-cutting prescription → governing layer (`AGENTS.md`);
 > deliberation about what to build → deliberation layer (`dev/`);
 > description of the software as it is → descriptive layer (`docs/`).
@@ -144,7 +144,7 @@ helper integration lands.
 
 ## Forking the procedure
 
-After install, the adopter customizes `docs/DOCUMENTATION_PLAN.md`:
+After install, the adopter customizes `dev/DOCUMENTATION_PLAN.md`:
 
 * **Replace the four-layer worked examples** with the adopter's
   actual file inventory (e.g., the entry-layer's `README.md` is
@@ -192,7 +192,7 @@ procedure generalize across project domains; only the *tier
 names* within the descriptive layer are domain-specific.
 
 Cairn's own self-hosted instance of this procedure lives at
-`cairn/docs/DOCUMENTATION_PLAN.md` (Cairn IS its own first
+`cairn/dev/DOCUMENTATION_PLAN.md` (Cairn IS its own first
 adopter; dogfooding the module on the Cairn tree validates the
 discipline before it ships to other adopters).
 

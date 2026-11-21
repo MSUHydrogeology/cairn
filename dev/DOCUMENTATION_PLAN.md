@@ -13,7 +13,7 @@ fidelity contract, `install/BOOTSTRAP.md` for the install
 sequence; this file plays it for Cairn's documentation and doctrine.
 
 The `documentation-plan` default-on module ships **a forkable copy**
-of this procedure to every adopter at `docs/DOCUMENTATION_PLAN.md`
+of this procedure to every adopter at `dev/DOCUMENTATION_PLAN.md`
 (see `cairn/templates/modules/default-on/documentation_plan_template.md`).
 The two artifacts share doctrine substance; only the worked-example
 paths differ -- Cairn's self-hosted instance discusses Cairn's own
@@ -80,13 +80,13 @@ how something is built or organized**.  The layer has two ranges:
     govern release provenance and the install safety threat model.
   * `cairn/release/RELEASE_PROCESS.md` governs Cairn release procedures
     and lives beside the release machinery.
-  * **This file** (`cairn/docs/DOCUMENTATION_PLAN.md`) governs
-    documentation placement and lives in `docs/`.  Organizing
-    documentation is the documentation domain's own concern -- so
-    its governance map is domain-local, exactly as
-    `BOOTSTRAP.md` is for the install sequence.  This file's own
-    placement in `docs/` is therefore *derived* from the vision,
-    not an unexplained exception to it.
+  * **This file** (`cairn/dev/DOCUMENTATION_PLAN.md`) governs
+    documentation placement and lives in `dev/`.  The Maintainer
+    placed it there (chat, 2026-11-19).  Where documents go is an
+    operating question for the people and agents who write them,
+    so this file's domain is Cairn's operating files and the rule
+    above holds: it lives with them, and `docs/` holds only what
+    describes the software.
   * `cairn/dev/rules/` carries Cairn-specific operating rules that
     do not belong in shared methodology.
 
@@ -150,7 +150,7 @@ question -- *what is it doing?*
 * **Prescribing how *one domain* is organized** -> the governing
   layer's domain-local range, **in that domain** (e.g.,
   `cairn/install/BOOTSTRAP.md`, `cairn/install/fidelity-
-  check.md`, this file in `cairn/docs/`).
+  check.md`, this file in `cairn/dev/`).
 * **Deliberating what to build, or how the team decides** -> the
   **deliberation layer**, `cairn/dev/` (Goal 1 substrate; the
   fold-back proposal behind this file is in the reference
@@ -210,7 +210,7 @@ navigate *to* as a starting point.  The UPPERCASE set, repo-wide:
 * **Install landmarks** -- `cairn/install/BOOTSTRAP.md`,
   `cairn/install/PROVENANCE.md`, `cairn/install/SAFETY.md`.
 * **Domain-governance maps** -- `cairn/install/BOOTSTRAP.md`,
-  `cairn/docs/DOCUMENTATION_PLAN.md`.
+  `cairn/dev/DOCUMENTATION_PLAN.md`.
 * **Roadmap boards** (self-hosted in `cairn/dev/`) --
   `cairn/dev/PLANNING.md`.
 
