@@ -3,66 +3,56 @@
 **Author**: Claude Fable 5.2 (Strategy)
 **Status**: awaiting-decision
 **Review**: usual + Security Review
-**Proposed tier**: heavy
-**Plan review**: required(Internal + Internal Security Review)
+**Proposed tier**: light
+**Plan review**: not required(no plan: light tier)
 **Opened**: 2026-11-21
-**Rules that apply**: dev/rules/certifying-runs.md, dev/rules/protected-surfaces.md, dev/rules/development-environment.md, dev/rules/working-agreements.md, dev/rules/conventions.md
-**In brief**: A release of Cairn is certified only when its tests have passed on a Mac, on Linux and on Windows, each host leaving its own record, so that no host you use is left out.
+**Rules that apply**: dev/rules/certifying-runs.md, dev/rules/development-environment.md, dev/rules/working-agreements.md
+**In brief**: A release of Cairn is certified when its whole test suite has passed once on a Mac, once on Linux and once on Windows, and the three results are written in the release note.
 
 ## Decision summary
 
-**What you noticed.** Cairn 0.8.0 was certified by one full test run on the Mac. The records that the release steps ask of the Mac and of Windows, and the check that joins them, were waived at the cut. Linux has never had a record, and the release check cannot accept one. You wrote on 2026-11-21 that "excluding Windows and Linux certification was a defect", and on 2026-11-19: "for future releases, I want Linux and Windows verification alongside Mac."
+**What you noticed.** Cairn 0.8.0 was certified by one full test run on the Mac. The records that the release steps ask of the Mac and of Windows, and the check that joins them, were waived at the cut, and Linux has never been tested as a whole. You wrote on 2026-11-21 that "excluding Windows and Linux certification was a defect", and that v0.8.1 is to be certified on all three platforms.
 
-**The change.** A release needs three records, one from each host. I read your words as starting with v0.8.1; that is choice 4. A record is nearly the whole test set (all but 16 files that only the Mac's own full run covers), run on that host twice, in two orders, under Python 3.13. One check, the join, reads the three records. It refuses the release if a host is missing, if the records are from different commits, or if a test that belongs to a host did not pass there.
+**The change, in its simple form.** Before a release is cut, the whole suite is run once on each of the three platforms, at the release commit, under Python 3.13. Each result is written in the release note: the platform, the commit, the counts, and every test skipped on that platform with its reason. A release is certified when all three have passed. No code is added.
 
-**What is added, changed or removed.**
-- The release check, an existing script, learns a third host, and its two-host join is removed. No new script and no new option.
-- The release steps and the rule on certifying runs name three hosts.
+**What changes.**
+- Two documents: the rule on certifying runs and the release steps.
 - The Linux machine gets Python 3.13.
-- If the Linux run finds tests that can pass only on a Mac, each is listed by name with its reason, and each release states how many there are.
-- Plan D2 of the defect arc, the Windows checks, becomes this work's Windows plan.
+- A test that cannot pass on a platform is marked to skip there, with its reason written in the test.
+- The record and join commands of the release check, which were waived at 0.8, are not used for v0.8.1. Whether to keep, extend or remove them is left to the tightening.
 
-**What it costs.** Machine time at every release: three hosts, two orders each. One order took 61 minutes on the Mac at 0.8 (measured). No full run has been timed on Linux or Windows, so the total is not known; expect several hours, unattended. Before the first such release the Linux and Windows runs must also be made to pass, and nobody can size that until each has run once.
+**What it costs.** One full run on each platform at every release. It took 61 minutes on the Mac at 0.8 (measured); Linux and Windows have never been timed. Before v0.8.1 the suite must first be made to pass on Linux and on Windows, and nobody can size that until each has run once.
 
-**Your choices.**
-1. *The Linux machine.* (a) The shared Linux virtual machine, with Python 3.13 added in its user's own folder: built from the official python.org source and checked against its published checksum, as Git was on that machine. Recommended. (b) Another machine you name.
-2. *Waivers.* (a) The join always refuses a missing record and has no waiver option. A waiver is your own words, quoted in the release notes. Recommended. (b) No waiver at all; a machine that is down then stops the release.
-3. *Tests that pass only on a Mac.* (a) List each by name with its reason. Recommended. (b) Make each one portable before the first three-host release; the size is unknown until Linux has run.
-4. *The first release cut this way.* (a) v0.8.1, as I read your words of 2026-11-21: Linux and Windows must pass before it is cut. (b) The release after, so that v0.8.1 is not held.
+**This is the narrowed form.** The proposal first asked for a stricter check in code: three machine-written records and a join that refuses a missing host. Both reviews below are of that form. Asked to choose between the two, you wrote: "Yes, the simple way". What was dropped is listed under Scope delta.
 
 ## Context
 
-- **Today's rule.** The certifying run is the full suite on a clean tree under Python 3.13 (`dev/rules/certifying-runs.md`). The release steps then ask for a record from the Mac, a record from Windows, and a join (`release/RELEASE_PROCESS.md`).
-- **A record** is what `release/security_check.py --record` writes on one host: every tracked test file except the 16 the release excludes, run in the default order and in one fixed shuffled order.
-- **The join** (`--join`) accepts exactly one Mac record and one Windows record (`_join_local_records`). No other host can produce a record: `_supported_native_host` knows only `darwin` and `win32`.
-- **Native tests.** 425 tests are marked as belonging to a host family: 63 to Windows and 362 to POSIX, the family that holds both the Mac and Linux (`tests/security_manifest.py`, counted 2026-11-21). The join requires each to pass on its host.
+- **Today's rule.** The certifying run is the full suite on a clean tree under Python 3.13 (`dev/rules/certifying-runs.md`). The release steps then ask for a machine-written record from the Mac, one from Windows, and a join of the two (`release/RELEASE_PROCESS.md`).
 - **0.8.0.** The Mac full run gave 1 failed, 5,894 passed and 66 skipped in 60:41 (`dev/measurement/certification-run-2026-11-19.md`). The two records, the join and both secrets scans were waived (`dev/PLANNING.md`, "Checks waived at the 0.8 cut").
-- **Linux.** The shared virtual machine runs Ubuntu 24.04 with Python 3.12.3, 2 cores and 3 GiB of memory (`dev/rules/development-environment.md`). A record needs Python 3.13. No full Linux run exists, so the number of tests that fail there is not known.
-- **Windows.** The last counted run on the Windows virtual machine gave 15 failed, 305 passed and 27 skipped (2026-11-16). The six measurements plan D2 waits for have not been taken.
+- **Linux.** The shared virtual machine runs Ubuntu 24.04 with Python 3.12.3, 2 cores and 3 GiB of memory (`dev/rules/development-environment.md`). No full Linux run exists, so the number of tests that fail there is not known.
+- **Windows.** The last counted run on the Windows virtual machine gave 15 failed, 305 passed and 27 skipped (2026-11-16). The six measurements that plan D2 of the defect arc waits for have not been taken.
 
 ## Proposal
 
-**A. Three records, one join.** `--record` accepts a Linux host. `--join` takes three records and requires exactly one each from the Mac, Linux and Windows, at the same commit, with the same test policy and the same excluded list, each having collected the same test files. Any other host, and any missing or repeated host, is refused, as today. The two-host join is removed, not kept beside this one. The Linux record is taken with the same `--history-roots` manifest as the others, the file that tells a record which history to scan for secrets. The join requires that scan in all three records, with equal policy and runner hashes, and every other comparison between records covers all three as well. Plan C confirms that the scan tool runs on the Linux machine.
+**A. The rule.** `dev/rules/certifying-runs.md` says that a release is certified by one full run on each of the three platforms, at the release commit, under Python 3.13, and that the three results go in the release note. A platform whose run did not pass is not certified. Only the Maintainer can cut without it, in words quoted in the release note.
 
-**B. A Mac-only class, built only if Linux needs it.** A POSIX test must pass on the Mac and on Linux. If the Linux run finds a test that can pass only on a Mac, it moves to a third class, with a one-line reason beside it. A Mac-only test must pass on the Mac and be skipped, never absent and never passed, on Linux and Windows; the Mac's record carries both the POSIX and the Mac-only duties. Moving a test into the class is a cut of a native test: it takes a Security Review and your re-signing of the gate manifest. The release's record states how many tests each class holds.
+**B. The release steps.** `release/RELEASE_PROCESS.md` names the three runs and their order, and says that the record and join commands are not part of the v0.8.1 cut.
 
-**C. The Linux record.** Python 3.13 is added to the Linux machine from a checked source (choice 1), and `dev/rules/development-environment.md` records where it came from. The record is run there once, to measure. Each failure is then fixed, or moved to the Mac-only class with its reason (choice 3).
+**C. Linux.** Python 3.13 is added to the shared Linux virtual machine in its user's own folder, built from the official python.org source and checked against its published checksum, as Git was on that machine. `dev/rules/development-environment.md` records where it came from. It is a download on the Maintainer's machine, so it waits for his word in the Mac session.
 
-**D. The Windows record.** The record is run on the Windows virtual machine. What fails there is the list plan D2 was waiting for. D2 is written from it and makes the record pass. Two of D2's six measurements are not part of any record and stay with D2 as they are: the published tag through both install routes in Git Bash, and the signing tests' missing temporary-folder variable.
+**D. Making the suite pass.** The suite is run once on Linux and once on the Windows virtual machine, to see what fails. Each failure is fixed, or the test is marked to skip on that platform with its reason. On Windows this is the work that plan D2 of the defect arc was waiting for. Each fix is an ordinary change, checked by the fewest tests that show it is right.
 
-**E. Rules and steps.** `dev/rules/certifying-runs.md` and `release/RELEASE_PROCESS.md` name the three hosts and the order. The Mac's full run, with the 16 excluded files, stays the certifying run. A waiver is yours alone (choice 2). Records are kept where they are kept today, and the short committed note that 0.8 had states the three results. The two secrets scans that were also waived at 0.8 are not changed here; they are due at the v0.8.1 cut.
+**E. The secrets scans** that were also waived at 0.8 are not changed here; they are due at the v0.8.1 cut.
 
-**Plans.** One on the Windows Server machine for A, B and E, tested with records written by hand. One for C and one for D, each run from the Mac, which reaches both virtual machines. The three real records and the join at the cut are your operation, not a plan's task. Which release is cut this way first is choice 4.
+There is no plan. The two documents are edited under this proposal. C and D happen in the Mac session, which reaches both virtual machines.
 
 ## Rationale
 
-The join is where "certified" is decided, so it is where a host must be required. Written steps cannot refuse a missing record, and at 0.8 they did not. This is exact work, the kind the roadmap's tooling rule keeps in a script, and it grows one existing script.
+The simplest thing that shows a release works on a platform is to run its tests there once. The stricter check adds code to a file the Maintainer signs and runs the suite twice on each host, and at 0.8 that same machinery was waived and never run.
 
 ## Alternatives considered
 
-- **Record Linux but do not require it.** A record nobody must produce is what was waived at 0.8.
-- **Certify Linux in the Linux subsystem of the Windows Server machine.** It is at hand, but it runs Python 3.14 and is not a host you named.
-- **Run only the native tests on Linux and Windows.** Minutes, not hours. But a test fails on a new host for reasons nobody listed, and only the whole set finds those. Worth another look if machine time proves too high.
+- **The stricter check in code,** this proposal's first form. Dropped by the Maintainer's choice; whether it returns is the tightening's question.
 - **Do nothing.** v0.8.1 is certified on the Mac alone again.
 
 ## Documentation / doctrine surface
@@ -71,23 +61,19 @@ The join is where "certified" is decided, so it is where a host must be required
 
 ## Evidence / verification plan
 
-It worked when a join over three real records at one commit passes, and a join without the Linux record is refused.
+It worked when the release note of v0.8.1 holds three passing full runs at one commit, one for each platform.
 
 ### Tests required
 
-Promise: no join passes without all three hosts. Entry points: `security_check.py --join` and `--record`. Extend the existing join tests in `tests/test_security_check.py` with records written by hand. Three good records pass. Each of these is refused: no Linux record; two Linux records; a Linux record at another commit, with another policy, or with another excluded list; a Linux record whose scan policy or runner hash differs; a POSIX test that failed on Linux; a Mac-only test that failed or was skipped on the Mac; a Mac-only test that passed on Linux. A Mac-only test must pass on the Mac and be skipped, never absent and never passed, on Linux and Windows. Bounded: the release check and its tests.
+None is added. The suite is the evidence.
 
 ### Examples / smoke checks
 
-`python tests/check_cairn.py` on each changed document. The three real records and their join at the cut.
+`python tests/check_cairn.py` on each changed document.
 
 #### Security preflight
 
-- **S1.** The join decides. Its inputs are three record files that the Maintainer names, the commit of the checkout, and the test policy in the checkout. Each record is written by the host it speaks for, as today. The join compares it with the checkout's own list of tests, not with what the record claims.
-- **S2.** Each refusal above is a test that fails if the refusal is removed. Moving a test into the Mac-only class is a cut of a native test: it needs a Security Review and the Maintainer's re-signing of the gate manifest, and the release's record states the class counts.
-- **S3.** The Maintainer runs `--record` on each host and `--join` on the Mac, over every tracked test file but the 16 excluded. The release steps will say three hosts.
-- **S4.** An unknown host, a missing record and a file that does not parse are each refused. That is less authority, not more.
-- **S5.** Someone who can edit a record file before the join can forge a pass. That is true today for two hosts and stays true for three. The Linux record is also written on a virtual machine that other projects share, and is carried to the Mac, which adds one writer and one transfer. The class is closed neither by construction nor by enumeration.
+N/A in this form: no code changes and no trust boundary is added or widened. One thing a reader should know: the three results are copied by hand from each run's output, so only the reader checks that they come from the same commit.
 
 ### Independent scientific check
 
@@ -95,15 +81,19 @@ N/A: no scientific assumption or result touched.
 
 ## Signals the change is wrong
 
-More than 50 of the 362 POSIX tests end up Mac-only, so the Linux record says little. A release's three records take more than a working day of machine time. The virtual machines fail tests for their own reasons, such as 3 GiB of memory, more often than Cairn does. The first Linux record fails in files nobody had measured.
+Dozens of tests end up skipped on Linux, so its run says little. A release's three runs take more than a working day of machine time. The virtual machines fail tests for their own reasons, such as 3 GiB of memory, more often than Cairn does. A result in a release note turns out to come from another commit.
 
 ## Scope delta
 
-**Scope delta**: preserved
+**Scope delta**: lost
+
+- The three machine-written records and the join that requires all three, the first form's outcome A. **disposition**: accept, by the Maintainer's words of 2026-11-21: "Yes, the simple way". If it returns, its home is the tightening.
+- The Mac-only class in the pinned list of native tests, outcome B. **disposition**: accept, same words. A test that cannot pass on a platform is skipped there with its reason.
+- Two runs in two orders on each host. **disposition**: accept, same words: one run on each.
 
 ## Assurance path
 
-**Assurance path**: high-assurance
+**Assurance path**: standard
 
 ## Review -- Claude Sonnet 5.5 -- 2026-11-21
 
@@ -222,5 +212,24 @@ Security Review:
 - "A Mac-only test absent from the Linux record is accepted." Withdrawn: it must be skipped, never absent and never passed.
 - S2's claim that the pinned policy id keeps a class move from going unseen. Withdrawn: the guards are the Security Review and the re-signing.
 - "From v0.8.1", stated as settled. It is now the Maintainer's choice 4.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Response to the Maintainer's choice -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+The operative text above is rewritten once, in place, for the simple form. Git keeps the form the two reviews read (`40a88e40`).
+
+After both reviews were folded, the Maintainer set a standing direction on testing (chat, 2026-11-21): "Just do all of the changes we need. Then run the fewest tests possible to make sure it was right. Then we re-anchor, certify on all three platforms, and cut." Strategy then judged its own proposal too heavy: it added code to the release check and ran the suite twice on each host. Strategy offered him two ways: "(a) Certify v0.8.1 the simple way: the whole suite once on each of the three platforms, results written in the release note, no new code. I recommend this. (b) Build the stricter check now." He wrote: "Yes, the simple way".
+
+What the rewrite does: it keeps the goal (three platforms) and the work that any form needs (Python 3.13 on Linux; making the suite pass on Linux and Windows), and drops the code. The proposed tier falls from heavy to light, because no high-risk surface changes: two rule and release documents are edited. His words also settle the first form's fourth choice: v0.8.1 itself is certified this way.
+
+No new review pass: the Maintainer removed scope and added none.
+
+### Withdrawn / superseded commitments
+
+- The three-record join, the removal of the two-host join, and every test listed for them. Withdrawn; see Scope delta.
+- The Mac-only class in the pinned list, and the rule that moving a test into it takes a Security Review and a re-signing. Withdrawn with the class.
+- The requirement that all three records carry the history scan. Withdrawn with the records; the secrets scans stay due at the cut.
+- Choices 2, 3 and 4 of the first form. Settled by the simple form: a waiver is the Maintainer's words in the release note; a test that cannot pass on a platform is skipped there with its reason; v0.8.1 is the first release certified this way.
 
 **Elapsed**: unknown. **Tokens**: unknown.
