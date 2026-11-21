@@ -1,7 +1,7 @@
 # Plan: Defect arc H, the meter reads a real Claude log folder
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -201,5 +201,21 @@ Security Review:
 Changed in this fold beyond the findings, for the code review to judge: both tests are existing tests, changed, where the plan first named three new ones. The time test becomes `test_same_message_twice_in_one_session_is_one_proven_event`, whose two copies carried one time; that is why the usage-counting plan's tests did not see the fault.
 
 Not run for this response: any test.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation closeout -- Claude Sonnet 5.5 (Implementation) -- 2026-11-21
+
+**Commits** (branch `arc-h-impl`): `d0e4d9d7` status to implementing; `82df2b85` code, shipped copy, the two changed tests, README, changelog; `fb400b49` Cairn's lock (`verify_integrity` reports OK).
+
+**As built.** (a) the size test applies to files only. (b) `snapshots[child] = info` when a sub-folder's handle is added. (c) `seen` set; a file with a second name is refused if already met, else must pass `check_acl(..., "profile")`; the reader's link-count test is removed. (d) the plan's code in the `read_records` merge loop, for Claude only. The fixture now copies `pulse.py` with its byte check. Both changed tests are as the plan gives them.
+
+**Difference from the plan.** In (d) the time key is `lambda text: datetime.fromisoformat(text.replace("Z", "+00:00"))`, because plain `fromisoformat` reads `Z` only from Python 3.11, and the meter elsewhere strips it. In the time test the earliest-time assertion compares with the time a single record reads as (`read([rec()])`), since the stored form is `+00:00`, not `Z`.
+
+**Command, before the code change** (the plan's one command): native Claude test failed, `hardlink` failed, time test failed on its new assertion (`unknown` not `known`). Both native cases failed at their first ordinary refresh (`_native_meter_successful_refresh`), before any of this plan's conditions: the receipt was `unavailable` with reason `unavailable`. This is this machine (probably the project folder's access rights on `F:`, the fifth finding), not the change. Two diagnostic reruns of `hardlink` alone, with traceback and locals, gave that location and reason.
+**After:** time test passed (one further run of that test alone, after I corrected its expected time form). Both native cases failed at the same first refresh. So (a) to (c) are not exercised by any test here; they stay unproven until a Windows run where the fixture's first refresh answers `ok`.
+
+**Not run.** Any other test; the real machines (Strategy's checks); the native tests to completion; the gate-manifest hash (the Maintainer's signing line).
+Home: Strategy's checks after merge, and certification on a Windows machine whose test folder passes the access tests.
 
 **Elapsed**: unknown. **Tokens**: unknown.
