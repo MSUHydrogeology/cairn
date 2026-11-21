@@ -372,3 +372,23 @@ The implementer's four choices and its added function stand; both reviews found 
 **Disposition**: chunks C3 to C5 may proceed.
 
 **Elapsed**: seven minutes from the Security Review's commit (20:47) to the last fix commit (20:54), by commit times. **Tokens**: unknown.
+
+## Implementation record, chunks C3 and C4 -- Claude Haiku 5.5 (Implementation, Low) -- 2026-11-20
+
+**Commits**: `9dcb802b` C3 (shallow message, stale-hash fix, 14 comment lines, `profile.yml` `test_command`). `bfaaabb3` C4 (heal corrects `claim_check_command` and its rendered file).
+
+**#99.4, outcome 1.** Before any code change, the stale-hash test exited 2: `blocked: tools/board.py: unproved ancestry; reconcile the old copy before moving it`. I changed `old_proved` as the criterion gives it (split over lines). The test now exits 0 and prints `copy`, and it is kept.
+
+**Comments.** 14 lines changed in `config.py` (12), `__init__.py` (1) and `lockfile.py` (1): 14 insertions, 14 deletions. `ast.dump` equal before and after for all three files.
+
+**Test nodes.** Shallow text (`test_shallow_cairn_checkout_says_to_fetch_the_history`): passed. Stale hash (`test_stale_hash_with_crlf_base_is_planned_as_a_copy`): passed. C4: `test_heal_layout_corrects_the_token_and_an_unedited_file`, `test_heal_layout_keeps_and_names_an_edited_file`, `test_heal_layout_second_run_has_nothing_to_heal`, `test_heal_layout_leaves_a_custom_token_value_alone`: all passed. The C4 tests were written in the same edit as the code, so I did not see them fail first.
+
+**Whole-file runs.** After C3: 15 passed, 2 skipped, 1 failed. After C4: 19 passed, 2 skipped, 1 failed. The failure is the host's `test_packaged_source_only_needs_history_for_legacy_paths`.
+
+**Profile runs (`profile.yml` edit).** Three files: pytest reported 80 failed, 269 passed, 43 skipped. The JUnit report lists 79 failing cases; all 79 are on the BASE list (`base-B3p.txt`). The eightieth failure is not in the report, so its ID was not checked. No test that passed at the start fails now, as far as the report shows; nothing was reverted.
+
+**Choices where the plan gave no wording or structure.** `_layout_heal_findings` returns a pair (records, settings). Messages: `Rewrote <dst>.`, `Set <name> to python <new>. Commit dev/.cairn/cairn-lock.yml.`, and `note: dev/.cairn/profile.yml also names <old>; change it there to python <new>.`. A file with no matching row, or whose render returns nothing, is kept with the "could not be read safely" message. A non-verbatim record with no `base_cache` is skipped silently. The apply message appends its sentence to the same line.
+
+**Left as found.** `profile.yml` line 4 already names `install/scaffold.py`, so the criterion's header requirement held. Line 5 still says "see BOOTSTRAP.md Act II-2", a file that is not in the repository. The criterion says nothing about that wording, so I did not change it.
+
+**Not run.** The 102-file selection, the Linux runs, the tier-inventory groups, `tests/test_ast_attest.py`, the scratch upgrade checks, and any release, signing or baseline command. **Elapsed**: unknown. **Tokens**: unknown.
