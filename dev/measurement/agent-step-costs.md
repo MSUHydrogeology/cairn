@@ -109,8 +109,9 @@ runs cost machine time, not tokens, and are listed separately.
 | | limited Security Review of the changed summary rule | High | 111,277 | 3 | accept, 0 blocking |
 | | usual plan review | Medium | 95,468 | 2 | accept, 0 blocking |
 | | proposal written by Strategy; usual review | Medium | 135,536 | 2 | revise, 4 blocking |
+| | Security Review | High | 105,186 | 2 | revise, 5 blocking |
 
-Total for the day so far: 12,674,065 tokens across 85 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 12,779,251 tokens across 86 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -166,7 +167,7 @@ Measured:
   Strategy put every design decision in the brief, so the author did no
   design, and Strategy folded the reviews itself, so no agent was resumed or
   spawned for that. Two against two is a small sample.
-- **Forty-two review passes so far.** Two were further passes that a design change required: one
+- **Forty-three review passes so far.** Two were further passes that a design change required: one
   by the Maintainer, and one to close a Security finding with a simpler rule. No pass has yet had to come back to check a fix.
 - **Replies of five lines work.** From 2026-11-21 each agent writes its full account into
   the plan or proposal and answers the coordinating session in a fixed form of five or six
