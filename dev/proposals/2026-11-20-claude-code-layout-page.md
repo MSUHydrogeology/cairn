@@ -1,7 +1,7 @@
 # A layout page for each project's code
 
 **Author**: Claude (Strategy), drafted by Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — outcome A adds an installed file through the installer's table of module files, and outcome C gives a shipped tool a new project file to read.
 **Plan review**: required(Internal + Internal Security Review) for the plans that build A, C and E's move check; required(Internal) for B, F and the rest of E.
@@ -211,5 +211,22 @@ Security Review:
 Also corrected: the example's `HandoffLock` entry, which stores its project root as well; and the count of files in `dev/tools`, which the note measured at v0.8.0 and is 23 today, is dropped from Context.
 
 Not checked by anyone: the note's count of 70 state-holding classes, the growth from 12 to 22 copy groups, and the outside studies. The three choices for the Maintainer are unchanged.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Decision -- Maintainer (scribed by Claude Fable 5.2) -- 2026-11-20
+
+**Tier**: heavy
+
+**ACCEPTED.** Asked whether he accepts this proposal at the proposed heavy tier, and for his picks on its three choices (Strategy's were 1a and 2a, with none on the third), the Maintainer wrote (chat, 2026-11-20):
+
+> "I accept the layout proposal with your recommendations. Heavy if you think it's needed"
+
+What that settles:
+
+- **Choice 1: (a).** The trial runs in the v0.9 window. The page, the plan lines and the check are built first in v0.10, and the restructuring guidance after the trial and the check.
+- **Choice 2: (a).** The first trial page is for modflow_tools.
+- **Choice 3, the languages after Python: not answered.** Strategy made no recommendation, so his words settle nothing here. The check stays Python-first, and the question waits on the roadmap.
+- **Tier.** He left it to Strategy's judgment. Strategy holds that heavy is needed, by the rule the template gives: outcome A adds an installed file through the installer's own table, and outcome C gives a shipped tool a new project file to read. Both reviews found the tier right.
 
 **Elapsed**: unknown. **Tokens**: unknown.
