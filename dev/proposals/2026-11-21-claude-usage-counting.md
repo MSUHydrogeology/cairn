@@ -1,7 +1,7 @@
 # Count Claude usage toward a project
 
 **Author**: Claude (Strategy), drafted by Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it changes what the meter accepts as proof that usage belongs to a project
 **Plan review**: required(Internal + Internal Security Review)
@@ -155,3 +155,49 @@ Tier heavy and the plan review are right. Not covered: I ran no test, read no lo
 2. Replace B's last sentence with: "The reading is marked incomplete, with a new reason code kept off `_PULSE_BENIGN_REASONS`, when for any session the summaries outnumber the distinct sub-agent transcripts read under approved roots. It compares counts because no id is yet known to tie a summary to its transcript; if the measurement before the plan finds one, the plan matches by id. Recomputed from the files on disk at each refresh, never kept as whole."
 3. Replace B's third sentence with: "A record is a summary only if every `usage` key found in it (anywhere, as `_record_carries_usage` walks) is a dict with exactly the three fields the plan names from the measured record, each a non-negative whole number and not a boolean. Any other `usage` key makes the record `unsupported_record`. Records of the four types the reader already skips (`user`, `system`, `progress`, `file-history-snapshot`) stay skipped; a test pins that, and the Security Review judges it."
 4. Under "What it costs": "A new reader version makes the meter refuse the ledger it holds, so the first refresh fails until that ledger is rebuilt from logs still on disk; usage whose logs were deleted is lost. Yes or no is your call (choice 5)."
+
+## Review -- Claude Opus 5.5 (`claude-opus-5-5`) -- 2026-11-21
+
+```
+Reviewed commit: b99c636d48e7f2c5c37ff5dbce1f3caa4596f6a7
+```
+
+**Tier**: Security Review
+**Findings**: raised (3 blocking, 4 non-blocking)
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes, if "proven" stays honest: a Claude record's only proof is its own folder text, while a Codex record must also agree with its session header, its copy and fork checks and the remote that header recorded -- `dev/tools/meter.py` lines 6796-6824 and 7055.
+2. **Best alternative.** Choice 2b (exact path only) narrows which folders count but adds no proof; the stronger fix is keying on the provider's ids so copies cannot count twice -- `dev/tools/meter.py` line 6634.
+3. **What would show it wrong.** One message counted under two session ids, or a report printed whole after a summary changed shape -- `dev/tools/pulse.py` line 39 (`unsupported_record` is harmless).
+
+The proposal's aim is right: count real use from the record's own folder, never the log's, and fail toward unknown. Three gaps break that promise.
+
+**Agreement with the usual review.** Its blocking 1, 3 and 4 hold. Blocking 2 holds, but my block S2 governs its last sentence: Claude logs are read incrementally, so "recomputed from the files on disk" cannot be built. In its block 1, replace "(`/` or `\\`)" with "(`\` on Windows, `/` elsewhere), with no empty part after it": the configured path is stored as Python's `Path` text (lines 1072-1077).
+
+**Blocking**
+
+S1. **"Proven" lacks a copy check, and the cost line is wrong.** The event key includes the session (6634); a resumed or forked session that copies messages under a new id counts them twice, breaking S2 and S4. Codex logs can be forged as easily; what Claude lacks is Codex's copy and fork checks. Use block S1.
+S2. **A changed summary shape hides missing transcripts.** A summary that fails the shape becomes `unsupported_record`, which the report treats as harmless; it is then not counted as a summary, so the incomplete rule never fires. Use block S2.
+S3. **Outcome E is ambiguous.** It forbids the meter's own export (model names come from logs), does not cover chat or agent prompts, and names no home for the list. Use block S3.
+
+**Non-blocking**
+
+S4. A folder link inside the project counts as inside; state it as an accepted limit in A.
+S5. Add to S5: "the measured agents themselves write under approved roots; a tool version changes the summary shape."
+S6. The four skipped types cannot add usage; keeping them skipped is acceptable if the measurement before the plan finds no summary in them.
+S7. Reading question: E adds a rule; none weakens.
+
+Not covered: I ran no test, read no log, did not read the Antigravity or Codex tests or Plan C's companion, and did not trace how a reader reason reaches the project export.
+
+### Exact words (Security Review)
+
+S1. In "What it costs", replace its first two sentences with: "Anything that can write files as you, including the agents being measured, can add made-up Claude usage to a project; Codex logs can be forged the same way. The harm is a wrong number in the usage report and the project's export." In A, after "Ownership becomes proven only on a record passing all three.", add: "A Claude event is keyed by its request id and message id, not its session. A message seen under two session ids, or with two folders, becomes unknown with `conflicting_binding` and never counts twice; the count-only measurement before the plan reports how many messages that affects."
+
+S2. In B, after the summary-shape sentence, add: "For Claude, a record that carries `usage` and is neither an assistant record nor a summary gets the new reason code, not `unsupported_record`." Replace the usual review's "Recomputed from the files on disk at each refresh, never kept as whole." with: "The ledger keeps, for each session, the summaries and distinct transcripts seen across refreshes; while summaries outnumber transcripts, or the new reason is present, it is in every project export's coverage reasons, so the report prints INCOMPLETE."
+
+S3. Replace E's quoted rule with: "Nothing read from a provider log goes into a plan, test, fixture, commit, report, chat reply or agent prompt except counts, the meter's own sanitized output, and field names on the list kept in this file; any other field name is counted, never shown."
