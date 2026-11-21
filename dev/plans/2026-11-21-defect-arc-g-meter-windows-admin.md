@@ -1,7 +1,7 @@
 # Plan: Defect arc G, the meter runs for a Windows administrator
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -33,13 +33,15 @@ elif role in {"cairn", "config", *private_roles} and owner_bytes != user_sid:
 
 **What stays.** The `.cairn` folder, the consent file and every private file the meter makes must still be owned by the user. The profile folder's access-list test is untouched. The POSIX check is untouched. No new tooling.
 
+**The consent folder and file on the Maintainer's machine** (measured by Strategy with `Get-Acl`, 2026-11-21): both are owned by his own account, so the roles `cairn` and `config` do not refuse there, and this plan does not widen them. A user who made the consent folder or file from an administrator shell may find them owned by the Administrators group and still get `unavailable`; `dev/measurement/README.md` gains one sentence for that user. If the real machine shows a second refusal of another kind, it goes back to Strategy; the build does not widen the access-list test.
+
 **Other places** (searched `"profile"`, `check_acl(` and `owner` in `meter.py`; read, not run). The profile folder's owner is tested in one place, the line above. The role `profile` is set once, in `read_config`; the ledger and export writers re-check the folders it held with those same roles, so they gain the rule with no edit. The source-root walk, the project-claims walk and the writers' own directory checks use the role `ancestor`, which already accepts SYSTEM and Administrators as owner. None needs a different rule.
 
 **Reuse.** `_privileged_sid`, found by searching `meter.py`; the `ancestor` test uses it the same way.
 
 ### Documentation / doctrine surface
 
-No doctrine surface. `dev/measurement/README.md` states no owner rule, so no sentence there changes.
+No doctrine surface. `dev/measurement/README.md` states no owner rule today. It gains one sentence, right after the sentence that begins "Keep the config and private ledger": "On Windows the Meter runs only when `.cairn` and `meter.json` are owned by your own account; if you made them from an administrator shell, make your account their owner."
 
 ## Sequence
 
@@ -51,7 +53,7 @@ Code review once after C1.
 
 ## Acceptance criteria
 
-**C1.** (a) The condition above is in `check_acl`. (b) One permanent test in `tests/integration/test_meter.py`, the file whose tests drive the Windows consent check with stand-ins (all replace `check_acl`). It builds `object.__new__(meter._WindowsConsentAPI)` with a stand-in `advapi` whose `GetSecurityInfo` returns a chosen owner and an empty access list, and stand-ins for `_sid_bytes` and `_privileged_sid` (true for `b"admins"` only, recording `ancestor=False`). Case 1: role `profile`, owner `b"admins"`, user `b"user"`: returns. Case 2: role `profile`, owner `b"other"`: raises `Unavailable`; role `cairn`, owner `b"admins"`: raises `Unavailable`. Case 1 fails before the change. (c) `cmp dev/tools/meter.py templates/skills/_lib/meter.py` prints nothing.
+**C1.** (a) The condition above is in `check_acl`. (b) One permanent test in `tests/integration/test_meter.py`: the function `test_windows_profile_owner_may_be_system_or_administrators`, appended exactly as the Security Review gives it below under "The test, as code". It runs the real `_privileged_sid`, so a wrong list of accounts fails it. Seven cases: the profile folder owned by the user, by the system or by Administrators is accepted; owned by another account or by TrustedInstaller it is refused; the consent folder or the consent file owned by Administrators is refused. The system and Administrators cases fail before the change. (c) `cmp dev/tools/meter.py templates/skills/_lib/meter.py` prints nothing.
 
 **Strategy's check, not the build's.** On the Windows Server machine the meter stops answering `unavailable`. The build agent must not attempt it or run the meter.
 
@@ -61,11 +63,11 @@ Code review once after C1.
 
 ## Verification
 
-Run once, on Windows: `C:\ProgramData\Anaconda3\python.exe -m pytest tests/integration/test_meter.py -q`. Nothing else.
+Run once, on Windows, the one new test: `C:\ProgramData\Anaconda3\python.exe -m pytest tests/integration/test_meter.py -q -k test_windows_profile_owner_may_be_system_or_administrators`. Nothing else: that file fails many of its other tests on this machine by itself, and they do not touch this change.
 
 **What goes stale, and who refreshes it.** The build agent refreshes the first three; the Maintainer does the fourth.
 - Shipped copy: `cp dev/tools/meter.py templates/skills/_lib/meter.py`, then `cmp` prints nothing.
-- Cairn's own lock: `C:\ProgramData\Anaconda3\python.exe install/scaffold.py upgrade --target . --finalize dev/tools/meter.py`, in a commit holding only the lock.
+- Cairn's own lock: `C:\ProgramData\Anaconda3\python.exe install/scaffold.py upgrade --target . --finalize dev/tools/meter.py dev/measurement/README.md`, in a commit holding only the lock (leave the README out of the command if the lock does not record it).
 - Changelog: one `Fixed` line under `Unreleased` in `CHANGELOG.md`.
 - Gate manifest: `tests/fixtures/gate_manifest.json` holds a hash of `test_meter.py`; the edit leaves one HOLD, a line added to the Maintainer's next signing.
 
@@ -164,3 +166,24 @@ def test_windows_profile_owner_may_be_system_or_administrators():
 ```
 
 Before the change, the profile cases with SYSTEM and Administrators raise, so the test fails. If the rule is too loose, the cases for another account or TrustedInstaller fail.
+
+## Plan response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-21
+
+Both reviews are folded once; status is now `ready-to-implement`.
+
+Usual review:
+1. Blocking 1 (the test is not given as code): closed with the Security Review's test, which governs; criterion (b) now names it.
+2. Non-blocking 2 (a case for the user as owner): it is in that test.
+3. Non-blocking 3 ("all replace `check_acl`"): the sentence is gone with the old criterion.
+4. Non-blocking 4 (a second refusal goes back to Strategy): taken, in Scope.
+
+Security Review:
+1. Blocking 1 (a second refusal is likely for the consent folder and file): answered by measurement. Strategy read both owners with `Get-Acl` on 2026-11-21 before this plan was written: both are the Maintainer's own account. So the plan is not widened, and no Decision is needed for his machine. For a user whose consent files are owned by Administrators, the README gains one sentence.
+2. Blocking 2 (the stand-in hid the list of accounts): closed with the reviewer's test, which runs the real `_privileged_sid`.
+3. Non-blocking 3 (TrustedInstaller stays out): the test has that case.
+
+Also changed, by the Maintainer's standing direction on testing of 2026-11-21 ("run the fewest tests possible to make sure it was right"): the build runs the one new test, not the whole file.
+
+Edited directly by Strategy, by exact replacement. Not run: any test.
+
+**Elapsed**: unknown. **Tokens**: unknown.
