@@ -65,3 +65,40 @@ Nothing is dropped beyond the proposal's accepted `lost` list; a kept test deliv
 ## Verification
 
 Changed promises: `refresh`, `rebuild`, `refresh --report`, the bare status, and the consent file, record and summary. The build runs the three meter test files, plus `tests/test_security_check.py` and `tests/test_skills_install.py` where they can run, once on Windows and once in the Linux subsystem, after C5; none before. Tests of removed checks are cut only through a Security Review (protected-surfaces rule); this plan's Internal Security Review is that review. Strategy's checks, not the build's: after the merge a real refresh on the Windows Server machine answers `ok`, its totals equal an independent count and only counts are found in the summary and record; the same on the Mac at the cut. The gate manifest's lines for touched frozen and test files are the Maintainer's signing lines; the detail file lists them; none is edited here. Not checked: Windows tests of a real refresh cannot run on this machine.
+
+## Plan review -- Claude Sonnet 5.5 (Reviewer) -- 2026-11-21
+
+```
+Reviewed commit: f25447fa6634c47406eef7818ffa785b9169324e
+```
+
+**Obligation**: clears the usual plan review; the Security Review pass follows.
+**Tier**: Internal
+**Findings**: raised (2 blocking, 4 non-blocking)
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The plan removes what the Decision removes and keeps the reader, the consent file's content check, the shapes and the closed reasons -- detail file C and D; proposal A to F.
+2. **Best alternative.** None simpler within the Decision; the one-flow rewrite of the four commands is the lightest way to one path -- detail C, "Rewritten".
+3. **What would show it wrong.** A kept test failing on Windows for a reason the plan did not name, or a claims file read through a link -- `tests/integration/test_meter.py` lines 5371 to 5374 and detail D.
+
+I checked by script, not by running any test: the detail file's sorted lists cover all 260 `test_meter.py` functions once each, with no name missing or invented. The 35 `nt` rows are all of deleted tests. The 52 `posix` rows split 21, 5, 22 and 4, so 314 is right. The 63 and 362 guard line is at `tests/security_manifest.py` line 689 and quoted at `tests/test_security_check.py` line 1306. The `exec` is only at `dev/tools/meter.py` line 5932, and the `B102` allowance is at `release/security_check.py` line 215. No other tool imports the meter. Both promises' tests are kept.
+
+**Blocking**
+
+- **B1. A kept test contradicts the lock rule.** `test_refresh_persists_normalized_history_and_claims_without_raw_inputs` (listed "marker off and patch removed") asserts after the run that `ledger.lock` still exists, is empty and has mode `0o600`, and that the ledger's mode is `0o600` (lines 5371 to 5374). D5 removes the lock at the end, and Windows has no such modes once the marker is off. Move it to "Other changes": delete the two lock lines, and make the two mode lines run only `if os.name == "posix"`. Change "103 changed" to match if the count moves.
+- **B2. Work claims have no link rule.** Proposal B says `dev/intents.jsonl` is "not through a link". D and C1 say nothing of it. Add to D: "`_read_project_claims` refuses `dev` or `dev/intents.jsonl` if it is a link or reparse point, and reads it with the same size limits as now." Add to C1 a criterion and one made-up-folder check of it.
+
+**Non-blocking**
+
+- N1. `test_explicit_refresh_partial_receipt_is_closed_and_nonzero` is "kept as it is" but takes the deleted `native_windows_root` argument; it belongs under "Other changes".
+- N2. The plan does not say the tree fails its tests between C1 and C4. Say so, and name `py_compile` as the check per chunk.
+- N3. `_write_summary` and `_read_project_claims` are given only a line count. Name how the link is found (`lstat` of `dev`, then `dev/measurement`, each refused if a link or reparse point), the temporary file's name in the same folder, and its removal on failure.
+- N4. Several call sites of `_verified_project_remote` exist besides `read_records` (lines 4563, 5498, 5639, 5705, 5857, 6703); say all go.
+- N5. A run killed by `session.py` leaves its lock, so the next session-end sees `ledger_busy` for up to 15 minutes. Say so in the README sentence.
+
+**Not covered**: running any test, real machines, the Security Review questions, the gate manifest's contents beyond its named lines.
