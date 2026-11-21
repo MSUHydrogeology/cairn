@@ -1,7 +1,7 @@
 # Plan: Defect arc B, upgrading
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -594,3 +594,29 @@ Both final reviews said revise. Each blocking finding came with exact code and a
 Status: `ready-to-archive`.
 
 **Elapsed**: 1 hour 20 minutes from the first final review's commit (23:30) to this response, by commit times; the reruns took most of it. **Tokens**: the two final reviews 160,248 and 195,473; the coordinating session's own use is not visible to it.
+
+## Implementation closeout -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+Every criterion held once the final reviews' fixes were in.
+
+- **C1.** A Windows clone with changed line endings gets its own message, and Cairn's tree carries a root `.gitattributes`. The clone checks passed on Windows at `68dc7726`.
+- **C2.** A finished layout move no longer writes the three lock keys, and `upgrade --heal-layout` removes them from a tree that has them. On scratch projects, upgrades from 0.7.0 and 0.8.0 leave no such key, and a damaged copy went from DEGRADED to CLEAN.
+- **C3.** A shallow checkout gets its own message, and a file whose recorded hash is stale but whose bytes match a release is planned as a move.
+- **C4.** The heal corrects the `claim_check_command` setting and the unedited file it renders, and keeps and names an edited one.
+- **C5.** `upgrade --retire-wrapper` records a wrapper deleted on purpose, and a tampered record cannot hide another file.
+
+Found on the way and fixed: the review point's blocking finding (`074b74fd`); a new test file with no tier (`55015944`); and, from the final reviews, a renamed wrapper that was never picked up again after being retired and restored, a setting name printed raw from the lock, and a drive-letter name the rule let through (`029532a0`).
+
+The branch, 24 commits changing 16 files, merged into `0.9-dev` at `87ca4d4c` with no conflict. On the merged tree with plan C (`92fad349`), the seven test files that hold both plans' new tests and the tier test: 121 passed and 2 skipped in the Linux subsystem; on the Windows Server machine, 107 passed, 8 skipped and 8 failed, and each of the 8 also fails at the starting commit. `install/verify_integrity.py --target .` reports OK for 70 files there.
+
+Not run: anything on the canonical runtime (Python 3.13 on the Mac), and the 102-file selection as one run. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+Not reviewed: the coordinator's change that a wrapper name holding `:` is never a retired wrapper (two conditions and one test, in `029532a0`). Home: `dev/PLANNING.md`, section 1, "What the one signing will show": `install/verify_integrity.py` is a frozen file, so the Maintainer reads that change at the signing.
+Remaining: the Maintainer's baseline step for four changed installer symbols, and one frozen file at the signing. Home: the same entry.
+Remaining: reads with no size limit, in the merge and the heal. Home: the register of triggered residuals in `dev/strategy/2026-08-05-codex-security-strategy.md`.
+Seen and left as specified, with no follow-up owed: a repeat of `--retire-wrapper` prints its message again though nothing changed; `verify_integrity` suggests retiring a wrapper that was only renamed and not yet finalized, and the command then refuses because the file exists.
+
+Dispositions: no follow-up of this plan is deferred without a home above.
+
+**Benefit versus cost**: unknown -- a project upgraded from 0.7.0 or 0.8.0 is no longer left with a security verification that cannot run, and two dead ends (a Windows clone, a deleted wrapper) get a message and a way out; no adopter has run it yet. Cost: 24 commits and one merge; six review passes with no return visit; 2,174,921 subagent tokens in 12 runs as the harness reported them (Strategy's own use is unknown); about 11 hours of machine time for tests (8.1 on the Windows Server machine in 14 runs and 3.0 in the Linux subsystem in 12, summed from the runs' own times). Remaining burden: two installer commands, one lock key, one rule kept in two copies, one new test file with 12 tests, and the tests added to the layout-migration file. Revisit at the recount at the end of v0.9.
+
+**Elapsed**: 8 hours 32 minutes from the plan's opening (16:19) to the merge (00:51), by commit times. **Tokens**: unknown beyond the subagent figure above.
