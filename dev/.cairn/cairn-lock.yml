@@ -465,7 +465,7 @@
       "base_cache": "dev/.cairn/base/dev/.cairn/scanner-check-allow.json",
       "base_hash": "sha256:2ecdb6835ec4488ee09720308c9bb915fac7128cfbccbb6e280262f62c8633b3",
       "dst": "dev/.cairn/scanner-check-allow.json",
-      "hash": "sha256:6f701cd82e8f6dd8348955246d24af3afcd833274c803311db8e54f7be75eb95",
+      "hash": "sha256:0b65961d1dfe87796d22dc523d3cf2cddc93823596d57b1c4ba4531a4baaeebd",
       "src": "modules/default-on/scanner-check-allow.json",
       "verbatim": false
     },
