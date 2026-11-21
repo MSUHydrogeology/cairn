@@ -1,7 +1,7 @@
 # Plan: Count Claude usage toward a project
 
 **Source proposal**: dev/proposals/archive/2026-11-21-claude-usage-counting.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/custom_session_routines.md, dev/rules/protected-surfaces.md, dev/rules/development-environment.md
@@ -361,5 +361,27 @@ Range: 75acc20c..fbd5cee2971829a2c4406863ca13c9f821b55128 (tip 4d5e4368 adds onl
 **Tests run** (the fewest: the one test file edited, once per host, no run before the change). Linux subsystem (Python 3.14.4): `tests/test_meter_claude_usage.py` 74 passed, 0 failed. Windows: the same file, 74 passed, 0 failed. Earlier it was 78 passed; 78 minus three tests, minus two rows, plus the new cap test is 74. Nothing else was run.
 
 **Not run.** The check of the meter against a real log (and P1 to P4, the developmental check) has not run: the meter is not set up on this machine. The Maintainer is being asked where it runs. No log, home-folder or `AppData` file was opened.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation closeout -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+The five chunks are built, both code reviews accepted them with no blocking finding, and one required check has not run.
+
+- **C1.** A Claude record counts toward a project when the folder the record itself names is the project's or inside it, its log is under an approved folder, and the project's remote checks out.
+- **C2.** A summary of a finished sub-agent is not usage. It is tied to its run through the frame the tool writes around the run's id.
+- **C3.** The ledger remembers runs and summaries between refreshes; a summary tied to no read transcript marks the reading incomplete. The ledger has a new version, and an old one is refused and left alone.
+- **C4.** The rule on what may leave a provider log is in `dev/rules/custom_session_routines.md`, with its list of names.
+- **C5.** Cairn's own lock was refreshed alone, and the two meter copies are identical.
+
+The branch merged into `0.9-dev` at `f7c4498a` with no conflict. On the merged tree `install/verify_integrity.py --target .` reports OK for 70 files, the tier check passes for 142 test files, and `cmp` of the two meter copies prints nothing.
+
+Tests. At the build, the plan's five test files: 627 passed in the Linux subsystem; on Windows 104 failed, each with the same test and message before the change and after. For the response, the one edited test file, once on each host: 74 passed, 0 failed on both. Three tests and two cases that repeated others were removed, on the Maintainer's standing direction on testing.
+
+Not run: the check of the meter against a real log, which the plan placed before code review. The meter cannot run on the Windows Server machine: its consent check refuses a profile folder owned by the Administrators group. Home: the Maintainer's choice of 2026-11-21, "Fix the meter", made on Strategy's statement that the check then runs on the Mac (`dev/PLANNING.md`, section 1, "The meter refuses a Windows account whose profile folder it does not own"); plan G carries the fix, and Strategy also runs the check on the Windows Server machine once the meter runs there. The Security Review of the code asks that this check also count records whose side-chain mark is not the value `true`.
+Not run: the wider test selection, the Python 3.13 run and the whole suite. Home: the certification, by the Maintainer's standing direction on testing (`dev/PLANNING.md`, "Where Cairn stands").
+Not taken: a test for the ledger's own size limit. It needs an oversized ledger fixture, the limit is not changed by this plan, and no existing test was removed for it.
+Remaining: `tests/integration/test_meter.py` changed, so one hash line at the Maintainer's signing. Home: `dev/PLANNING.md`, section 1, "What the one signing will show".
+Remaining: Antigravity usage, which the Maintainer placed in v0.8.1. Home: the Mac session's fourth job, in `dev/PLANNING.md` under "Waiting on you".
 
 **Elapsed**: unknown. **Tokens**: unknown.
