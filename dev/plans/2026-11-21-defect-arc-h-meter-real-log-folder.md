@@ -62,3 +62,50 @@ Write T1 to T3 first and run them once (they fail); change the code; run them on
 **Measured now.** The `hardlink` case, run once here, failed with `pulse-module-unavailable` (the fixture defect). T1 and T2 run here after the fix.
 
 **Strategy's checks, not the build's.** After the merge, a real refresh on the Windows Server machine; at the v0.8.1 cut, the Mac check against a real log.
+
+## Plan review -- Reviewer (usual) -- 2026-11-21
+
+Reviewed commit: 2e6c42274599f6d6cb5c555e3f4485d9a15adfe0
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+
+**Verdict**: REVISE. Changes (a), (b) and (c) are sound and small; (d) and the tests are not yet specified for a low-tier builder, and one gated record is missed.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the walk's directory size test and missing snapshot, the reader's link test and the merge loop's `_merge_normalized_event` call each match a refusal named in the plan -- `dev/tools/meter.py` lines 2205-2217, 1779, 7305.
+2. **Best alternative.** None simpler for (a) to (c). T1 and T2 can be one native test (each fault alone refuses the whole refresh), saving a native run and a manifest row -- `tests/integration/test_meter.py` `_native_meter_setup`.
+3. **What would show it wrong.** A real refresh on the Windows machine still answering `unavailable`, or T3 showing `ambiguous_time`; forward test is T3 plus Strategy's real refresh -- plan "Strategy's checks".
+
+**Findings**
+
+1. **Blocking: (d) is words only and "earliest" can be wrong.** Observed times are ISO text with offsets (`_timestamp`), so text order is not time order. Replace the (d) rule with this code, placed around the `_merge_normalized_event(merged[key], event)` call at the end of the loop:
+
+```python
+earlier = None
+if tool == "claude":
+    first, second = merged[key]["observed_at"], event["observed_at"]
+    if first is not None and second is not None and first != second:
+        earlier = min(first, second, key=datetime.fromisoformat)
+_merge_normalized_event(merged[key], event)
+if earlier is not None:
+    merged[key]["observed_at"] = earlier
+    merged[key]["time_coverage"] = "known"
+    merged[key]["reasons"] = sorted(set(merged[key]["reasons"]) - {"ambiguous_time"})
+```
+An unknown time against a known one still loses the time, as today.
+
+2. **Blocking: T1 and T2 have no recipe.** The first refresh only sets bookmarks and counts nothing. Say: run `_native_meter_successful_refresh`; then create the nested log (T1) or `os.link` the log outside the folder and call `_native_meter_append_valid_update` (T2); refresh once; `_native_meter_receipt(..., "ok", "none")`; assert one new event key, as `_native_meter_assert_update`. For T1 use 20 file names of 200 characters in the sub-folder and assert `os.stat(sub).st_size > 0`.
+
+3. **Blocking: a gated record is missed.** New Windows-only tests are listed in `tests/security_manifest.py` (`NATIVE_ONLY_NODE_IDS`, bound to `NATIVE_ONLY_POLICY_ID`, read by `release/check_release_test_members.py`). Add the new node ids; leave the policy-id line as the Maintainer's signing line, with the gate-manifest hash. I did not run it.
+
+4. Non-blocking: give (c) as code: `seen = set()` before the loop; replace the `links != 1` test with `if info["links"] != 1 and info["identity"] in seen: raise Unavailable("source_read_unavailable")` then `seen.add(info["identity"])`.
+5. Non-blocking: say the Mac and Linux walk has no link or size test (`_enumerate_jsonl`), so only (d) reaches it.
+6. Non-blocking: T3 should use equal usage in the three records; unequal usage is a separate conflict I did not check against real logs.
+7. Non-blocking: tell the build not to attempt Strategy's real-machine checks.
+
+**Not covered**: Security Review questions; real logs (privacy rule); the `F:` drive refusal; every other `links` test, which I read and found none on a log's path; I ran no test.
+
+Elapsed time: unknown. Tokens: unknown.
