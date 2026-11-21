@@ -2,9 +2,6 @@
 
 This is the companion of `dev/plans/2026-11-21-claude-usage-counting.md` and part of it. It holds the exact names, conditions, reason codes and test inputs, so that a low-tier agent invents no design. It exists because the opening plan would otherwise pass 1,500 words. Every code change lands in both copies of the meter (`dev/tools/meter.py` and `templates/skills/_lib/meter.py`); the second is made by copying the first (`cp`) in the same commit, then `cmp` of the two must print nothing.
 
-Proposed paths:
-- `tests/test_meter_claude_usage.py`
-
 Names that carry no vendor word are chosen on purpose, so the neutrality lint needs no marker. The existing `# vendor-ok:` markers stay where they are. A new line that must repeat the quoted tool name is avoided.
 
 ## D0. Names and numbers that are fixed here

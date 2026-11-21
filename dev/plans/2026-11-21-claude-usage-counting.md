@@ -1,7 +1,7 @@
 # Plan: Count Claude usage toward a project
 
 **Source proposal**: dev/proposals/archive/2026-11-21-claude-usage-counting.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/custom_session_routines.md, dev/rules/protected-surfaces.md, dev/rules/development-environment.md
@@ -18,9 +18,6 @@ The Maintainer accepted the proposal at the heavy tier on 2026-11-21 with all fi
 ## Scope
 
 **Result.** The Pulse shows Claude usage for the project by kind of token (fresh input, cache writes, cache reads, output), with cost data that no longer depends on a hand-kept record that measured the wrong thing.
-
-Proposed paths:
-- `tests/test_meter_claude_usage.py`
 
 **Measured by Strategy on 2026-11-21, counts only, one project's logs** (90 log files, 9,609 assistant records with usage): 4,333 distinct messages, none under more than one session id. No record of the four skipped types held a `usage` key. The folder equalled the configured project path exactly in 3,539 records and lay exactly inside it in 59; none differed only by letter case or separators, none lay outside. There were 84 summaries and 89 sub-agent transcripts; no summary's own id equalled a transcript's agent id, but the text of every one of the 84 names exactly one transcript's agent id. Every summary also holds its own run's id inside a fixed frame the tool writes, `<task-id>`, the id, `</task-id>` (87 of 87; Detail D7, P4). The incomplete rule rests on that frame, not on every run of letters in the text: a summary is covered when its frame names exactly one id and a transcript of that run, in the same session, was read; a summary with no frame, or two different ids in frames, or a run not read, makes the reading incomplete. This leans on the tool's wording; a tool version that changes it turns readings incomplete, never whole.
 
@@ -250,3 +247,41 @@ The amendment review accepted the changed summary rule with no blocking finding.
 Edited directly by Strategy, by exact replacement. Not run: any test, log read or meter run.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record -- Claude Sonnet 5.5 (`claude-sonnet-5-5`; Implementation, build stage) -- 2026-11-21
+
+**Result**: built in five commits on branch `usage-impl`; the two meter copies are byte-identical (`cmp` printed nothing after each code chunk and at the tip); Cairn's lock reports OK; the five test files the plan names pass on Linux and, on Windows, fail only where they also failed before the change. Status is `awaiting-code-review`. The developmental check on a real log is Strategy's and was not attempted; no log, home-folder or `AppData` file was opened, and no meter, pulse or session routine was run on real data.
+
+**Chunks.** Each was written by a fresh Haiku execution agent (model `haiku`), one at a time; I read each diff against the chunk's criterion and Detail.
+
+| Chunk | Commit | What it did |
+|---|---|---|
+| C1 | `5df9e1ab` | `_project_for_folder`; the Claude branch counts by the record's own folder; the event key no longer holds the session; new test file and its tier entry; `event_key_for` in `tests/integration/test_meter.py` |
+| C2 | `40e9e097` | `_usage_values` replaces `_record_carries_usage`; `_summary_run`; transcript pairs; the batch's `agent_runs`; the changed expectation in `tests/test_meter_usage_free_records.py` |
+| C3 | `af36911e` | the ledger's `agent_runs`, its merge and validation, the coverage reason, `/6` versions, both refresh routes, the C3 tests |
+| C3 fix | `136c627a` | a fifth place that named the ledger version (see Differs) |
+| C4 | `bea8181b` | rule sentence and list, README sentences, changelog entry (Haiku's own report; I checked the diff) |
+| C5 | `e2b944bb` | the lock, alone in its commit |
+
+The plan's status was set to `implementing` in `21514a35`.
+
+**Where an execution agent chose words or structure the plan did not give.** C1: `read()` in the new tests defaults to `cfg()`; the "relative path" case is `project\sub`; the Windows-form tests patch `meter.os`; the claim-split and two-roots tests call `_build_mappings` and `_merge_event_batches` directly. C2: `_SUMMARY_FIELDS` and `_SUMMARY_FRAME` sit after `MAX_LEDGER_BYTES`, not beside `MAX_AGENT_*`; a small helper `_summary_shape` holds D3.2's shape test; the early-return batches (invalid config, disabled) also carry an empty `agent_runs`; the summary tests include one assistant record, because `read_records` adds `no_supported_usage` to an otherwise empty batch, so Detail's "issues == []" control would fail without it. C3: helpers `_gather_agent_runs` and `_merge_agent_runs`; new integration helpers `record_in_project` and `sub_agent_summary`; the end-to-end checks read the export and the pulse parse. C4: the rule sentence sits mid-paragraph after "clear yes."; the names list is one comma-separated paragraph under a new last heading; the changelog entry has a second sentence about INCOMPLETE; the shipped commit line says Haiku 5.5, not 4.5 (the agent's own statement of its model).
+
+**Where the build differs from the plan.**
+1. Detail D5 lists four places in `tests/integration/test_meter.py` that name the ledger or reader version; there are five. `test_hand_edited_ledger_is_refused_as_invalid` asserted that the schema ends with `/5`. Its 27 cases failed on Linux at `e2b944bb` and passed after the one-character edit in `136c627a`. That file is in the gate manifest; the edit is that one line, besides what Detail names.
+2. The plan says the lock is refreshed over `dev/tools/meter.py` alone. `verify_integrity` also named `dev/measurement/README.md` (C4 edits it), so the scoped finalize took both paths; the commit holds only the lock.
+3. Between C2 and C3 the meter would put `agent_runs_incomplete` into readings (the plan says the chunks merge together, so no such meter runs outside this folder).
+
+**Tests.** The Maintainer's standing direction on testing (chat, 2026-11-21), passed on by the coordinator: "Just do all of the changes we need. Then run the fewest tests possible to make sure it was right. Then we re-anchor, certify on all three platforms, and cut." So the plan's wider runs, the before-and-after comparison on the whole selection and a nine-file run for C5, are not made; the whole suite's home is the certification.
+
+What was run:
+- Windows, `e2b944bb` (code identical to the tip; the one later edit is a POSIX-only test that Windows skips): the nine selected files at the starting commit `75acc20c` and at `e2b944bb`, and the new file alone. Starting commit: 104 failed, 416 passed, 214 skipped. After: 104 failed, 416 passed, 217 skipped. The comparison tool reports the same 104 failing ids with the same messages (0 only after, 0 only before). Failures by file, the same both times: `tests/integration/test_meter.py` 37, `tests/security/test_git_read_routes.py` 22, `tests/test_session_failsafe.py` 4, `tests/test_session_writes_contained.py` 37, `tests/test_skills_install.py` 1, `tests/test_skills_upgrade.py` 3. So no failure is new on Windows, and the host's own failures are not caused by this change (same id and message before). The new file alone: 78 passed.
+- Linux, `75acc20c`, nine files: 697 passed, 37 skipped, none failed. Linux, `e2b944bb`, nine files plus the new file: 27 failed, 751 passed; the 27 are the cases of item 1 above. Linux, `136c627a`, the four meter test files and the new file (the final code): 627 passed, 36 skipped, none failed. This run includes the two end-to-end tests.
+- `python tests/tier_inventory.py check`: ok, 141 test files, each in one of 5 tiers. `install/verify_integrity.py --target .`: OK, 70 recorded files.
+- Gate-manifest tests: none that I ran fail after the change. `tests/integration/test_meter.py` now differs from its recorded hash, so the manifest check will refuse it until the Maintainer's signing; I did not run that check, and the plan names it as the Maintainer's.
+
+**Not run, each with its home.** The developmental check on a real log, and P1 to P4: Strategy's. The other five selected files on Linux after the final edit (`tests/security/test_git_read_routes.py`, `tests/test_security_lint.py`, `tests/test_session_failsafe.py`, `tests/test_session_routines.py`, `tests/test_session_writes_contained.py`), the Python 3.13 run and the joined run: the certification, under the Maintainer's direction quoted above. The Windows route's end-to-end behaviour (POSIX-only tests): not run on Windows; the Mac and Windows certification. No AST listing was owed (no installer symbol changed).
+
+**Elapsed**: unknown. **Tokens**: unknown for me; the Haiku agents used about 133k, 136k, 186k and 110k (as their tools reported, for C1 to C4).
+
+The two `Proposed paths:` declarations (here and in Detail) named the new test file, which now exists, so `claim_check` flagged them as stale; I deleted those lines in the same commit as this record. Nothing else in the operative text changed.
