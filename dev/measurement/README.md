@@ -83,7 +83,7 @@ them.
   ```
 
   Keep the config and private ledger under the account's protected `.cairn`
-  directory. The bare `python tools/meter.py --json` command checks only
+  directory. On Windows the Meter runs only when `.cairn` and `meter.json` are owned by your own account; if you made them from an administrator shell, make your account their owner. The bare `python tools/meter.py --json` command checks only
   whether configuration is disabled or unavailable; it does not collect.
   `python tools/meter.py refresh --json` explicitly reads only configured
   source roots, verifies configured projects, updates the private ledger at
@@ -106,6 +106,14 @@ them.
   its coverage reasons and the pulse report prints `INCOMPLETE` beside the
   supplied usage. An older ledger is refused with `ledger_old_schema`; move
   `~/.cairn/meter/ledger.json` aside to start a new one.
+  A Claude record counts toward a project when its own working folder is the
+  project's or lies inside it, its log is under an approved root, and the
+  project's remote checks out. Summaries of finished sub-agents are not
+  counted; a reading whose summaries cannot be tied to a read transcript prints
+  INCOMPLETE. The runs are kept for every session under the approved roots, so
+  one untied summary anywhere marks every project, and it clears only when the
+  ledger is replaced (which loses history: a new ledger counts nothing before
+  its first refresh).
   Missing configuration stays disabled, and invalid or unsupported privacy
   state fails closed as unavailable. Aggregate coverage remains globally
   unknown; the output does not claim complete project history.

@@ -21,4 +21,6 @@ dev/measurement/collision_log.md
 dev/measurement/snapshots/
 dev/measurement/suite-cost.md
 dev/measurement/suite-runs.jsonl
+# The usage meter's summary for this project: each refresh rewrites it, on this machine only.
+dev/measurement/meter.json
 dev/.cairn-upgrade/

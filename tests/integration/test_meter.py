@@ -6323,8 +6323,8 @@ def test_first_refresh_records_where_each_log_ends_and_counts_nothing(tmp_path, 
 
     ledger = ledger_of(home)
     assert result["status"] == "written" and result["events"] == 0
-    assert ledger["schema"] == "cairn-meter-ledger/5"
-    assert ledger["reader_version"] == "cairn-source-readers/5"
+    assert ledger["schema"] == "cairn-meter-ledger/6"
+    assert ledger["reader_version"] == "cairn-source-readers/6"
     assert ledger["events"] == [] and ledger["waits"] == []
     assert ledger["fold_horizon"] == "2026-10-22" and ledger["daily"] == []
     assert ledger["starts"] == [
@@ -6439,6 +6439,7 @@ def test_a_source_added_later_gets_its_own_start_point(tmp_path, monkeypatch):
 @pytest.mark.parametrize("schema, reader", [
     ("cairn-meter-ledger/3", "cairn-source-readers/3"),
     ("cairn-meter-ledger/4", "cairn-source-readers/4"),
+    ("cairn-meter-ledger/5", "cairn-source-readers/5"),
 ])
 def test_an_old_ledger_is_refused_and_never_overwritten(tmp_path, monkeypatch, schema, reader):
     home, _claude_root, _codex_root, _project, _config = c1_home(
@@ -6447,10 +6448,12 @@ def test_an_old_ledger_is_refused_and_never_overwritten(tmp_path, monkeypatch, s
     path = home / ".cairn" / "meter" / "ledger.json"
     old = json.loads(path.read_bytes())
     old.update(schema=schema, reader_version=reader)
-    for field in ("starts", "fold_horizon", "daily"):
-        del old[field]
-    for cursor in old["cursors"]:
-        del cursor["digest"], cursor["owner_key"]
+    del old["agent_runs"]
+    if not schema.endswith("/5"):
+        for field in ("starts", "fold_horizon", "daily"):
+            del old[field]
+        for cursor in old["cursors"]:
+            del cursor["digest"], cursor["owner_key"]
     if schema.endswith("/3"):
         del old["waits"]
     path.write_bytes((json.dumps(old, sort_keys=True, separators=(",", ":")) + "\n").encode())
@@ -6465,6 +6468,67 @@ def test_an_old_ledger_is_refused_and_never_overwritten(tmp_path, monkeypatch, s
     with pytest.raises(meter.Unavailable) as refused:
         meter._load_ledger(before)
     assert refused.value.reason == "ledger_old_schema"
+
+
+SUB_RUN = "a1b2c3d4e5f6g7h8i"
+
+
+def record_in_project(project, message_id, **changes):
+    """A Claude record whose own working folder is the approved project."""
+    record = claude_record(message_id)
+    record["cwd"] = str(project)
+    record.update(changes)
+    return record
+
+
+def sub_agent_summary(run=SUB_RUN):
+    return {"type": "attachment", "timestamp": STAMP, "sessionId": "session-a",
+            "text": "done <task-id>" + run + "</task-id>",
+            "usage": {"totalTokens": 9, "toolUses": 2, "durationMs": 500}}
+
+
+def fresh_totals(ledger, alias):
+    rows = [row for row in ledger["aggregates"]
+            if row["tool"] == "claude" and row["project_alias"] == alias]
+    return {name: sum(row["kinds"][name] or 0 for row in rows)
+            for name in ("fresh_input", "cache_write", "cache_read", "output")}
+
+
+@POSIX_ONLY
+def test_sub_agent_usage_counts_with_its_transcript_and_summary(tmp_path, monkeypatch):
+    home, claude_root, _codex_root, project, _config = c1_home(tmp_path, monkeypatch)
+    assert meter._refresh_ledger(home)["status"] == "written"
+    (claude_root / "session.jsonl").write_bytes(b"".join(encoded(
+        [record_in_project(project, "message-main"), sub_agent_summary()])))
+    (claude_root / "agent.jsonl").write_bytes(b"".join(encoded(
+        [record_in_project(project, "message-sub", isSidechain=True, agentId=SUB_RUN)])))
+
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    ledger = ledger_of(home)
+    assert "agent_runs_incomplete" not in ledger["coverage"]["reasons"]
+    assert fresh_totals(ledger, "sample") == {
+        "fresh_input": 20, "cache_write": 4, "cache_read": 16, "output": 8}
+
+
+@POSIX_ONLY
+def test_summary_without_its_transcript_is_incomplete_until_it_is_read(tmp_path, monkeypatch):
+    home, claude_root, _codex_root, project, config_path = c1_home(tmp_path, monkeypatch)
+    assert meter._refresh_ledger(home)["status"] == "written"
+    (claude_root / "session.jsonl").write_bytes(b"".join(encoded(
+        [record_in_project(project, "message-main"), sub_agent_summary()])))
+    assert meter._refresh_ledger(home)["status"] == "written"
+    config = meter.validate_config_bytes(config_path.read_bytes())
+    first = ledger_of(home)
+    assert "agent_runs_incomplete" in first["coverage"]["reasons"]
+    assert b"agent_runs_incomplete" in meter._project_export_bytes(first, config, "sample")
+
+    (claude_root / "agent.jsonl").write_bytes(b"".join(encoded(
+        [record_in_project(project, "message-sub", isSidechain=True, agentId=SUB_RUN)])))
+    assert meter._refresh_ledger(home)["status"] == "written"
+    second = ledger_of(home)
+    assert "agent_runs_incomplete" not in second["coverage"]["reasons"]
+    assert b"agent_runs_incomplete" not in meter._project_export_bytes(second, config, "sample")
 
 
 def daily_row(day="2026-11-01", **changes):
@@ -6550,7 +6614,7 @@ INVALID_LEDGER_EDITS = {
 @pytest.mark.parametrize("name", sorted(INVALID_LEDGER_EDITS))
 def test_hand_edited_ledger_is_refused_as_invalid(tmp_path, monkeypatch, name):
     ledger = ledger_with_cursors(tmp_path, monkeypatch)
-    assert meter._load_ledger(as_bytes(ledger), CLOCK)["schema"].endswith("/5")
+    assert meter._load_ledger(as_bytes(ledger), CLOCK)["schema"].endswith("/6")
     INVALID_LEDGER_EDITS[name](ledger)
     with pytest.raises(meter.Unavailable) as refused:
         meter._load_ledger(as_bytes(ledger))
@@ -6590,7 +6654,7 @@ def test_a_retained_event_before_the_horizon_is_refused(tmp_path, monkeypatch):
 def test_the_empty_ledger_has_the_new_fields():
     empty = meter._load_ledger(None)
     assert empty["starts"] == [] and empty["fold_horizon"] is None and empty["daily"] == []
-    assert empty["schema"] == "cairn-meter-ledger/5"
+    assert empty["schema"] == "cairn-meter-ledger/6"
     assert meter._load_ledger(as_bytes(empty), CLOCK) == empty
 
 
@@ -7216,7 +7280,7 @@ def keys_of(ledger):
 
 
 def event_key_for(message_id, session="session-a"):
-    return meter._digest("claude", session, "request-" + message_id, message_id)
+    return meter._digest("claude", "request-" + message_id, message_id)
 
 
 def grow(path, data):
@@ -8798,3 +8862,37 @@ def test_events_of_the_clock_day_are_never_folded_even_above_the_target(tmp_path
     ledger = ledger_of(home)
     assert ledger["fold_horizon"] == "2026-11-10"
     assert len(ledger["events"]) == 4 and ledger["daily"] == []
+
+
+def test_windows_profile_owner_may_be_system_or_administrators():
+    acl = ctypes.create_string_buffer(struct.pack("<BBHH", 2, 0, 8, 0), 8)
+    sids = {1: b"user", 2: b"other", 3: b"system", 4: b"admins", 5: b"trusted"}
+    names = {"S-1-5-18": 3, "S-1-5-32-544": 4,
+             "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464": 5}
+    state = {}
+
+    class Advapi:
+        def GetSecurityInfo(self, _handle, _kind, _info, owner, _group, dacl, _sacl, sd):
+            owner._obj.value = state["owner"]
+            dacl._obj.value = ctypes.addressof(acl)
+            sd._obj.value = 99
+            return 0
+
+        def ConvertStringSidToSidW(self, text, out):
+            out._obj.value = names[text]
+            return 1
+
+    api = object.__new__(meter._WindowsConsentAPI)
+    api.C, api.W = ctypes, SimpleNamespace()
+    api.advapi, api.kernel = Advapi(), SimpleNamespace(LocalFree=lambda _p: None)
+    api._sid_bytes = lambda sid: sids[sid.value]
+    cases = [("profile", 1, True), ("profile", 3, True), ("profile", 4, True),
+             ("profile", 2, False), ("profile", 5, False),
+             ("cairn", 4, False), ("config", 4, False)]
+    for role, owner, allowed in cases:
+        state["owner"] = owner
+        if allowed:
+            api.check_acl(7, b"user", role)
+        else:
+            with pytest.raises(meter.Unavailable):
+                api.check_acl(7, b"user", role)

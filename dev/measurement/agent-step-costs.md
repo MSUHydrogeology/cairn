@@ -122,8 +122,21 @@ runs cost machine time, not tokens, and are listed separately.
 | Strip test pressure | inventory of every sentence that asks for a test, by a reader | Medium | 376,025 | 17 | 675 entries in 57 files |
 | | proposal written by Strategy; usual review | Medium | 88,587 | 1 | revise, 3 blocking |
 | | Security Review | High | 98,276 | 2 | revise, 3 blocking |
+| Arc G, the meter runs for a Windows administrator | plan written from a brief, by the plan's agent | Medium | 110,449 | 2 | opened |
+| | usual plan review | Medium | 86,417 | 1 | revise, 1 blocking |
+| | Security Review of the plan | High | 85,529 | 2 | revise, 2 blocking; it wrote the test |
+| Strip test pressure | edits, group 5 (other pages), by an Implementation agent | Medium | 99,657 | 2 | 72 rows: 61 kept, 10 rewritten, 1 undecided |
+| | edits, group 1 (the files every agent loads) | Medium | 101,729 | 3 | 54 rows: 28 kept, 12 rewritten, 12 removed, 2 the new rule |
+| | edits, group 2 (the collaboration file, both copies) | Medium | 116,661 | 3 | 110 rows: 61 kept, 24 rewritten, 17 removed, 6 the new rule, 2 undecided |
+| | response to both code reviews, by the plan's agent | Medium | 95,088 | 27 | ready to archive; 5 tests and cases removed |
+| Arc G, the meter runs for a Windows administrator | build, by the plan's agent | Medium | 75,300 | 1 | awaiting code review |
+| Strip test pressure | edits, group 3 (the two templates) | Medium | 145,915 | 4 | 132 rows: 69 kept, 44 rewritten, 19 removed |
+| | edits, group 4 (the published method) | Medium | 185,773 | 8 | 182 rows: 100 kept, 49 rewritten, 29 removed, 2 the new rule, 2 undecided |
+| Arc G, the meter runs for a Windows administrator | code review, usual | Medium | 76,053 | 1 | accept; one note, no change asked |
+| | code review, Security | High | 78,479 | 1 | accept; no finding |
+| Strip test pressure | read of the whole diff | Medium | 124,007 | 2 | accept; two wording notes |
 
-Total for the day so far: 14,702,796 tokens across 98 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 16,083,853 tokens across 111 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -188,7 +201,7 @@ Measured:
   Strategy put every design decision in the brief, so the author did no
   design, and Strategy folded the reviews itself, so no agent was resumed or
   spawned for that. Two against two is a small sample.
-- **Fifty review passes so far.** Two were further passes that a design change required: one
+- **Fifty-five review passes so far.** Two were further passes that a design change required: one
   by the Maintainer, and one to close a Security finding with a simpler rule. No pass has yet had to come back to check a fix.
 - **Replies of five lines work.** From 2026-11-21 each agent writes its full account into
   the plan or proposal and answers the coordinating session in a fixed form of five or six

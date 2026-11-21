@@ -40,7 +40,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit, urlunsplit
 
 
-READER_VERSION = "cairn-source-readers/5"
+READER_VERSION = "cairn-source-readers/6"
 CODEX_CONTRACT = "49f0c6022596c361fe676a5c4738fb2be34e3a93"  # vendor-ok: pins reviewed input contract
 MAX_COUNTER = 2**63 - 1
 TOOLS = ("codex", "claude", "antigravity")  # vendor-ok: source adapters
@@ -75,8 +75,9 @@ def _load_shared_pulse():
 
 
 _PULSE = _load_shared_pulse()
-LEDGER_SCHEMA = "cairn-meter-ledger/5"
-_OLD_LEDGER_SCHEMAS = frozenset({"cairn-meter-ledger/3", "cairn-meter-ledger/4"})
+LEDGER_SCHEMA = "cairn-meter-ledger/6"
+_OLD_LEDGER_SCHEMAS = frozenset({"cairn-meter-ledger/3", "cairn-meter-ledger/4",
+                                 "cairn-meter-ledger/5"})
 RATIO_VERSION = "cairn-api-token-index/2026-11-06"
 _RATIO_INDEX = {
     "version": RATIO_VERSION,
@@ -132,6 +133,12 @@ MAX_WAIT_EXPORT_WORK = 100_000
 MAX_CLAIM_BYTES = 8 * 1024 * 1024
 MAX_CLAIM_LINE = 64 * 1024
 MAX_LEDGER_BYTES = 64 * 1024 * 1024
+MAX_AGENT_SUMMARIES = 1_000
+MAX_AGENT_TRANSCRIPTS = 100_000
+# The three counts a finished sub-agent's summary record holds (Detail D0, P1).
+_SUMMARY_FIELDS = frozenset({"totalTokens", "toolUses", "durationMs"})
+# The frame the tool writes around a run's id inside its summary (Detail D0, P4).
+_SUMMARY_FRAME = re.compile(r"<task-id>([A-Za-z0-9]{8,64})</task-id>")
 LEDGER_NAME = "ledger.json"
 LEDGER_LOCK_NAME = "ledger.lock"
 _PRIVATE_FS_SUPPORTED = os.name == "posix"
@@ -626,7 +633,10 @@ class _WindowsConsentAPI:
                 raise Unavailable
             owner_bytes = self._sid_bytes(owner)
             private_roles = {"meter", "ledger", "lock", "candidate", "export"}
-            if role in {"profile", "cairn", "config", *private_roles} and owner_bytes != user_sid:
+            if role == "profile":
+                if owner_bytes != user_sid and not self._privileged_sid(owner_bytes, ancestor=False):
+                    raise Unavailable
+            elif role in {"cairn", "config", *private_roles} and owner_bytes != user_sid:
                 raise Unavailable
             if role in private_roles:
                 control, revision = self.W.WORD(), self.W.DWORD()
@@ -2591,7 +2601,7 @@ _WAIT_REASONS = {
 _LEDGER_FIELDS = {
     "schema", "reader_version", "ratio_version", "ratio_index", "events", "claims", "cursors",
     "mappings", "project_remotes", "aggregates", "lineages", "waits", "coverage",
-    "starts", "fold_horizon", "daily",
+    "starts", "fold_horizon", "daily", "agent_runs",
 }
 
 
@@ -3019,6 +3029,28 @@ def _validate_aggregate_row(aggregate):
             raise ValueError
 
 
+def _validate_agent_runs(value):
+    if not isinstance(value, dict) or set(value) != {"transcripts", "summaries", "unclassified"}:
+        raise ValueError
+    _counter(value["unclassified"])
+    for name, cap in (("transcripts", MAX_AGENT_TRANSCRIPTS),
+                      ("summaries", MAX_AGENT_SUMMARIES)):
+        rows = value[name]
+        if not isinstance(rows, list) or len(rows) > cap:
+            raise ValueError
+        keys = []
+        for row in rows:
+            if not isinstance(row, dict) or set(row) != {"session_key", "agent_key"}:
+                raise ValueError
+            for field in ("session_key", "agent_key"):
+                if (not isinstance(row[field], str)
+                        or not re.fullmatch(r"[0-9a-f]{64}", row[field])):
+                    raise ValueError
+            keys.append((row["session_key"], row["agent_key"]))
+        if keys != sorted(keys) or len(set(keys)) != len(keys):
+            raise ValueError
+
+
 def _load_ledger(raw, now=None):
     if raw is None:
         return {
@@ -3027,6 +3059,7 @@ def _load_ledger(raw, now=None):
             "events": [], "claims": [], "cursors": [],
             "mappings": [], "project_remotes": [], "aggregates": [], "lineages": [],
             "waits": [], "starts": [], "fold_horizon": None, "daily": [],
+            "agent_runs": _empty_agent_runs(),
             "coverage": {"global": "unknown", "reasons": []},
         }
     try:
@@ -3047,6 +3080,7 @@ def _load_ledger(raw, now=None):
                 "events", "claims", "cursors", "mappings", "project_remotes",
                 "aggregates", "lineages", "waits", "starts", "daily")):
             raise ValueError
+        _validate_agent_runs(ledger["agent_runs"])
         now = _now_utc() if now is None else now
         if ledger["fold_horizon"] is not None and (
                 not isinstance(ledger["fold_horizon"], str)
@@ -4192,7 +4226,7 @@ def _read_fork_parents(source, config, files, previous, source_batches, spent, *
 
 
 def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=None,
-                           windows_api=None, windows_user_sid=None):
+                           windows_api=None, windows_user_sid=None, agent_runs=None):
     windows = os.name == "nt" or windows_api is not None
     windows_api = (_WindowsConsentAPI() if windows and windows_api is None
                    else windows_api)
@@ -4363,6 +4397,8 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                 if not resumed:
                     batch["started_at"] = started_at
                 batches.append(batch)
+                if agent_runs is not None:
+                    _gather_agent_runs(agent_runs, batch)
             if source["tool"] == "codex":
                 parents, dropped, used = _read_fork_parents(
                     source, config, files, previous, batches[first_batch:],
@@ -4620,9 +4656,19 @@ def _build_mappings(events, claims, config):
 
 def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incoming_claims,
                 project_remotes, capture_status, scan_reasons, verified_forks,
-                fork_conflicts, starts=None, now=None):
+                fork_conflicts, starts=None, now=None, agent_runs=None):
     starts = prior["starts"] if starts is None else starts
     now = _now_utc() if now is None else now
+    if agent_runs is None:
+        incoming_runs = _empty_agent_runs()
+    else:
+        incoming_runs = {
+            "transcripts": [{"session_key": session_key, "agent_key": agent_key}
+                            for session_key, agent_key in sorted(agent_runs["transcripts"])],
+            "summaries": [{"session_key": session_key, "agent_key": agent_key}
+                          for session_key, agent_key in sorted(agent_runs["summaries"])],
+            "unclassified": agent_runs["unclassified"]}
+    runs = _merge_agent_runs(prior["agent_runs"], incoming_runs)
     events = _merge_events(prior["events"], incoming_events)
     waits = _merge_wait_rows(prior["waits"], incoming_waits)
     old_remotes = {item["alias"]: item["remote"] for item in prior["project_remotes"]}
@@ -4698,6 +4744,8 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
     lineages = _drop_folded_lineages(lineages, events, waits)
     mappings = _build_mappings(events, claims, config)
     reasons = set(scan_reasons)
+    if runs["summaries"] or runs["unclassified"] > 0:
+        reasons.add("agent_runs_incomplete")
     if reasons & {"catching_up", "source_too_large"}:
         reasons.add("incomplete")
     reasons.update(status for status in capture_status if status != "captured")
@@ -4713,7 +4761,7 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
                              key=_aggregate_sort_key),
         "lineages": lineages,
         "starts": sorted(starts, key=lambda item: item["source_alias"]),
-        "fold_horizon": fold_horizon, "daily": daily,
+        "fold_horizon": fold_horizon, "daily": daily, "agent_runs": runs,
         "coverage": {"global": "unknown", "reasons": sorted(reasons)},
     }
 
@@ -5011,15 +5059,16 @@ def _refresh_ledger(home, *, report_current_directory=None):
         old_fd, old_raw, old_identity = _read_optional_ledger(meter_fd)
         now = _now_utc()
         prior = _load_ledger(old_raw, now)
+        runs = {"transcripts": set(), "summaries": set(), "unclassified": 0}
         (incoming_events, cursors, scan_reasons, verified_forks, fork_conflicts,
          incoming_waits, starts) = _scan_approved_sources(
             config, prior["cursors"], starts=prior["starts"], now=now,
-            fold_horizon=prior["fold_horizon"])
+            fold_horizon=prior["fold_horizon"], agent_runs=runs)
         incoming_claims, project_remotes, capture_status = _capture_all_claims(config)
         candidate = _new_ledger(prior, config, incoming_events, incoming_waits, cursors,
                                 incoming_claims, project_remotes,
                                 capture_status, scan_reasons, verified_forks,
-                                fork_conflicts, starts=starts, now=now)
+                                fork_conflicts, starts=starts, now=now, agent_runs=runs)
         result = _atomic_replace_ledger(
             home, home_fd, cairn_fd, meter_fd, lock_fd, lock_identity,
             old_fd if isinstance(old_fd, int) and old_fd >= 0 else None,
@@ -5358,17 +5407,18 @@ def _refresh_ledger_windows(profile, api, user_sid, *, opened=None,
 
         def build_candidate(prior):
             now = _now_utc()
+            runs = {"transcripts": set(), "summaries": set(), "unclassified": 0}
             (events, cursors, scan_reasons, verified_forks,
              fork_conflicts, waits, starts) = _scan_approved_sources(
                 config, prior["cursors"], starts=prior["starts"], now=now,
                 fold_horizon=prior["fold_horizon"],
-                windows_api=api, windows_user_sid=user_sid)
+                windows_api=api, windows_user_sid=user_sid, agent_runs=runs)
             claims, remotes, claim_status = _capture_all_claims(
                 config, windows_api=api, windows_user_sid=user_sid)
             result = _new_ledger(prior, config, events, waits, cursors, claims,
                                  remotes, claim_status, scan_reasons,
                                  verified_forks, fork_conflicts,
-                                 starts=starts, now=now)
+                                 starts=starts, now=now, agent_runs=runs)
             built[:] = [result]
             return result
 
@@ -6313,6 +6363,43 @@ def _codex_context(payload, owner):  # vendor-ok: validate the supported input p
             "owner": owner}
 
 
+def _project_for_folder(cwd, projects):
+    """Return the one configured project whose path holds `cwd` as text, or None.
+
+    The folder is never opened, linked or resolved; it is compared as text.
+    """
+    if not isinstance(cwd, str):
+        return None
+    try:
+        cwd = _text(cwd)
+    except ValueError:
+        return None
+    if os.name == "nt":
+        try:
+            _windows_absolute_parts(cwd)
+        except Unavailable:
+            return None
+        sep = "\\"
+    else:
+        if not cwd.startswith("/") or any(part in {".", ".."} for part in cwd.split("/")):
+            return None
+        sep = "/"
+    containing = []
+    for project in projects:
+        path = project.get("path")
+        if not isinstance(path, str):
+            continue
+        if cwd == path:
+            containing.append(project)
+            continue
+        prefix = path if path.endswith(sep) else path + sep
+        if cwd.startswith(prefix):
+            rest = cwd[len(prefix):]
+            if rest and all(rest.split(sep)):
+                containing.append(project)
+    return containing[0] if len(containing) == 1 else None
+
+
 def _codex_identity(payload):  # vendor-ok: extract the supported input protocol
     thread = _codex_uuid(payload["thread_id"])
     session = _codex_uuid(payload["session_id"])
@@ -6497,22 +6584,98 @@ def _merge_event_batches(batches):
     return list(merged.values())
 
 
-def _record_carries_usage(record):
-    """Return True if any dict inside the record has a `usage` key.
+def _usage_values(record):
+    """Return every value stored under a `usage` key inside the record.
 
     Walks without recursion: a list is used as a stack over dict values and
     list items, so a deeply nested record cannot exhaust the call stack.
     """
+    found = []
     pending = [record]
     while pending:
         item = pending.pop()
         if isinstance(item, dict):
             if "usage" in item:
-                return True
+                found.append(item["usage"])
             pending.extend(item.values())
         elif isinstance(item, list):
             pending.extend(item)
-    return False
+    return found
+
+
+def _empty_agent_runs():
+    return {"transcripts": [], "summaries": [], "unclassified": 0}
+
+
+def _gather_agent_runs(gathered, batch):
+    """Add one batch's sub-agent rows to a refresh's sets; nothing is covered here."""
+    runs = batch["agent_runs"]
+    gathered["transcripts"].update(
+        (row["session_key"], row["agent_key"]) for row in runs["transcripts"])
+    gathered["summaries"].update(
+        (row["session_key"], row["agent_key"]) for row in runs["summaries"])
+    gathered["unclassified"] = min(MAX_COUNTER,
+                                   gathered["unclassified"] + runs["unclassified"])
+
+
+def _merge_agent_runs(first, second):
+    """Union two sub-agent records, drop covered summaries, then apply the caps."""
+    transcripts = {(row["session_key"], row["agent_key"])
+                   for row in [*first["transcripts"], *second["transcripts"]]}
+    summaries = {(row["session_key"], row["agent_key"])
+                 for row in [*first["summaries"], *second["summaries"]]}
+    unclassified = min(MAX_COUNTER, first["unclassified"] + second["unclassified"])
+    summaries -= transcripts
+    kept_transcripts = sorted(transcripts)
+    kept_summaries = sorted(summaries)
+    cut = max(0, len(kept_transcripts) - MAX_AGENT_TRANSCRIPTS)
+    cut += max(0, len(kept_summaries) - MAX_AGENT_SUMMARIES)
+    kept_transcripts = kept_transcripts[:MAX_AGENT_TRANSCRIPTS]
+    kept_summaries = kept_summaries[:MAX_AGENT_SUMMARIES]
+    return {
+        "transcripts": [{"session_key": session_key, "agent_key": agent_key}
+                        for session_key, agent_key in kept_transcripts],
+        "summaries": [{"session_key": session_key, "agent_key": agent_key}
+                      for session_key, agent_key in kept_summaries],
+        "unclassified": min(MAX_COUNTER, unclassified + cut)}
+
+
+def _summary_shape(value):
+    if not isinstance(value, dict) or set(value) != _SUMMARY_FIELDS:
+        return False
+    try:
+        for name in _SUMMARY_FIELDS:
+            _counter(value[name])
+    except ValueError:
+        return False
+    return True
+
+
+def _summary_run(record):
+    """Return the digest of the run a finished sub-agent's summary names.
+
+    None when the record's usage values are not the summary shape. "" when the
+    frame names no run, or more than one. The id is read only inside the frame.
+    """
+    values = _usage_values(record)
+    if not values or not all(_summary_shape(value) for value in values):
+        return None
+    found = set()
+    pending = [record]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, dict):
+            pending.extend(item.values())
+        elif isinstance(item, list):
+            pending.extend(item)
+        elif isinstance(item, str):
+            for match in _SUMMARY_FRAME.finditer(item):
+                found.add(match.group(1))
+                if len(found) > 1:
+                    return ""
+    if len(found) != 1:
+        return ""
+    return _digest("agent-id", next(iter(found)))
 
 
 def read_records(tool, lines, *, config=None, source_aliases=(), source_root=None,
@@ -6528,6 +6691,7 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
     issues, contexts, candidates = set(), {}, []
     timing_observations = []
     timing_candidates = []
+    agent_transcripts, agent_summaries, agent_unclassified = set(), set(), 0
     config_supplied = config is not None
 
     def verify_project(project, excluded_roots):
@@ -6569,12 +6733,14 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
         return {"schema": READER_VERSION, "tool": tool, "events": [],
                 "timing_observations": [], "timing_coverage": "unknown",
                 "coverage": "unknown", "identity_coverage": "unknown",
-                "ownership_coverage": "unknown", "issues": ["invalid_record"]}
+                "ownership_coverage": "unknown", "issues": ["invalid_record"],
+                "agent_runs": _empty_agent_runs()}
     if isinstance(config, dict) and not config["enabled"]:
         return {"schema": READER_VERSION, "tool": tool, "events": [],
                 "timing_observations": [], "timing_coverage": "unknown",
                 "coverage": "unknown", "identity_coverage": "unknown",
-                "ownership_coverage": "unknown", "issues": ["disabled"]}
+                "ownership_coverage": "unknown", "issues": ["disabled"],
+                "agent_runs": _empty_agent_runs()}
     if isinstance(config, dict) and isinstance(source_aliases, (list, tuple, set)):
         if any(not isinstance(alias, str) for alias in source_aliases):
             source_aliases = ()
@@ -6622,16 +6788,34 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                 continue
             if tool == "claude":  # vendor-ok: producer assistant usage shape
                 if kind != "assistant":
-                    if kind not in {"user", "system", "progress", "file-history-snapshot"} \
-                            and _record_carries_usage(record):
-                        issues.add("unsupported_record")
+                    if kind in {"user", "system", "progress", "file-history-snapshot"}:
+                        continue
+                    if not _usage_values(record):
+                        continue
+                    run = _summary_run(record)
+                    try:
+                        session_key = _digest(tool, _text(record["sessionId"]))
+                    except (KeyError, ValueError):
+                        session_key = None
+                    if not run or session_key is None:
+                        issues.add("agent_runs_incomplete")
+                        agent_unclassified += 1
+                        continue
+                    agent_summaries.add((session_key, run))
                     continue
                 message = record["message"]
                 session = _text(record["sessionId"])
+                if record.get("isSidechain") is True:
+                    try:
+                        agent_key = _digest("agent-id", _text(record["agentId"]))
+                    except (KeyError, ValueError):
+                        pass
+                    else:
+                        agent_transcripts.add((_digest(tool, session), agent_key))
                 message_id = _text(message["id"])
                 request = record.get("requestId")
                 response = _text(request) if request is not None else message_id
-                event_key = _digest(tool, session, response, message_id)
+                event_key = _digest(tool, response, message_id)
                 try:
                     kinds = _claude_usage(message["usage"])
                     cache_write_ttl = _claude_cache_ttl(
@@ -6656,7 +6840,26 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                         model = None
                         issues.add("invalid_record")
                         model_invalid = True
-                reasons = {"project_path_unapproved"}
+                reasons = set()
+                bound = None
+                folder_project = (_project_for_folder(record.get("cwd"), projects)
+                                  if source_root_approved else None)
+                if request is None:
+                    reasons.add("conflicting_binding")
+                elif account_filter_requested:
+                    pass
+                elif folder_project is None:
+                    reasons.add("project_path_unapproved")
+                else:
+                    cache_key = (folder_project.get("alias"), folder_project.get("path"))
+                    if cache_key not in verified_projects:
+                        verified_projects[cache_key] = verify_project(folder_project,
+                                                                      excluded_roots)
+                    current_remote, remote_reason = verified_projects[cache_key]
+                    if remote_reason is None:
+                        bound = folder_project
+                    else:
+                        reasons.add(remote_reason)
                 if usage_invalid or model_invalid:
                     reasons.add("invalid_record")
                 if account_filter_requested:
@@ -6670,7 +6873,10 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     kinds=kinds, model=model,
                     model_provenance=("usage_record" if model is not None else "unknown"),
                     effective_model=model,
-                    cache_write_ttl=cache_write_ttl, reasons=reasons)
+                    cache_write_ttl=cache_write_ttl, reasons=reasons,
+                    project_alias=bound["alias"] if bound else None,
+                    project_state="current_local_verified" if bound else "unknown",
+                    ownership="proven" if bound else "unknown")
                 candidates.append((candidate, tuple(candidate["kinds"].items()),
                                    (session, None, None, None), None, line_ordinal))
                 continue
@@ -6955,10 +7161,16 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
         candidates.clear()
         timing_observations.clear()
         timing_candidates.clear()
+        agent_transcripts.clear()
+        agent_summaries.clear()
+        agent_unclassified = 0
         issues.add(lines.terminal_reason)
     if len(candidates) > MAX_NORMALIZED_EVENTS:
         candidates.clear()
         timing_candidates.clear()
+        agent_transcripts.clear()
+        agent_summaries.clear()
+        agent_unclassified = 0
         issues.add("source_budget_exceeded")
 
     normalized_waits = []
@@ -7150,7 +7362,13 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
             "timing_observations": timing_observations,
             "wait_candidates": normalized_waits, "timing_coverage": "unknown",
             "coverage": "unknown", "identity_coverage": "unknown",
-            "ownership_coverage": "unknown", "issues": sorted(issues)}
+            "ownership_coverage": "unknown", "issues": sorted(issues),
+            "agent_runs": {
+                "transcripts": [{"session_key": session_key, "agent_key": agent_key}
+                                for session_key, agent_key in sorted(agent_transcripts)],
+                "summaries": [{"session_key": session_key, "agent_key": agent_key}
+                              for session_key, agent_key in sorted(agent_summaries)],
+                "unclassified": agent_unclassified}}
 
 
 _REFRESH_REASONS = frozenset({
