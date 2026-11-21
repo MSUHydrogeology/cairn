@@ -1,7 +1,7 @@
 # Certify each release on the Mac, Linux and Windows
 
 **Author**: Claude Fable 5.2 (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -231,5 +231,25 @@ No new review pass: the Maintainer removed scope and added none.
 - The Mac-only class in the pinned list, and the rule that moving a test into it takes a Security Review and a re-signing. Withdrawn with the class.
 - The requirement that all three records carry the history scan. Withdrawn with the records; the secrets scans stay due at the cut.
 - Choices 2, 3 and 4 of the first form. Settled by the simple form: a waiver is the Maintainer's words in the release note; a test that cannot pass on a platform is skipped there with its reason; v0.8.1 is the first release certified this way.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Decision -- Maintainer (scribed by Claude Fable 5.2) -- 2026-11-21
+
+**Tier**: light
+
+**ACCEPTED, in the simple form.** Strategy asked: "(a) Certify v0.8.1 the simple way: the whole suite once on each of the three platforms, results written in the release note, no new code. I recommend this. (b) Build the stricter check now." The Maintainer wrote (chat, 2026-11-21):
+
+> "Yes, the simple way"
+
+Earlier the same day he had written: "Then we re-anchor, certify on all three platforms, and cut."
+
+What that settles:
+
+- **The simple form is accepted,** as the operative text above states it: one full run on each of the three platforms, the results in the release note, no code.
+- **v0.8.1 itself is certified this way.**
+- **The stricter check is not built.** Whether the record and join commands are kept, extended or removed is left to the tightening.
+- **Tier: light.** It was not put to him as a separate question. The revised proposal proposes light, because only two rule and release documents change, and by the template a proposed tier stands unless the Decision changes it.
+- **Still his to say, in the Mac session:** adding Python 3.13 to the Linux machine, because it is a download on his machine.
 
 **Elapsed**: unknown. **Tokens**: unknown.
