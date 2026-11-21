@@ -228,6 +228,8 @@ python release/security_check.py --record /absolute/path/mac.json --history-root
 python release/security_check.py --record /absolute/path/windows.json --history-roots /absolute/private/cut-history.json
 ```
 
+Freeze from a fresh clone, not from a working checkout. `--freeze-history` records every ref in the repository and stops with `cannot peel to a commit` when a ref points at a tree; some tools leave such refs in a working checkout (the Codex tool's `refs/codex/turn-diffs/...`). A new `git clone` of the clean Mac authority, checked out at the cut commit, copies branches and tags and none of those. Before the freeze, fetch `refs/cairn/gate-anchor` into the clone from the trusted origin and verify its signed commit; fetch nothing after the freeze. Take the Mac record and run the join from that same clone: the join refuses when the repository's refs or its location differ from the frozen manifest. The Windows record is taken in the Windows checkout, with the same manifest file. The join's `PASS` covers only the commit it names. Push only that commit as `master`: where you push from, `git rev-parse master` must print it; if not, stop and freeze again.
+
 Each local run preserves both orders of the shipped-only selection
 (every test except the files in `RELEASE_EXCLUDED_TESTS`): the direct default order and
 the quality gate's seed-0 order, along with neutrality, redundancy, Bandit,

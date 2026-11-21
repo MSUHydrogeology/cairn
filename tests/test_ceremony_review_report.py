@@ -325,6 +325,25 @@ class TestLineScan:
         # the rest is counted by class, never silently dropped
         assert sum(rep["scan"]["not_line_scanned"].values()) == 3, rep["scan"]
 
+    def test_a_new_non_test_file_under_tests_is_scanned_and_a_new_test_module_is_not(
+            self, tmp_path):
+        line = "import subprocess\n"
+        repo, a, h = _make_range(
+            tmp_path,
+            {"docs/guide.md": "a\n"},
+            {"tests/new_tool.py": line,
+             "tests/sub/conftest.py": line,
+             "tests/security/test_new.py": line,
+             "tests/test_new.py": line,
+             "tests/fixtures/data.py": line})
+        rep = _report(repo, a, h)
+        assert {p for p, _l, _n in _hits(rep)} == {
+            "tests/new_tool.py", "tests/sub/conftest.py"}
+        assert rep["scan"]["scanned"] == [
+            "tests/new_tool.py", "tests/sub/conftest.py"]
+        # the three excluded added files are counted, never silently dropped
+        assert sum(rep["scan"]["not_line_scanned"].values()) == 3, rep["scan"]
+
     def test_a_diff_attribute_does_not_hide_a_hit(self, tmp_path):
         """A `-diff` attribute in the candidate's own tree makes git print
         "Binary files differ" and no lines. The scan reads raw blobs, so the

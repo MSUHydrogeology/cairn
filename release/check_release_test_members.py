@@ -237,6 +237,16 @@ def _report(path: Path, started_ns: int) -> ET.Element:
     return document
 
 
+def _report_file(raw: object, windows: bool | None = None) -> object:
+    """pytest writes the `file=` field with the host's separator, a backslash
+    on Windows. Read it as forward slashes there and nowhere else; the
+    comparison with the file the classname names, and every later check in
+    `_file`, are unchanged."""
+    if windows is None:
+        windows = os.name == "nt"
+    return raw.replace("\\", "/") if windows and isinstance(raw, str) else raw
+
+
 def compare(root: Path, report: Path, started_ns: int, required: set[str],
             native: NativeSkips | None = None) -> tuple[int, int]:
     """Return (reported cases, listed other-platform skips accepted).
@@ -268,7 +278,7 @@ def compare(root: Path, report: Path, started_ns: int, required: set[str],
         if len(candidates) != 1:
             raise CheckError("test classname does not resolve to exactly one source file")
         filename = _file(root, candidates.pop())
-        if "file" in case.attrib and _file(root, case.attrib["file"]) != filename:
+        if "file" in case.attrib and _file(root, _report_file(case.attrib["file"])) != filename:
             raise CheckError("test file and classname identities disagree")
         outcomes = [child.tag for child in case
                     if child.tag in {"failure", "error", "skipped"}]

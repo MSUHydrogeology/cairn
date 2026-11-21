@@ -163,8 +163,12 @@ def _check(root: Path, report: Path, start: int, *, configured: bool = True):
 def evidence(project: Path):
     report = project / "report.xml"
     (project / "required.json").write_text(json.dumps([VICTIM]))
-    start = time.time_ns()
     ET.ElementTree(_xml()).write(report, encoding="utf-8")
+    # The checker refuses a report older than the run's start. A file system stamps a
+    # file from a coarse clock that can read earlier than time.time_ns() (always on
+    # Linux, often on Windows), so take the start from the report's own time: a test
+    # that rewrites the report then never makes it look older than the start.
+    start = report.stat().st_mtime_ns
     return project, report, start
 
 
@@ -238,6 +242,49 @@ def test_report_refusals(evidence, fault: str):
     result = _check(root, report, start)
     assert result.returncode != 0, fault
     assert "FAIL" in result.stderr
+
+
+@pytest.mark.skipif(os.name == "nt",
+                    reason="on Windows the backslash spelling is accepted; the next test covers it")
+def test_backslash_file_field_is_refused_off_windows(evidence):
+    root, report, start = evidence
+    suite = _xml()
+    suite[0].set("file", "tests\\test_security_lint.py")
+    ET.ElementTree(suite).write(report, encoding="utf-8")
+    result = _check(root, report, start)
+    assert result.returncode == 1, result.stderr
+    assert "invalid test-file identity" in result.stderr
+
+
+@pytest.mark.skipif(os.name != "nt",
+                    reason="pytest writes a backslash file= path only on Windows")
+def test_backslash_file_field_is_accepted_on_windows(evidence):
+    root, report, start = evidence
+    suite = _xml()
+    suite[0].set("file", "tests\\test_security_lint.py")
+    ET.ElementTree(suite).write(report, encoding="utf-8")
+    result = _check(root, report, start)
+    assert result.returncode == 0, result.stderr
+
+
+def test_file_field_naming_another_file_is_refused(evidence):
+    root, report, start = evidence
+    suite = _xml()
+    suite[0].set("file", "tests/test_security_marker.py".replace("/", os.sep))
+    ET.ElementTree(suite).write(report, encoding="utf-8")
+    result = _check(root, report, start)
+    assert result.returncode == 1, result.stderr
+    assert "test file and classname identities disagree" in result.stderr
+
+
+def test_dotdot_in_a_windows_file_field_is_refused(evidence):
+    root, report, start = evidence
+    suite = _xml()
+    suite[0].set("file", "tests/../tests/test_security_lint.py".replace("/", os.sep))
+    ET.ElementTree(suite).write(report, encoding="utf-8")
+    result = _check(root, report, start)
+    assert result.returncode == 1, result.stderr
+    assert "not a canonical relative path" in result.stderr
 
 
 @pytest.mark.parametrize("value", [None, [], {}, [VICTIM, VICTIM], ["../outside.py"],

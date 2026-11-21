@@ -1,7 +1,7 @@
 # Plan: Defect arc D1, gate narrowings and release control
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -200,3 +200,120 @@ Both reviews said REVISE. Every blocking finding is applied with its reviewer's 
 **Not checked**: no code or test was run. The roadmap edits in `dev/PLANNING.md` are Strategy's and are not made here. The two edits the "Owners" paragraph names must be committed before archive.
 
 Elapsed about 10 minutes; tokens unknown.
+
+## Implementation record -- Claude Haiku 5.5 (Implementation, Low) -- 2026-11-20
+
+BASE: ecc1a913. Status left at implementing.
+
+Commits: 29121797 Step 0 (header); 9c20accb D1-1 (new-file scan, one node); b2286566 D1-2 (record number asserted); 8feca392 D1-3 (_report_file, one changed line, four nodes); c9220e61 D1-4 (one paragraph).
+
+Nodes (this Windows host):
+- D1-1 new node: fails before and after with "the ssh-keygen path /usr/bin/ssh-keygen is not absolute". Every test using this helper fails the same way here, so the scan is not exercised; the Mac run is the check.
+- D1-2 node: BASE refusal holds "record <n>:", so no stop. 6 of 6 pass after.
+- D1-3 Windows node: "invalid test-file identity" before, passes after. The other-file and ".." nodes fail before (the same backslash refusal) and pass after. The off-Windows node is skipped here.
+
+Probes (undone): D1-1 tests/ excluded: host message, inconclusive. D1-2 number + 1: fails. D1-2 hostile src on record 1, planted record valid: fails (scratch copy). D1-3 _report_file values: as Detail says.
+
+Whole files, against BASE:
+- test_ceremony_review_report.py: 75 failed, 1 passed; BASE 74 and 1. The extra id is the new node; all host messages.
+- test_fork_advisory.py: 2 failed, 12 passed; BASE 3 and 11. The two symlink cases are WinError 1314 on both. BASE's extra failure (test_node11) passed on repeat.
+- test_release_members_contract.py: 8 or 9 failed; BASE 8. The extra id, test_minimal_report_passes, is timing and failed once at BASE too.
+
+Differences from the plan: none in code. The planted record is the last in the lock, so D1-2 probe 2 put the hostile src on record 1.
+
+Not run: the other selected files (test_gate_preflight, test_gate_reanchor, test_oracle_activation, test_reanchor, test_reanchor_driver_disclosures, test_repin, test_repin_ceremony, test_security_marker); the Mac run; any freeze, record, join or signing. Not confirmed here: the D1-1 node and the D1-3 off-Windows node.
+
+Elapsed about 20 minutes (18:55 to 19:15, host clock). Tokens: unknown.
+
+## Coordinator verification -- Claude Fable 5.2 (Strategy) -- 2026-11-20
+
+The four chunks match Detail. The tests that cannot run on the Windows Server host ran in its Linux subsystem (Ubuntu, Python 3.14.4): a development check, not the canonical runtime.
+
+- **One defect found and fixed** (`52cc8095`, under the rule for a cheap defect fix). On Linux, three of D1-3's new nodes failed with "report is stale" before reaching their own check. The `evidence` fixture read the clock and then wrote the report; a file system stamps a new file from a coarser clock, which read earlier than the clock on 200 of 200 new files on Linux (by up to 4.7 ms) and on 129 of 200 on Windows (up to 0.7 ms), measured. `test_minimal_report_passes` failed the same way on Linux at the starting commit; on Windows this is the "timing flake" on the roadmap. The fixture now takes the start from the report's own time. The checker is unchanged.
+- **Linux.** The four edited test files: 257 passed, 2 skipped. D1-1's control: with `tests/_gate_preflight.py` put back to the starting commit the new node fails (it finds no hit in the two tool files); with the change it passes. D1-1's nine selected files: the same 120 failures by id and message before and after, all in the signing tests, and one more pass, the new node.
+- **Windows Server host.** D1-1's nine files: 372 failed and 156 errors before; after, the only new failing id is the new node, which cannot run here (`the ssh-keygen path /usr/bin/ssh-keygen is not absolute`). D1-2's file: the same 2 failures. D1-3's two files, after the fixture fix: 8 failed against 9, none new; `test_minimal_report_passes` failed before and passes now.
+
+Not run: the Mac. Home: `dev/PLANNING.md`, "Waiting on you", the Mac session's second job. Not run: any freeze, record, join or signing. Found on the way and listed for plan D2 in `dev/PLANNING.md`, section 1, "Windows", items (g) to (j) (committed on `0.9-dev` at `f9c02db2`, so not in this branch's copy until the merge): the fixture race, a refusal test that asserts only "FAIL", stray files the ceremony tests leave on Windows, and an unstable gauge test file.
+
+**Elapsed**: 53 minutes from the implementer's record (19:16) to this one, most of it test runs. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-20
+
+Reviewed commit: 1e729c4ee4c91928e0d1fd944b0c7f1cf076f88c; range `ecc1a913..HEAD` on `arc-d-impl`.
+
+**Obligation**: the usual code review the heavy tier requires; the Security Review pass follows.
+**Findings**: none blocking, three non-blocking.
+
+The change gives the review page back a scan of new tool files under `tests/`, makes one test name the record it refuses, lets the release checker read pytest's Windows `file=` spelling, and writes down the clean-clone freeze. All four chunks match Detail word for word: the code blocks, the node names and cases, the one changed checker line, the docstring lines, and the single inserted paragraph (`git diff` shows one added line in `release/RELEASE_PROCESS.md`; the `bash` block is untouched).
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. It scans more and accepts nothing new except, on Windows, one spelling of a field that `compare` still checks against the classname. -- `tests/_gate_preflight.py:1450-1454`, `release/check_release_test_members.py:240` and `:281`
+2. **Best alternative.** For the fixture fix, keep `time.time_ns()` and stamp the report with `os.utime`, as the file's other helper does (finding 2). Otherwise none simpler. -- `tests/contract/test_release_members_contract.py:418`
+3. **What would show it wrong.** I tried names near the edge on the `_is_test_module` rule and the `tests/fixtures/` exclusion; `conftest.py`, `Test_a.py`, `tests_tool.py`, `test_a.pyi`, `test_a.sh`, and a `run.py` in a folder named `test_data` or `Fixtures` are all scanned; `test_*.py` at any depth and `tests/fixtures/` (any file) are not, as designed. A rename is `modified`, not `added`, so it is never new-file scanned, as before. I also ran the D1-3 nodes and the fork-advisory node here. -- `C:\ProgramData\Anaconda3\python.exe -m pytest tests/contract/test_release_members_contract.py -k "file_field or minimal_report or test_report_refusals"`: 26 passed, 1 skipped (the off-Windows node), 1 failed (symlink, host privilege, fails at BASE); `tests/test_fork_advisory.py -k node16_f5_parametric_no_lockfile`: 6 passed.
+
+**Findings**
+
+1. Non-blocking. D1-1's node cannot run on this host (record: `ssh-keygen` path). Its control ran only in the Linux subsystem; the Mac run is open and has a home in `dev/PLANNING.md`, "Waiting on you". I did not run it.
+2. Non-blocking, advice. The `evidence` fixture fix is within the cheap defect rule: it restores a promise in an edited file (`test_minimal_report_passes`), adds no file or name, and carries the `Defect fix:` line. The "stale" case still stamps the report one nanosecond before the start (`:194`), and "future" is unchanged, so both refusals are still tested. Taking the start from the report's own time cannot make a checker that ignores or inverts the start comparison pass: a `<=` mistake fails the minimal report, and an ignored start fails "stale". Safer form, not required: keep `time.time_ns()` and `os.utime` the report just after writing it. Then the start does not depend on the file system clock.
+3. Non-blocking. A new `conftest.py` under `tests/fixtures/` still runs unscanned; the plan reviews already sent this to the Maintainer.
+
+**Removed caller-visible faults?** None; the fork-advisory assertion only gains a line, and no test is removed. **Permanent tests worth their runtime?** Yes: four small contract nodes, one range-report node, one added assertion; no probe was left. **Does any rule weaken or disappear?** No; the paragraph adds a rule and the checker still refuses backslashes everywhere except that one Windows field.
+
+**Not covered**: the Mac and Linux runs, and the other seven D1-1 files; any freeze, join or signing. Whether the paragraph's statements are true of `release/security_check.py` is left to the Security Review. **Bounding**: no protected, frozen or fixture file beyond the two frozen files and two roster tests the plan names is touched, and no manifest is refreshed. Elapsed: unknown. Tokens: unknown.
+
+**Verdict**: APPROVE
+
+## Code review -- Claude Opus 5.5 (Security Review) -- 2026-11-20
+
+```
+Reviewed commit: 4cf6af350c90579cbf699c4d66b6979bf0203f4c
+```
+
+Range `ecc1a913..HEAD` on `arc-d-impl`; the code is unchanged since `52cc8095`.
+
+**Obligation**: the Security Review the heavy tier adds at the code stage.
+**Findings**: none blocking, three non-blocking.
+
+The change puts new tool files under `tests/` back on the review page, makes one refusal test name its record, lets the checker read pytest's Windows `file=` spelling, and writes down a clean-clone freeze. Nothing in it accepts a case the checker refused before for another file.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. On Windows, every spelling that newly passes (`tests\x.py`, an absolute path in the checkout, a case, trailing-dot or `::$DATA` variant) already passed with forward slashes and resolves to the classname's file; another file, `..`, `\?\`, drive-relative and root-relative spellings are refused. The classname stays the authority. -- `release/check_release_test_members.py:57-74`, `:281`; direct calls of `_file(_report_file(...))` on this host
+2. **Best alternative.** None safer for the scope. -- `tests/_gate_preflight.py:1350-1354`
+3. **What would show it wrong.** I tried 19 names against the scan rule and 16 `file=` spellings, both hosts' branches, and ran the D1-3, minimal, stale and future nodes: 7 passed, 1 skipped (off-Windows node). -- `python -m pytest tests/contract/test_release_members_contract.py -k "file_field or dotdot or minimal_report or stale or future"`
+
+**Findings**
+
+1. I agree with the usual review's three findings. On the fixture fix: it is within the cheap-fix rule and strengthens the file. Before it, on Linux every `test_report_refusals` case could pass on "stale", since that test asserts only `FAIL`; now each reaches its own check, and "stale" and "future" are still refused.
+2. Non-blocking; my words govern over the usual review's Foundations 3. A rename is not `modified`: the range is read with `--no-renames` (`tests/_gate_preflight.py:1207`) and `_scan_range` keys on path (`:1446-1448`), so the new name is `added` and scanned. The error points the safe way.
+3. Non-blocking, for the Maintainer, older than D1. An added `Tests/conftest.py` (any case variant of a root) is not scanned; on a case-insensitive checkout (the Mac's default, Windows) it lands in `tests/` and runs at collection. It is still named on the page by class.
+4. Non-blocking, older than D1. On Windows a `file=` naming a network share (`//host/share/x.py`, possible before D1) is resolved before it is refused, so the checker may contact that host. The report's author is test code already running there, so no new exposure. Fix later: refuse a leading `//` before `resolve`.
+
+**Paragraph.** Each statement holds against `release/security_check.py`: the peel refusal (`:2094-2098`), the join's location and ref comparison (`:2606-2611`), the Windows record comparing refs only in the frozen checkout (`:2459-2462`), and `PASS` naming one commit (`:2639`, `:2648`). The anchor sentence matches `dev/rules/protected-surfaces.md:37-38`. **Does any rule weaken or disappear?** No. **Removed caller-visible faults?** None removed. **Permanent tests worth their runtime?** Yes; no probe left. Security S1 to S5 hold as built.
+
+**Waiting-line check**: no fenced chunk in the range. **Bounding**: ACCEPTED; no protected, frozen or fixture file beyond the plan's four is touched, and no manifest is refreshed.
+
+**Not covered**: the D1-1 node (cannot run here) and its Mac run; the other D1-1 files; any freeze, join or signing; whether `git clone` leaves tree refs out. About 520 words: two findings correct the record. Elapsed: unknown. Tokens: unknown.
+
+**Verdict**: APPROVE
+
+## Code-review response -- Claude Fable 5.2 (Strategy, acting as implementer) -- 2026-11-20
+
+Strategy coordinated this plan and answers; the implementing session (Claude Haiku 5.5) had ended. Neither code review raised a blocking finding, and no code changed after the reviews.
+
+Usual review:
+
+- **1, the new D1-1 node cannot run on the Windows host: no change.** It ran in the Linux subsystem (coordinator's record). The Mac run stays open. Home: `dev/PLANNING.md`, "Waiting on you", the Mac session's second job.
+- **2, another form for the fixture fix: declined.** Stamping the report inside the fixture, as the file's other helper does, would not hold for D1-3's nodes: they rewrite the report after the fixture returns, and the rewrite takes a fresh stamp from the coarse clock. Taking the start from the report's own time also covers a rewrite.
+- **3, a `conftest.py` under `tests/fixtures/` is not scanned: no change.** Already with the Maintainer (`dev/PLANNING.md`, section 1, "Narrowings from the layout move").
+
+Security Review:
+
+- **1: agreed.**
+- **2, renames: that review corrects the record.** A renamed file shows as added and is scanned. No change.
+- **3 and 4: queued for plan D2.** A root spelled with other capitals (`Tests/conftest.py`) is not line-scanned, and on Windows a `file=` value that names a network share is resolved before it is refused. Both are older than D1. By the security strategy's test for a new finding (`dev/strategy/2026-08-05-codex-security-strategy.md`, "Decision test for new security findings") they are queued on the roadmap for the next batch on the same boundary, which is plan D2. Neither is reproduced on the canonical runtime yet. Home: `dev/PLANNING.md` on `0.9-dev`, section 1, "Narrowings from the layout move" and "Windows", item (k).
+
+Both reviews wrote the verdict as APPROVE where the skeleton's word is ACCEPT; the meaning is the same.
+
+**Elapsed**: under ten minutes after the Security Review's commit (20:14 on the host clock). **Tokens**: unknown.

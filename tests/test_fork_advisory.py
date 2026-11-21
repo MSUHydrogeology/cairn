@@ -792,8 +792,11 @@ def test_node16_f5_parametric_no_lockfile_field_can_suppress_at_upgrade(
         # lock ahead of the ordinary containment check, so which of the two
         # prints the refusal is not the promise; the refused exit status and
         # the named field are.
+        from install.scaffold import read_lockfile  # noqa: PLC0415
+        number = next(n for n, rec in enumerate(read_lockfile(target)["files"], 1) if rec.get("dst") == "dev/tools/intent.py")
         assert rc == 2, err
         assert "'src' is not a plain relative file name" in err
+        assert f"record {number}: the lockfile's 'src' is not a plain relative file name" in err, err
         assert "tools/_intent" not in err
     else:
         assert "tools/_intent" in err, (
