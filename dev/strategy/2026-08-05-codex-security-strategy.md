@@ -140,6 +140,8 @@ Smaller queued items and triggered residuals live here until their boundary is n
 * **`[TRU-4]` Explicitly name the 16 trust-apparatus files in `AGENTS.md`.** `conftest.py`, `_gate_*.py`, `_ast_attest.py`, `_oracle*.py`, `_loader_proto.py`, and their `test_*` files are currently protected as contract surfaces only via the blanket `tests/**/*.py` glob. List them explicitly in `AGENTS.md` > High-risk surfaces before ever narrowing that glob.
 
 ### Triggered residuals (wait for their trigger before opening work)
+* **`[BND-2]` Upgrade reads saved ancestors and project files with no size limit.**
+  * The merge-ancestor read in `_compute_upgrade` and, since the v0.9 defect arc, the layout heal (`upgrade --heal-layout`) read a saved ancestor and the project file whole. Both go through the protected readers (no link followed, containment checked); neither has a size cap. Found by the Security Review of defect-arc plan B's code, 2026-11-20, as non-blocking (*trigger:* next edit to `_read_regular_bytes` or to either caller, or a report of an upgrade slowed or stopped by a very large file).
 * **`[BND-1]` Profile authority & lockfile schema validation (`_LOCK_SCHEMA`).**
   * Unknown module names under `modules:` in `profile.yml` are not yet rejected at parse time (*trigger:* first mistyped-module report or edit to `expand_preset`).
   * `_infer_init_lock_axes` infers `human_team` from whether `CONTRIBUTING.md` exists (*trigger:* next edit to `--init-lock` axis inference).
