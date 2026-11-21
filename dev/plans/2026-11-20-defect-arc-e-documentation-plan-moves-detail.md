@@ -1,10 +1,9 @@
+<!-- claim-check-allow: docs/DOCUMENTATION_PLAN.md -->
 # Detail for plan E of the defect arc: exact conditions, texts and edits
 
 This file is part of `dev/plans/2026-11-20-defect-arc-e-documentation-plan-moves.md`. It exists because the plan must leave no design to a low-tier implementer, and the exact texts would push the plan well past its word target. The companion is part of the plan.
 
-Proposed paths:
-- `dev/DOCUMENTATION_PLAN.md`
-- `tests/test_upgrade_documentation_plan_moved.py`
+Paths built: `dev/DOCUMENTATION_PLAN.md` and `tests/test_upgrade_documentation_plan_moved.py` (both exist since the build).
 
 The installer code is merged into `0.9-dev` and was read in the main checkout on 2026-11-21 (HEAD `3fb798f5`; the installer files last changed in `029532a0`, the commit the plan first cited). Line numbers are guides; the function names are the contract.
 

@@ -1,7 +1,8 @@
+<!-- claim-check-allow: docs/DOCUMENTATION_PLAN.md, docs/notes.md -->
 # Plan: Defect arc E, the documentation plan moves
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -19,9 +20,7 @@ The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defec
 
 **Result.** New installs, Cairn itself and existing projects all keep the documentation plan at `dev/DOCUMENTATION_PLAN.md`, and an upgrade never loses, moves or overwrites an adopter's copy.
 
-Proposed paths:
-- `dev/DOCUMENTATION_PLAN.md`
-- `tests/test_upgrade_documentation_plan_moved.py`
+Paths built: `dev/DOCUMENTATION_PLAN.md` and `tests/test_upgrade_documentation_plan_moved.py` (both exist since the build).
 
 **Read, not run.** The installer this plan builds on is merged into `0.9-dev`. It was read in the main checkout on 2026-11-21 (HEAD `3fb798f5`); its files last changed in `029532a0`, the commit the plan first cited. Plans B and C are merged.
 
@@ -268,3 +267,55 @@ The amendment review's findings are closed in the plan and its companion; status
 5. Non-blocking 5 (the Git repo in the order tests): accepted; D5 names them.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record -- Claude Sonnet 5.5 (Implementation, take-over) -- 2026-11-21
+
+**Conclusion.** The four chunks are built and the plan's checks are met, with two exceptions: six link variants of the protected hostile-data test fail on both hosts after the change, which the plan did not foresee (Maintainer question below); and the Linux run found one more test the plan did not list, now fixed. Elapsed time and tokens: unknown, except the test run times below.
+
+**Who built what.** A first Implementation agent (Claude Sonnet 5.5) did steps 1, 2 and 4 of the brief with Haiku execution agents and was stopped before it wrote a record. I treated every one of its commits as unverified: I read each diff against its chunk's criterion and Detail, and ran the tests afresh. None of its test output was used.
+
+| Chunk | Commit | What it did |
+|---|---|---|
+| status | `0a7b2c9f` | `implementing` |
+| C1 | `5d34f839` | install row, discovery text, 5 shipped files, 4 tests, as Detail D4 and D5 say |
+| C2 | `031ef837` | `--documentation-plan-moved`, the report line, new test file (listed in the `workflow` tier) |
+| C3 | `e4dced3a` | `git mv` and 9 other files; Cairn's own scanner allow-list names the new place |
+| C4 | `1c46527d`, `08c30286` | UPGRADE.md step, changelog, roadmap, `claim-check-allow` comments |
+| lock | `7217a3ce`, `472ec9bb` | Cairn's own lock, each commit holding only the lockfile; the second written by `--finalize` |
+| fixes | `e6b7caae`, `f7b644c3`, `c52fc7ab`, `3434491f`, `1f20ec66` | below |
+
+**What I corrected in the earlier agent's work.**
+1. `08c30286` emptied Cairn's own `dev/.cairn/scanner-check-allow.json` as "unused". It is not: without the entry, `link_check` reports 3 broken links in `dev/modules/documentation-plan.md` (measured). The "unused links entry" line `check_cairn` prints is a note with exit 0, and it printed the same at the starting commit. Entry restored in `c52fc7ab`; lock refreshed in `472ec9bb`.
+2. The roadmap line claimed runs that had not been recorded; it now says what ran.
+
+**Scope the Maintainer added (chat, 2026-11-21).** He wrote that Cairn "is inside the package. It is the way that an owner interfaces with their code using Agents", and "Yeah no new tooling unless it's needed! Cairn is tooling light on purpose." So the agent that carries out an upgrade does the move and corrects the links by following the notes; the installer only records the new place and checks. Commit `f7b644c3` changed prose and the test that pins it, and added no code for correcting links. The one steps constant, the lines `--plan` and `--apply` print, the refusals and `install/UPGRADE.md` now give five numbered steps in this order: `git mv`; correct each link in the project's own files, leaving files Cairn installs alone; `--documentation-plan-moved`; `verify_integrity` and the project's link check; `git add` and `git commit`. M7, M11 and M12 name the new step numbers. The plan said "three steps"; this is the Maintainer's change to it.
+
+**Where the build differs from the plan.**
+- Five steps, not three (above); a one-line note after them replaces the plan's LINKS line.
+- `3434491f`: the instructions check showed that step 4 names `dev/tools/link_check.py`, which only the opt-in doc-drift-prevention module installs, and the agent hesitated. Step 4 now says "if it has one".
+- The plan said the other tests in the hostile-data file "create their own `docs` subfolders and are not edited". Four of them write into `docs/` without making it (lines 257, 338, 417, 525), and six cases fail. I stopped on that protected file (see the question).
+- `tests/test_upgrade_lockfile_path_containment.py` (ordinary, not in the plan) wrote `docs/notes.md` without the folder; `1f20ec66` adds one `mkdir`. On Linux, 4 cases failed only after the change and passed alone at the starting commit; the file and the new test file pass at `1f20ec66` (82 passed, 1 skipped).
+- Execution agents chose words where Detail was silent (test names, helpers in the new test file); I read them and found none that changes a message or a number.
+
+**Question for the Maintainer (protected file).** `tests/test_upgrade_refuses_hostile_project_data.py` has six link cases (`existing-inside-file`) that put a file under `docs/`, which a default install no longer has. Choices: (a) make the folder first, `(world.project / "docs").mkdir(exist_ok=True)`, at the four sites (four more lines on the signing page); (b) point them at `dev/modules`, as the plan did for the other test. Strategy recommends (a). The refusal being tested does not change.
+
+**Tests.** Each chunk's selection ran once at the starting commit `bd8fd8c9` (work folder `arc-e-base`) and once at the build, with `-rf --tb=line`, compared by test id and message. Windows Server, Python 3.13; Linux subsystem, Python 3.14, one run at a time. The build was `472ec9bb` for every run but the last Linux one (`1f20ec66`). The later commits changed one step's wording, one test file and one `mkdir`, so I did not rerun the Windows groups; the new test file's two wording tests passed after the wording commit.
+
+| Group (files) | Windows before | Windows after | Linux before | Linux after |
+|---|---|---|---|---|
+| C1 (10) | 13 failed, 397 passed | 20 failed, 396 passed | 1 failed, 445 passed | 6 failed, 440 passed |
+| C2 (39; 40 with the new file) | 268 failed, 1503 passed | 278 failed, 1527 passed | 6 failed, 2022 passed | 12 failed, 2042 passed |
+| C3 (5) | 2 failed, 100 passed | 2 failed, 100 passed | 0 failed, 105 passed | 0 failed, 105 passed |
+| C4 (10; 11 with the new file) | 160 failed, 430 passed | 160 failed, 454 passed | 1 failed, 637 passed | 1 failed, 664 passed |
+
+Failing only after the change, after reruns alone: **6 ids, on both hosts**, all hostile-data cases above (they fail alone at the build; at the start they pass on Linux and skip on Windows, where that run had no link rights). Other ids that appeared only after: on Windows, besides the six, 1 in C1 and 8 in C2; on Linux 4 in C2 (the containment test, now fixed). Rerun alone, twice, at both commits on Windows: the intents, portable-sweeps and `test_scratch_install_and_upgrade_preserve_project_content` ids pass at both, so they are the host's; the containment ids skip at both, so they are shown fixed only on Linux. The ids that fail in the before run are the host's: the same message fails at the starting commit.
+
+Elapsed seconds, Windows before and after (two groups at once): C1 1062 and 970, C2 3766 and 4025, C3 63 and 72, C4 1577 and 1858. Linux: C1 389 and 374, C2 1822 and 1881, C3 33 and 29, C4 696 and 786.
+
+**Developmental checks.**
+- Instructions check, run twice. A Haiku agent got a project installed from tag `v0.8.0` and upgraded, with a link to the old place added to its own `README.md`, and only the printed text. Run 1 (`472ec9bb`): it finished the move but could not run the link check (the file is not installed), hesitated, and committed anyway. Run 2 (`3434491f`, after the wording fix): all five pass conditions held (the new file exists; the old one does not; the lock's one record names the new place; `git status --porcelain` for the lock prints nothing; `verify_integrity` exits 0). One slip: its first edit of the link failed because it had not read the file, so it ran step 3 before step 2 and fixed the link at once; the command does not read the README. The Cairn-installed plan and proposal templates and the module README still held the old path afterwards, because their text sits in slots the ordinary upgrade does not rewrite; `install/UPGRADE.md` item 4 says so.
+- Tier check: `python tests/tier_inventory.py check` passed (141 test files, each in one of 5 tiers).
+- Changed installer symbols (`ast_step1.py`, read only): before the change 4 changed and 237 new; after, 5 changed and 244 new. The added change is `Assign:_MODULE_MAPPINGS`; the seven new symbols are `_DOCPLAN_SRC`, `_DOCPLAN_OLD`, `_DOCPLAN_NEW`, `_DOCPLAN_STEPS`, `_DOCPLAN_NOTE`, `_cmd_documentation_plan_moved` and `_documentation_plan_move_lines`. The other changed symbols come from merged plans B and C.
+- Cairn's own tree: `verify_integrity` reports OK (70 files) after the lock refresh. The prose gates (`claim_check`, `link_check`, `check_cairn`, `git diff --check`) pass on `install/UPGRADE.md`, `dev/PLANNING.md` and this plan.
+
+**Not run, with its home.** The 68-file C1 selection beyond the ten named tests, the Python 3.13 run on Linux, the link variants of the containment test on Windows, and the macOS run: all on the roadmap's joined run (`dev/PLANNING.md`, "What the joined run owes", plan E). The protected-file fix awaits the Maintainer. The AST baseline and the signing hashes stay with the Maintainer's baseline and signing steps.
