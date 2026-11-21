@@ -1,7 +1,7 @@
 # Plan: Defect arc F, stale comments in protected tools
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -141,3 +141,9 @@ The change does what the plan says: sixteen comment lines, no code.
 **Left unproven, and what would prove it.** No test ran, by the Maintainer's direction. An equal syntax tree proves no code changed, so only a test that reads comment text could fail; the certification run covers that. I did not run the signing check, the stale-comment search or any test.
 
 **Verdict**: ACCEPT. Elapsed time: unknown. Tokens: unknown.
+
+## Code-review response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-21
+
+The code review accepted the change and raised no finding, so nothing is revised. Status is now `ready-to-archive`.
+
+**Elapsed**: unknown. **Tokens**: unknown.
