@@ -110,8 +110,9 @@ runs cost machine time, not tokens, and are listed separately.
 | | usual plan review | Medium | 95,468 | 2 | accept, 0 blocking |
 | | proposal written by Strategy; usual review | Medium | 135,536 | 2 | revise, 4 blocking |
 | | Security Review | High | 105,186 | 2 | revise, 5 blocking |
+| Plan E, the documentation plan moves | build finished and checked on two hosts, by the plan's second agent | Medium | 270,682 | 143 | awaiting code review; 6 test cases fail, one question |
 
-Total for the day so far: 12,779,251 tokens across 86 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 13,049,933 tokens across 87 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
