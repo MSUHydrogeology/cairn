@@ -113,8 +113,10 @@ runs cost machine time, not tokens, and are listed separately.
 | Plan E, the documentation plan moves | build finished and checked on two hosts, by the plan's second agent | Medium | 270,682 | 143 | awaiting code review; 6 test cases fail, one question |
 | | usual code review | Medium | 155,906 | 7 | revise, 2 blocking |
 | | Security Review of the code, with an addendum after the Maintainer named the test folder | High | 168,948 | 7 | revise, 1 blocking |
+| Arc F, stale comments | build stage, by the plan's agent; it waited over an hour for the test machine, and the test run was then dropped on the Maintainer's direction | Medium | 101,809 | 75 | awaiting code review |
+| | usual code review | Medium | 78,216 | 1 | accept, no finding |
 
-Total for the day so far: 13,374,787 tokens across 89 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 13,554,812 tokens across 91 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -179,7 +181,7 @@ Measured:
   Strategy put every design decision in the brief, so the author did no
   design, and Strategy folded the reviews itself, so no agent was resumed or
   spawned for that. Two against two is a small sample.
-- **Forty-five review passes so far.** Two were further passes that a design change required: one
+- **Forty-six review passes so far.** Two were further passes that a design change required: one
   by the Maintainer, and one to close a Security finding with a simpler rule. No pass has yet had to come back to check a fix.
 - **Replies of five lines work.** From 2026-11-21 each agent writes its full account into
   the plan or proposal and answers the coordinating session in a fixed form of five or six
