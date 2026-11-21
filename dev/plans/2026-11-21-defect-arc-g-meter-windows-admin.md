@@ -276,3 +276,22 @@ Both code reviews accepted the change, and neither raised a blocking finding. St
 Not run for this response: any test.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Strategy's check on the real machine -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+**Not met.** The refusal this plan fixes is gone, and the meter still does not run on the Windows Server machine. The plan stays at `ready-to-archive` and is not archived on this result.
+
+Measured on the merged tree (`577e6a8e`), with probes that print sizes, counts, reason codes and code locations only; nothing read from a log was kept or shown.
+
+- The consent read passes (`current_user_profile` and `read_config` both return). Before the change it stopped at the owner test in `check_acl`.
+- `meter.py refresh --json` still answers `unavailable`, now with the reason `source_changed`, raised in the walk of the log folder (`_enumerate_windows_jsonl`).
+- A diagnostic run relaxed each stopping comparison in memory only. The tracked file was not edited, and the ledger that run made was deleted. It found, in order: a sub-folder's size is read as a change; any sub-folder then fails a lookup; a log file with two names is refused, and the desktop app gives each background sub-agent's transcript a second name; and the project's own folders on the `F:` drive give other accounts rights the meter refuses.
+- One finding touches every platform: a Claude reply written as several records with different times loses its date. With the meter's own reader over about five minutes of one session, 12 replies gave token totals equal to an independent count, and 9 of the 12 were marked `ambiguous_time`.
+
+This is "a second refusal of another kind", which the Scope sends back to Strategy. Home: `dev/PLANNING.md`, section 1, "The meter still does not run on the Windows Server machine". Plan H carries the faults in the meter. The folders on the `F:` drive are the Maintainer's to settle and are asked of him under "Waiting on you".
+
+Seen on the way: Cairn's own ignore file had no line for the meter's summary file, which every installed project gets. Fixed in `b6c26c71`.
+
+Not checked: the export step on Windows, which the fourth finding stops before it runs; the Mac and Linux paths on a real log.
+
+**Elapsed**: unknown. **Tokens**: unknown.
