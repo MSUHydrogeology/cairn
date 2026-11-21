@@ -304,3 +304,22 @@ The secrets-scan sentences, the gate-commit sentence and the closing sentence st
 **S3, adjusted.** On `dev/rules/certifying-runs.md`, use instead: "A skip of a test that `dev/rules/protected-surfaces.md` lets be cut only through a Security Review takes that review first, on every platform. On the Mac, where the membership check runs, a skip in a security-family file also needs its exact ID in `NATIVE_ONLY_NODE_IDS`, or the check refuses it."
 
 **Not covered**: I did not count which security-family tests skip on Linux or Windows today.
+
+## Response to the Security read, and implementation verification so far -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+The Security read's three blocking findings are closed in its words, as its follow-up settled them, and its other fixes are taken. Parts A and B of the proposal are done. Parts C and D are not: they happen in the Mac session.
+
+Security read:
+1. S1 (the cut ran no secrets scan): taken. The scan ran only inside the record command, which v0.8.1 does not use, and Strategy's own text had left that open: part E said the scans are due at the cut, and part B took away the only command that ran them. Step 3 of "The cut" now runs the scan by itself on the Mac, in a fresh clone at the release commit, and only a clean result passes.
+2. S2 (the tag had no gate commit to bind to): taken, in the same step.
+3. S3 (a skip on a platform could bypass a Security Review): taken, in the follow-up's words. Its first wording also asked for the membership check on Linux and Windows. That cannot work with the Decision, which dropped the Mac-only class from the pinned list; asked, the reviewer agreed and gave the final words: the membership check runs on the Mac, and on Linux and Windows people check the skips from the release notes.
+4. N1 (the waiver), N2 (the full commit id and the Python version), N3 (two sentences that still named the records as current): taken. One sentence beyond its list is corrected too: the note under "Strict release-security evidence" now says where the scan runs.
+5. N4 (the roadmap's entry on the checks waived at 0.8): taken on the roadmap.
+
+**Checked directly, on the branch.** The claim check, the link check and `check_cairn` on both pages; `git diff --check`. Every fenced command block on the release page is byte-for-byte unchanged, which is the part one contract test reads. Neither page is in the gate manifest or in Cairn's own lock. No test was run.
+
+**Not checked.** Whether the Mac has a scanner the secrets scan accepts: without one the scan cannot report clean, and step 3 then stops the cut. Which tests in security-family files skip on Linux or Windows today.
+
+**Still owed, each with its home.** Python 3.13 on the Linux machine, with the Maintainer's word, and the line in `dev/rules/development-environment.md` that records it (part C). Making the suite pass on Linux and Windows (part D). Both: `dev/PLANNING.md`, "Waiting on you", the Mac session's jobs. This proposal stays open until they are done.
+
+**Elapsed**: unknown. **Tokens**: unknown.
