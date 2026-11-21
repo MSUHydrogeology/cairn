@@ -92,8 +92,13 @@ runs cost machine time, not tokens, and are listed separately.
 | | author, from a complete design brief | Medium | 161,405 | 4 | drafted, 1,496 words |
 | | usual review | Medium | 134,610 | 2 | revise, 4 blocking |
 | | Security Review | High | 116,680 | 3 | revise, 3 blocking |
+| Harness check | can an agent start agents of its own | Medium | 58,580 | 0.1 | yes, and it can name their model |
+| Plan E, the documentation plan moves | revision for the design the Maintainer chose, by the plan's agent | Medium | 149,607 | 5 | revised |
+| | limited Security Review of the revision | High | 137,943 | 3 | revise, 1 blocking |
+| Plan C, first session and tools | answer recorded, closeout and archive, by the plan's agent | Medium | 104,776 | 1 | archived |
+| Six unsigned files | Security read for the Maintainer | High | 172,475 | 5 | sign as they are |
 
-Total for the day so far: 10,443,874 tokens across 69 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 11,067,255 tokens across 74 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -145,7 +150,11 @@ Measured:
   Strategy put every design decision in the brief, so the author did no
   design, and Strategy folded the reviews itself, so no agent was resumed or
   spawned for that. Two against two is a small sample.
-- **Thirty-six review passes so far, and still no return visit.**
+- **Thirty-seven review passes so far.** One was a further pass that a design change by the
+  Maintainer required. No pass has yet had to come back to check a fix.
+- **Replies of five lines work.** From 2026-11-21 each agent writes its full account into
+  the plan or proposal and answers the coordinating session in a fixed form of five or six
+  lines. Nine agents have done so; none needed a second ask.
 - **Plan E was the dearest plan to write: 322,825 tokens.** Its author had to
   settle a design question from code on an unmerged branch. Both reviews then
   pointed to a lighter design; had Strategy settled that question in the
