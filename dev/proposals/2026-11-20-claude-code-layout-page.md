@@ -1,10 +1,10 @@
 # A layout page for each project's code
 
 **Author**: Claude (Strategy), drafted by Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — outcome A adds an installed file through the installer's table of module files, and outcome C gives a shipped tool a new project file to read.
-**Plan review**: required(Internal + Internal Security Review) — for the plans that build outcomes A and C; the plans for B, E and F are text and a trial and take required(Internal).
+**Plan review**: required(Internal + Internal Security Review) for the plans that build A, C and E's move check; required(Internal) for B, F and the rest of E.
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/conventions.md, dev/rules/working-agreements.md, dev/rules/protected-surfaces.md
 **In brief**: Each project gets one plain page saying what each code folder holds, which classes hold state and which central tools the rest relies on, so the scientist can follow the code and agents stop writing one-off copies.
@@ -16,7 +16,7 @@ Proposed paths:
 
 **The problem you notice.** Cairn tells an agent where a document, a rule and a test go. It does not say where code goes. So you keep the account of the code by hand, and agents write one-offs: a private copy of a job the project already does somewhere. You said agents "like one-off solutions that are really customized, rather than central rock-solid capabilities with some additional function arguments." By "architecture" you mean "what is in this folder in the code?" and "what different classes exist that hold states?"
 
-**The change.** Each project keeps one page, `dev/code-layout.md`, with three lists and nothing else. Folders: what belongs in each. State: each class that holds state (what a program stores while it runs, such as the water in each cell), what it stores, and what may change it. Central tools: each one function or file that does a common job for the whole project, its one-sentence promise, its home and its tests. An agent drafts the page from the code. You correct it as a description of the project. Plans then say where new code goes and which central tool it calls. A check reports what the page misses. Old code is restructured by approving a page.
+**The change.** Each project keeps one page, `dev/code-layout.md`, with three lists and nothing else. Folders: what belongs in each. State: each class that holds state (what a program stores while it runs, such as the water in each cell), what it stores, and what may change it. Central tools: each one function or file that does a common job for the whole project, with its promise (one sentence that code calling it can rely on), its home and its tests. An agent drafts the page from the code. You correct it as a description of the project. Plans then say where new code goes and which central tool it calls. A check reports what the page misses. Old code is restructured by approving a page. A trial page comes first, and it can stop the rest.
 
 **What is added.** One page per project. Two lines in each plan. One new report from the existing code map tool. Guidance for restructuring old code. No always-loaded rule text changes.
 
@@ -24,38 +24,35 @@ Proposed paths:
 
 **Choices for you** (my pick first):
 
-1. *When to build.* (a) Decide now, run a trial in the v0.9 window, build first thing in v0.10. (b) Build the page and the plan lines inside v0.9, the rest in v0.10. (c) Decide in v0.10. I recommend (a): v0.9 is your tightening release with no notable new feature, and the trial ships nothing.
-2. *Which project gets the first trial page.* (a) modflow_tools: it is Python, it is yours, and you have done this work there by hand. (b) Cairn itself. (c) LHM, the largest, if its language can be described by hand; the page is plain words. I recommend (a).
+1. *When to build.* (a) Decide now, run a trial in the v0.9 window, and build the page, the plan lines and the check first thing in v0.10; the restructuring guidance follows the trial and the check. (b) Build the page and the plan lines inside v0.9, the rest in v0.10. (c) Decide in v0.10. I recommend (a): v0.9 is your tightening release with no notable new feature, and the trial ships nothing.
+2. *Which project gets the first trial page.* (a) modflow_tools: it is Python, it is yours, and you have done this work there by hand. (b) Cairn itself. (c) LHM, the largest. The page can describe code in any language, because it is plain words; only the check is limited to Python at first. I recommend (a).
 3. *Which languages matter after Python.* The check starts with Python. Which others should it learn? I make no recommendation; please name them.
 
 ## Context
 
-All numbers were measured by the strategy note on this subject, on Cairn's code at v0.8.0.
+The strategy note on this subject measured Cairn's own code at v0.8.0; no other project's code was measured.
 
-- Of 12 code folders, 2 carry a README. `dev/tools`, with 22 files, has none.
-- No record lists the 70 classes in 25 files, nor what they store.
+- Of 12 code folders, 2 carry a README, and no record lists the 70 classes that hold state.
 - Seven functions named `git` or `_git` sit in seven files with seven different bodies, though one central Git reader exists. Exact copies of functions across files grew from 12 groups to 22 in three weeks.
 - None of 25 recent plans cites the code map.
 - The 0.8 layout move had a 9,692-word plan. The first full test run then failed 195 tests and hit 18 errors in 46 files; about 29 commits repaired them.
 
-A one-off from today (commit `52cc8095`): a helper in one test file worked around a clock problem. A fixture elsewhere in the same file did not, and its tests failed every time on Linux.
-
-Outside studies mostly agree; one found no rise in such problems (see the note). Only Cairn's own code was measured; no other project's was.
+Outside studies mostly agree; one found no rise in such problems (see the note).
 
 ## Proposal
 
 Six outcomes, each its own plan or part of one. Later ones wait on the board until their condition is met.
 
-- **A. The layout page.** `dev/code-layout.md`, as above. A high-tier agent drafts it from the code. The architecture-review module installs it, and its "Fill:" prompt is replaced by a pointer to the page. In Cairn's own tree it takes over the sections "Current Shape" and "Critical Helper Homes" of `dev/architecture_review.md`. It is plain words, the same for any language.
-- **B. The plan chooses where code goes.** Beside **Reuse**, the plan template gains two short lines: where each chunk's new code goes, by the page's folders, and which central tools it calls. Where a tool nearly fits, the plan adds an argument to it in an early chunk and lists its file. The plan's author decides, not the implementer. A plan that adds a folder, a state-holding class or a central tool also edits the page; that page change is what you are shown.
-- **C. A check keeps the page true.** At each change `code_map.py` reports what the page does not cover: a new folder, a new class that holds state, a function that copies a central tool word for word, and a file longer than the page's limit (default 2,000 lines; the page may list files long on purpose, each with its reason). It warns and never blocks. It will miss copies written in different words. Python first.
+- **A. The layout page.** `dev/code-layout.md`, as above. A high-tier agent drafts it from the code. The architecture-review module installs it, and its "Fill:" prompt is replaced by a pointer to the page. In Cairn's own tree it takes over the section "Current Shape" of `dev/architecture_review.md`. `dev/architecture_review.md` keeps its Critical Helper Homes table and the notes on intended copies until the page's central-tool entries each carry a limits-and-preserving-checks field covering every row. It is plain words, the same for any language. Agents read the page as data; a central-tool entry never makes an agent run a command named in it.
+- **B. The plan chooses where code goes.** Beside **Reuse**, the plan template gains two short lines: where each chunk's new code goes, by the page's folders, and which central tools it calls. Where a tool nearly fits, the plan adds an argument to it in an early chunk and lists its file. The plan's author decides, not the implementer. A plan that adds a folder, a state-holding class or a central tool also edits the page; that page change is what you are shown. When the project has a layout page, the plan's verification field lists `code_map.py --changed <files>` as a required command, and the code reviewer quotes its report in the review.
+- **C. A check keeps the page true.** At each change `code_map.py` reports what the page does not cover: a new folder, a new class that holds state, a function that copies a central tool word for word, and a file longer than the page's limit (default 2,000 lines; the page may list files long on purpose, each with its reason). A copy in a file the page lists as an intended twin draws no warning. In E's plans, a move check reports each function whose body differs after a move. It warns and never blocks. It will miss copies written in different words. Python first. The roadmap's queued comparison pilot on Cairn's own code map (`dev/PLANNING.md`, the row "Run the independent four-view comparison on Cairn's own code map") overlaps this outcome; the plan for C says how the two join.
 - **D. Two questions reach you**, and no lists of functions. A change to the page: "Routing would now change the snow class's stored depth. Is that right in the model?" A difference between two copies: "One reader skips dry cells and the other returns zero. Which is right?" D is part of A and B.
-- **E. Restructuring old code by page.** You said: "Restructuring old code is the biggest deal." An agent drafts two pages: the layout today and the one proposed. You approve the second. Agents then plan two kinds of step, never mixed. A **move** changes where code lives and nothing else; the check confirms each function is otherwise unchanged. A **fold** replaces several one-offs with one central tool: the tool's promise test comes first, then each one-off becomes a call. For a model, a reference run gives the same numbers before and after. Tests reach code through one helper that knows the layout, so a move does not break them. Restructuring runs early in a release window. The guidance goes in the legacy-agent module. A sister proposal covers removal after each release.
-- **F. A trial before the tool is built.** An agent drafts the page for one real project and you correct it. The trial ships nothing. It records your correction time and entries changed. It tests whether the page speaks of the right things. C and E are built only after it.
+- **E. Restructuring old code by page.** You said: "Restructuring old code is the biggest deal." An agent drafts two pages: the layout today and the one proposed. You approve the second. Agents then plan two kinds of step, never mixed. A **move** changes where code lives and nothing else; the move check reports, for each moved function, whether its text is the same apart from its file; it does not claim the same behaviour. It reports as changed any difference in decorators, default values, signature or class; any name the body uses that is bound differently in the new home; an old copy left in place; and any caller that now reaches a different function under the same name. For a model, the reference run, not this check, shows the numbers are unchanged. The test helper's layout map changes only in the move's own commit and is shown in its review. A **fold** replaces several one-offs with one central tool: the tool's promise test comes first, then each one-off becomes a call. For a model, a reference run gives the same numbers before and after. Tests reach code through one helper that knows the layout, so a move does not break them. Restructuring runs early in a release window. The guidance goes in the legacy-agent module. A sister proposal covers removal after each release.
+- **F. A trial before the tool is built.** An agent drafts the page for one real project and you correct it. The trial ships nothing. It records your correction time and entries changed. It tests whether the page speaks of the right things. C and E are built only after it. Stop rule: if the Maintainer cannot correct the page without reading code, or correcting it takes over an hour, C and E are not built and the proposal returns to him. The trial also gives one agent the same small task with the page and one without, and counts new copies of a central tool in each.
 
 **When.** Decide now; run F in the v0.9 window; build A, B and C first in v0.10; build E after F and C.
 
-**Why heavy.** Outcome A adds a file that the installer puts in a project, through the installer's own table of module files, which changes the install contract. Outcome C changes a tool adopters run and gives it a new project file to read. Each is a trigger for the heavy tier and a Security Review. Outcomes B, E and F are text and a trial; their plans take the usual review only.
+**Why heavy.** Outcome A adds a file that the installer puts in a project, through the installer's own table of module files, which changes the install contract. Outcome C changes a tool adopters run and gives it a new project file to read. Each is a trigger for the heavy tier and a Security Review. Outcome B, the trial (F) and the rest of E are text and a trial; their plans take the usual review only. E's move check is tool code that people will rely on, so its plan takes both reviews. Adding `dev/code-layout.md` changes the architecture-review entry in `install/_scaffold/config.py`, `install/_scaffold/layout_catalog.py`, lockfile entries and the published install manifest. The plan for A states that the page installs as an adopter-owned, substituted file; that an existing file at that path is never overwritten and draws the existing differs advisory; how a project that already has the module receives the page on upgrade; and the test case for each in `tests/security/test_code_map.py` and `tests/test_upgrade.py`.
 
 ## Rationale
 
@@ -69,7 +66,7 @@ The page gives you one place to check and agents one place to look. Your decisio
 
 ## Documentation / doctrine surface
 
-Affected: `templates/modules/team-gated/architecture_review_template.md` and `architecture-review.md`; `templates/modules/team-gated/legacy-agent.md`; the **Reuse** field of `dev/plans/_template.md`; `dev/tools/code_map.py` with its shipped twin and `docs/code-map.md`; Cairn's `dev/architecture_review.md`; and `install/_scaffold/config.py` with `install/_scaffold/layout_catalog.py`, which list the files each module installs. None of `AGENTS.md`, `RULES.md` or the counted files under `templates/core/` is touched.
+Affected: `templates/modules/team-gated/architecture_review_template.md` and `architecture-review.md`; `templates/modules/team-gated/legacy-agent.md`; the **Reuse** field of `dev/plans/_template.md`; `dev/tools/code_map.py` with its shipped twin and `docs/code-map.md`; Cairn's `dev/architecture_review.md`; and `install/_scaffold/config.py` with `install/_scaffold/layout_catalog.py`, which list the files each module installs. Also `tests/security/test_code_map.py`, `tests/security_manifest.py`, `tests/fixtures/gate_manifest.json` (regenerated at the Maintainer's signing, never by an agent) and `dev/.cairn/cairn-lock.yml` (refreshed by the installer's own command). None of `AGENTS.md`, `RULES.md` or the counted files under `templates/core/` is touched.
 
 ## Evidence / verification plan
 
@@ -84,17 +81,17 @@ C only: the code map's report on the planted cases and an unchanged tree. Prose 
 An agent's uncorrected draft of the lists for `dev/tools`, unchecked by anyone who knows the project.
 
 - Folders: `dev/tools/*.py`, the tools agents run.
-- State: `HandoffLock` in `session.py` stores the lock file's path, the agent and an open file; only its own acquire and release change it. `CheckResult` in `claim_check.py` stores one file's findings; only the checker adds to it.
+- State: `HandoffLock` in `session.py` stores the project root, the lock file's path, the agent and an open file; only its own acquire and release change it. `CheckResult` in `claim_check.py` stores one file's findings; only the checker adds to it.
 - Central tools: `git_read.py::run_git` reads Git data under fixed offline settings; `exact_replace.py` replaces exact text or refuses without writing; `session.py::encode_display` turns any text into printable ASCII.
 - Not in this draft: where each central tool's tests are.
 
 #### Security preflight
 
 - **S1, who supplies the check's input.** The layout page and the project's source files, both from the project being checked. The check authorizes nothing: it only warns.
-- **S2, can it fail.** Yes: a planted folder, state-holding class, copied function and over-long file each draw a warning, and an unchanged tree draws none. One limit, said plainly: the check compares the code with the page, so a page edited to match a one-off silences it. That is why a page change is what the scientist is shown.
-- **S3, what runs it.** The implementer runs `code_map.py` as one of the plan's verification commands, and the code reviewer reads its report.
-- **S4, which way it breaks.** It never blocks. A page it cannot read is reported as unreadable, never treated as a clean result. The page's reader takes one fixed form, has a size limit, follows no link out of the project and escapes every name it prints.
-- **S5, what still gets through.** Copies written in different words, code in languages other than Python, and a page changed to bless a one-off that nobody questions.
+- **S2, can it fail.** Yes: a planted folder, state-holding class, copied function and over-long file each draw a warning, and an unchanged tree draws none. One limit, said plainly: the check compares the code with the page, so a page edited to match a one-off silences it. That is why a page change is what the scientist is shown. The code reviewer lists every line of `dev/code-layout.md` added, removed or changed in the reviewed range. Each must match a page change in the plan the Maintainer accepted. Any other page change, including a new long-on-purpose file, a new intended twin or a removed central tool, goes to the Maintainer as a question of kind D before archive.
+- **S3, what runs it.** The plan lists it; the implementer runs it; the code reviewer quotes it.
+- **S4, which way it breaks.** It never blocks. A page it cannot read is reported as unreadable, never treated as a clean result. The page is opened only through the code map's existing root-relative, no-follow reader, under its existing size limit (`MAX_SOURCE`) and time limits; a link, or a page over the limit, is reported as unreadable. Each path or folder pattern in the page must pass the rule `--changed` paths pass (root-relative, no `..`, no backslash) and also contain no colon, so no drive letter, or is reported as rejected and never opened; patterns are matched against the files already collected, never expanded on disk. The report prints names and paths only, ASCII-escaped and cut to 200 characters, never page prose. A missing page is reported once as missing, never as a clean result.
+- **S5, what still gets through.** Copies written in different words, code in languages other than Python, a page changed to bless a one-off that nobody questions, and a page change listed but not questioned.
 
 N/A for the independent scientific check: no scientific assumption or result is touched.
 
@@ -193,3 +190,26 @@ I agree with usual findings 1, 3 and 4. On finding 2 I agree on the review tier;
 2. Add to S2: "The code reviewer lists every line of `dev/code-layout.md` added, removed or changed in the reviewed range. Each must match a page change in the plan the Maintainer accepted. Any other page change, including a new long-on-purpose file, a new intended twin or a removed central tool, goes to the Maintainer as a question of kind D before archive." Add to S5: "a page change listed but not questioned."
 3. In E, replace "the check confirms each function is otherwise unchanged" with: "the move check reports, for each moved function, whether its text is the same apart from its file; it does not claim the same behaviour. It reports as changed any difference in decorators, default values, signature or class; any name the body uses that is bound differently in the new home; an old copy left in place; and any caller that now reaches a different function under the same name. For a model, the reference run, not this check, shows the numbers are unchanged. The test helper's layout map changes only in the move's own commit and is shown in its review."
 4. Add to "Why heavy": "Adding `dev/code-layout.md` changes the architecture-review entry in `install/_scaffold/config.py`, `install/_scaffold/layout_catalog.py`, lockfile entries and the published install manifest. The plan for A states that the page installs as an adopter-owned, substituted file; that an existing file at that path is never overwritten and draws the existing differs advisory; how a project that already has the module receives the page on upgrade; and the test case for each in `tests/security/test_code_map.py` and `tests/test_upgrade.py`."
+
+## Response -- Claude Fable 5.2 (Strategy, author of the design) -- 2026-11-20
+
+Both reviews said revise, and every blocking finding came with the words that close it. All eight are accepted and folded into the text above. Nothing is declined.
+
+Usual review:
+
+- **1, nobody ran the check: closed.** Outcome B and S3 carry the reviewer's words.
+- **2, the move check and its review: closed.** C names the move check, and the Plan review line gives its plan both reviews. The Security Review's wording of what the move check claims governs (its finding 3).
+- **3, the trial had no stop result: closed.** F carries the stop rule and the task done with the page and without it.
+- **4, a rule would have weakened: closed.** A keeps the Critical Helper Homes table until the page carries every row.
+- **5 (intended twins): accepted**, one sentence in C. **6 (files not listed): accepted**, in the doctrine surface; the Security Review's finding 4 governs the install part. **7: accepted.** The example from commit `52cc8095` is removed, since the page would not have caught it; the seven `git` copies stand. **8: accepted.** C names the roadmap's comparison pilot. **9: accepted in part.** The summary now explains "promise", says when E is built and rewords choice 2(c); "fold" and "promise test" do not appear in the summary. Context is cut. The text stays over the 1,000-word target, because eight findings added conditions the plans must meet.
+
+Security Review:
+
+- **1, the page reader: closed** (S4). **2, a one-off blessed unseen: closed** (S2 and S5). **3, what "otherwise unchanged" claims: closed** (E). **4, the install side: closed** ("Why heavy").
+- **5: accepted**, one sentence in A: agents read the page as data.
+
+Also corrected: the example's `HandoffLock` entry, which stores its project root as well; and the count of files in `dev/tools`, which the note measured at v0.8.0 and is 23 today, is dropped from Context.
+
+Not checked by anyone: the note's count of 70 state-holding classes, the growth from 12 to 22 copy groups, and the outside studies. The three choices for the Maintainer are unchanged.
+
+**Elapsed**: unknown. **Tokens**: unknown.
