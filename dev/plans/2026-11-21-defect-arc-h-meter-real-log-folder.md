@@ -1,7 +1,7 @@
 # Plan: Defect arc H, the meter reads a real Claude log folder
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -107,5 +107,32 @@ An unknown time against a known one still loses the time, as today.
 7. Non-blocking: tell the build not to attempt Strategy's real-machine checks.
 
 **Not covered**: Security Review questions; real logs (privacy rule); the `F:` drive refusal; every other `links` test, which I read and found none on a log's path; I ran no test.
+
+Elapsed time: unknown. Tokens: unknown.
+
+## Plan review -- Security Review -- 2026-11-21
+
+Reviewed commit: 085e30d1f063b9f03cd559a5306385aa3c6473b6
+
+**Obligation**: Internal Security Review
+**Tier**: Internal
+**Findings**: raised
+
+**Verdict**: REVISE. (a), (b) and (d) keep their protection; (c) opens one path the plan's security note misses. I agree with the usual review's findings 1 to 7; its (d) code governs, and is safe for Claude because a merged Claude event with a known time never already holds `ambiguous_time`. Either form of T1 and T2 (one test or two) serves.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, with one added check: the old two-name refusal is the only thing that stops a planted name -- `dev/tools/meter.py` lines 2209, 2216.
+2. **Best alternative.** Keep two names refused unless the file also passes the stricter `profile` access test; one line, no new test -- `check_acl`, lines 647-675.
+3. **What would show it wrong.** Strategy's real refresh refusing the desktop app's second-name logs on the access test -- plan "Strategy's checks".
+
+**Findings**
+
+1. **Blocking: a planted second name.** The `ancestor` access test lets another account add files to a folder and write a file's data (mask at line 656 omits 0x2, 0x4, 0x100). Today such an account cannot plant a file the meter accepts: its own new file fails the owner test, and moving one in needs DELETE, which fails too. A hard link needs neither: it can put, inside the log folder, a name for a file owned by the user that the other account can write, and inject usage. In (c), after "unless it already met the same `info["identity"]`", add: "A file with a second name must also pass `api.check_acl(child, user_sid, "profile")`, which refuses any other account's write access." The `hardlink` case and T2 show it accepts the normal case.
+2. Non-blocking: name what still ties the read to the walk: `_check_stream_identity` (volume and file id at open and close, line 4378), the reader's `ancestor` test, and `root_snapshot.verify()` after all reads (line 4423).
+3. Non-blocking: (a) and (b) lose nothing. A folder change during the walk or the reads changes its write time, which `verify` compares; only `accessed`, which the walk's own reading changes, is ignored (line 1678). With (b), a log created in a sub-folder during a refresh now refuses it, as the root already did: an availability cost for Strategy's real refresh to watch.
+4. Non-blocking: a second name in another approved folder is read twice; `_merge_event_batches` keeps one event per key (line 4544). (d) cannot move usage between days for anyone who cannot write the log: only records in the one file read are compared.
+
+**Not covered**: real logs and their access lists (privacy rule), so I did not confirm real second-name logs pass `profile`; the `F:` drive refusal; I ran no test.
 
 Elapsed time: unknown. Tokens: unknown.
