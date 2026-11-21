@@ -1,7 +1,7 @@
 # Plan: Defect arc G, the meter runs for a Windows administrator
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -265,3 +265,14 @@ None. Checked: the test ran once, `1 passed, 554 deselected in 2.18s`; `cmp` pri
 **Verdict**: ACCEPT
 
 Not covered: the real machine, the POSIX path, the rest of `test_meter.py`, a re-run without the change (the record shows it). Elapsed time: unknown. Tokens: unknown.
+
+## Code-review response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-21
+
+Both code reviews accepted the change, and neither raised a blocking finding. Status is now `ready-to-archive`.
+
+1. Usual review, finding 1 (non-blocking: the README sentence sits inside an existing long line): no change is asked and none is made. Functional prose is edited by exact replacement and never rewrapped, so the line stays as it is.
+2. Security Review: no finding.
+
+Not run for this response: any test.
+
+**Elapsed**: unknown. **Tokens**: unknown.
