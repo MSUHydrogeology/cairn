@@ -216,6 +216,11 @@ the proof that each platform-only test ran and passed on its own host.
 
 ## Strict release-security evidence
 
+The record and join commands below are not part of the v0.8.1 cut; the
+tightening decides whether to keep, extend or remove them. The secrets scans,
+the signing, the membership check and every other safety, security and
+release check this page names stay due at their own triggers.
+
 At the final release candidate, first freeze the complete source history on the
 clean Mac authority (creating the deterministic sibling `.pack` before
 publishing the manifest), then run the strict check on native Mac and Windows
@@ -315,8 +320,13 @@ Maintainer.
    changelog below included.
 2. Merge that commit into `master` with `git merge --ff-only`, so the tagged
    commit is on the protected branch. Do not push yet.
-3. From `master` at that commit, freeze the history, take the Mac and Windows
-   records and join them (see "Strict release-security evidence").
+3. From `master` at that commit, run the whole test suite once on each of
+   three platforms: the Mac, then Linux, then Windows (the order carries no
+   meaning), each under Python 3.13 on a clean tree, and write the three
+   results in the release notes (`dev/rules/certifying-runs.md`). The record
+   and join commands of "Strict release-security evidence" are not part of
+   the v0.8.1 cut; whether to keep, extend or remove them is left to the
+   tightening.
 4. Push `master`. Then create the signed tag on the gate commit and push the tag.
 5. Publish the GitHub Release and run the publication check.
 6. Ask the Maintainer for the version DOI Zenodo mints for the published
