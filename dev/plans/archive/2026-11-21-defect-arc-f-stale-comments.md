@@ -1,7 +1,7 @@
 # Plan: Defect arc F, stale comments in protected tools
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -145,5 +145,22 @@ The change does what the plan says: sixteen comment lines, no code.
 ## Code-review response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-21
 
 The code review accepted the change and raised no finding, so nothing is revised. Status is now `ready-to-archive`.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation closeout -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+Both criteria held, and the one code review accepted the change with no finding.
+
+- **C1.** Sixteen comment lines are corrected in eleven copies of seven tools (`4b1ceeb3`). Every copy parses to the same syntax tree as before, the stale-comment search finds none of the sixteen, and the four pairs of copies are identical.
+- **C2.** Cairn's own lock was refreshed alone in `c02edfd4`, and `install/verify_integrity.py --target .` reports OK for 70 files.
+
+The branch merged into `0.9-dev` at `47ecd680` with no conflict, and the integrity check reports OK on the merged tree.
+
+Not run: the plan's 29-file test selection, before and after. Home: the Maintainer's standing direction on testing of 2026-11-21 (`dev/PLANNING.md`, "Where Cairn stands"): "Just do all of the changes we need. Then run the fewest tests possible to make sure it was right. Then we re-anchor, certify on all three platforms, and cut." The unchanged syntax tree stands in the tests' place.
+Not run: the whole suite and the signing check. Home: the certification named in the same direction.
+Remaining: eleven frozen copies changed, so eleven hash lines at the Maintainer's signing. Home: `dev/PLANNING.md`, section 1, "What the one signing will show".
+Remaining: docstrings and strings in the same tools that still name an old folder (16 strings, 42 lines). Home: `dev/PLANNING.md`, section 1, "Comments in protected files"; whether to correct them is the Maintainer's to say.
+Seen: a work claim naming eleven files was refused because its record was over 512 bytes, so the edit commit carried no claim. Home: `dev/PLANNING.md`, section 1, "A work claim that names many files is refused".
 
 **Elapsed**: unknown. **Tokens**: unknown.
