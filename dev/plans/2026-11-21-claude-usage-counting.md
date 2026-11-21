@@ -1,7 +1,7 @@
 # Plan: Count Claude usage toward a project
 
 **Source proposal**: dev/proposals/archive/2026-11-21-claude-usage-counting.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/custom_session_routines.md, dev/rules/protected-surfaces.md, dev/rules/development-environment.md
@@ -33,7 +33,7 @@ Proposed paths:
 
 The rule sentence, the field-name list, the README and the changelog are written steps, not code.
 
-**Limits stated.** (1) A folder link inside the project counts as inside, since the folder is compared as text. (2) A message seen under two folders or two sessions becomes unknown in one reading, and across refreshes when both folders map to a project; a repeat across refreshes where one folder lies outside every project is not caught. (3) Past 1,000 uncovered summaries or 100,000 transcripts, the meter cuts the excess and prints INCOMPLETE; it never fails a refresh over it. (4) The summary's three field names and the keys `isSidechain` and `agentId` were confirmed by Strategy on 2026-11-21 (Detail D7, P1 to P3). The author's first guess at the three names was wrong, and Detail D0 now holds the confirmed ones; they hold for the tool version measured. (5) The incomplete rule sees only summaries, and on the measured logs all 85 were in the main log: none was in a transcript, and ten of the 90 transcripts were named by no summary. By Strategy's reading those ten include runs that another agent started. Such a run is counted from its transcript like any other, but if its transcript were missing, nothing would mark the reading incomplete. (6) The frame is the tool's wording, so a tool version that drops or changes it turns readings incomplete, never whole. One residual: if a version dropped its own frame and a model's text carried a frame naming a run whose transcript was read, that summary would be called covered. (7) A sub-agent that finished between its last record and a new ledger's first refresh leaves its summary untied for good: the reading says INCOMPLETE until the ledger is replaced.
+**Limits stated.** (1) A folder link inside the project counts as inside, since the folder is compared as text. (2) A message seen under two folders or two sessions becomes unknown in one reading, and across refreshes when both folders map to a project; a repeat across refreshes where one folder lies outside every project is not caught. (3) Past 1,000 uncovered summaries or 100,000 transcripts, the meter cuts the excess and prints INCOMPLETE; it never fails a refresh over it. (4) The summary's three field names and the keys `isSidechain` and `agentId` were confirmed by Strategy on 2026-11-21 (Detail D7, P1 to P3). The author's first guess at the three names was wrong, and Detail D0 now holds the confirmed ones; they hold for the tool version measured. (5) The incomplete rule sees only summaries, and on the measured logs all 85 were in the main log: none was in a transcript, and ten of the 90 transcripts were named by no summary. By Strategy's reading those ten include runs that another agent started. Such a run is counted from its transcript like any other, but if its transcript were missing, nothing would mark the reading incomplete. (6) The frame is the tool's wording, so a tool version that drops or changes it turns readings incomplete, never whole. One residual: if a version dropped its own frame and a model's text carried a frame naming a run whose transcript was read, that summary would be called covered. And a model's text that quotes another run's frame makes its summary untied, so the reading says INCOMPLETE until the ledger is replaced. (7) A sub-agent that finished between its last record and a new ledger's first refresh leaves its summary untied for good: the reading says INCOMPLETE until the ledger is replaced.
 
 **Reuse.** The Codex project check (`_verified_project_remote`, the `verify_project` closure) and `_event_record` are reused as they are; the merge at the end of `read_records` already turns two bindings of one message into `conflicting_binding`. `_record_carries_usage` is replaced by `_usage_values`, the same walk, rather than a second walker. The Codex folder test is repeated in four lines, not shared, because the Codex tests pin `_codex_context`. Searched `dev/tools/` and `templates/skills/_lib/` for `cwd`, `isSidechain` and `usage`: only `meter.py` holds them.
 
@@ -43,7 +43,7 @@ The rule sentence, the field-name list, the README and the changelog are written
 
 ## Sequence
 
-C1 to C3 each end in the copy and `cmp`, one commit for each chunk, explicit paths only. The execution agents are Haiku; the plan's agent checks each diff against the criterion. The `/6` version change stays in C3 (the usual review's N4 asked for C1): the chunks merge together, no meter outside the build's work folder runs between them, and the branch's meter is not used for a real refresh before C3.
+C1 to C3 each end in the copy and `cmp`, one commit for each chunk, explicit paths only. The execution agents are Haiku; the plan's agent checks each diff against the criterion. The `/6` version change stays in C3 (the usual review's N4 asked for C1): the chunks merge together, no meter outside the build's work folder runs between them, and the branch's meter is not used for a real refresh before C3. The chunks are built in a separate work folder and merged into `0.9-dev` together, so no guarded handoff runs a C1 or C2 meter.
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
@@ -57,7 +57,7 @@ C1 to C3 each end in the copy and `cmp`, one commit for each chunk, explicit pat
 
 **C1.** A Claude record whose `cwd` equals the project path or lies inside it, with a request id and a passing remote check, reads as `proven` and `current_local_verified`, with the project's alias. Each failing case in Detail D5 (outside, sibling name, trailing separator, other letter case, `..`, inside two projects, the Windows forms, failed remote check, unapproved root, no request id) stays unknown with its reason and has a passing control. One message under two sessions or two folders is one unknown event with `conflicting_binding`; equal repeats merge; differing usage gives `conflicting_usage`. A proven Claude event with a known time joins the per-artifact split only when exactly one closed, reliable claim for its project, tool and session covers its time; `_build_mappings` is not changed. Public entry: `meter.read_records`.
 
-**C2.** A record with exactly the three summary fields is no event and leaves one summary row. Any other non-assistant, non-skipped record carrying `usage` adds `agent_runs_incomplete`, never `unsupported_record`; the four skipped types stay skipped whatever they hold. A sub-agent transcript record leaves one pair of keys. Each shape failure in Detail D5 has its control.
+**C2.** A record with exactly the three summary fields and one id in frames is no event and leaves one summary row. Any other non-assistant, non-skipped record carrying `usage` adds `agent_runs_incomplete`, never `unsupported_record`; the four skipped types stay skipped whatever they hold. A sub-agent transcript record leaves one pair of keys. Each shape failure in Detail D5 has its control.
 
 **C3.** After a refresh that reads a summary with no transcript, the export lists `agent_runs_incomplete` and the pulse prints INCOMPLETE; after one that reads the transcript, it does not. Another session's transcript, two different ids in frames, no frame, or a run not read leave it on; a record that could not be classified keeps it until the ledger is replaced. The ledger round-trips, each hand edit in Detail D5 is refused as `ledger_invalid`, and a `/5` ledger is refused with `ledger_old_schema` and left unchanged. Entries: `_refresh_ledger`, `_new_ledger`, `_load_ledger`, `pulse._parse_meter_aggregate`. End-to-end tests run on POSIX only (the Linux subsystem here).
 
@@ -236,3 +236,17 @@ Not covered: no log, ledger or consent file; no test run; unparsable summary lin
 5. Sequence: after "before C3." add "The chunks are built in a separate work folder and merged into `0.9-dev` together, so no guarded handoff runs a C1 or C2 meter."
 6. C2: replace "A record with exactly the three summary fields is no event and leaves one summary row." with "A record with exactly the three summary fields and one id in frames is no event and leaves one summary row."
 7. Detail D6: replace "and field names on the list kept in this file; any other field name" with "and names on the list kept in this file; any other name", and "Field names that may be shown" with "Names that may be shown".
+
+## Plan response to the amendment review -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-21
+
+The amendment review accepted the changed summary rule with no blocking finding. Its five non-blocking findings are taken, each with its own exact words (block R); status is now `ready-to-implement`.
+
+1. N1 (a model's text quoting another run's frame): taken, Limits (6).
+2. N2 (the pattern runs on each string on its own; the unmatched forms get tests): taken, Detail D3.2 and four more inputs in the D5 row.
+3. N3 (the row's key set is not pinned): taken, Detail D4.
+4. N4 and the reviewer's question (a separate work folder, or move the version change into C1): the first. The chunks are built in a work folder of their own and merged into `0.9-dev` together; Sequence says so.
+5. N5 (C2's sentence; the list holds names that are not field names): taken, C2 and Detail D6. The rule sentence now says "names" where the accepted proposal said "field names". It binds every name, so nothing weakens.
+
+Edited directly by Strategy, by exact replacement. Not run: any test, log read or meter run.
+
+**Elapsed**: unknown. **Tokens**: unknown.
