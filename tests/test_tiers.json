@@ -91,7 +91,8 @@
         "test_quickstart_sequence",
         "test_first_session_report",
         "test_skills_upgrade",
-        "test_finalize_retired_living_state"
+        "test_finalize_retired_living_state",
+        "test_retire_wrapper"
       ]
     },
     {
