@@ -1,7 +1,7 @@
 # Plan: Defect arc F, stale comments in protected tools
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -23,7 +23,7 @@ The accepted defect arc counts comment text in tool files among the stale paths 
 
 **Twins.** The four tools that have two copies are byte-identical today (`cmp` checked on 2026-11-21 for each pair) and must stay so. The shipped `run_security_verification.py` and `api_access_security.py` have no copy in `dev/tools/`. `install/check_module_body_coverage.py` is a single file.
 
-**Frozen, not protected.** Protected-surfaces names `run_portable_security_sweeps.py` and its shipped copy as high-risk. All eleven copies are frozen in `tests/fixtures/gate_manifest.json` (the manifest lists Cairn's own four under their pre-layout `scripts/` paths and the check-coverage tool under `bootstrap/`). None is in its `protected_roster`. Changing any of them makes the manifest's recorded hash stale; the Maintainer's signing refreshes it, and no agent does. The signing's one sentence is: "Eleven frozen tool files changed only in comments naming old folders; each parses to the same syntax tree as before." Cairn's own lock (`dev/.cairn/cairn-lock.yml`) records the four `dev/tools/` copies, so those four hashes go stale too; the Implementation agent refreshes them in C2.
+**Frozen, not protected.** Protected-surfaces names `run_portable_security_sweeps.py` and its shipped copy as high-risk. All eleven copies are frozen in `tests/fixtures/gate_manifest.json` (the manifest lists Cairn's own four under their pre-layout `scripts/` paths and the check-coverage tool under `bootstrap/`). Each is also listed in the manifest's `protected_roster` under `preserved_non_test_frozen_paths`; none is in `protected_python_paths`. Changing any of them makes the manifest's recorded hash stale; the Maintainer's signing refreshes it, and no agent does. The signing's one sentence is: "Eleven frozen tool files changed only in comments naming old folders; each parses to the same syntax tree as before." Cairn's own lock (`dev/.cairn/cairn-lock.yml`) records the four `dev/tools/` copies, so those four hashes go stale too; the Implementation agent refreshes them in C2.
 
 **Review.** Protected-surfaces gives the heavy tier to a change that alters what a high-risk surface does or accepts, and says that merely touching a surface does not. A comment cannot alter what a tool does, and the syntax-tree check below proves for every copy that no code changed. So this plan takes the usual review at each stage: one plan review and one code review. The code reviewer re-runs the syntax-tree check and the stale-comment search, and reads the diff for any token that is not a comment. The author first took the heavier tier, as its brief told it to wherever the rules left a choice; Strategy set this one on 2026-11-21, because the rule leaves none here. The Maintainer still sees each changed frozen file at the signing.
 
@@ -85,3 +85,14 @@ The plan delivers the Maintainer's "Fix them all now" with the smallest change: 
 **Not covered.** I ran no test, no tree command, no lock command and no signing step. I did not read the code review's future diff. The tree command shows no code changed; it does not show a new comment is accurate.
 
 **Verdict**: ACCEPT. Elapsed time: unknown. Tokens: unknown.
+
+## Plan response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-21
+
+The review accepted the plan with no blocking finding and confirmed that the usual review is the right obligation. Both non-blocking findings are taken; status is now `ready-to-implement`.
+
+1. Finding 1 (the manifest's roster): taken, with the reviewer's exact words, in Scope.
+2. Finding 2 (docstrings and strings have no home): taken on the roadmap, in the entry "Comments in protected files", with a count Strategy made on 2026-11-21: 16 strings, 42 lines, in ten of the eleven copies name an old folder (8 docstrings and 8 other strings; a text search, so some may be there on purpose). They are code, not comments, so this plan leaves them, and whether to correct them is the Maintainer's to say.
+
+Edited directly by Strategy, by exact replacement. Not run: any test or the syntax-tree command.
+
+**Elapsed**: unknown. **Tokens**: unknown.
