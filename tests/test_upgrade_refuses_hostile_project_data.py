@@ -254,7 +254,7 @@ def test_init_lock_refuses_a_profile_that_is_a_link(world, how):
         target = world.outside / "existing.yml"
         target.write_text(_complete_profile(world.marker), encoding="utf-8")
     elif how == "existing-inside-file":
-        target = world.project / "docs" / "profile-copy.yml"
+        target = world.project / "dev" / "scratch" / "profile-copy.yml"
         target.write_text(_complete_profile(world.marker), encoding="utf-8")
     else:
         target = world.outside / "new-profile.yml"
@@ -335,7 +335,7 @@ def test_init_lock_refuses_a_mapped_file_that_is_a_link(world, how):
         target = world.outside / "linked-agents.md"
         target.write_text("outside linked bytes\n", encoding="utf-8")
     elif how == "existing-inside-file":
-        target = world.project / "docs" / "linked-agents.md"
+        target = world.project / "dev" / "scratch" / "linked-agents.md"
         target.write_text("inside linked bytes\n", encoding="utf-8")
     else:
         target = world.outside / "missing-agents.md"
@@ -358,17 +358,17 @@ def test_init_lock_refuses_a_mapped_file_below_a_linked_parent(world):
     """A linked docs parent is checked at the mapped path and gives a folder remedy."""
     world = _no_lockfile_world(world)
     (world.project / PROFILE_REL).write_text(_complete_profile("MappedParent"), encoding="utf-8")
-    shutil.rmtree(world.project / "docs")
+    shutil.rmtree(world.project / "dev" / "modules")
     target = world.outside / "linked-docs"
     target.mkdir()
-    (target / "DOCUMENTATION_PLAN.md").write_text("outside documentation\n", encoding="utf-8")
-    link(target, world.project / "docs")
+    (target / "README.md").write_text("outside documentation\n", encoding="utf-8")
+    link(target, world.project / "dev" / "modules")
     project_before, outside_before = snapshot(world.project), snapshot(world.outside)
 
     proc = upgrade(world.project, "--init-lock")
 
     assert_plain_refusal(proc)
-    assert "docs/DOCUMENTATION_PLAN.md" in proc.stderr
+    assert "dev/modules/README.md" in proc.stderr
     assert "ordinary file or directory, as appropriate" in proc.stderr
     assert world.marker not in proc.stdout + proc.stderr
     assert not (world.project / LOCK_REL).exists(), "no lockfile may be written"
@@ -414,7 +414,7 @@ def test_plan_and_stage_refuse_a_profile_that_is_a_link(world, tmp_path, flag, h
     is refused, wherever it points, with the refusal `--init-lock` prints -- the
     rule `--apply` already keeps for this file."""
     if how == "existing-inside-file":
-        target = world.project / "docs" / "profile-copy.yml"
+        target = world.project / "dev" / "scratch" / "profile-copy.yml"
         target.write_text("# not complete\n", encoding="utf-8")
         (world.project / PROFILE_REL).unlink(missing_ok=True)
         link(target, world.project / PROFILE_REL)
@@ -522,7 +522,7 @@ def test_adoptions_refuse_a_profile_that_is_a_link(world, action, how):
         target = world.outside / "existing.yml"
         target.write_text(text, encoding="utf-8")
     elif how == "existing-inside-file":
-        target = world.project / "docs" / "profile-copy.yml"
+        target = world.project / "dev" / "scratch" / "profile-copy.yml"
         target.write_text(text, encoding="utf-8")
     else:
         target = world.outside / "new-profile.yml"

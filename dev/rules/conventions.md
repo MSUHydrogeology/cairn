@@ -5,7 +5,7 @@ Cairn's dependency and file-naming conventions. Routed from `RULES.md`. The text
 Everything Cairn ships to adopters is standard-library-only. Read
 `install/DEPENDENCY_BUDGET.md` before adding an import. Place prescription in
 `AGENTS.md`, deliberation in `dev/`, and software description in `docs/`, per
-`docs/DOCUMENTATION_PLAN.md`.
+`dev/DOCUMENTATION_PLAN.md`.
 
 Files use uppercase names for landmarks and lowercase-kebab for content.
 Plans use `<YYYY-MM-DD>-<slug>.md`; proposal and strategy files use

@@ -1,10 +1,9 @@
+<!-- claim-check-allow: docs/DOCUMENTATION_PLAN.md -->
 # Detail for plan E of the defect arc: exact conditions, texts and edits
 
 This file is part of `dev/plans/2026-11-20-defect-arc-e-documentation-plan-moves.md`. It exists because the plan must leave no design to a low-tier implementer, and the exact texts would push the plan well past its word target. The companion is part of the plan.
 
-Proposed paths:
-- `dev/DOCUMENTATION_PLAN.md`
-- `tests/test_upgrade_documentation_plan_moved.py`
+Paths built: `dev/DOCUMENTATION_PLAN.md` and `tests/test_upgrade_documentation_plan_moved.py` (both exist since the build).
 
 The installer code is merged into `0.9-dev` and was read in the main checkout on 2026-11-21 (HEAD `3fb798f5`; the installer files last changed in `029532a0`, the commit the plan first cited). Line numbers are guides; the function names are the contract.
 
@@ -81,7 +80,7 @@ Mirror plan B's `--heal-layout`, point by point:
 New helper `_documentation_plan_move_lines(target) -> list[str]`. It never raises, whatever the lock holds. It reads the lock with `read_lockfile(target)`; returns `[]` on any `OSError`, `ScaffoldSecurityError` or `ValueError`, or when the lock is missing. It reads `files` only when it is a list and skips any record that is not an object, as D2 step 1 does. When exactly one record has `src == _DOCPLAN_SRC` and its `dst == _DOCPLAN_OLD`, it returns these lines, and otherwise `[]`:
 
 ```
-The documentation plan moves to dev/ in 0.9. To move it, run these steps in order:
+The documentation plan moves to dev/ in 0.8.1. To move it, run these steps in order:
 <STEPS, three lines>
 Links in your own files are not changed: search them for docs/DOCUMENTATION_PLAN.md and point each at dev/DOCUMENTATION_PLAN.md.
 ```

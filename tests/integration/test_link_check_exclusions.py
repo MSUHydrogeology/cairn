@@ -329,7 +329,7 @@ def test_installed_documentation_module_uses_editable_seed(tmp_path, capsys):
     settings = json.loads(settings_path.read_text(encoding='utf-8'))
     assert len(settings['links']) == 1
     assert settings['links'][0]['source'] == 'dev/modules/documentation-plan.md'
-    assert settings['links'][0]['target'] == 'docs/DOCUMENTATION_PLAN.md'
+    assert settings['links'][0]['target'] == 'dev/DOCUMENTATION_PLAN.md'
     assert settings['links'][0]['reason'].strip()
     assert settings['internal_refs'] == []
     capsys.readouterr()
@@ -346,7 +346,7 @@ def test_installed_documentation_module_uses_editable_seed(tmp_path, capsys):
     settings['links'][0]['target'] = 'docs/renamed-plan.md'
     settings_path.write_text(json.dumps(settings), encoding='utf-8')
     assert lk.main(['--root', str(root), str(doc)]) == 1
-    assert 'broken link target: `docs/DOCUMENTATION_PLAN.md`' in capsys.readouterr().err
+    assert 'broken link target: `dev/DOCUMENTATION_PLAN.md`' in capsys.readouterr().err
 
 
 # --- filter_sources: root-anchored exclusions + opt-ins ----------------------

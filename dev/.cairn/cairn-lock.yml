@@ -59,7 +59,7 @@
     },
     {
       "dst": "dev/README.md",
-      "hash": "sha256:dce8583f9353a9921e8df56f4e56c864de58564cfaae47866167916fa3bde35e",
+      "hash": "sha256:dc6f4fb894a9e5a4fd061e5bfb790634c6eb61ebfda86fee0267991c42ef0f9d",
       "src": "core/dev/README.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -109,7 +109,7 @@
     },
     {
       "dst": "dev/modules/documentation-plan.md",
-      "hash": "sha256:a51e189ac78eea693a5ec647c285205601d99f96dc34ea0c4bcffb1748336fc7",
+      "hash": "sha256:fbe2c0841f843db9e9e1226a3f981274d87eecbcdb902b368a424b1d91cf120d",
       "src": "modules/default-on/documentation-plan.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -187,14 +187,14 @@
     },
     {
       "dst": "dev/plans/_template.md",
-      "hash": "sha256:e25ccaa7bdbd1d8473795b597b4cfb71eac7e57f690d76b98e282cc9114e234c",
+      "hash": "sha256:03a37f1c2388b199cb7c2f4e54dd70f79712e94dd25996316204f8b2bc95c658",
       "src": "core/dev/plans/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/proposals/_template.md",
-      "hash": "sha256:9c45d9900895ccad5932ed4975d61e3c584b26bd2c47ed36b057190c28a99965",
+      "hash": "sha256:5f97ce7df920bfbd28f0a4a22ac73d5fd54d843466ad077a5042ba21020df175",
       "src": "core/dev/proposals/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -249,8 +249,8 @@
       "verbatim": false
     },
     {
-      "dst": "docs/DOCUMENTATION_PLAN.md",
-      "hash": "sha256:66e9d6f777e014bdcfe2887577dfcbc864301a94bd8450c58baa8bd8453b60ec",
+      "dst": "dev/DOCUMENTATION_PLAN.md",
+      "hash": "sha256:64a2e814d8669ef5e6ff63e93466bb2866c97b07322e7853346cb5c40b577bcd",
       "src": "modules/default-on/documentation_plan_template.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -465,7 +465,7 @@
       "base_cache": "dev/.cairn/base/dev/.cairn/scanner-check-allow.json",
       "base_hash": "sha256:2ecdb6835ec4488ee09720308c9bb915fac7128cfbccbb6e280262f62c8633b3",
       "dst": "dev/.cairn/scanner-check-allow.json",
-      "hash": "sha256:523f29776383073869fc742d78f85964bcbe21b3a301b3b9929c026a23a0507f",
+      "hash": "sha256:0b65961d1dfe87796d22dc523d3cf2cddc93823596d57b1c4ba4531a4baaeebd",
       "src": "modules/default-on/scanner-check-allow.json",
       "verbatim": false
     },

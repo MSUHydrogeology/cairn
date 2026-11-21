@@ -197,7 +197,7 @@ Name affected documentation, doctrine and contract surfaces and their destinatio
 
 <!-- cairn:slot documentation-tier-home -->
 **Doc tier home rule** — route doc and doctrine changes by layer per
-[`docs/DOCUMENTATION_PLAN.md`](../../docs/DOCUMENTATION_PLAN.md):
+[`dev/DOCUMENTATION_PLAN.md`](../DOCUMENTATION_PLAN.md):
 cross-cutting prescription → governing layer (`AGENTS.md`);
 deliberation about what to build → deliberation layer (`dev/`);
 description of the software as it is → descriptive layer (`docs/`). A

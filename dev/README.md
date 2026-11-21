@@ -53,7 +53,7 @@ contributor reaches the other layers in one hop:
   wrapper). Read `AGENTS.md` first.
 * **Entry layer (root)** — [`README.md`](../README.md) (the front
   door), [`CHANGELOG.md`](../CHANGELOG.md), [`SECURITY.md`](../SECURITY.md).
-* **Documentation map** — [`docs/DOCUMENTATION_PLAN.md`](../docs/DOCUMENTATION_PLAN.md)
+* **Documentation map** — [`dev/DOCUMENTATION_PLAN.md`](DOCUMENTATION_PLAN.md)
   is the placement-decision procedure (where any new doc goes);
   [`docs/workflow-role.md`](../docs/workflow-role.md) and
   [`docs/getting-started.md`](../docs/getting-started.md) orient a

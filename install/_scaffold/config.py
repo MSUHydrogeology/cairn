@@ -1117,7 +1117,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     # `dev/PLANNING.md` (modflow_tools-side) > "Cairn-side merge-helper
     # / install-lockfile interaction fix".  The forkable's worked
     # examples are adopter-relative; Cairn's own self-hosted instance at
-    # cairn/docs/DOCUMENTATION_PLAN.md uses cairn-prefixed paths and is
+    # cairn/dev/DOCUMENTATION_PLAN.md uses cairn-prefixed paths and is
     # the methodology source-of-truth.
     "documentation-plan": [
         InstallSpec("default-on/documentation-plan.md",
@@ -1125,7 +1125,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("default-on/token_budget.py",
                     "dev/tools/token_budget.py", verbatim=True),
         InstallSpec("default-on/documentation_plan_template.md",
-                    "docs/DOCUMENTATION_PLAN.md"),
+                    "dev/DOCUMENTATION_PLAN.md"),
         InstallSpec("default-on/scanner-check-allow.json",
                     "dev/.cairn/scanner-check-allow.json"),
     ],
@@ -1538,7 +1538,7 @@ _MODULE_DISCOVERY: dict[str, tuple[str, str, str, str]] = {
     "reflections": ("Keep a short record of what changed and what the next session needs.", "dev/reflections/README.md", "Read the module and reflection guide; write one session reflection.", "A local reflection in dev/reflections/."),
     "claim-check": ("Check repository paths and line citations in durable records.", "dev/tools/claim_check.py", "Run the installed checker on one existing document.", "A report of checked path and line claims."),
     "incident-trackers": ("Record recurring friction and incidents for later review.", "dev/modules/incident_log_template.md", "Copy the tracker template for one relevant incident class.", "A project tracker based on the shipped template."),
-    "documentation-plan": ("Route project documentation to the right home.", "docs/DOCUMENTATION_PLAN.md", "Tailor the installed placement plan to this project.", "A project-specific documentation map."),
+    "documentation-plan": ("Route project documentation to the right home.", "dev/DOCUMENTATION_PLAN.md", "Tailor the installed placement plan to this project.", "A project-specific documentation map."),
     "dual-review": ("Plan staffing for a Maintainer-called external read.", "dev/modules/dual-review.md", "Read the module and document a staffing approach if a read is called.", "A staffing choice, without creating a review obligation."),
     "domain-agents": ("Define bounded roles for specialist knowledge.", "dev/modules/domain-agents.md", "Identify one domain and a possible agent boundary.", "A candidate role boundary."),
     "legacy-agent": ("Focus agent work on inherited-system risks.", "dev/modules/legacy-agent.md", "Identify one inherited area where the guidance applies.", "A candidate legacy-system focus."),

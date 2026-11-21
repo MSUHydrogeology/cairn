@@ -233,7 +233,7 @@ Cairn's scanners and integrity checks have limits; a clean result is not proof
 that a file or operation is safe. Read [the security statement](SECURITY.md)
 before installing third-party instructions or running agents on sensitive work.
 
-See [the documentation plan](docs/DOCUMENTATION_PLAN.md) for folder roles.
+See [the documentation plan](dev/DOCUMENTATION_PLAN.md) for folder roles.
 
 ## Repository guide
 
