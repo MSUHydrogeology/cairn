@@ -1,7 +1,7 @@
 # Count Claude usage toward a project
 
 **Author**: Claude (Strategy), drafted by Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it changes what the meter accepts as proof that usage belongs to a project
 **Plan review**: required(Internal + Internal Security Review)
@@ -16,20 +16,21 @@
 **The problem.** You asked for cost data "so we can actually see what works to keep costs down." The end-of-session report shows Claude usage as unknown. The hand-kept cost record measured the wrong thing: the figure the tool gives for each sub-agent is close to the size of its last request, about a thirtieth of what the sub-agents used that day. Two thirds of that day's tokens were the coordinating session's own, which the hand record cannot see (both measured 2026-11-21). Only the tool's logs hold real use. The meter reads them but will not accept the folder a log sits in as proof of the project. You decided (chat, 2026-11-20): "Yes, both CLAUDE and Antigravity should count."
 
 **What is added.**
-- A Claude record counts toward a project when its working folder is the project's or inside it, its log is under a folder you approved, and the project's Git remote checks out as for Codex. All 3,434 records measured carry that folder.
+- A Claude record counts toward a project when its working folder is the project's or inside it, its log is under a folder you approved, and the project's Git remote (the address of its shared repository) checks out as for Codex. All 3,434 records measured carry that folder.
 - Sub-agent transcripts count the same way. The one-line summaries in the main log are not usage.
-- The report shows Claude usage for the project by kind of token.
-- One rule sentence: nothing read from a provider log goes into a plan, test, fixture, commit or report except counts and field names from a fixed list.
+- The report shows Claude usage for the project by kind of token: fresh input, cache writes, cache reads and output.
+- One rule sentence on what may leave a provider log: counts, the meter's own cleaned output, and field names from a list kept beside the rule.
 
-**What it costs.** Anyone who can write your own logs can make usage count toward a project. Codex already works this way; the harm is a wrong number in a private report. Folders inside the project are new: 59 of 3,434 records came from one.
+**What it costs.** Anything that can write files as you, including the agents being measured, can add made-up Claude usage to a project; Codex logs can be forged the same way. The harm is a wrong number in the usage report and the project's export. Folders inside the project are new: 59 of 3,434 records came from one. A new reader version makes the meter refuse the ledger it holds (its private running record), so the first refresh fails until that ledger is rebuilt from logs still on disk; usage whose logs were deleted is lost. Yes or no is your call (choice 5).
 
-**Not known.** Whether Antigravity's saved files hold token counts: a look at three transcripts on 2026-11-04 found none, and nothing has been looked at since. Whether a summary ties to its transcript by an id: measured, counts only, before the plan. Whether a resumed session copies earlier messages under a new session id, which would count them twice: not looked at.
+**Not known.** Whether Antigravity's saved files hold token counts: a look at three transcripts on 2026-11-04 found none, and nothing has been looked at since. Whether a resumed session copies earlier messages under a new session id: such messages would become unknown, never counted twice, and a count-only measurement before the plan says how many. Whether a summary ties to its transcript by an id: if none does, a session that resumed a sub-agent prints as incomplete, as the measured one would (75 summaries, 70 transcripts).
 
-**Four choices** (my pick first):
+**Five choices** (my pick first):
 1. *Antigravity.* (a) One count-only look first, with your leave. (b) Build a collector for its live status line now: larger, and a new place where Cairn writes. (c) Leave it out, with the reason shown.
 2. *Folders inside the project.* (a) They count. (b) Only the exact path counts, as for Codex.
-3. *A table for each agent run.* (a) Not now. (b) Include it now.
+3. *A table for each agent run*, one row for each sub-agent with its real use. (a) Not now. (b) Include it now.
 4. *When.* (a) v0.9, so issue #96 closes with this release. (b) v0.10.
+5. *The ledger the meter holds.* (a) Rebuild it from the logs still on disk at the first refresh. (b) Keep the old one readable: more code.
 
 ## Context
 
@@ -41,7 +42,7 @@ Codex differs: `read_records` sets a project when the record's folder equals exa
 - 3,434 assistant records in the session log and 4,947 in 70 sub-agent transcripts. Each has a working folder, session id and request id; every folder was the project's root or inside it.
 - Transcripts sit beside the session log, carry the parent's session id and a side-chain mark, and share no message with it.
 - 75 summaries in the session log; 70 have totals within one percent of a transcript's last request.
-- 3,806 messages in the log and transcripts together. 3,130 are written on more than one record, and in every one the repeats carry equal usage. No assistant record lacks a request id.
+- 3,806 messages in the log and transcripts together (the cost record's table shows 3,755, counted earlier that day; the session had grown). 3,130 are written on more than one record, and in every one the repeats carry equal usage. No assistant record lacks a request id.
 
 **Read from the code, not measured.** The scanner descends sub-folders to depth 32 (`_enumerate_jsonl`), so transcripts under an approved root are already read. An event key is session, request id and message id. Records with one key and equal usage merge; unequal usage makes the event unknown (`conflicting_usage`).
 
@@ -49,22 +50,22 @@ Codex differs: `read_records` sets a project when the record's folder equals exa
 
 **A. A Claude record proves its own project.** It counts toward a configured project when all three hold; otherwise it stays unknown, with a reason.
 1. Its log lies under an approved source root, as today.
-2. Its working folder, compared as text and never opened, is the project's path or lies inside it, for exactly one configured project. A folder inside two counts for neither.
+2. Its working folder, compared as text and never opened, is the project's path or lies inside it, for exactly one configured project. The folder is the record's own `cwd` text. It must be absolute, hold no `.` or `..` part and no control character, and on Windows use a drive letter and backslashes only (no `/`, and no network-share prefix of two backslashes), as the Codex check requires; otherwise the record stays unknown with `project_path_unapproved`. It is compared with the configured path as the config file stores it, with no case folding, no trailing-separator trimming, no `..` resolution and no symlink or drive-mapping lookup: a differing letter case or a trailing separator makes it unknown. It counts as inside the project only when it equals the project path or begins with the project path followed by one separator (a backslash on Windows, `/` elsewhere), with no empty part after it, so `/w/cairn-old` is not inside `/w/cairn`. A folder inside two configured projects (one nested in the other) counts for neither.
 3. The project's Git remote passes the Codex check, which reads the configured project's own `.git/config`.
 
-The log's folder is never proof. A record with no request id stays unknown, as `test_requestless_claude_does_not_guess_lineage_from_directory` pins. Ownership becomes proven only on a record passing all three.
+The log's folder is never proof. A record with no request id stays unknown, and a test with a configured project pins it. Ownership becomes proven only on a record passing all three. A Claude event is keyed by its request id and message id, not its session. A message seen under two session ids, or with two folders, becomes unknown with `conflicting_binding` and never counts twice; the count-only measurement before the plan reports how many messages that affects. A folder link inside the project counts as inside: an accepted limit, since the folder is compared as text and never opened.
 
-**B. Sub-agent transcripts are usage and count under A; their summaries are not.** Equal repeats already merge by event key, and in the measured session every repeat was equal. The meter recognises the summary's exact shape, a `usage` value with exactly three whole-number fields (token total, tool count, duration), does not count it, and no longer calls it unsupported. Any other non-assistant record carrying `usage` stays `unsupported_record`. When a session has summaries and no transcript under any approved root, the reading is marked incomplete with a new reason code, kept off the report's harmless list (`_PULSE_BENIGN_REASONS`, `dev/tools/pulse.py`) so the report prints INCOMPLETE.
+**B. Sub-agent transcripts are usage and count under A; their summaries are not.** Equal repeats already merge by event key, and in the measured session every repeat was equal. A record is a summary only if every `usage` key found in it (anywhere, as `_record_carries_usage` walks) is a dict with exactly the three fields the plan names from the measured record, each a non-negative whole number and not a boolean. The meter does not count a summary and does not call it unsupported. For Claude, a record that carries `usage` and is neither an assistant record nor a summary gets the new reason code below, not `unsupported_record`. Records of the four types the reader already skips (`user`, `system`, `progress`, `file-history-snapshot`) stay skipped; a test pins that. The reading is marked incomplete, with a new reason code kept off `_PULSE_BENIGN_REASONS` (`dev/tools/pulse.py`), when for any session the summaries outnumber the distinct sub-agent transcripts read under approved roots. It compares counts because no id is yet known to tie a summary to its transcript; if the measurement before the plan finds one, the plan matches by id. The ledger keeps, for each session, the summaries and distinct transcripts seen across refreshes; while summaries outnumber transcripts, or the new reason is present, it is in every project export's coverage reasons, so the report prints INCOMPLETE.
 
 **C. The report shows it.** `pulse.py` marks a tool PARTIAL when the aggregate has rows for it, so Claude rows appear and no report format changes. I found no pinned test expecting a matching Claude record to stay unknown; I did not read all of `tests/integration/test_meter.py`. The usage-free tests gain a summary case.
 
 **D. Antigravity: look before building.** The reader is a deliberate stub; this proposal builds none. It asks your leave for one count-only look at Antigravity's saved files where you use it: field names from a fixed list, and counts; nothing copied. If they hold token counts and a working folder, a follow-up plan adds a reader under A's rule. If not, the report says why and that part of #96 closes on that reason with your word.
 
-**E. The rule is written down.** One sentence in `dev/rules/custom_session_routines.md`, beside the consent rule: nothing read from a provider log goes into a plan, test, fixture, commit or report except counts and field names from a fixed list. The list is fixed because on 2026-11-21 a count-only check printed a sentence: a record used one as a field name.
+**E. The rule is written down.** One sentence in `dev/rules/custom_session_routines.md`, beside the consent rule: nothing read from a provider log goes into a plan, test, fixture, commit, report, chat reply or agent prompt except counts, the meter's own sanitized output, and field names on the list kept in this file; any other field name is counted, never shown. The list is fixed because on 2026-11-21 a count-only check printed a sentence: a record used one as a field name.
 
 **Not here.** A table for each agent run (choice 3); a collector for Antigravity's live status line; usage kept under another field name than `usage`, which stays unseen.
 
-**Ledger cost.** A new `READER_VERSION` may be needed, which makes the meter refuse an older ledger. Earlier Claude events are not back-filled. The plan decides.
+**Ledger cost.** A new `READER_VERSION` makes `_load_ledger` refuse the ledger the meter holds, so the first refresh fails until that ledger is rebuilt from logs still on disk; usage whose logs were deleted is lost (choice 5). Earlier Claude events are not back-filled.
 
 ## Rationale
 
@@ -83,7 +84,7 @@ The record names its own project, as Codex's does: one trust story, one differen
 
 ## Evidence / verification plan
 
-Tests use hand-written records. Failing cases: a folder outside every project; inside two; a failed remote check; repeats with differing usage; a summary with no transcript; another non-assistant record with `usage`. **One developmental check on a real log, with your leave:** the meter's Claude totals for one session, by kind of token, equal an independent count-only sum of its log and transcripts. I ran no test and read no log for this proposal.
+Tests use hand-written records. Failing cases: a folder outside every project; inside two; a failed remote check; repeats with differing usage; a summary with no transcript; another non-assistant record with `usage`. **One developmental check on a real log, with your leave:** the meter's Claude totals for one session, by kind of token, equal an independent count-only sum of its log and transcripts. **To be measured before the plan, counts only:** whether a summary ties to its transcript by an id; how many messages appear under two session ids, as a resumed session might write them; how many records' folder text equals the configured path exactly, letter case included; and whether any record of the four skipped types holds a summary. The drafting agent ran no test and read no log.
 
 ### Security preflight
 
@@ -91,7 +92,7 @@ Tests use hand-written records. Failing cases: a folder outside every project; i
 - **S2** Each failing case above leaves usage unknown or the reading incomplete.
 - **S3** The user's own `refresh` command, over approved roots and configured projects only.
 - **S4** Toward unknown or incomplete, never a guessed number.
-- **S5** Forged logs; usage under another field name; a renamed field in a new tool version; logs deleted before a refresh.
+- **S5** Forged logs; usage under another field name; a renamed field in a new tool version; logs deleted before a refresh; the measured agents themselves write under approved roots; a tool version changes the summary shape.
 
 ### Independent scientific check
 
@@ -105,7 +106,7 @@ N/A: no scientific assumption or result touched.
 
 ## Scope delta
 
-**Scope delta**: preserved.
+**Scope delta**: degraded -- Antigravity counting. **Disposition**: defer, until choice 1 is answered. The Maintainer's word was that both tools should count; this proposal delivers a look only for Antigravity.
 
 ## Assurance path
 
@@ -201,3 +202,30 @@ S1. In "What it costs", replace its first two sentences with: "Anything that can
 S2. In B, after the summary-shape sentence, add: "For Claude, a record that carries `usage` and is neither an assistant record nor a summary gets the new reason code, not `unsupported_record`." Replace the usual review's "Recomputed from the files on disk at each refresh, never kept as whole." with: "The ledger keeps, for each session, the summaries and distinct transcripts seen across refreshes; while summaries outnumber transcripts, or the new reason is present, it is in every project export's coverage reasons, so the report prints INCOMPLETE."
 
 S3. Replace E's quoted rule with: "Nothing read from a provider log goes into a plan, test, fixture, commit, report, chat reply or agent prompt except counts, the meter's own sanitized output, and field names on the list kept in this file; any other field name is counted, never shown."
+
+## Response -- Claude Fable 5.2 (Strategy, author of the design) -- 2026-11-21
+
+Both reviews said revise. All seven blocking findings came with the words that close them; all are accepted and folded into the text above, and nothing is declined.
+
+Usual review:
+
+- **1, the folder rule was left to the plan: closed.** A.2 carries its words, with the Security Review's correction that the separator is the host's own. The network-share prefix is named in words, to avoid a doubt about how many backslashes were meant.
+- **2, the incomplete rule missed the measured case: closed.** B marks a reading incomplete when summaries outnumber transcripts; the Security Review's sentence governs how that is kept across refreshes.
+- **3, a false statement and an undefined shape: closed.** B defines a summary by every `usage` key in the record. Where the two reviews differ on a record that is neither, the Security Review governs: it gets the new reason code, so the report cannot pass it as harmless.
+- **4, the ledger effect: closed.** It is in the summary's costs and is choice 5.
+- **5 to 9: accepted.** The request-less sentence no longer leans on a test that pins nothing; two folders on one message is named; the measurements owed before the plan are listed under evidence; three terms are explained in the summary and the two message counts reconciled; the scope delta is stated as degraded for Antigravity.
+
+Security Review:
+
+- **S1, copies counted twice: closed.** A Claude event is keyed by request id and message id. The reviewer asked whether a message seen under two session ids should become unknown or count once under the earlier session. It becomes unknown: that fails the safe way and needs no trust in a log's own times. If the measurement shows many such messages, the plan returns to this.
+- **S2, a changed summary shape hid missing transcripts: closed** (B).
+- **S3, outcome E was ambiguous: closed**, with its words.
+- **S4 to S7: accepted.** The link inside a project is a stated limit; two entries join S5; the skipped types are checked in the measurement.
+
+One consequence the folded text makes visible, my reading and not measured: the five summaries without a transcript in the measured session are probably sub-agents that were resumed, which leaves a second summary and one transcript. If no id ties a summary to its transcript, every such session will print as incomplete. The summary's "Not known" says so.
+
+Also changed by me before review: one measurement, that repeats of a message always carried equal usage.
+
+Not checked by anyone: Antigravity's files; a resumed session's log; a run of the changed meter on a real log, which waits for the Maintainer's leave.
+
+**Elapsed**: unknown. **Tokens**: unknown.
