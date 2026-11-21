@@ -236,3 +236,113 @@ def test_proven_event_without_a_covering_claim_stays_unmapped():
     assert meter._build_mappings([event], [], config) == []
     open_claim = _claim(event["session_digest"], released_at=None)
     assert meter._build_mappings([event], [open_claim], config) == []
+
+
+# Arc C2: summaries of finished sub-agents and transcripts, read at read time.
+
+RUN = "a1b2c3d4e5f6g7h8i"
+DIGEST = meter._digest("agent-id", RUN)
+SESSION_KEY = meter._digest("claude", "session-a")
+SUMMARY_ROW = {"session_key": SESSION_KEY, "agent_key": DIGEST}
+VALID = {"totalTokens": 9, "toolUses": 2, "durationMs": 500}
+
+
+def summary_record(**changes):
+    """A summary-shaped record: the tool's frame around the run's id, and usage of the three counts."""
+    record = {"type": "attachment", "timestamp": STAMP, "sessionId": "session-a",
+              "text": "done <task-id>" + RUN + "</task-id>", "usage": dict(VALID)}
+    record.update(changes)
+    return record
+
+
+def test_summary_is_not_usage_and_leaves_one_row():
+    result = read([rec(), summary_record()])
+    assert len(result["events"]) == 1
+    assert "unsupported_record" not in result["issues"]
+    assert "agent_runs_incomplete" not in result["issues"]
+    assert result["agent_runs"]["summaries"] == [SUMMARY_ROW]
+
+
+def test_user_record_with_summary_shape_is_skipped():
+    result = read([rec(), summary_record(type="user")])
+    assert result["issues"] == []
+    assert result["agent_runs"] == meter._empty_agent_runs()
+
+
+BAD_SHAPES = {
+    "wrong-field-name": {"totalTokens": 9, "toolUses": 2, "duration": 500},
+    "extra-field": dict(VALID, extra=1),
+    "missing-field": {"totalTokens": 9, "toolUses": 2},
+    "negative": dict(VALID, toolUses=-1),
+    "boolean": dict(VALID, totalTokens=True),
+    "fraction": dict(VALID, durationMs=1.5),
+    "string-number": dict(VALID, totalTokens="3"),
+    "usage-in-usage": {"usage": dict(VALID)},
+    "usage-list": [dict(VALID)],
+    "empty-usage": {},
+}
+
+
+@pytest.mark.parametrize("name", sorted(BAD_SHAPES))
+def test_summary_shape_failure_is_incomplete_not_unsupported(name):
+    result = read([summary_record(usage=BAD_SHAPES[name])])
+    assert "agent_runs_incomplete" in result["issues"]
+    assert "unsupported_record" not in result["issues"]
+    assert result["agent_runs"]["unclassified"] == 1
+    assert result["agent_runs"]["summaries"] == []
+
+
+def test_one_good_and_one_bad_usage_in_one_record_is_incomplete():
+    record = summary_record(other={"usage": dict(VALID, toolUses=-1)})
+    result = read([record])
+    assert "agent_runs_incomplete" in result["issues"]
+    assert result["agent_runs"]["summaries"] == []
+
+
+@pytest.mark.parametrize("name", ["user", "system", "progress", "file-history-snapshot"])
+def test_skipped_types_stay_skipped_whatever_they_hold(name):
+    result = read([rec(), {"type": name, "usage": dict(VALID)},
+                   {"type": name, "usage": {"bad": 1}}])
+    assert result["issues"] == []
+    assert result["agent_runs"] == meter._empty_agent_runs()
+
+
+def test_summary_without_session_is_incomplete():
+    record = summary_record()
+    del record["sessionId"]
+    result = read([record])
+    assert "agent_runs_incomplete" in result["issues"]
+    assert result["agent_runs"]["unclassified"] == 1
+
+
+@pytest.mark.parametrize("extra, expected", [
+    ({"text": "<task-id>" + RUN + "</task-id>"}, DIGEST),
+    ({"text": "done"}, ""),
+    ({"text": "<task-id>" + RUN + "</task-id> then <task-id>" + RUN + "</task-id>"}, DIGEST),
+    ({"text": "<task-id>" + RUN + "</task-id> <task-id>b1b2c3d4e5f6g7h8j</task-id>"}, ""),
+    ({"text": "stray1234567890ab <task-id>" + RUN + "</task-id>"}, DIGEST),
+    ({"text": "<task-id>" + "a" * 65 + "</task-id>"}, ""),
+    ({"<task-id>" + RUN + "</task-id>": "x"}, ""),
+    ({"a": "<task-id>" + RUN, "b": "</task-id>"}, ""),
+    ({"text": "<TASK-ID>" + RUN + "</TASK-ID>"}, ""),
+    ({"text": "<task-id>a1b2c3d</task-id>"}, ""),
+], ids=["one-frame", "no-frame", "same-frame-twice", "two-ids",
+        "stray-word-beside-frame", "frame-with-65-characters", "frame-only-in-key",
+        "frame-split-across-strings", "upper-case-tag", "seven-characters"])
+def test_summary_run_reads_only_the_frame(extra, expected):
+    record = {"type": "attachment", "usage": dict(VALID), **extra}
+    assert meter._summary_run(record) == expected
+
+
+def test_transcript_record_registers_one_pair():
+    result = read([rec(isSidechain=True, agentId=RUN)])
+    assert result["agent_runs"]["transcripts"] == [SUMMARY_ROW]
+    assert len(result["events"]) == 1
+
+
+def test_transcript_mark_needs_true_and_a_text_agent_id():
+    no_mark = read([rec(agentId=RUN)])
+    assert no_mark["agent_runs"]["transcripts"] == []
+    bad_id = read([rec(isSidechain=True, agentId=5)])
+    assert bad_id["agent_runs"]["transcripts"] == []
+    assert len(bad_id["events"]) == 1

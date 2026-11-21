@@ -132,6 +132,10 @@ MAX_WAIT_EXPORT_WORK = 100_000
 MAX_CLAIM_BYTES = 8 * 1024 * 1024
 MAX_CLAIM_LINE = 64 * 1024
 MAX_LEDGER_BYTES = 64 * 1024 * 1024
+# The three counts a finished sub-agent's summary record holds (Detail D0, P1).
+_SUMMARY_FIELDS = frozenset({"totalTokens", "toolUses", "durationMs"})
+# The frame the tool writes around a run's id inside its summary (Detail D0, P4).
+_SUMMARY_FRAME = re.compile(r"<task-id>([A-Za-z0-9]{8,64})</task-id>")
 LEDGER_NAME = "ledger.json"
 LEDGER_LOCK_NAME = "ledger.lock"
 _PRIVATE_FS_SUPPORTED = os.name == "posix"
@@ -6534,22 +6538,65 @@ def _merge_event_batches(batches):
     return list(merged.values())
 
 
-def _record_carries_usage(record):
-    """Return True if any dict inside the record has a `usage` key.
+def _usage_values(record):
+    """Return every value stored under a `usage` key inside the record.
 
     Walks without recursion: a list is used as a stack over dict values and
     list items, so a deeply nested record cannot exhaust the call stack.
     """
+    found = []
     pending = [record]
     while pending:
         item = pending.pop()
         if isinstance(item, dict):
             if "usage" in item:
-                return True
+                found.append(item["usage"])
             pending.extend(item.values())
         elif isinstance(item, list):
             pending.extend(item)
-    return False
+    return found
+
+
+def _empty_agent_runs():
+    return {"transcripts": [], "summaries": [], "unclassified": 0}
+
+
+def _summary_shape(value):
+    if not isinstance(value, dict) or set(value) != _SUMMARY_FIELDS:
+        return False
+    try:
+        for name in _SUMMARY_FIELDS:
+            _counter(value[name])
+    except ValueError:
+        return False
+    return True
+
+
+def _summary_run(record):
+    """Return the digest of the run a finished sub-agent's summary names.
+
+    None when the record's usage values are not the summary shape. "" when the
+    frame names no run, or more than one. The id is read only inside the frame.
+    """
+    values = _usage_values(record)
+    if not values or not all(_summary_shape(value) for value in values):
+        return None
+    found = set()
+    pending = [record]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, dict):
+            pending.extend(item.values())
+        elif isinstance(item, list):
+            pending.extend(item)
+        elif isinstance(item, str):
+            for match in _SUMMARY_FRAME.finditer(item):
+                found.add(match.group(1))
+                if len(found) > 1:
+                    return ""
+    if len(found) != 1:
+        return ""
+    return _digest("agent-id", next(iter(found)))
 
 
 def read_records(tool, lines, *, config=None, source_aliases=(), source_root=None,
@@ -6565,6 +6612,7 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
     issues, contexts, candidates = set(), {}, []
     timing_observations = []
     timing_candidates = []
+    agent_transcripts, agent_summaries, agent_unclassified = set(), set(), 0
     config_supplied = config is not None
 
     def verify_project(project, excluded_roots):
@@ -6606,12 +6654,14 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
         return {"schema": READER_VERSION, "tool": tool, "events": [],
                 "timing_observations": [], "timing_coverage": "unknown",
                 "coverage": "unknown", "identity_coverage": "unknown",
-                "ownership_coverage": "unknown", "issues": ["invalid_record"]}
+                "ownership_coverage": "unknown", "issues": ["invalid_record"],
+                "agent_runs": _empty_agent_runs()}
     if isinstance(config, dict) and not config["enabled"]:
         return {"schema": READER_VERSION, "tool": tool, "events": [],
                 "timing_observations": [], "timing_coverage": "unknown",
                 "coverage": "unknown", "identity_coverage": "unknown",
-                "ownership_coverage": "unknown", "issues": ["disabled"]}
+                "ownership_coverage": "unknown", "issues": ["disabled"],
+                "agent_runs": _empty_agent_runs()}
     if isinstance(config, dict) and isinstance(source_aliases, (list, tuple, set)):
         if any(not isinstance(alias, str) for alias in source_aliases):
             source_aliases = ()
@@ -6659,12 +6709,30 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                 continue
             if tool == "claude":  # vendor-ok: producer assistant usage shape
                 if kind != "assistant":
-                    if kind not in {"user", "system", "progress", "file-history-snapshot"} \
-                            and _record_carries_usage(record):
-                        issues.add("unsupported_record")
+                    if kind in {"user", "system", "progress", "file-history-snapshot"}:
+                        continue
+                    if not _usage_values(record):
+                        continue
+                    run = _summary_run(record)
+                    try:
+                        session_key = _digest(tool, _text(record["sessionId"]))
+                    except (KeyError, ValueError):
+                        session_key = None
+                    if not run or session_key is None:
+                        issues.add("agent_runs_incomplete")
+                        agent_unclassified += 1
+                        continue
+                    agent_summaries.add((session_key, run))
                     continue
                 message = record["message"]
                 session = _text(record["sessionId"])
+                if record.get("isSidechain") is True:
+                    try:
+                        agent_key = _digest("agent-id", _text(record["agentId"]))
+                    except (KeyError, ValueError):
+                        pass
+                    else:
+                        agent_transcripts.add((_digest(tool, session), agent_key))
                 message_id = _text(message["id"])
                 request = record.get("requestId")
                 response = _text(request) if request is not None else message_id
@@ -7014,10 +7082,16 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
         candidates.clear()
         timing_observations.clear()
         timing_candidates.clear()
+        agent_transcripts.clear()
+        agent_summaries.clear()
+        agent_unclassified = 0
         issues.add(lines.terminal_reason)
     if len(candidates) > MAX_NORMALIZED_EVENTS:
         candidates.clear()
         timing_candidates.clear()
+        agent_transcripts.clear()
+        agent_summaries.clear()
+        agent_unclassified = 0
         issues.add("source_budget_exceeded")
 
     normalized_waits = []
@@ -7209,7 +7283,13 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
             "timing_observations": timing_observations,
             "wait_candidates": normalized_waits, "timing_coverage": "unknown",
             "coverage": "unknown", "identity_coverage": "unknown",
-            "ownership_coverage": "unknown", "issues": sorted(issues)}
+            "ownership_coverage": "unknown", "issues": sorted(issues),
+            "agent_runs": {
+                "transcripts": [{"session_key": session_key, "agent_key": agent_key}
+                                for session_key, agent_key in sorted(agent_transcripts)],
+                "summaries": [{"session_key": session_key, "agent_key": agent_key}
+                              for session_key, agent_key in sorted(agent_summaries)],
+                "unclassified": agent_unclassified}}
 
 
 _REFRESH_REASONS = frozenset({
