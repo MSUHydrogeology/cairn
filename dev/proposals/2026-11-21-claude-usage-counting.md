@@ -23,7 +23,7 @@
 
 **What it costs.** Anyone who can write your own logs can make usage count toward a project. Codex already works this way; the harm is a wrong number in a private report. Folders inside the project are new: 59 of 3,434 records came from one.
 
-**Not known.** Whether Antigravity's saved files hold token counts: a look at three transcripts on 2026-11-04 found none, and nothing has been looked at since. Whether repeats of one message always carry equal usage, and whether a summary ties to its transcript by an id: both measured, counts only, before the plan.
+**Not known.** Whether Antigravity's saved files hold token counts: a look at three transcripts on 2026-11-04 found none, and nothing has been looked at since. Whether a summary ties to its transcript by an id: measured, counts only, before the plan. Whether a resumed session copies earlier messages under a new session id, which would count them twice: not looked at.
 
 **Four choices** (my pick first):
 1. *Antigravity.* (a) One count-only look first, with your leave. (b) Build a collector for its live status line now: larger, and a new place where Cairn writes. (c) Leave it out, with the reason shown.
@@ -41,6 +41,7 @@ Codex differs: `read_records` sets a project when the record's folder equals exa
 - 3,434 assistant records in the session log and 4,947 in 70 sub-agent transcripts. Each has a working folder, session id and request id; every folder was the project's root or inside it.
 - Transcripts sit beside the session log, carry the parent's session id and a side-chain mark, and share no message with it.
 - 75 summaries in the session log; 70 have totals within one percent of a transcript's last request.
+- 3,806 messages in the log and transcripts together. 3,130 are written on more than one record, and in every one the repeats carry equal usage. No assistant record lacks a request id.
 
 **Read from the code, not measured.** The scanner descends sub-folders to depth 32 (`_enumerate_jsonl`), so transcripts under an approved root are already read. An event key is session, request id and message id. Records with one key and equal usage merge; unequal usage makes the event unknown (`conflicting_usage`).
 
@@ -53,7 +54,7 @@ Codex differs: `read_records` sets a project when the record's folder equals exa
 
 The log's folder is never proof. A record with no request id stays unknown, as `test_requestless_claude_does_not_guess_lineage_from_directory` pins. Ownership becomes proven only on a record passing all three.
 
-**B. Sub-agent transcripts are usage and count under A; their summaries are not.** Equal repeats already merge by event key; the plan checks this against the repeat measurement. The meter recognises the summary's exact shape, a `usage` value with exactly three whole-number fields (token total, tool count, duration), does not count it, and no longer calls it unsupported. Any other non-assistant record carrying `usage` stays `unsupported_record`. When a session has summaries and no transcript under any approved root, the reading is marked incomplete with a new reason code, kept off the report's harmless list (`_PULSE_BENIGN_REASONS`, `dev/tools/pulse.py`) so the report prints INCOMPLETE.
+**B. Sub-agent transcripts are usage and count under A; their summaries are not.** Equal repeats already merge by event key, and in the measured session every repeat was equal. The meter recognises the summary's exact shape, a `usage` value with exactly three whole-number fields (token total, tool count, duration), does not count it, and no longer calls it unsupported. Any other non-assistant record carrying `usage` stays `unsupported_record`. When a session has summaries and no transcript under any approved root, the reading is marked incomplete with a new reason code, kept off the report's harmless list (`_PULSE_BENIGN_REASONS`, `dev/tools/pulse.py`) so the report prints INCOMPLETE.
 
 **C. The report shows it.** `pulse.py` marks a tool PARTIAL when the aggregate has rows for it, so Claude rows appear and no report format changes. I found no pinned test expecting a matching Claude record to stay unknown; I did not read all of `tests/integration/test_meter.py`. The usage-free tests gain a summary case.
 
