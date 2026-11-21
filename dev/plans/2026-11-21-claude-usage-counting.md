@@ -285,3 +285,32 @@ What was run:
 **Elapsed**: unknown. **Tokens**: unknown for me; the Haiku agents used about 133k, 136k, 186k and 110k (as their tools reported, for C1 to C4).
 
 The two `Proposed paths:` declarations (here and in Detail) named the new test file, which now exists, so `claim_check` flagged them as stale; I deleted those lines in the same commit as this record. Nothing else in the operative text changed.
+
+## Code review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`) (usual reviewer) -- 2026-11-21
+
+```
+Reviewed commit: fbd5cee2971829a2c4406863ca13c9f821b55128
+Range: 75acc20c..fbd5cee2971829a2c4406863ca13c9f821b55128
+```
+
+**Obligation**: the usual code review; the Security Review pass is still due, so Status is unchanged.
+**Findings**: raised (0 blocking, 5 non-blocking)
+**Bounding**: reviewed every hunk of the range and the code around each changed function; not covered: the Windows refresh route end to end, any test run, any real log, the pulse's printing.
+**Verdict**: ACCEPT
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: names, conditions and reason codes match D0 to D4; the two copies are identical and the lock verifies -- `cmp dev/tools/meter.py templates/skills/_lib/meter.py` (no output), `install/verify_integrity.py --target .` (OK, 70 files).
+2. **Best alternative.** None simpler; the three build differences are sound: the fifth version place is a one-character test edit, the lock commit holds only `dev/.cairn/cairn-lock.yml`, and the C2 to C3 gap is closed by merging together -- `git show --stat e2b944bb`, plan "Where the build differs".
+3. **What would show it wrong.** I called `_project_for_folder` on hand-typed folders (project path, inside, `-old` sibling, trailing and doubled separators, other case, `..`, a folder inside two projects, drive-letter case, reserved names, `a:b`, `/`): every result matched D1. `_summary_run` on 8 MiB of unclosed or 64-letter frames: `""` in 0.11 s. A failed remote, no request id and two sessions are covered by the new tests, read by hand against `read_records` 6840-6860.
+
+**Non-blocking**
+- N1. Three whole tests can go: `test_user_record_with_summary_shape_is_skipped` (the skipped-types test already runs `user` with the same shape), `test_repeats_with_equal_usage_merge_without_conflict` (same input as `test_same_message_twice_in_one_session_is_one_proven_event`), `test_the_empty_ledger_starts_with_no_runs` (the existing empty-ledger round trip and `run_ledger` fail without the field). Two rows can also go: `own-run-read` (covered by `test_summary_then_its_transcript_clears_the_reason`) and `no-frame-or-two-ids` (duplicates the unclassified test).
+- N2. Gaps, not blockers: `isSidechain` is tested only as absent, never as a truthy non-`True` value, so `if record.get("isSidechain")` would pass; the transcript cap and the ledger's own cap check have no test.
+- N3. A transcript is registered before its record is parsed, so an invalid assistant record still counts as "read"; `invalid_record` is raised too, so the reading is not called whole.
+- N4. `tests/integration/test_meter.py` is in the gate manifest and now differs; it fails until the Maintainer signs it, as the plan says.
+- N5. Transcripts are never aged: past 100,000 the cut goes to `unclassified` and INCOMPLETE stays (stated Limit 3).
+
+No rule weakens: the D6 sentence adds a bound; the README and changelog say what shipped. Privacy: tests use only synthetic ids and the names on the kept list.
