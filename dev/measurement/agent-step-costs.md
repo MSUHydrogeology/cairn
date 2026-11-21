@@ -116,8 +116,9 @@ runs cost machine time, not tokens, and are listed separately.
 | Arc F, stale comments | build stage, by the plan's agent; it waited over an hour for the test machine, and the test run was then dropped on the Maintainer's direction | Medium | 101,809 | 75 | awaiting code review |
 | | usual code review | Medium | 78,216 | 1 | accept, no finding |
 | | response to both code reviews, by the plan's agent | Medium | 127,455 | 49 | ready to archive |
+| | build, five chunks, by the plan's agent with Haiku execution agents | Medium | 193,873 | 150 | awaiting code review |
 
-Total for the day so far: 13,682,267 tokens across 92 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 13,876,140 tokens across 93 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
