@@ -1,7 +1,7 @@
 # Certify each release on the Mac, Linux and Windows
 
 **Author**: Claude Fable 5.2 (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -103,3 +103,49 @@ More than 50 of the 362 POSIX tests end up Mac-only, so the Linux record says li
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Claude Sonnet 5.5 -- 2026-11-21
+
+```
+Reviewed commit: 2e7c920bebb9735c826f3a48815b79fefa11585f
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the join is the one place a missing host can be refused, and a three-host join is the smallest code that does it. The framing leaves two things to guess (findings 1 and 2). -- `release/security_check.py` `_join_local_records` (line 732: exactly two records) and `_supported_native_host` (line 324).
+2. **Best alternative.** Whole set on each host beats native-only: the join already demands every non-excluded test pass in both orders (`_validate_raw_suite_report`, `pytest_exit == 0`), so a native-only record would be new code, not less. Doing nothing repeats the 0.8 waiver. -- `release/security_check.py` lines 395-413, 464-474.
+3. **What would show it wrong.** The proposal's own signals hold (over 50 Mac-only, over a working day). Add: the first Linux record fails in files it never measured. -- Signals section; `dev/PLANNING.md` Windows entry.
+
+**Does any rule weaken or disappear?** No, if finding 4 is added. Checked: facts 63/362 (`validated_native_only_nodes`, line 689), 16 excluded rows (`RELEASE_EXCLUDED_TESTS`), 60:41 run (certification record), Linux VM facts (`development-environment.md` lines 163-167). Not checked: the 15/305/27 Windows figures of 2026-11-16 (taken from the roadmap and proposal, not re-counted) and the 61-minute timing beyond the record's own line.
+
+The proposal's strongest form: no host you use is left out, and the join, not prose, enforces it. Sound.
+
+**Findings**
+
+1. **Blocking. "A Mac-only test absent from the Linux record is accepted" contradicts the code and weakens it.** Today `_validate_outcome_rows` (lines 374-376) and `_validate_local_record` (584-586) refuse a record that omits any fixed native ID. Accepting absence loosens both, for every host, and lets a test vanish from Linux unseen. Replace the sentence with the exact words below.
+2. **Blocking. The secrets-scan part of the record is unstated.** With `--history-roots`, every record must carry a history sweep and the join compares two records' policy and runner hashes (`_run_join`). Three records change that; Linux would need the same scan tool. State whether the Linux record uses it. Words below.
+3. **Blocking. "Waiver" has no mechanism.** The join refuses; it prints no waiver. Say a waiver is the Maintainer's quoted words in the release notes, with no script option. Also say choice 2(b) means a down machine stops a release. Words below.
+4. **Blocking, premise, for the Maintainer: which release.** "Excluding Windows and Linux certification was a defect" ends his reply about Claude and Antigravity; the roadmap calls the v0.8.1 reading Strategy's, and another roadmap entry says the waived checks fall due at 0.9. Add a fourth choice. The Decision summary now states v0.8.1 as settled.
+5. Non-blocking. The Mac full run (with the 16 excluded files) must stay named in the certifying rule; add one clause to E.
+6. Non-blocking. The 120-of-895 signing failures belong to files the record excludes; they do not predict the Mac-only count. Drop or label them.
+7. Non-blocking. Build the Mac-only class in plan C only if Linux needs it, per "no new tooling unless it's needed". The join for three is needed.
+8. Non-blocking. Plan D2: measurements (d) the published-tag check in Git Bash and (e) the ceremony tests are not in a record (the ceremony files are excluded). Say they stay with D2 or move to the roadmap.
+9. Non-blocking. Name where Python 3.13 comes from and how it is checked; it runs the certifying record.
+10. Non-blocking. The proposal is 1,669 words against 1,000; Context's native-test and Windows lines repeat the roadmap.
+
+**Not covered**: no test run; Windows record and the plan archive read only for D2's six items; code of the record's child run (`_run_local_record` body) skimmed, not traced.
+
+### Exact words
+
+- **1.** In "Tests required", replace "A Mac-only test absent from the Linux record is accepted." with "A Mac-only test must appear in the Linux and Windows records as skipped, never absent, and must pass on the Mac; a Mac-only test that passed on Linux is also accepted."
+- **2.** Add to A: "The Linux record is taken with the same `--history-roots` manifest as the others, and the join requires the history sweep in all three and equal policy and runner hashes across them. Plan C confirms the sweep tool runs on the Linux machine."
+- **3.** Add to choice 2(a): "A waiver is the Maintainer's own words, quoted in the release notes; the join has no waiver option and still refuses." Add to 2(b): "A machine that is down then stops the release."
+- **4.** Add "4. *First release.* (a) v0.8.1, as you wrote on 2026-11-21; Linux and Windows must pass first. (b) The release after, so v0.8.1 is not held." and, in the summary, "I read your words as v0.8.1."
+- **5.** Add to E: "The Mac's full run, with the 16 excluded files, stays the certifying run."
