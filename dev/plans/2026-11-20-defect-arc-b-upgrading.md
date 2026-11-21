@@ -511,3 +511,56 @@ def test_a_renamed_wrapper_restored_after_retiring_is_finalized(tmp_path, capsys
     assert _upgrade(tmp_path, "--finalize", "CLAUDE.md", "--force") == 0
     assert "adopter_deleted" not in _wrapper_record(_lock(tmp_path))
 ```
+
+## Code review -- Claude Opus 5.5 (`claude-opus-5-5`) (Security Review) -- 2026-11-20
+
+Reviewed commit: `1dbdaa1e12e23dfc1fb2f7e8ca21dcee343f3140`; range `ecc1a913..HEAD` on `arc-b-impl` (last code commit `55015944`).
+**Obligation**: the Security Review the heavy tier adds at the code stage. Status stays `revising-code`.
+
+**Verdict: REVISE, two blocking findings** (the usual review's finding 1, and one of mine). The two new routes add little authority. A lock edit can excuse only the one wrapper record. The heal can only swap a setting for a fixed Cairn path, and only in files nobody edited.
+
+**Foundations**
+1. **Should this happen as framed?** Yes. `cmd_upgrade` checks every `dst` and `base_cache` (printable, contained, no drive or `..`) before either command runs; the heal writes only rows of `LAYOUT_INSTALLS`, through `_assert_safe_write` and `_write_by_replacing`. -- `upgrade.py` 5062-5066, 4642-4747.
+2. **Best alternative.** None safer. Excusing a deleted file by hand-editing the lock already works by deleting its record, which upgrade then plans back in. The new key adds only "do not re-add the wrapper". -- `verify_integrity.py` 417-482.
+3. **What would show it wrong.** I tried: a token name holding a terminal escape (printed raw, finding 2); a drive-relative wrapper `dst` (finding 4); the usual review's renamed-wrapper restore, also with `--finalize VENDOR.md` (both fail before its fix, pass after); the three tampered-lock controls. -- probe tests in a `git archive` copy.
+
+**Findings**
+1. **Blocking: I agree with the usual review's finding 1, its fix and its test.** The fix only stops honouring the key once a wrapper file is back, so the installer checks more, never less. `verify_integrity` still excuses the record until `--finalize`. The restored file is not yet in the lock, and `verify_integrity` never checks unrecorded files, so nothing recorded is hidden.
+2. **Blocking.** `upgrade --heal-layout` prints `Set <name> to ...` with the token name taken raw from the lock. A name holding an escape sequence reaches the terminal. S1 is untrue until this closes, and `_contained_lockfile_path` refuses such names for paths for exactly this reason. Fix and failing test below. Every `dst` the heal prints is already checked; the usual review's finding 2 needs nothing more.
+3. Non-blocking. The heal reads ancestors and project files with no size limit. It matches the merge-ancestor read the plan names.
+4. Non-blocking. On Windows, `verify_integrity` accepts a retired wrapper record with `dst: C:x.md` (OK), but upgrade refuses the whole lock (exit 2). This excuses only the wrapper record. Upgrade is the stricter of the two.
+
+**Checked, holds.** `old_proved` now accepts only a verbatim file whose bytes equal a blob from Cairn's own history. Before this change, a lock writer could already get that by setting `base_hash`. The shallow check uses an allowed helper form (`git_read.py` 55); if it fails, the plan gives the old text. A heal stopped part-way is finished by a second run. `adopter_deleted` is not checked by the dispatcher's record-key check, which reads only runner and policy records. Once findings 1 and 2 are fixed, S1 to S5 hold.
+
+**Implementers' choices and tests.** I agree with the usual review: the choices are sound and the tests are worth their runtime.
+
+**Bounding**: ACCEPTED once findings 1 and 2 are fixed. The joined run stays homed in `dev/PLANNING.md`, "What the joined run owes".
+
+**Not covered.** Linux, links and file modes; Git before 2.31; the 40-file groups; the prose gates for `install/UPGRADE.md`. **Elapsed**: unknown. **Tokens**: unknown.
+
+### Exact code that closes finding 2 (Security Review)
+
+In `install/_scaffold/upgrade.py`, `_layout_heal_findings`, replace
+`    for name, value in settings.items():` followed by `        for _, _, old, _, _, new in _LAYOUT_MOVES:` with
+```
+    for name, value in settings.items():
+        if not (isinstance(name, str) and re.fullmatch(r"\w+", name, re.ASCII)):
+            continue  # not a name a template can hold; never printed
+        for _, _, old, _, _, new in _LAYOUT_MOVES:
+```
+Test to add at the end of `tests/test_upgrade_layout_migration.py`; command `python -m pytest "tests/test_upgrade_layout_migration.py::test_heal_layout_prints_no_token_name_from_the_lock_that_is_not_plain"`. Run in a `git archive` copy, it fails now (`'\x1b' is contained here`) and passes with the fix. With both this fix and the usual review's fix, that file gives 20 passed, 2 skipped and the host's one known failure, and `tests/test_retire_wrapper.py` with its added node gives 11 passed.
+```python
+def test_heal_layout_prints_no_token_name_from_the_lock_that_is_not_plain(layout, capsys):
+    _, target, _ = layout
+    _claim_check_tree(layout)
+    lock = scaffold.read_lockfile(target)
+    lock["tokens"]["evil\x1b]0;x\x07"] = "python scripts/claim_check.py"
+    _put(target, LOCK, json.dumps(lock).encode("utf-8"))
+    _commit(target, "a token name holding a terminal escape")
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    assert "\x1b" not in capsys.readouterr().out
+    lock = scaffold.read_lockfile(target)
+    assert lock["tokens"]["claim_check_command"] == "python dev/tools/claim_check.py"
+    assert lock["tokens"]["evil\x1b]0;x\x07"] == "python scripts/claim_check.py"
+```
