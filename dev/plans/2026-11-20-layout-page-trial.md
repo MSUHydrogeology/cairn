@@ -1,7 +1,7 @@
 # Plan: trial of the code layout page on modflow_tools
 
 **Source proposal**: `dev/proposals/archive/2026-11-20-claude-code-layout-page.md`
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/conventions.md
