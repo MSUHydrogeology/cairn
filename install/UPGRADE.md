@@ -105,7 +105,7 @@ From 0.9 the documentation plan file is `dev/DOCUMENTATION_PLAN.md`; a project i
   3. git add dev/.cairn/cairn-lock.yml, then git commit
 ```
 
-4. Links in your own files are not changed. Search them for `docs/DOCUMENTATION_PLAN.md` and point each at `dev/DOCUMENTATION_PLAN.md`. Text you pasted into the `documentation-discipline` or `documentation-tier-home` slots is yours and is not rewritten.
+4. Links in the files you wrote yourself are not changed. Search them for `docs/DOCUMENTATION_PLAN.md` and point each at `dev/DOCUMENTATION_PLAN.md`. Do not edit files Cairn installed; the ordinary upgrade corrects them, and an edit to one makes `verify_integrity` fail until you run `--finalize` on it. Text you pasted into the `documentation-discipline` or `documentation-tier-home` slots is yours and is not rewritten.
 
 The command checks that the file is at the new place and not the old, then changes one field of one lockfile record and nothing else. If it refuses, its message says what to do. Run it again after you fix the cause: a second run prints `Nothing to record` and changes nothing. The ordinary `--stage` and `--apply` merge template changes into the file at whichever place the lockfile names, so you may run them before or after these steps.
 

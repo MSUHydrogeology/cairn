@@ -49,8 +49,9 @@ STEPS = [
     "  2. python install/scaffold.py upgrade --target <repo> --documentation-plan-moved",
     "  3. git add dev/.cairn/cairn-lock.yml, then git commit",
 ]
-LINKS = ("Links in your own files are not changed: search them for "
-         "docs/DOCUMENTATION_PLAN.md and point each at dev/DOCUMENTATION_PLAN.md.")
+LINKS = ("Links in the files you wrote yourself are not changed: search them for "
+         "docs/DOCUMENTATION_PLAN.md and point each at dev/DOCUMENTATION_PLAN.md. "
+         "Do not edit files Cairn installed; the ordinary upgrade corrects them.")
 MOVED = "--documentation-plan-moved"
 
 
