@@ -1,7 +1,7 @@
 # Plan: Defect arc H, the meter reads a real Claude log folder
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -39,7 +39,7 @@ seen.add(info["identity"])
 
 So a file with a second name is read once, and only if it also passes the stricter `profile` access test, which refuses any other account's right to write it. The reader's `before["links"] != 1` test in `_WindowsApprovedLineStream.__iter__` is removed; its directory and volume tests stay. A refused file cannot reach the reader: the walk raises, so the refresh stops before any read. What still ties the file that is read to the file the walk accepted: `_check_stream_identity` (volume and file id, at open and at close), the reader's own `ancestor` access test, and the walk's `verify` after all reads.
 
-*For Security Review.* The old refusal did two things. It kept one file from being read twice under two names: kept, by `seen`. And it was the only thing that stopped another account from planting, inside the log folder, a name for a file the user owns but that account can write: kept, by the `profile` test. A second name outside the folder gives a reader no content the log does not already hold. The owner and access-list tests on every file are untouched. The `hardlink` case (both names inside the folder) is still refused. A second name in another approved folder is read twice, and `_merge_event_batches` keeps one event for each key. Measured on the Windows Server machine with the meter's own `check_acl`, reading no file's data: all 16 logs with two names, and all 120 with one, pass the `profile` test.
+*For Security Review.* The old refusal did two things. It kept one file from being read twice under two names: kept, by `seen`. And it was the only thing that stopped another account from planting, inside the log folder, a name for a file the user owns but that account can write: kept, by the `profile` test. A second name that the user's own app made gives a reader no content the log does not already hold. A name that another account planted for a file of the user's that it can read but not write is no longer refused: it can add only the user's own real records, and a record counts toward a project only when the folder it names is that project's. The owner and access-list tests on every file are untouched. The `hardlink` case (both names inside the folder) is still refused. A second name in another approved folder is read twice, and `_merge_event_batches` keeps one event for each key. Measured on the Windows Server machine with the meter's own `check_acl`, reading no file's data: all 16 logs with two names, and all 120 with one, pass the `profile` test.
 
 **(d) Reply times.** In the merge loop of `read_records`, around the call `_merge_normalized_event(merged[key], event)`:
 
@@ -299,3 +299,20 @@ I ran the time test once: passed. `cmp` printed nothing; `verify_integrity.py` r
 **Not covered**: whether Windows lets an account link a file it cannot write (not tested); the Windows-only tests; real logs; Mac and Linux.
 
 Elapsed time: unknown. Tokens: unknown.
+
+## Code-review response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-21
+
+Both code reviews accepted the change, and neither raised a blocking finding. Status is now `ready-to-archive`.
+
+Usual review:
+1. Finding 1 (the time test does not set text order against instant order): fixed. The third copy's time is now written with an offset, so it is the latest instant though its text sorts first. Run once: passed.
+2. Finding 2 (the native stage would not catch a file read twice): no change. The unedited `hardlink` case and the third planted case hold that refusal.
+3. Finding 3 (the native stage has passed nowhere since the change): it stands. Home: the certification run on the Windows machine.
+
+Security Review:
+1. Finding 1 (a name planted for a file of the user's that another account can read but not write is no longer refused). Its question, refuse it in a later plan or accept it and correct the plan's sentence: accepted, and the sentence in (c) is corrected. Such a name can add only the user's own real records, and a record counts toward a project only when the folder it names is that project's, so nothing can be invented or moved to another project.
+2. Finding 2 (the reader's link test is also gone from the read of the Git helper's own source): no change; its SHA-256 check holds it, as the review says.
+
+Not run for this response: any test but the one named above.
+
+**Elapsed**: unknown. **Tokens**: unknown.
