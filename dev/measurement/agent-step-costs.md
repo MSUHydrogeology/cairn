@@ -104,8 +104,10 @@ runs cost machine time, not tokens, and are listed separately.
 | | usual plan review | Medium | 184,915 | 5 | revise, 2 blocking |
 | | Security Review | High | 139,770 | 5 | revise, 1 blocking |
 | | revision for both reviews, by the plan's agent | Medium | 121,523 | 2 | folded; one short Security Review due |
+| Arc F, stale comments | plan written from a brief, by the plan's agent | Medium | 145,036 | 4 | opened |
+| Three-host certification | facts gathered for the proposal, by a reader | Medium | 136,098 | 4 | note written; 8 of 9 items answered |
 
-Total for the day so far: 12,050,650 tokens across 80 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 12,331,784 tokens across 82 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
