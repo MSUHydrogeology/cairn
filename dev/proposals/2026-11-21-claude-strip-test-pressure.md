@@ -326,3 +326,23 @@ Security read:
 Checked after the fixes: the three test files that compare copies, once, 49 passed; the claim check, the link check and `check_cairn` on each of the eleven changed files; `cmp` of the two copies of the session-start skill prints nothing; the always-loaded files hold 1,577 and 1,478 words against limits of 2,000 and 1,500. Not checked: the files that neither read covered.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation verification -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+The edits are merged into `0.9-dev` at `8067d2df`. Thirty-one text files changed, in Cairn's own tree and in the copies that ship.
+
+**Who did what.** Five medium-tier agents made the edits by exact replacement, each on its own files, from the inventory's rows; the appendix records what each row became. Strategy made three edits for consistency and applied the Security read's fixes. A fresh reviewer read the whole diff against section C and accepted it. A Security reviewer read the changed review rules and found two faults, both closed in its exact words (the response above).
+
+**Checked directly.**
+- The three test files that compare copies, run once on the branch after it took in `0.9-dev`: 49 passed.
+- `install/verify_integrity.py --target .` reports OK for 70 files on the merged tree. Seven installed files had changed, and Cairn's own lock was refreshed for them alone in `dace7d8d`.
+- The claim check, the link check and `check_cairn` on each of the 33 text files the merge changed: no flag. `git diff --check` is clean.
+- The always-loaded files hold 1,577 words against a limit of 2,000, and 1,478 against 1,500.
+- The files that stay whole are untouched: no file with `security` in its name, nor `dev/rules/protected-surfaces.md`, `dev/rules/certifying-runs.md`, nor either copy of the testing module (the merge's list of files).
+- One conflict arose when the branch took in `0.9-dev`, in this file: both sides had appended to it. The sections are kept in the order they were written.
+
+**Not checked.** The reader's search was not run again over all 57 files. The diff read searched the 31 edited files for the old trigger words and did not read the appendix row by row. Neither read covered the 26 files of the inventory that the change did not touch.
+
+**Still owed, each with its home.** Lowering the test runner's own limit of 40 files, which is in a protected file: the next proposal, `dev/PLANNING.md`, "Small fixes are tested for hours". The testing module is settled by the Maintainer's second Decision above; nothing is owed on it.
+
+**Elapsed**: unknown. **Tokens**: unknown.
