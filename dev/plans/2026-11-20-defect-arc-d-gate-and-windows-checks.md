@@ -200,3 +200,27 @@ Both reviews said REVISE. Every blocking finding is applied with its reviewer's 
 **Not checked**: no code or test was run. The roadmap edits in `dev/PLANNING.md` are Strategy's and are not made here. The two edits the "Owners" paragraph names must be committed before archive.
 
 Elapsed about 10 minutes; tokens unknown.
+
+## Implementation record -- Claude Haiku 5.5 (Implementation, Low) -- 2026-11-20
+
+BASE: ecc1a913. Status left at implementing.
+
+Commits: 29121797 Step 0 (header); 9c20accb D1-1 (new-file scan, one node); b2286566 D1-2 (record number asserted); 8feca392 D1-3 (_report_file, one changed line, four nodes); c9220e61 D1-4 (one paragraph).
+
+Nodes (this Windows host):
+- D1-1 new node: fails before and after with "the ssh-keygen path /usr/bin/ssh-keygen is not absolute". Every test using this helper fails the same way here, so the scan is not exercised; the Mac run is the check.
+- D1-2 node: BASE refusal holds "record <n>:", so no stop. 6 of 6 pass after.
+- D1-3 Windows node: "invalid test-file identity" before, passes after. The other-file and ".." nodes fail before (the same backslash refusal) and pass after. The off-Windows node is skipped here.
+
+Probes (undone): D1-1 tests/ excluded: host message, inconclusive. D1-2 number + 1: fails. D1-2 hostile src on record 1, planted record valid: fails (scratch copy). D1-3 _report_file values: as Detail says.
+
+Whole files, against BASE:
+- test_ceremony_review_report.py: 75 failed, 1 passed; BASE 74 and 1. The extra id is the new node; all host messages.
+- test_fork_advisory.py: 2 failed, 12 passed; BASE 3 and 11. The two symlink cases are WinError 1314 on both. BASE's extra failure (test_node11) passed on repeat.
+- test_release_members_contract.py: 8 or 9 failed; BASE 8. The extra id, test_minimal_report_passes, is timing and failed once at BASE too.
+
+Differences from the plan: none in code. The planted record is the last in the lock, so D1-2 probe 2 put the hostile src on record 1.
+
+Not run: the other selected files (test_gate_preflight, test_gate_reanchor, test_oracle_activation, test_reanchor, test_reanchor_driver_disclosures, test_repin, test_repin_ceremony, test_security_marker); the Mac run; any freeze, record, join or signing. Not confirmed here: the D1-1 node and the D1-3 off-Windows node.
+
+Elapsed about 20 minutes (18:55 to 19:15, host clock). Tokens: unknown.
