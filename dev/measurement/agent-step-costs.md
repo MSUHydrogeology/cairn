@@ -131,6 +131,15 @@ A's ten files that name the upgrade notes: 27 to 29 minutes a run, three runs.
 Plan A in all: about 3.6 hours of machine time for tests, against 0.81 million
 subagent tokens in five runs.
 
+Plan E, the documentation plan moves (2026-11-21, from its build record): four groups of
+10, 39, 5 and 10 test files, each run before and after the change on both hosts. On the
+Windows Server machine the four took 6,468 seconds before and 6,925 after; in the Linux
+subsystem, 2,940 and 3,070. That is 5.4 hours of machine time for one comparison. The
+39-file group took 63 to 67 minutes a pass on Windows and about 30 in the Linux subsystem.
+It is selected because the change touches the upgrade script, which 38 test files name.
+On Windows 268 of that group's 1,771 tests failed before any change, which is why each
+run is made twice and compared.
+
 ## What the day's numbers show
 
 Measured:
