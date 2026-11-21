@@ -225,3 +225,32 @@ Both reviews said REVISE. Every blocking finding is applied with its reviewer's 
 Not checked: no code or test run; the new function's name and the `_wrapper_retired` details against the code.
 
 **Elapsed**: about 15 minutes. **Tokens**: unknown.
+
+## Implementation record, chunks C1 and C2 -- Claude Haiku 5.5 (Implementation, Low) -- 2026-11-20
+
+**BASE**: `ecc1a913`. Step 0 (`1b0510a7`) set the header to implementing.
+
+**Commits**
+- `68dc7726` C1: root `.gitattributes` (byte copy); `_git_read_binding_refusal` and its two uses; calm first-install line.
+- `df96fe64` C2: final layout stage stops writing the three keys; `_cmd_heal_layout` and `--heal-layout`.
+
+**Tests** (node, result)
+- `test_skipped_vendor_absent_is_a_calm_no_action_line` (changed): pass.
+- `test_unbound_git_reader_names_its_cause`, two cases (new): pass.
+- `test_layout_migration_resumes_on_either_side_of_lock` (changed): pass.
+- `test_heal_layout_removes_keys_from_moved_records_only` (new; covers "Nothing to heal."): pass.
+- `test_heal_layout_refuses_a_dirty_lock` (new): pass.
+- `test_layout_migration_refuses_or_reconciles` (unchanged reconcile test): pass.
+
+**Whole files**
+- `test_first_session_report.py`: 3 passed.
+- `test_upgrade_layout_migration.py`: 8 passed, 1 skipped (links), 1 failed. The failure, `test_packaged_source_only_needs_history_for_legacy_paths`, is a PermissionError in `shutil.rmtree` of `.git` on the first line of the test. The BASE output shows the same test and message.
+
+**Differences from the plan**
+- A missing helper file counts as "not regular", so it gets the second text. The plan does not say.
+- The dirty-lock message and the `--heal-layout` help text are my wording. The plan gives neither.
+- `--plan` prints `<repo>` literally, as the plan's text does.
+
+**Not run**: the selections, the developmental checks, the Linux runs, `test_ast_attest.py` (expected red). C3 to C5 not touched.
+
+**Elapsed**: about 30 minutes (first claim 18:58, last commit about 19:15). **Tokens**: unknown.
