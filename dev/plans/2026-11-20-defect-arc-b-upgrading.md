@@ -1,7 +1,7 @@
 # Plan: Defect arc B, upgrading
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -450,3 +450,64 @@ A caution about the Linux evidence. For part of the evening two Linux test strea
 **Not run.** The 102-file selection as one run; the canonical runtime (Python 3.13 on the Mac); a real adopter's upgrade. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
 
 **Elapsed**: 4 hours 26 minutes from status implementing (18:57) to this record, by commit times; test runs took most of it. **Tokens**: implementers 190,900, 232,591 and 243,761; review point 158,151 and 136,088; the coordinating session's own use is not visible to it.
+
+## Code review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`) (usual reviewer) -- 2026-11-20
+
+Reviewed commit: `e4cf7523a2096c5dcca9fe327e404016cede38f5`; range `ecc1a913..HEAD` on `arc-b-impl` (last code commit `55015944`).
+**Obligation**: the usual final code review; a Security Review pass follows. The change raised a blocking finding, so the header Status is `revising-code`.
+
+**Verdict: REVISE, one blocking finding.** The change does what C3, C4 and C5 say, with the messages, names, exit codes and wiring they give. One printed promise fails for a renamed wrapper.
+
+**Foundations**
+1. **Should this happen as framed?** Yes. The two `_wrapper_retired` copies agree (parts, order, the four excluded names); `verify_integrity` is stricter, since it checks the hash, containment and `..` first. No other rule weakens. -- `upgrade.py` 1864-1898, `verify_integrity.py` 463-473.
+2. **Best alternative.** None simpler. The key on the existing record keeps `VENDOR.md` from being re-added as a new file. -- `upgrade.py` 4750-4806.
+3. **What would show it wrong.** I tried: the retire route on a renamed wrapper, then restore and finalize (it fails, finding 1); tampered records on a script, `AGENTS.md` and two wrapper records (the three controls hold); the heal on an edited file (kept and named); `ast.dump` equality of `config.py`, `lockfile.py` and `__init__.py` against the base (equal). The root-level `.md` records an install can hold are only the five shipped ones, four of them excluded. -- scratch installs under a temp folder; `tests/test_retire_wrapper.py` 10 passed; `tests/test_upgrade_layout_migration.py` 19 passed, 2 skipped, 1 failed (the host's `rmtree` failure, same id as the base).
+
+**Findings**
+1. **Blocking.** The retire message and `install/UPGRADE.md` say "restore the file and run `upgrade --finalize <NAME>`". With the lock recording `VENDOR.md` and the adopter's file named `CLAUDE.md` (the plan's own example), `--finalize CLAUDE.md` exits 1 ("not tracked in the lockfile"), `--plan` still prints `up-to-date: VENDOR.md`, and the restored file is never merged or finalized. `_wrapper_retired` looks only at the recorded name. Reproduced; the fix and a test are below.
+2. Non-blocking. Heal messages echo lock text: `kept <dst>`, `Rewrote <dst>` and `Set <name> ...`. The Security Review should judge whether they need `_plain`.
+3. Non-blocking. With a token to fix, every non-verbatim record with an unreadable saved ancestor prints "could not be read safely", though it does not name the token. Noise, not harm.
+4. Non-blocking. `--plan` prints the heal hint only for lock keys, not for a token alone. The hint says "lock keys", so this is sound; the apply message covers the token.
+
+**Implementers' choices.** All sound: the refusal texts, `_wrapper_record_fits` split out, the key dropped by `--finalize` when the file is back, the hint on `missing:`, and the pair return of `_layout_heal_findings`. None needs the author or the Maintainer.
+
+**C3.** Moves newly planned are verbatim files whose live bytes equal the blob from Cairn's own history; each one is a byte-equal release file. The shallow text is given only when the history lookup found nothing and the checkout is shallow; its Git form is on the helper's allowed list (`git_read.py` line 55). **C4.** The heal can rewrite only a file whose bytes equal the old or the new render of its saved ancestor, read and written by the protected routines; files first, lock last, so a stopped run finishes on the second run. An edited file is kept and named.
+
+**Review-point fixes.** The one clause is right. The five nodes are sound. The private-path node stays: no public entry shows a drifted path.
+
+**Tests.** Each new node goes through `scaffold.main` or `verify_integrity.main` and fails under its fault. The long text pins are what C1 and C3 ask for. The retire file covers the criterion's refusals but not finding 1.
+
+**Cairn's own lock.** The commit deletes 105 lines (35 records, three keys) and nothing else; `verify_integrity --target .` reports OK for 70 files. **Protected files.** Changed symbols are the four the plan names; no other frozen file is touched.
+
+**Bounding**: ACCEPTED once finding 1 is fixed. The Linux runs and the joined run stay open in the coordinator's record, homed at `dev/PLANNING.md`, "What the joined run owes".
+
+**Not covered.** Security Review questions; the Linux subsystem and links; Git before 2.31; a `dst` holding a NUL byte; Windows drive-relative `dst` values; the prose gates; the 40-file test groups. **Elapsed**: unknown. **Tokens**: unknown.
+
+### Exact code that closes finding 1
+
+In `install/_scaffold/upgrade.py`, `_cmd_finalize_lockfile`, replace
+`        if _wrapper_retired(rec, files, target):` with
+```
+        if (_wrapper_retired(rec, files, target)
+                and _resolve_vendor_wrapper(target, mapped) is None):
+```
+and in `_compute_upgrade`, replace `        if _wrapper_retired(rec, lock.get("files", []), target):` with
+```
+        if (_wrapper_retired(rec, lock.get("files", []), target)
+                and _resolve_vendor_wrapper(
+                    target, {r["dst"] for r in lock.get("files", [])}) is None):
+```
+`verify_integrity.py` stays as it is, so the two copies of the rule stay equal. Test to add at the end of `tests/test_retire_wrapper.py`; command `python -m pytest tests/test_retire_wrapper.py -k renamed_wrapper_restored`. It fails now (`assert [] != []`) and passes with the fix; the other 10 nodes pass with the fix (run in a `git archive` copy).
+```python
+def test_a_renamed_wrapper_restored_after_retiring_is_finalized(tmp_path, capsys):
+    _install(tmp_path)
+    (tmp_path / WRAPPER).rename(tmp_path / "CLAUDE.md")
+    (tmp_path / "CLAUDE.md").unlink()
+    assert _upgrade(tmp_path, "--retire-wrapper", "CLAUDE.md") == 0
+
+    (tmp_path / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
+    capsys.readouterr()
+    assert [p.kind for p in _plans(tmp_path) if p.dst == "CLAUDE.md"] != []
+    assert _upgrade(tmp_path, "--finalize", "CLAUDE.md", "--force") == 0
+    assert "adopter_deleted" not in _wrapper_record(_lock(tmp_path))
+```
