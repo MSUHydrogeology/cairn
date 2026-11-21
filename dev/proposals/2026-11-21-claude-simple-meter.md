@@ -95,3 +95,42 @@ Any text from a log in the summary or the record. A summary found outside a proj
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Claude Sonnet 5.5 (Reviewer) -- 2026-11-21
+
+```
+Reviewed commit: e04c889e295d2ecf8ff0af7d5c2c46a4acc7f268
+```
+
+**Tier**: usual
+**Findings**: raised (4 blocking, 6 non-blocking)
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The counting code that stays (`read_records`, `_safe_alias`, `_digest`, `_project_export` over a validated ledger) already limits what leaves a log to ids hashed, times, token counts and an alias-shaped model name -- `dev/tools/meter.py` lines 1047, 6685-6884, 3719-3827. The checks that go guard the account's own files.
+2. **Best alternative.** Plan I, or a lighter cut that keeps the consent file's owner check. The second is a real middle path, but it is the check that refused on the Windows Server machine, so the Maintainer's words decide it.
+3. **What would show it wrong.** A summary or record holding text, a name or a path from a log; or totals that differ from an independent count. Neither follows from the cut as drafted, if B1 and B4 are fixed.
+
+The two promises mostly live in code that stays. Two do not: the consent file's integrity, and the error text of a failed read.
+
+**Blocking**
+
+- **B1. Promise A is not "unchanged".** The check of who owns and may write `~/.cairn/meter.json` (`_verify_private_home`, `_private_regular_file`, Windows `read_config`) is what makes the file the user's own words. Add to A: "The consent file's content is still checked in full; who owns it and who may write it is no longer checked, so a consent file written by another account is trusted as written." Say the same in S2 and "What it gives up".
+- **B2. "Closed list" is false for models.** `_safe_alias` accepts any string of 80 characters or fewer made of letters, digits, `.`, `_` and `-`. Replace in A: "names of models, each limited to those characters and 80 long, and the tool's name from a fixed list".
+- **B3. The pinned-list account is incomplete.** The list has 63 `nt` rows, 35 of them the meter's, and 362 `posix` rows, 52 of them the meter's. The count guard is `tests/security_manifest.py` line 689, quoted in `tests/test_security_check.py` line 1306. Replace the middle of F: "Their 35 `nt` rows leave the pinned list, as do the `posix` meter rows whose test goes or now runs on all three platforms; the two counts in `tests/security_manifest.py` (now 63 and 362), the policy fingerprint, and the guard that `tests/test_security_check.py` quotes follow."
+- **B4. Errors can carry paths.** A plain `open` failure's text names the file. Add to B: "A failure maps to one of the closed reasons; no system error text, path or file name is printed or stored."
+
+**Non-blocking**
+
+- N1. D: the Git read proved the folder is a clone of the listed repository. For Claude records it was the only tie beyond the folder's text. The labels `current_local_verified` and `proven` stay but no longer verify; say so in the README.
+- N2. Not covered by A to F: the project's `dev/intents.jsonl` (work claims; skip a link); `rebuild` and `refresh --report`; the bare status route; the summary's mode (today 0600, ignored by Git); and whether a missing `dev/measurement` is created (today it fails).
+- N3. C: say how a stale lock after a crash clears; that `os.replace` can fail on Windows while the summary is open; that a junction is found by its reparse attribute; and that Windows has no user-only mode.
+- N4. Say whether the check that a resumed log's earlier part is unchanged stays.
+- N5. Documents: add `templates/core/dev/measurement/README.md`, `tests/security_manifest.py`, and the refresh of `dev/.cairn/cairn-lock.yml`.
+- N6. Size: one plan of five chunks is believable; the risk is rewriting the kept tests' set-up, not deleting.
+
+**Not covered**: real logs and machines (barred), running any test, `release/security_check.py`, the Antigravity reader, and the Security Review questions.
