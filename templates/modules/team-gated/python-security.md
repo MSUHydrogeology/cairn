@@ -177,8 +177,9 @@ Cairn's deliberate `exec` of verified bytes, and one XML parse in `pulse.py`
 (Bandit B314), which Cairn allows in its own release gate.
 
 Unlike the gate scripts, this file is not hash-checked by the lock. The printed
-threshold is how a change to it is seen. A Bandit status in the summary with no
-`[threshold: ...]` suffix means the default: any finding fails.
+threshold is how a change to it is seen. A clean or findings Bandit status with no
+`[threshold: ...]` suffix means the default: any finding fails. A degraded status
+never carries the suffix and never passes.
 
 ### `python_package` — single contained package (v1)
 

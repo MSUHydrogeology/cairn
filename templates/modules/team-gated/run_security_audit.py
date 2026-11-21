@@ -899,10 +899,10 @@ def load_bandit_policy(repo_root: Path) -> BanditPolicy:
     default = BanditPolicy("low", "low", False)
     path = repo_root.joinpath(*_POLICY_PATH_PARTS)
     try:
-        path.lstat()
-    except FileNotFoundError:
-        return default
-    try:
+        try:
+            path.lstat()
+        except FileNotFoundError:
+            return default
         if path.is_symlink() or not path.is_file():
             raise _policy_refusal(
                 "it is not a regular file (a link, folder or special file)")
@@ -998,7 +998,6 @@ def run_bandit_pass(pkg: Path, repo_root: Path) -> tuple[str, int]:
     conf_min = _BANDIT_RANK[policy.min_confidence.upper()]
     failing = sum(1 for sev, conf in ranked if sev >= sev_min and conf >= conf_min)
     below = len(ranked) - failing
-    print(run.stdout)
     print(f"[bandit] {failing} finding(s) at or above the threshold (these fail "
           f"the audit); {below} below it (printed above; they do not fail the "
           "audit).")
