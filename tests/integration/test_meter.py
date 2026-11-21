@@ -6614,7 +6614,7 @@ INVALID_LEDGER_EDITS = {
 @pytest.mark.parametrize("name", sorted(INVALID_LEDGER_EDITS))
 def test_hand_edited_ledger_is_refused_as_invalid(tmp_path, monkeypatch, name):
     ledger = ledger_with_cursors(tmp_path, monkeypatch)
-    assert meter._load_ledger(as_bytes(ledger), CLOCK)["schema"].endswith("/5")
+    assert meter._load_ledger(as_bytes(ledger), CLOCK)["schema"].endswith("/6")
     INVALID_LEDGER_EDITS[name](ledger)
     with pytest.raises(meter.Unavailable) as refused:
         meter._load_ledger(as_bytes(ledger))
