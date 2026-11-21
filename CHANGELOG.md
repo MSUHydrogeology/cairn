@@ -45,6 +45,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 - **Fixed: Stale paths and commands in the docs.** The quickstart's Windows steps, the goodnight prune command, the session-start step for a missing `python`, the upgrade notes and several older path names now match the layout Cairn 0.8 installs, and the prose check passes on a fresh clone. ([plan](dev/plans/archive/2026-11-20-defect-arc-a-stale-text.md))
 
+- **Fixed: Upgrades from 0.7.0 or 0.8.0 say what is wrong, and repair what they can.** A Windows clone with changed line endings and a shallow Cairn clone each get their own message, and the first install says what to do when the harness folder is missing. `upgrade --heal-layout` removes lock keys that the security verification refused after the 0.8 move, and corrects a `claim_check_command` setting that still names an old path. `upgrade --retire-wrapper NAME` records a vendor wrapper such as `CLAUDE.md` that you deleted on purpose. Cairn's own repository gains a `.gitattributes` that keeps text files LF on a fresh clone. ([plan](dev/plans/2026-11-20-defect-arc-b-upgrading.md))
+
 ## 0.8.0 — 2026-11-19
 
 The main change: everything Cairn installs in a project now lives in one `dev/` folder, apart from a few root files such as `AGENTS.md` and `RULES.md`.

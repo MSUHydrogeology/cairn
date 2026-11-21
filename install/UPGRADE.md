@@ -59,6 +59,8 @@ staged. Run it from a full clone of Cairn, with all of its history: the
 installer checks each old copy against that history, and a shallow clone
 cannot supply it.
 
+If the move says `unproved ancestry; the Cairn checkout is shallow, so the release this copy came from is not in it`, your Cairn checkout is shallow. It also prints "Fetch the full history in the Cairn checkout (git fetch --unshallow --tags), then run this again." Run that fetch in the Cairn checkout, then run the command again.
+
 1. `python install/scaffold.py upgrade --target <repo> --plan` lists each move
    as `action: old -> new`. It writes nothing. A `blocked:` line that says
    "unproved ancestry" means the installer could not match an
@@ -79,6 +81,7 @@ cannot supply it.
    that digest, adding `--to <id>` if the line shows it. It ends with
    `Layout migration complete.`
 5. Now follow [The workflow](#the-workflow).
+6. If `--plan` prints `Run python install/scaffold.py upgrade --target <repo> --heal-layout to remove lock keys the security verification refuses.`, run `upgrade --target <repo> --heal-layout`, then commit `dev/.cairn/cairn-lock.yml`. The same command also fixes a setting that still names a pre-0.8 path. Its `Nothing to heal.` line means there is nothing to do.
 
 If a run stops partway, the next `upgrade` command says where the unfinished
 move is; resume it with `--apply --migration-receipt <digest>`.
@@ -409,7 +412,7 @@ and skills files; additions to selected modules follow their existing selection.
 
   If `--plan` lists files that differ only in line endings, Git converted saved ancestors or scripts when it checked your project out (`core.autocrlf`). Re-clone with `git clone -c core.autocrlf=false` and run `--plan` again; do not edit `dev/.cairn/base/`.
 
-  The same applies to the Cairn checkout you run the upgrade from. On Windows, Git for Windows may set `core.autocrlf=true`, which gives Cairn's own pinned helper files CRLF line endings. The upgrade then stops with `use a Cairn Git checkout with the legacy installer history to verify these old copies`, although the clone has its full history. Clone Cairn with `git clone -c core.autocrlf=false` as well.
+  The same applies to the Cairn checkout you run the upgrade from. On Windows, Git for Windows may set `core.autocrlf=true`, which gives Cairn's own pinned helper file `templates/skills/_lib/git_read.py` CRLF line endings. The upgrade then stops and prints: "Cairn's copy of templates/skills/_lib/git_read.py has Windows line endings, so the installer cannot trust it. Git did this when it cloned Cairn with core.autocrlf=true. In the Cairn checkout run `git config core.autocrlf false`, delete that file, and run `git checkout -- templates/skills/_lib/git_read.py`. Then run this command again. A new clone made with `git clone -c core.autocrlf=false` also works." The cure is the one that message gives: change the setting, delete the file, restore it from Git, and run the command again. Cairn's own repository now carries a `.gitattributes` file that keeps these files LF when you clone it fresh, so a new clone does not need the cure.
 
   For an invalid ancestor, keep the original cache untouched. Compare the
   `.ours` and `.theirs` pair, reconcile the original file by hand, then use
@@ -695,6 +698,25 @@ it from the project root, then run `upgrade --stage` and review the template
 before applying. Keep the saved history. A destination already tracked under a
 different source, a link, a folder or another ineligible path needs manual
 resolution; collision adoption does not cover those cases.
+
+### If you deleted a vendor wrapper on purpose
+
+A vendor wrapper such as `CLAUDE.md` is the short file that imports
+`AGENTS.md`. Cairn installs it as `VENDOR.md` and tracks it for upgrades. If you
+deleted your wrapper on purpose, tell Cairn: its absence is then intended, and
+`--plan`, `--finalize` and `verify_integrity` stop reporting it as missing. If
+`verify_integrity` reports `missing: VENDOR.md (deleted on purpose? upgrade
+--retire-wrapper VENDOR.md)`, this is the command it means. Run:
+
+```
+python install/scaffold.py upgrade --target <repo> --retire-wrapper CLAUDE.md
+```
+
+The command prints `Retired the record of CLAUDE.md: Cairn treats its absence
+as intended. Commit dev/.cairn/cairn-lock.yml. To bring a wrapper back, restore
+the file and run upgrade --finalize CLAUDE.md.` Commit the lockfile. The command
+refuses while the wrapper file is still in the project. To bring the wrapper
+back, restore the file and run the `upgrade --finalize` line it printed.
 
 ### If `.gitattributes` meets your own
 
