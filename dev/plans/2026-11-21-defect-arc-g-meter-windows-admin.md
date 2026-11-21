@@ -1,7 +1,7 @@
 # Plan: Defect arc G, the meter runs for a Windows administrator
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -185,5 +185,33 @@ Security Review:
 Also changed, by the Maintainer's standing direction on testing of 2026-11-21 ("run the fewest tests possible to make sure it was right"): the build runs the one new test, not the whole file.
 
 Edited directly by Strategy, by exact replacement. Not run: any test.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record -- Implementation (Claude Sonnet 5.5) -- 2026-11-21
+
+Worktree `.claude/worktrees/arc-g`, branch `arc-g-impl`, cut from `0.9-dev` at f7c4498a (usage-counting work already merged; lines re-read before the edit).
+
+**Commits.** 5141720c status implementing; 14cde571 code, test, README sentence, changelog line, shipped copy; 4a40b602 lock only.
+
+**Condition as built**, in `check_acl` (`dev/tools/meter.py`), exactly as the Scope gives it:
+
+```python
+if role == "profile":
+    if owner_bytes != user_sid and not self._privileged_sid(owner_bytes, ancestor=False):
+        raise Unavailable
+elif role in {"cairn", "config", *private_roles} and owner_bytes != user_sid:
+    raise Unavailable
+```
+
+**Test.** `test_windows_profile_owner_may_be_system_or_administrators`, appended as the Security Review gives it; it needed no new import. With the change, on Windows: `1 passed, 554 deselected in 3.16s`.
+
+**Fails without the change.** I stashed only `dev/tools/meter.py` (the old condition), ran the same command once, then restored it: `1 failed, 554 deselected in 3.65s`, with `Unavailable` raised at the old owner line, on the first SYSTEM-owned profile case.
+
+**Checks.** `cmp dev/tools/meter.py templates/skills/_lib/meter.py` printed nothing. `verify_integrity.py --target .` reported OK (70 recorded files match). The lock was refreshed with the plan's `--finalize` command for `meter.py` and the README (both are recorded); its commit holds only the lock.
+
+**Not run.** The rest of `test_meter.py` and the suite (certification). The real machine and the meter itself (Strategy's check). The gate manifest hash of `test_meter.py` is left as the plan says: one HOLD for the Maintainer's next signing.
+
+**Differences from the plan.** None.
 
 **Elapsed**: unknown. **Tokens**: unknown.
