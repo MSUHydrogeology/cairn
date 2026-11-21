@@ -40,8 +40,8 @@ regular-file reading, write containment, terminal encoding and Git execution.
 Look there before adding another implementation. Keep justified standalone
 scripts, stronger specialized readers and wrappers; compare their actual
 contracts rather than matching names alone. For a demonstrated dangerous
-fork, add a narrow check in its existing test home with a failing example and
-an allowed-copy or wrapper control. This is not a universal duplicate-code ban.
+fork, add a narrow check in its existing test home, shown once to refuse one
+dangerous example. This is not a universal duplicate-code ban.
 
 At releases using this module, update the assessment in the same record with
 the map and its omissions, neighbor dispositions, endpoint growth and ranked

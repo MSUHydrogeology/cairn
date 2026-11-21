@@ -40,7 +40,7 @@ sufficiently capable agent can fill:
 * **Strategy / Research** — surveys the landscape, frames
   problems, drafts proposals, holds the long-horizon view.
 * **Implementation** — carries an accepted proposal through its
-  plan: the code, the tests, the docs.
+  plan: the code, the docs, and a test only where none covers the change.
 * **Reviewer** — a fresh reviewer who did not write the work, on the
   work's side (`dual-review.md`): it questions the work's foundations
   and answers the stage's three questions in writing. Also carries

@@ -25,8 +25,8 @@ The module's test doctrine:
 > same thing regardless of language.
 >
 > **Cross-language seams are named.** The boundary where one
-> language calls into another is a documented surface with its own
-> tests — never an implicit join.
+> language calls into another is a documented surface, with a test
+> only where no existing test covers it — never an implicit join.
 >
 > **Port stewardship.** If a language transition is in flight, a
 > port-stewardship note tracks which surfaces have moved, which

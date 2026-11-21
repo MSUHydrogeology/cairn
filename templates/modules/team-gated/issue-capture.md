@@ -61,12 +61,12 @@ Friction is **fixed where you meet it** when the defect-fix rule in
 `dev/agent_collaboration.md` > "Working tree and commits" allows it, and **captured** otherwise.
 The operational rule is stated there once, including what counts as a defect
 and as cheap; this module adds no permission. A person who meets an easy
-problem fixes it with its test and review rather than scattering unreviewed
+problem fixes it with review, and a test only where no existing test covers it, rather than scattering unreviewed
 changes through the session.
 
 The same rule binds the User Agent's **debug-from-the-user's-seat** mode and
 the Operator after switching to Implementation:
-a diagnosed fix that meets it lands with its test; one that does not is
+a diagnosed fix that meets it lands, with a test only where no existing test covers it; one that does not is
 captured with reproduction and root cause, then routed to its owning
 implementer or to the Maintainer when a decision is required.
 

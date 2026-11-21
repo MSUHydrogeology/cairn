@@ -84,8 +84,7 @@ transformation assumptions; summaries that don't expose the underlying
 data.)*
 
 Check whether safety helpers have diverged from their named homes. A narrow
-drift check needs a dangerous counterexample and a legitimate-copy or wrapper
-control; it is not proof that all other code is safe. Capabilities need cited
+drift check is shown once to refuse one dangerous example; it is not proof that all other code is safe. Capabilities need cited
 workflows or declarations, not a count of symbols.
 
 *(This lens generalizes a "Scientific Trust" lens. Keep it wherever a

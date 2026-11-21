@@ -63,9 +63,9 @@ For functional-prose changes, also ask: **Does any rule weaken or disappear?**
 This is a reading question, not a fourth Foundations answer.
 
 Each pass opens with a **Foundations** block of three lines, one answer per
-question, each ending in the file, test, line or command that backs it. Each
+question, each ending in the file, line, reasoning or direct check that backs it. Each
 answer states its point in a sentence; it may also point to a finding. Question
-3 names a forward test even when there are no findings.
+3 names what would show it wrong even when there are no findings.
  "No defects found" is allowed only with the three answers
 evidenced and the gaps named.
 Reviews are **attributed and self-committed**: a review you did not write is not
@@ -108,8 +108,8 @@ The proposal stays one file: reviews, responses and decisions are appended to it
   in the ignored dev/scratch/ folder; keep durable conclusions in existing
   records. Cite a committed task brief by path and commit.
   The proposal carries the criterion and the result, not the code behind them.
-* **Cite evidence concisely.** Point to reproducible tests or scripts and state
-  their outcome; do not copy probe inventories into lifecycle records.
+* **Cite evidence concisely.** Point to what was read or checked directly and state
+  the result; do not copy probe inventories into lifecycle records.
 * **Read by section.** Give each review, response or decision its own `##` heading, titled by what it holds and when it was written. Readers list them with `grep -n '^## ' <proposal>` and read only the sections the job needs.
 * **Appendix.** Default none. Allowed only for a table or arithmetic a reviewer must check that no cited record can hold: one separate file per proposal, `<proposal-stem>--appendix.md`, beside it, never inline. The board skips it; session start still lists it. The 1,000-word budget applies to the text at the Decision, so cut or move review additions before it.
 
@@ -190,17 +190,17 @@ slot is a review finding.)
 
 ## Evidence / verification plan
 
-How anyone will know this worked — the tests, the checks, the observation. Name
-what would falsify it.
+How anyone will know this worked — what was read, reasoned or checked directly.
+Name what would falsify it.
 
 ### Tests required
 
-For each implementation change, name its caller-visible promise and public entry point. Identify a plausible uncovered fault or extend an existing promise test; do not propose a test merely because a change exists.
+Propose a test only for a behavior that no existing test covers, and then one; a fix needs none if an existing test would have caught the fault. The rule on tests is in `dev/agent_collaboration.md` > "Verification".
 
 
 
 <!-- cairn:slot tests-tier-home -->
-(Name the project's test homes, affected behavioral nodes and public paths exercised through their real entry points.  Record speed or environment tiers, but speed alone does not establish affected coverage. The reviewed plan maps changed behavior, not a permanent fast set: `bounded` covers affected behavior and consumers; `wide` covers owning families, known integration, public paths and standing gates. Name uncertainty; never claim unknown dependencies covered, and keep known unmet checks or criteria open. Certification cannot replace a missing check.
+(Name the project's test homes. Speed alone does not establish affected coverage. Name uncertainty; never claim unknown dependencies covered, and keep known unmet checks or criteria open. Certification cannot replace a missing check.
  Fill from the project's test plan, or replace with
 `N/A: no test layout` plus the project's scoped test procedure.)
 <!-- cairn:end tests-tier-home -->
@@ -365,7 +365,7 @@ the Maintainer's words beneath them, verbatim and apart:*
 **Called by**: Maintainer -- Decision at <commit>
 
 **Foundations** (the proposal row; one line per answer, each ending in the file,
-test, line or command that backs it):
+line, reasoning or direct check that backs it):
 
 1. **Should this happen as framed?** {{should this exist as framed, and is there a better design, doing nothing included}} -- <evidence>
 2. **Best alternative.** {{the strongest, doing nothing included}} -- <evidence>
@@ -405,6 +405,4 @@ commit carries nothing else.
 ## Implementation verification -- <agent> -- YYYY-MM-DD
 
 *Append for light work only; the accepted proposal is its implementation and
-verification record.* Record the selected changed-promise checks, tested
-revision, canonical runtime, commands and results, non-pass dispositions and
-omissions. Cite reused results and their limits.  Record elapsed time and tokens, using `unknown` when unavailable.
+verification record.* Record what was read, reasoned or checked directly, the revision it applies to, any commands run with their results, and in one line what was not checked. Cite reused results and their limits.  Record elapsed time and tokens, using `unknown` when unavailable.

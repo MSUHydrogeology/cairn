@@ -166,7 +166,7 @@ implementation. The Decision sets its tier. Light work uses the accepted
 proposal as its implementation record and does not open a plan. Standard and
 heavy work retain plan triage, required reviews and checks. There is no
 parentless change-note route. Genuinely trivial work — a typo, a one-line bug
-with a failing-test reproduction, a self-contained helper, a docstring polish
+with a reproduction, a self-contained helper, a docstring polish
 — is just made, with no proposal or plan.
 
 Once accepted, a light-tier proposal has no plan or code review, regardless of

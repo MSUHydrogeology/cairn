@@ -75,7 +75,7 @@ path.
 ### Characterization testing
 
 Before changing legacy behavior, pin the *current* behavior with
-tests, so the change is visible against a known baseline. A
+a test where no existing test does, so the change is visible against a known baseline. A
 characterization test is not a correctness test — it records what
 the surface *does today*, which is exactly what a refactor must not
 silently alter.

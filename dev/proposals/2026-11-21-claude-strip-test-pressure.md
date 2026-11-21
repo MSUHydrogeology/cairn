@@ -237,3 +237,92 @@ What that settles:
 - The one row in another file that was left undecided because it leans on that module stays as it is too.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Read of the whole diff -- Claude Sonnet 5.5 (Reviewer) -- 2026-11-21
+
+```
+Reviewed commit: 38f5ba2b
+```
+
+**Range read**: `git diff 328325bb..HEAD`, 31 files of prose plus the appendix; every removed line read.
+
+**Verdict**: ACCEPT. No blocking finding; two small wording mismatches, below.
+
+**What I checked, by the brief's nine points**
+
+1. **Kept list.** Every honesty sentence, the review rules on declining a blocking finding and sending it to the Maintainer, "unsupported assertion", known-positive controls, the claim check and Security Review sentences are still there. The only removed honesty lines ("a missing smoke is unavailable, not passed") belonged to the goodnight smoke run, which the proposal removes.
+2. **Untouched files.** `git diff --stat` names no `security` file, no `protected-surfaces.md`, no `certifying-runs.md`, no `testing-discipline.md`.
+3. **Pressure left.** I searched the 31 files for: Bounding, WIDER RUN, joined integration, tier_inventory, Not run, smoke, before and after, second host, failing test, widen, mutation, positive/negative control, rerun. What remains is on the kept list or is a permitted case.
+4. **Agreement.** The rule is in full once in each collaboration copy and in `plans.md`, word for word; `AGENTS.md` has the short form. The section headings the pointers name all exist.
+5. **Reads.** No half sentence, empty list item or rewrapped paragraph found. Slot and `{{` counts are unchanged in every file; `git diff --check` is clean.
+6. **Copies.** All pairs identical before are identical now; the changed lines of the collaboration file and both templates match between trees.
+7. **Words.** 1577 of 2000 and 1478 of 1500.
+8. **Tests.** The three files: 49 passed, 0 failed.
+9. **Beyond the proposal.** Nothing weakens beyond sections A to C.
+
+**Non-blocking findings**
+
+- **N1.** The two files that define a defect repair still say "failing-test reproduction", while both session-start copies now say "a test or a direct check".
+- **N2.** `plans.md` and `dual-review.md` still say a new security check "needs a demonstrated failing case"; the collaboration file says one planted bad input, run once. They agree in effect.
+
+**Not covered.** I did not read the appendix row by row, or the pressure that the diff left alone in the 26 files it never touched. I did not search the whole repository for sentences in files outside the diff. Elapsed and tokens: unknown.
+
+### Exact fixes (optional)
+
+- `docs/methodology/lifecycle.md`: "(i) a failing-test reproduction," becomes "(i) a reproduction by a test or a direct check,".
+- `docs/methodology/plans.md`: "(a failing-test" becomes "(a test or direct-check".
+
+## Security read of the changed review rules -- Claude Opus 5.5 (Security Review) -- 2026-11-21
+
+```
+Reviewed commit: f3bf60c8
+```
+
+**Range read**: `git diff 328325bb..f3bf60c8`, every removed and added line of `AGENTS.md`, `RULES.md`, `dev/agent_collaboration.md`, both templates, both session skills, their shipped twins, and `docs/methodology/` `dual-review.md`, `plans.md`, `lifecycle.md`, `proposals.md`.
+
+**Verdict**: REVISE. Two blocking findings, each a few words; three non-blocking.
+
+**The six points**
+
+1. **Guards kept.** Still present: an ordinary pass never clears a Security Review; a declined blocking finding goes to the Maintainer; a changed test is a decline; an unsupported assertion does not clear a review; existing refusals and checks may not be weakened; `AGENTS.md` keeps the known-positive rule.
+2. **New security check.** Present in both collaboration copies. `plans.md` and `dual-review.md` say "a demonstrated failing case": weaker, because it omits a change to what a check accepts and the recorded command. Use the collaboration words (N2 below).
+3. **Rule A.** Blocking S-A. "Where another text differs, this rule governs" lets rule A override the kept security modules, a Security Review's one run, and the planted input. Only a plan-named run is saved.
+4. **Defect-repair carve-out.** Blocking S-B. "A test or a direct check" as condition (i) is acceptable. But the edits also dropped condition (iii), the surface's own tests running. On a named high-risk surface this carve-out has no proposal and no review, so that run was its only remaining check. Restore it, bounded by rule A.
+5. **Evidence from the party judged.** Both plan templates still say forward behavior needs only "what was read, reasoned or checked directly". The collaboration file asks for something that would fail. The plan template's "Preserve required security checks" line limits the gap. Non-blocking N3.
+6. **Untouched files.** Confirmed: the stat names no `security` file, no `protected-surfaces.md`, no `certifying-runs.md`, no `testing-discipline.md`.
+
+**Non-blocking N4.** Removed from the collaboration file and `plans.md`: "Search for readers and byte pins". A broken pin on a high-risk surface now fails at certification, not earlier. It fails closed, so I let it stand.
+
+**Not covered.** I did not read the appendix row by row or the 15 other changed files. I did not check that the tier rules on when a Security Review is required are unchanged outside these files. I ran no test. Elapsed and tokens: unknown.
+
+### Exact fixes
+
+**S-A (blocking).** In `dev/agent_collaboration.md`, its twin `templates/core/dev/agent_collaboration.md`, and `docs/methodology/plans.md`, "A run that a plan names for a security requirement still stands." becomes "It does not override the security modules, the protected-surfaces rule, a run that a plan names for a security requirement, a Security Review's one run or planted case, or the planted bad input for a new security check."
+
+**S-B (blocking).**
+- Both session-start copies: "only when it meets both" becomes "only when it meets all three"; "or intended behavior with no contract change. A change" becomes "or intended behavior with no contract change; (iii) the surface's own tests, at most five files, run once after the fix and pass. A change".
+- `lifecycle.md`: "a **defect repair** — both of" becomes "a **defect repair** — all three of"; "(i) a failing-test reproduction," becomes "(i) a reproduction by a test or a direct check,"; "intended behavior with no contract change — takes the trivial" becomes "intended behavior with no contract change, (iii) the touched surface's own tests, at most five files, run once after the fix and pass — takes the trivial".
+- `plans.md`: "two conditions in `docs/methodology/lifecycle.md` (a failing-test" becomes "three conditions in `docs/methodology/lifecycle.md` (a test or direct-check"; "change). That repair" becomes "change; the touched surface's own tests run once and pass). That repair".
+- `proposals.md` lines 178 and 335: "the lifecycle's two conditions" becomes "the lifecycle's three conditions".
+
+**N2.** `plans.md`: "a new security check needs a" / "demonstrated failing case." becomes "a new security check, or a change to what one accepts, is shown once to refuse one planted bad input, with the command and result recorded." `dual-review.md`: "demonstrate a failing case for a new security" / "check." becomes "show once that a new security check, or a change to what one accepts, refuses one planted bad input, with the command and result recorded."
+
+**N3.** Both plan templates: "Forward behavior needs evidence before completion: what was" / "read, reasoned or checked directly; a run is one kind and is not required." becomes "Forward behavior needs a direct check before completion: something that would fail if it were wrong was read, run or checked; a run is one kind and is not required."
+
+## Response to the two reads -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+The Security read's two blocking findings are closed in its exact words, and its two other fixes are taken as written.
+
+Read of the whole diff:
+1. N1 (the defect repair's first condition): taken in the Security read's wording, "a reproduction by a test or a direct check", together with the third condition (S-B below).
+2. N2 (a new security check in the published pages): taken in the Security read's wording.
+
+Security read:
+1. S-A (the rule on tests could be read as overriding the security texts): taken, in both copies of the collaboration file and in `docs/methodology/plans.md`.
+2. S-B (the defect repair that skips review had lost its third condition): taken, in both copies of the session-start skill, in `docs/methodology/lifecycle.md` and `docs/methodology/plans.md`, and at two places in `docs/methodology/proposals.md`. The edits had removed a guard that section C keeps. On a named surface this repair has no proposal and no review, and the surface's own tests were its one remaining check. They run once, at most five files.
+3. N2 and N3: taken as written.
+4. N4 (the search for readers and byte pins is gone): it stands, as the read says; a broken pin fails at certification.
+
+Checked after the fixes: the three test files that compare copies, once, 49 passed; the claim check, the link check and `check_cairn` on each of the eleven changed files; `cmp` of the two copies of the session-start skill prints nothing; the always-loaded files hold 1,577 and 1,478 words against limits of 2,000 and 1,500. Not checked: the files that neither read covered.
+
+**Elapsed**: unknown. **Tokens**: unknown.

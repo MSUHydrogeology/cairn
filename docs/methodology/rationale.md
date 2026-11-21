@@ -446,7 +446,7 @@ named-but-uncommon corner of it.
   standing up dedicated Test and Doc agents — the retrofit pattern
   the multi-agent literature describes — Cairn makes testing,
   documentation, and examples *required prompts in the proposal
-  template*, where their omission is itself a review finding. This
+  template*, each answered in a line. This
   is the AI-team-first stance: a project built with the
   methodology from the start need not retrofit a role for what
   should be part of every change.
