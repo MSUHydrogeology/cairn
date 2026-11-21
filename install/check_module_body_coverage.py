@@ -78,7 +78,7 @@ from pathlib import Path
 # Configuration / defaults
 # ----------------------------------------------------------------------
 
-#: The Cairn checkout this script ships in (bootstrap/ -> repo root).
+#: The Cairn checkout this script ships in (install/ -> repo root).
 #: Its docs/methodology/ holds the upstream bodies to compare against.
 DEFAULT_CAIRN_ROOT = Path(__file__).resolve().parent.parent
 

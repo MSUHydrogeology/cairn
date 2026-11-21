@@ -1003,7 +1003,7 @@ def check_path_token(
 
     resolved = repo_root / target
     # A node citation names a test node, which lives in a FILE -- a
-    # directory path half (``bootstrap/tests::test_x``) is not a valid
+    # directory path half (``tests/integration::test_x``) is not a valid
     # ``path::node`` and must still flag.  The bare-path branch keeps
     # ``.exists()``, because a directory IS a legitimate path claim.
     # Mirrors the line-bounds branch, which is ``.is_file()`` for the

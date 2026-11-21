@@ -321,7 +321,7 @@ _CAIRN_MARKER_RE = re.compile(
     r"cairn(?::slot|:end|-accept)"
     # The quality_gate.py neutrality-lint exemption family.  All are
     # Cairn-owned directive syntax intended to live in prose; they are
-    # parsed by scripts/quality_gate.py and must not trip the
+    # parsed by tests/quality_gate.py and must not trip the
     # instruction-bearing-HTML-comment heuristic.
     r"|vendor-ok(?:-begin|-end)?"
     r"|case-study"

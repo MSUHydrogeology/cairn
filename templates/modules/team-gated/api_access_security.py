@@ -46,7 +46,7 @@ CAPABILITY_CONTRACT = "1"
 POLICY_RELATIVE = "dev/.cairn/api-access-policy.json"
 
 #: Where the engine package is looked for, in order.  Exactly two names, both
-#: siblings of this file: the installed layout (``scripts/_api_access_security``,
+#: siblings of this file: the installed layout (``dev/tools/_api_access_security``,
 #: the facade-engine convention ``_facade_engine_dir`` already recognises) and
 #: the shared template layout this source is reviewed in.  Neither is
 #: adopter-supplied, ``sys.path`` is never consulted, and both are containment
@@ -64,7 +64,7 @@ def _load_engine():
         init = engine_dir / "__init__.py"
         if not init.is_file():
             continue
-        # Parity with bootstrap/scaffold.py's launcher: a real directory inside
+        # Parity with install/scaffold.py's launcher: a real directory inside
         # this file's own directory, never a symlink and never out of tree, so
         # the loader cannot be pointed at code from somewhere else.
         if (engine_dir.is_symlink() or init.is_symlink()

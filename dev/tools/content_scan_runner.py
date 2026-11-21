@@ -84,7 +84,8 @@ _HERE = Path(__file__).resolve().parent
 if (_HERE.name == "team-gated" and _HERE.parent.name == "modules"
         and _HERE.parent.parent.name == "templates"):
     # A source-tree run from the module template uses the repository root;
-    # the rendered scripts/ and installed tools/ copies use their own parent.
+    # the installed dev/tools/ copy has its own branch below; a copy
+    # installed before 0.8 uses its own parent.
     _REPO_ROOT = _HERE.parents[2]
     _GIT_READ_REL = ("templates", "skills", "_lib", "git_read.py")
 elif _HERE.name == "tools" and _HERE.parent.name == "dev":

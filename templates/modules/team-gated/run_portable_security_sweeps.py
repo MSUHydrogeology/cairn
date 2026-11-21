@@ -181,7 +181,7 @@ _GIT_READ = _load_verified_git_read()
 
 # --- the shared aggregate exit space -----------------------------------------
 # Reuses python-security's space (that module installs its orchestrator at
-# scripts/run_security_audit.py) so an adopter reads one exit vocabulary across
+# dev/tools/run_security_audit.py) so an adopter reads one exit vocabulary across
 # every Cairn security module.  Precedence: degraded > findings > incomplete >
 # clean.
 _AGG_CLEAN = 0
