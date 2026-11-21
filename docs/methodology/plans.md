@@ -250,9 +250,9 @@ coverage, skip the plan when:**
   fully captured in the implementing commit message).
 * The change does not touch a contract or trust-ceremony surface, and its
   effects can be confidently bounded, unless it is a defect repair meeting the
-  two conditions in `docs/methodology/lifecycle.md` (a failing-test
+  three conditions in `docs/methodology/lifecycle.md` (a test or direct-check
   reproduction; it restores documented or intended behaviour with no contract
-  change). That repair
+  change; the touched surface's own tests run once and pass). That repair
   stays trivial even on a named surface. A change that skips a plan has no code
   review.
 
@@ -367,7 +367,7 @@ one broad command is not independent review.
 
 ### Boundary A — Iteration (scoped)
 
-Run the fewest tests that show the change is right, once: the tests written for it, and at most five test files that can see it. Make no run before the change to compare with, no second host unless the code is specific to that host, and no wide run because a large file was touched. A direct check that proves the point replaces the tests. Something that would fail if the change were wrong must be read, run or checked once. The whole suite runs at certification, before a release is cut. More than this needs the Maintainer's word. Where another text differs, this rule governs. A run that a plan names for a security requirement still stands. Run applicable standing prose gates for prose.
+Run the fewest tests that show the change is right, once: the tests written for it, and at most five test files that can see it. Make no run before the change to compare with, no second host unless the code is specific to that host, and no wide run because a large file was touched. A direct check that proves the point replaces the tests. Something that would fail if the change were wrong must be read, run or checked once. The whole suite runs at certification, before a release is cut. More than this needs the Maintainer's word. Where another text differs, this rule governs. It does not override the security modules, the protected-surfaces rule, a run that a plan names for a security requirement, a Security Review's one run or planted case, or the planted bad input for a new security check. Run applicable standing prose gates for prose.
 Folder sweepers are
 covered by the release run. Unknown dependencies are not claimed as covered.
 A known required path, check, or acceptance criterion that remains unmet keeps
@@ -395,8 +395,8 @@ implementation record. Reuse results when their bytes, platform, inputs and
 obligation still apply; cite the source and limits. Review may use committed
 evidence or static calculation when adequate, but claims about forward behavior
 need a direct check, one run included. Mutation is optional unless a specific requirement
-calls for it. Keep existing negative controls; a new security check needs a
-demonstrated failing case. Preserve every applicable security check and review.
+calls for it. Keep existing negative controls; a new security check, or a change to what one accepts,
+is shown once to refuse one planted bad input, with the command and result recorded. Preserve every applicable security check and review.
 For scientific work that touches an assumption or a published or acted-on
 result, retain the independent error check and positive control even when the
 intended result is unchanged. If dependencies are too tangled to

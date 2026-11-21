@@ -13,6 +13,15 @@ Strategy made three more edits for consistency, by exact replacement (commit `16
 Answers Strategy gave to the groups' questions: row 29 was rewritten to ask for direct evidence; the "joined integration run" became the certification run; rows 158 and 514 were kept, because a question about whether tests are worth their runtime pushes the number of tests down; row 498 was left as it is, with the testing module, by the Maintainer's word.
 
 
+## After the Security read
+
+The Security read of the changed review rules asked for these, and Strategy applied its exact words. Where a row below this section quotes one of these places, this section governs.
+
+- The rule on tests, in both copies of the collaboration file and in `docs/methodology/plans.md`: its last sentence now says the rule does not override the security modules, the protected-surfaces rule, a run that a plan names for a security requirement, a Security Review's one run or planted case, or the planted bad input for a new security check.
+- The defect repair that takes the trivial lane on a named surface, in both copies of the session-start skill, `docs/methodology/lifecycle.md` (row 301), `docs/methodology/plans.md` (row 312) and two places in `docs/methodology/proposals.md`: three conditions again. A test or a direct check reproduces the fault; the fix restores documented or intended behaviour with no contract change; the surface's own tests, at most five files, run once after the fix and pass. The edits had dropped the third.
+- A new security check, in `docs/methodology/plans.md` and `docs/methodology/dual-review.md`: the words of the collaboration file, one planted bad input refused once, with the command and result recorded.
+- Forward behaviour, in both plan templates: it needs a direct check, something that would fail if it were wrong.
+
 ## Group G1
 
 ### Rows G1 (entry files)

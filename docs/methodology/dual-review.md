@@ -354,8 +354,8 @@ For a claim that a value reaches every member of a set, inventory the members
 from the tree and check the applicable paths; a diff alone does not establish
 coverage. Reuse applicable committed evidence and state its source and limits.
 Mutation is an optional probe unless a specific requirement calls for it.
-Keep existing negative controls; demonstrate a failing case for a new security
-check. Claims about forward behavior need a direct check, one run included; committed
+Keep existing negative controls; show once that a new security check, or a change to what one accepts,
+refuses one planted bad input, with the command and result recorded. Claims about forward behavior need a direct check, one run included; committed
 evidence or static calculation may support other claims when adequate. Review
 records state what the checks covered and what remains uncertain, not a probe
 inventory.

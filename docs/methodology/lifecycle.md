@@ -47,9 +47,9 @@ select a tier or remove an obligation:
    or security ceremony, or (d) is a **major new feature** — a new
    user-facing capability, module, or subsystem, because *what to
    build* is a structure question, not an implementation one. One
-   carve-out crosses this rule: a **defect repair** — both of
-   (i) a failing-test reproduction, (ii) restores documented or
-   intended behavior with no contract change — takes the trivial
+   carve-out crosses this rule: a **defect repair** — all three of
+   (i) a reproduction by a test or a direct check, (ii) restores documented or
+   intended behavior with no contract change, (iii) the touched surface's own tests, at most five files, run once after the fix and pass — takes the trivial
    lane even on a named surface. An edit that changes what a ceremony
    or surface *does* is not a defect repair and stays deliberate,
    whether or not a public contract moved.

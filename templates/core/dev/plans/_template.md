@@ -343,8 +343,8 @@ not the accepted proposal.
 For each plan, name changed caller-visible promises, public entry points and
 outputs. The rule on tests is in `dev/agent_collaboration.md` > "Verification".
 Permanent tests guard external promises; temporary development probes leave
-before archive. Forward behavior needs evidence before completion: what was
-read, reasoned or checked directly; a run is one kind and is not required.
+before archive. Forward behavior needs a direct check before completion: something that would
+fail if it were wrong was read, run or checked; a run is one kind and is not required.
 Forward structure can be checked on committed structure. Missing or failed required evidence keeps work open.
 Preserve required security checks and reviews, scientific independent error and
 positive controls, and release operations.

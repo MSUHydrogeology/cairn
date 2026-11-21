@@ -175,7 +175,7 @@ after its final implementation commit and archives it with that record.
 
 For standard/heavy proposals, the implementation is **trivial** (a single commit, a
 single area, no follow-ups, and a Boundary B that would run `bounded`,
-except that a defect repair meeting the lifecycle's two conditions stays
+except that a defect repair meeting the lifecycle's three conditions stays
 trivial on a named surface — implemented and the proposal archived together, with no code review) or
 **non-trivial** (multiple commits or areas, multi-stage sequencing,
 deferred follow-ups, or Boundary B in `wide` mode — it opens a plan; see
@@ -332,7 +332,7 @@ commit:
 * For **standard/heavy**, if the implementation will be **trivial** (single commit, single
   area, no multi-stage execution, no deferred follow-ups, and a
   Boundary B that would run `bounded`, except that a defect repair meeting
-  the lifecycle's two conditions stays trivial on a named surface), the implementing commit ships the
+  the lifecycle's three conditions stays trivial on a named surface), the implementing commit ships the
   work AND moves the proposal to `dev/proposals/archive/` in the same
   commit. It has no code review. The implementing commit re-reads each
   plan-skip condition against what it actually touched. If it touched more

@@ -176,9 +176,9 @@ published method, which an adopter's tree does not hold.
    or security ceremony, is a major new feature, or is otherwise substantive starts
    with a proposal. Its Maintainer Decision sets light, standard or heavy. Do not
    start settled substantive work from a parentless change note. A defect repair
-   takes the trivial path on a named surface only when it meets both
+   takes the trivial path on a named surface only when it meets all three
    conditions: (i) a test or a direct check reproduces it; (ii) the fix restores documented
-   or intended behavior with no contract change. A change to what a surface or ceremony does is not a defect repair.
+   or intended behavior with no contract change; (iii) the surface's own tests, at most five files, run once after the fix and pass. A change to what a surface or ceremony does is not a defect repair.
 2. *Trivial: work it.* An eligible defect repair, typo or obvious one-line correction:
    code, and a test only where none covers it, with no proposal. The lifecycle owes no code review;
    drain has a fresh reviewer read each commit anyway (below), because no person
