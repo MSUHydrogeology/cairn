@@ -267,3 +267,54 @@ C1 and C2 do what their criteria say on the Windows host, and the fix for #99 pa
 Not run: the 38-file group in the Linux subsystem (queued; the response will record it). Not run: the 102-file selection, Python 3.13 and `tests/test_ast_attest.py`. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
 
 **Elapsed**: 76 minutes from the implementer's record (19:20) to this one, most of it test runs (24 and 23 minutes for the 17-file group, 58 and 61 for the 38-file group). **Tokens**: unknown.
+
+## Code review, review point after C2 -- Claude Sonnet 5.5 (`claude-sonnet-5-5`) (usual reviewer) -- 2026-11-20
+
+Reviewed commit: `d7f967b8b406e2a3dbf997dfe94c8e60420bdc10`; range `ecc1a913..HEAD` on `arc-b-impl`, chunks C1 and C2 only.
+**Obligation**: the usual code review at this review point; a Security Review pass follows.
+
+**Verdict: REVISE, one blocking finding.** The change does what C1 and C2 say. One error text is wrong in a case that can happen.
+
+**Foundations**
+1. **Should this happen as framed?** Yes. Messages, names, exit codes and wiring match C1 and C2 line by line; `.gitattributes` is a byte copy and changes no tracked file (`cmp`; `git ls-files --eol`; `git status` clean). -- `upgrade.py` 171-235, 4545-4580, 4707, 4747, 4800, 4863; `cli.py` 584-601.
+2. **Best alternative.** None simpler. Duplicating the helper path recipe keeps `lockfile.py` unchanged (AST baseline). -- AST listing: CHANGED is only `cmd_upgrade` and `main`.
+3. **What would show it wrong.** I tried a CRLF, an exact, a partly CRLF, an edited, a folder, a missing, an oversize and a CRCRLF helper copy; heal with `--to`, a dirty lock, a cannot-tell check, `--force`, a bad lock. Only the exact copy misbehaved. -- scratch probes in a `git archive` copy; the Linux-only link case was not run.
+
+**Findings**
+1. **Blocking.** If the helper fails to bind but its bytes are the pinned ones (no CR at all), `_git_read_binding_refusal` says "has Windows line endings". It sends the adopter to delete and restore a file that is already right. Constructed: the exact bytes with `_git_read_helper` raising returns the first text. Fix, in `upgrade.py`, replace `if raw is not None and hashlib.sha256(` with `if raw is not None and b"\r\n" in raw and hashlib.sha256(`; the exact copy then gets the second text. Test below; it fails now and passes with the fix (run in the copy).
+2. Non-blocking. No permanent test runs the real `_git_read_helper_path()`; both tests patch it. A wrong path would give the second text on every real clone unnoticed.
+3. Non-blocking. The `cmd_upgrade` `--to` use of the refusal (exit 1) has no permanent test, nor does `_git_read_plain_bytes` for a link or oversize file. The coordinator's clone check covers the first.
+4. Non-blocking, needs a home. `upgrade --plan` on Cairn's own tree lists the new root `.gitattributes` as a blocked addition (I ran it). C5's own-lock step does not say how it is settled.
+
+**Implementer's choices.** (1) missing file gets the second text: sound. (2) the dirty-lock wording and help text: sound. (3) literal `<repo>`: sound, as other hints. (4) the path function in `upgrade.py`: sound. `_git_read_plain_bytes` is needed to read after the checks; it checks every part, the size before and during the read, and returns bytes only to the caller. None needs the author or the Maintainer; finding 4 needs the author.
+
+**C2.** Final-stage records drop the three keys; the reconcile branch and `layout_keep` are unchanged. The heal touches only records whose `dst` is not an old path and that carry a key; nothing else reads the keys from moved records (grep). Twice-run, dirty, `--to` and cannot-tell all exit with a code and a message. A profile link was not run here (no link privilege); it is wired in the refusal tuple.
+
+**Tests.** The new tests go through `scaffold.main`, and each fails under its fault. The two long text pins are what C1 asks for. The removed `layout_fork is True` and "no action needed" assertions pinned behaviour or wording being removed. The heal test compares the parsed lock, not bytes; enough for the faults named.
+
+**Protected files.** Only `cmd_upgrade` and `main` are CHANGED against the AST baseline, as the plan expects; no frozen file is touched.
+
+**Bounding**: ACCEPTED for C1 and C2 once finding 1 is fixed; the Linux 38-file group stays open in the coordinator's record, homed at "What the joined run owes".
+
+Not covered: Security Review questions; the Linux subsystem; links; Git older than 2.31; the Waiting-line check; whether the frozen test manifest names `tests/test_first_session_report.py` under its old path. **Elapsed**: unknown. **Tokens**: unknown.
+
+### Test that closes finding 1
+
+Add to `tests/test_upgrade_layout_migration.py` after `test_unbound_git_reader_names_its_cause`; command: `python -m pytest tests/test_upgrade_layout_migration.py::test_exact_copy_is_not_called_line_endings`.
+
+```python
+def test_exact_copy_is_not_called_line_endings(layout, capsys, monkeypatch, tmp_path):
+    helper = Path(__file__).resolve().parents[1] / "templates/skills/_lib/git_read.py"
+    copy = tmp_path / "git_read.py"
+    copy.write_bytes(helper.read_bytes())
+
+    def unbound():
+        raise RuntimeError("Git read helper binding failed")
+
+    monkeypatch.setattr(upgrade, "_git_read_helper", unbound)
+    monkeypatch.setattr(upgrade, "_git_read_helper_path", lambda: str(copy))
+    assert _upgrade(layout, "--plan") == 2
+    error = capsys.readouterr().err
+    assert GIT_READ_CRLF not in error
+    assert GIT_READ_OTHER in error
+```
