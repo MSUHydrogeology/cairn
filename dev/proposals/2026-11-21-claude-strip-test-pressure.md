@@ -223,3 +223,17 @@ What this records, plainly:
 - **If he redirects,** every edit is a commit on the development branch and can be taken back.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Decision, the testing module -- Maintainer (scribed by Claude Fable 5.2) -- 2026-11-21
+
+**The testing module stays as it is.** One page was held out of this proposal for his word: the module that tells a project how to test its own science code, in both copies. Strategy asked whether it should change too, and recommended that it should. He wrote (chat, 2026-11-21):
+
+> "Don't change the testing a project's own science code"
+
+What that settles:
+
+- **Neither copy of the testing module is edited,** now or under this proposal. Its 46 sentences in each copy stay.
+- **The Scope delta's one item is closed:** disposition accept, by his words above.
+- The one row in another file that was left undecided because it leans on that module stays as it is too.
+
+**Elapsed**: unknown. **Tokens**: unknown.
