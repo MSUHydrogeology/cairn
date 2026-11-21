@@ -404,3 +404,78 @@ def test_stale_hash_with_crlf_base_is_planned_as_a_copy(layout, capsys):
 
     assert _upgrade(layout, "--plan", "--to", "HEAD") == 0
     assert "  copy: " + OLD[0] + " -> " + NEW[0] in capsys.readouterr().out
+
+
+CHECK_DST = "dev/modules/claim-check.md"
+CHECK_BASE = "dev/.cairn/base/" + CHECK_DST
+CHECK_TEMPLATE = b"Run `{{claim_check_command}}` on a document.\n"
+CHECK_OLD = b"Run `python scripts/claim_check.py` on a document.\n"
+CHECK_NEW = b"Run `python dev/tools/claim_check.py` on a document.\n"
+CHECK_EDITED = b"Run `python scripts/claim_check.py` on a document. Mine.\n"
+
+
+def _claim_check_tree(layout, *, edited: bytes = CHECK_OLD, token: str = "python scripts/claim_check.py"):
+    """A lock whose claim_check_command still names the pre-0.8 script, with the
+    moved script's record and the rendered module doc as an adopter has it."""
+    _, target, _ = layout
+    _put(target, CHECK_BASE, CHECK_TEMPLATE)
+    _put(target, CHECK_DST, edited)
+    _put(target, "dev/tools/claim_check.py", b"# claim check\n")
+    lock = scaffold.read_lockfile(target)
+    lock["tokens"] = {"claim_check_command": token}
+    lock["files"].append({"src": "modules/default-on/claim-check.md", "dst": CHECK_DST,
+                          "verbatim": False, "base_cache": CHECK_BASE,
+                          "base_hash": _digest(CHECK_TEMPLATE), "hash": _digest(edited)})
+    lock["files"].append({"src": "modules/default-on/claim_check.py",
+                          "dst": "dev/tools/claim_check.py", "verbatim": True,
+                          "base_hash": _digest(b"# claim check\n"),
+                          "hash": _digest(b"# claim check\n")})
+    _put(target, LOCK, json.dumps(lock).encode("utf-8"))
+    _commit(target, "pre-0.8 claim-check setting")
+
+
+def test_heal_layout_corrects_the_token_and_an_unedited_file(layout, capsys):
+    _, target, _ = layout
+    _claim_check_tree(layout)
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    lock = scaffold.read_lockfile(target)
+    assert lock["tokens"]["claim_check_command"] == "python dev/tools/claim_check.py"
+    assert (target / CHECK_DST).read_bytes() == CHECK_NEW
+    record = next(row for row in lock["files"] if row["dst"] == CHECK_DST)
+    assert record["hash"] == _digest(CHECK_NEW)
+    assert record["base_hash"] == _digest(CHECK_TEMPLATE)
+
+
+def test_heal_layout_keeps_and_names_an_edited_file(layout, capsys):
+    _, target, _ = layout
+    _claim_check_tree(layout, edited=CHECK_EDITED)
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    assert (f"kept {CHECK_DST}: you edited it, so it still names the old path; "
+            "correct it by hand") in capsys.readouterr().out
+    assert (target / CHECK_DST).read_bytes() == CHECK_EDITED
+    lock = scaffold.read_lockfile(target)
+    assert lock["tokens"]["claim_check_command"] == "python dev/tools/claim_check.py"
+    record = next(row for row in lock["files"] if row["dst"] == CHECK_DST)
+    assert record["hash"] == _digest(CHECK_EDITED)
+
+
+def test_heal_layout_second_run_has_nothing_to_heal(layout, capsys):
+    _claim_check_tree(layout)
+    assert _upgrade(layout, "--heal-layout") == 0
+    capsys.readouterr()
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    assert "Nothing to heal." in capsys.readouterr().out
+
+
+def test_heal_layout_leaves_a_custom_token_value_alone(layout, capsys):
+    _, target, _ = layout
+    _claim_check_tree(layout, token="python tools/my_check.py")
+    before = (target / LOCK).read_bytes()
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    assert "Nothing to heal." in capsys.readouterr().out
+    assert (target / LOCK).read_bytes() == before
+    assert (target / CHECK_DST).read_bytes() == CHECK_OLD

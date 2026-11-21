@@ -4565,20 +4565,80 @@ def _layout_guard(force: bool, after: bool, tx: LayoutTransaction) -> None:
                                     + "; commit them or pass --force")
 
 
-def _layout_heal_findings(lock: dict[str, Any]) -> list[dict[str, Any]]:
-    """Lock records that carry a layout-move key and whose ``dst`` is not an
-    old path of ``_LAYOUT_MOVES`` (an old-path record is left for the reconcile)."""
+def _layout_heal_findings(lock: dict[str, Any]) -> tuple[list[dict[str, Any]], list[tuple[str, str, str]]]:
+    """Two kinds of finding. Records: lock records that carry a layout-move key
+    and whose ``dst`` is not an old path of ``_LAYOUT_MOVES`` (an old-path record
+    is left for the reconcile). Settings: ``(name, value, new)`` for each lock
+    token whose value is ``"python " + old`` for a row of ``_LAYOUT_MOVES``, when
+    the file ``new`` has a record and no record has ``old``."""
+    files = lock.get("files") or []
     old_paths = {row[2] for row in _LAYOUT_MOVES}
-    return [rec for rec in lock.get("files") or []
-            if rec.get("dst") not in old_paths
-            and any(key in rec for key in _LAYOUT_LOCK_KEYS)]
+    records = [rec for rec in files
+               if rec.get("dst") not in old_paths
+               and any(key in rec for key in _LAYOUT_LOCK_KEYS)]
+    dsts = {rec.get("dst") for rec in files}
+    settings = lock.get("tokens") or {}
+    if not isinstance(settings, dict):
+        settings = {}
+    tokens = []
+    for name, value in settings.items():
+        for _, _, old, _, _, new in _LAYOUT_MOVES:
+            if value == "python " + old and new in dsts and old not in dsts:
+                tokens.append((name, value, new))
+    return records, tokens
+
+
+def _layout_heal_rendered(target: Path, rec: dict[str, Any], profile: dict[str, Any],
+                          old_tokens: dict[str, Any], new_tokens: dict[str, Any],
+                          tokens: list[tuple[str, str, str]]
+                          ) -> tuple[bytes | None, str | None]:
+    """For one non-verbatim record: ``(bytes, None)`` to rewrite the file,
+    ``(None, message)`` to keep it and name it, ``(None, None)`` when its saved
+    ancestor names none of the settings. The ancestor is read as
+    ``_compute_upgrade`` reads a merge ancestor; the project file with
+    ``_assert_safe_write`` then ``_read_regular_bytes``."""
+    dst = rec["dst"]
+    unreadable = f"kept {dst}: could not be read safely; correct it by hand"
+    try:
+        base_path = target / rec["base_cache"]
+        _assert_safe_write(base_path, target)
+        base_bytes = _read_regular_bytes(base_path)
+        if base_bytes is None or "sha256:" + _sha256_hex(base_bytes) != rec.get("base_hash"):
+            raise ValueError("saved ancestor digest does not match")
+        base_text = base_bytes.decode("utf-8")
+    except (OSError, UnicodeError, ValueError, ScaffoldSecurityError):
+        return None, unreadable
+    if not any("{{" + name + "}}" in base_text for name, _, _ in tokens):
+        return None, None
+    row = next((r for r in LAYOUT_INSTALLS if r[5] == dst), None)
+    if row is None:
+        return None, unreadable
+    old_render = _layout_render(base_bytes, row[4], profile, old_tokens)
+    new_render = _layout_render(base_bytes, row[4], profile, new_tokens)
+    if old_render is None or new_render is None:
+        return None, unreadable
+    try:
+        path = target / dst
+        _assert_safe_write(path, target)
+        raw = _read_regular_bytes(path)
+        if raw is None:
+            raise ValueError("project file is missing")
+        ours = raw.decode("utf-8")
+    except (OSError, UnicodeError, ValueError, ScaffoldSecurityError):
+        return None, unreadable
+    if ours in (old_render, new_render):
+        return new_render.encode("utf-8"), None
+    return None, (f"kept {dst}: you edited it, so it still names the old path; "
+                  "correct it by hand")
 
 
 def _cmd_heal_layout(target: Path, lock: dict[str, Any], force: bool) -> int:
     """`upgrade --heal-layout`: remove the layout-move keys from the records
-    that carry them, so the security verification accepts the lockfile."""
-    findings = _layout_heal_findings(lock)
-    if not findings:
+    that carry them, correct each setting that still names a pre-0.8 path and
+    the files it renders, so the security verification accepts the lockfile.
+    Files are written first; the lockfile is committed last."""
+    findings, tokens = _layout_heal_findings(lock)
+    if not findings and not tokens:
         print("Nothing to heal.")
         return 0
     if not force:
@@ -4591,12 +4651,47 @@ def _cmd_heal_layout(target: Path, lock: dict[str, Any], force: bool) -> int:
             print("error: refusing --heal-layout: the lockfile has unsaved edits; "
                   "commit them or pass --force", file=sys.stderr)
             return 1
+    profile = lock.get("profile") or {}
+    old_tokens = dict(lock.get("tokens") or {})
+    new_tokens = dict(old_tokens)
+    for name, _, new in tokens:
+        new_tokens[name] = "python " + new
+    writes: list[tuple[dict[str, Any], bytes]] = []
+    if tokens:
+        for rec in lock.get("files") or []:
+            if rec.get("verbatim") or not isinstance(rec.get("base_cache"), str):
+                continue
+            data, message = _layout_heal_rendered(
+                target, rec, profile, old_tokens, new_tokens, tokens)
+            if message is not None:
+                print(message)
+            if data is not None:
+                writes.append((rec, data))
+        profile_path = target / _PROFILE_REL
+        try:
+            _assert_safe_write(profile_path, target)
+            profile_raw = _read_regular_bytes(profile_path) or b""
+        except (OSError, ScaffoldSecurityError):
+            profile_raw = b""
+        for name, value, new in tokens:
+            if value.encode("utf-8") in profile_raw:
+                print(f"note: {_PROFILE_REL} also names {value}; change it there to "
+                      f"python {new}.")
+    for rec, data in writes:
+        _write_by_replacing(target / rec["dst"], data, target)
+        rec["hash"] = _layout_digest(data)
+        print(f"Rewrote {rec['dst']}.")
     for rec in findings:
         for key in _LAYOUT_LOCK_KEYS:
             rec.pop(key, None)
+    for name, _, new in tokens:
+        lock["tokens"][name] = "python " + new
     _commit_lock_and_caches(target, lock, [])
-    print(f"Removed layout keys from {len(findings)} lock record(s). "
-          f"Commit {_LOCKFILE_REL}.")
+    if findings:
+        print(f"Removed layout keys from {len(findings)} lock record(s). "
+              f"Commit {_LOCKFILE_REL}.")
+    for name, _, new in tokens:
+        print(f"Set {name} to python {new}. Commit {_LOCKFILE_REL}.")
     return 0
 
 
@@ -4629,8 +4724,12 @@ def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
             raise ScaffoldSecurityError("\n".join(blocked))
         tx.apply(raw, _LOCKFILE_REL, _PROFILE_REL,
                  lambda after, transaction: _layout_guard(args.force, after, transaction))
-        print("Layout reconciliation complete." if comparison else
-              "Layout migration complete. Run --stage for ordinary upgrades.")
+        message = ("Layout reconciliation complete." if comparison else
+                   "Layout migration complete. Run --stage for ordinary upgrades.")
+        state = _read_layout_state(target, _LOCKFILE_REL)
+        if state is not None and _layout_heal_findings(_layout_decode_lock(state.raw))[1]:
+            message += " A setting still names a pre-0.8 path; run upgrade --heal-layout."
+        print(message)
         return 0
     if any((args.init_lock, args.finalize, args.adopt_collisions, args.adopt_module, args.remove_retired,
             args.heal_layout)):
@@ -5120,7 +5219,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
               "the exact bytes you review.")
     for line in model_selection_notice_lines(target):
         print(line)
-    if _layout_heal_findings(lock):
+    if _layout_heal_findings(lock)[0]:
         print("Run python install/scaffold.py upgrade --target <repo> --heal-layout "
               "to remove lock keys the security verification refuses.")
     return 0
