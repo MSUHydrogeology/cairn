@@ -240,3 +240,28 @@ Also checked: the copies match (`cmp` printed nothing); the lock commit holds on
 **Verdict**: ACCEPT
 
 Not covered: the Security Review questions, the rest of `test_meter.py`, the real machine. Elapsed time: unknown. Tokens: unknown.
+
+## Code review -- Claude Opus 5.5 (Security Review) -- 2026-11-21
+
+Reviewed commit: ea0a2a2f0144235fa44b32a08d63f419687284f6
+Range: f7c4498af5073e604907e1e21a1e0cf865f759c1 (merge-base with `0.9-dev`) to ea0a2a2f0144235fa44b32a08d63f419687284f6
+
+**Obligation**: the Security Review at the code stage
+**Tier**: Internal Security Review
+**Findings**: none
+
+**Foundations**:
+
+1. **No account gains power over consent.** Owning a folder gives the right to rewrite its access list. Administrators and SYSTEM already pass the profile access-list loop with any rights, and an elevated administrator can take ownership anyway. An ordinary second user is neither, so stays refused; a second administrator gains nothing new -- `dev/tools/meter.py` `check_acl`, the loop's `_privileged_sid` skip.
+2. **Identity, not membership.** The owner's SID bytes are compared with exactly `S-1-5-18` and `S-1-5-32-544`; group membership is never consulted, so Domain Admins or any other group stays refused -- `meter.py` `_privileged_sid`, `ancestor=False`.
+3. **Every other role is as strict as before.** `cairn`, `config` and the five private roles still require the user; `ancestor` is untouched; the profile access-list mask (`profile_denied`) is unchanged, so no one but the user, SYSTEM and Administrators may hold write, delete-child or access-list rights there -- `git diff f7c4498a ea0a2a2f -- dev/tools/meter.py`, five lines.
+
+I agree with the usual review's Foundations and its one finding; on the four security questions this review governs.
+
+**Findings**
+
+None. Checked: the test ran once, `1 passed, 554 deselected in 2.18s`; `cmp` printed nothing; `verify_integrity.py --target .` reports OK; the lock commit 4a40b602 holds only the lock.
+
+**Verdict**: ACCEPT
+
+Not covered: the real machine, the POSIX path, the rest of `test_meter.py`, a re-run without the change (the record shows it). Elapsed time: unknown. Tokens: unknown.
