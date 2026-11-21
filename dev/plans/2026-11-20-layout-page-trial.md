@@ -1,7 +1,7 @@
 # Plan: trial of the code layout page on modflow_tools
 
 **Source proposal**: `dev/proposals/archive/2026-11-20-claude-code-layout-page.md`
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/conventions.md
@@ -63,3 +63,43 @@ None. The closeout edits the roadmap's trial subsection and v0.10 layout row, an
 ## Verification
 
 No test is added or required. Checks: the prose gates on this plan (`claim_check.py`, `link_check.py`, `tests/check_cairn.py`), then the code-stage recount. That reviewer recounts entries changed, added and removed from the two page files and the copies from the two patches, and searches Cairn's files this plan changed for each entry name in `corrected.md`, expecting no hit, after confirming the search finds a planted name. Not covered: whether the page is right (only he can say); the counter's call on a reworded copy, which a recount only repeats.
+
+## Plan review -- Claude Sonnet 5.5 -- 2026-11-20
+
+```
+Reviewed commit: f7ae7539688e00410c64841bbef7d7a84c288f2c
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the plan is outcome F with its stop rule, and the data boundary is mostly right (`git check-ignore` confirms the scratch path is ignored in the other project); the gaps are in how the numbers are fixed -- findings 1 to 5, `_template.md` "Sequence", `dev/agent_collaboration.md` "Plans and records".
+2. **Best alternative.** The same trial with tasks written by an agent that has not seen the page, and a script for the entry counts -- finding 4.
+3. **What would show it wrong.** Forward test: both agents write no copy, or the task's tool was cut by the 20-entry limit; the plan would then report a pass or a failure for the wrong reason -- finding 4.
+
+The plan tries to learn, cheaply and with one scientist's hour, whether a plain page can be corrected without reading code and whether it changes what agents write. That is sound.
+
+**Findings**
+
+1. **Blocking.** His hour is an approved observation, not a decision or permission, so C2 takes no fence, and the plan is `implementing` after C1, not waiting at `ready-to-implement`. Block 1.
+2. **Blocking.** Leak search covers only `corrected.md` names in Cairn files the plan changed. It misses commit messages, cost rows, task text and patch file names, and C2 records "the chosen task". Block 2.
+3. **Blocking.** "Skipped if the rule fires, as the accepted text provides": the accepted text says no such thing, so "preserved" is unsupported. Block 3.
+4. **Blocking.** Counts decided on the day: changed entry, copy, clock start and stop, the wording of his first question (the plan's version asks what he could do, not what he did), both-zero and impossible tasks. Block 4.
+5. **Blocking.** Fairness: the draft's author also writes the tasks and key, so tasks fit the page; the 20-entry cap can hide the task's tool; the counter may see the page file in a patch. Block 5.
+6. Non-blocking. Throwaway copies are deleted only at C3's end, so they stay if C3 never runs; each count step names no output file; the project's commit used is unrecorded; the opening text is 1,296 words against 1,000. Say each.
+
+**Not covered**: I read the other project's folder list and its ignore rule only; no test run; whether sending that code to the vendor suits the university's terms is assumed by the plan and not checked by me.
+
+### Closing words (plan review of 2026-11-20)
+
+1. Sequence, C2 gate cell: replace "MAINTAINER-ONLY: only he can judge his project's page" with "none: an observation by him, up to 60 minutes". Scope, "Who runs it": replace "The plan may wait at `ready-to-implement` for his hour." with "After C1 the plan is `implementing`; C2 waits for his hour as an approved observation, which stays implementation across days. No Waiting line is written, since nothing is asked of him but that hour. The roadmap's trial subsection names the wait: owner the Maintainer, restart when he starts the correction."
+2. C2: replace "the chosen task is recorded" with "the chosen task's number (1 to 3) is recorded; its text stays in the trial folder". Verification: replace "searches Cairn's files this plan changed for each entry name in `corrected.md`, expecting no hit, after confirming the search finds a planted name" with "searches every Cairn file this plan changed, every commit message in the range and the cost rows for each entry name in `draft.md` and `corrected.md`, each name in `tasks.md` and each file name in the patches, expecting no hit; the search is first run with a planted name in each of those places and must find each. Cairn's records hold only counts, yes or no answers, minutes, model names, tokens and a task's number." Cost-row "Work" cells read "Layout trial, step N".
+3. Scope delta: replace the text with "**Scope delta**: preserved. The paired runs are accepted scope and the stop rule does not release them, so C3 runs on whatever page he produced even if the rule fires, and the closeout says so. C3 is skipped only on his quoted word in chat, which is then recorded here as degraded, disposition accept." Step 3: delete "step 4 is skipped and". C3 gate: "C2 done".
+4. Add to Scope: "Counts. An entry is one line of a list, named by its first term. A script, not an agent, counts added (name only in `corrected.md`), removed (name only in `draft.md`) and changed (same name, text differs after whitespace is normalised); the agent adds one number, how many changed entries alter what is said, not only how. The clock starts when `draft.md` is handed to him and stops when he says it is corrected; time he says he spent away is subtracted and both totals are recorded. His questions, asked after the stop and answered yes or no: 'While correcting, did you open code or run anything?' and 'Is there a kind of thing it should speak of that it does not?' A yes to the first, or his stopping unfinished, fires the rule. A copy is a new function whose job a call to a listed central tool could do; the counter gives one reason per copy in the trial folder. Both counts zero is reported as no difference seen, not as a pass. A run that cannot do the task as instructed is marked incomplete and counted as written."
+5. Step 1: move the tasks and key to a medium agent that reads the copy and not `draft.md`; the draft agent also writes `left-out.md` naming each entry the limits cut. A task whose tool is not on the corrected page is dropped, and the closeout says whether the page lacked it or the limits cut it. The counter gets the two patches under random labels with the page's file name removed (the session checks first), plus the list of tool promises, and never the page or the key; asked at the end which patch had the page, its guess is recorded.
+6. Throwaway copies: "deleted at the end of C3, or at the closeout if C3 does not run." Each count step: name its input files and its one output file in the trial folder. Record the copied commit in the trial folder only.
