@@ -63,8 +63,17 @@ runs cost machine time, not tokens, and are listed separately.
 | Plan D1, gate narrowings | implementation, four chunks | Low | 192,331 | 19 | done |
 | | usual code review | Medium | 102,189 | 2 | accept, 3 notes |
 | | Security Review of the code | High | 126,389 | 4 | accept, 4 notes |
+| Plan B, upgrading | usual code review at the review point after C2 | Medium | 158,151 | 7 | revise, 1 blocking |
+| | Security Review at the same point | High | 136,088 | 4 | revise, the same finding |
+| Plan C, first session and tools | implementation, chunks C3 to C5 | Low | 172,477 | 9 | done |
+| Code layout proposal | author, from a complete design brief | Medium | 111,537 | 2 | drafted, 1,497 words |
+| | usual review | Medium | 101,155 | 2 | revise, 4 blocking |
+| | Security Review | High | 92,938 | 2 | revise, 4 blocking |
+| Consumer proposal | author, from a complete design brief | Medium | 128,380 | 4 | drafted, 1,700 words |
+| | usual review | Medium | 79,482 | 1 | revise, 3 blocking |
+| | Security Review | High | 94,489 | 2 | revise, 4 blocking |
 
-Total for the day so far: 6,398,191 tokens across 42 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 7,472,888 tokens across 51 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -109,6 +118,14 @@ Measured:
   of 1,151 tests on the Windows Server machine before any change, and 1 of
   1,151 in its Linux subsystem. On Linux a real failure stands out; on
   Windows it has to be found by comparing two long lists.
+- **A complete brief roughly halved the cost of a proposal.** The two
+  proposals written in the evening went from brief to awaiting-decision for
+  305,630 and 302,351 tokens (author, usual review, Security Review). The
+  two written in the morning cost 557,593 and 555,078. Two things differed:
+  Strategy put every design decision in the brief, so the author did no
+  design, and Strategy folded the reviews itself, so no agent was resumed or
+  spawned for that. Two against two is a small sample.
+- **Twenty-seven review passes so far, and still no return visit.**
 - **An agent's own "elapsed" figure is not data.** Four agents wrote an elapsed
   time into their records this evening, and the harness timed the same runs:
   40 minutes written against 3 measured, 30 against 6, 25 against 7, and 10
