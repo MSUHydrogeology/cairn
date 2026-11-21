@@ -119,3 +119,40 @@ A defect traces to a removed test or rule. Restores stay zero for three releases
 ## Assurance path
 
 **Assurance path**: high-assurance. The pass removes tests and rules beside security guards.
+
+## Review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`) -- 2026-11-20
+
+```
+Reviewed commit: 033cc5ca
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes in aim: a removal pass after the tag, outside the gate, with no list shown to the Maintainer, answers a measured regrowth. The framing misses that Cairn already has a rule for cutting tests (finding 1), and that moving a closeout breaks a tool (finding 2). -- `dev/rules/protected-surfaces.md` ("Tests exempt from the promise-only cut"); `dev/tools/board.py` lines 22-23.
+2. **Best alternative.** Doing nothing keeps the gate's sweep, which grew anyway. The strongest alternative is to run the same pass but reuse the existing Security Review cut route for guards. -- `release/RELEASE_PROCESS.md` lines 19-22.
+3. **What would show it wrong.** Forward test: after the first pass, replant one removed guard-named test and one record omission; the script must fail on both. Also a defect traced to a removed item, or a gate run no shorter after two passes (the proposal's signals). -- "Signals the change is wrong".
+
+**Does any rule weaken or disappear?** Possibly: the existing rule says a test that a release document names as a guard is cut only through a Security Review. The proposal's one-pass second agent is weaker (finding 1).
+
+The strongest version of the proposal: one removing role, run after the tag so the gate stays a day long, protected by a page the Maintainer owns and by checks that do not trust the remover. Conditions met: no list reaches the Maintainer, and the gate does not grow (choice 3 removes a step).
+
+**Findings**
+
+1. **Blocking.** The proposal does not mention the existing cut rule: tests of protected surfaces, the security-family files, tests named as guards, and refusal or hostile-state tests may be cut only through a Security Review. Licence line 4 sends the sweep to "a second agent ... in one pass". Replace licence line 4's last two sentences with: "It records each call. A removal or merge of any test or rule that `dev/rules/protected-surfaces.md` ("Tests exempt from the promise-only cut") names goes only through a Security Review, as today; the second agent's pass covers the rest. The Maintainer is not shown a list of tests or rules." Also add `dev/rules/protected-surfaces.md` to the doctrine surface, to say how the page and that rule relate.
+2. **Blocking.** Part A moves the closeout, but `dev/tools/board.py` warns on ready-to-archive plans by reading the plan's closeout for items without a Home, and `docs/methodology/lifecycle.md` ("Archive precondition") ties archiving to it. Add to the doctrine surface: "`dev/tools/board.py` and `docs/methodology/lifecycle.md` change so that Home and Dispositions lines and the Benefit versus cost line are read from the proposal; no closeout item loses its Home requirement." Add `dev/tools/board.py` and `lifecycle.md` to the "Edited in plans" list.
+3. **Blocking.** Part B removes archived plans but the proposal gives no check that nothing breaks. About 122 files outside the archive name the plans archive, and ten manifest lines name the generators. Add under Tests required: "After B, `link_check` and the board pass over the whole tree, and the two generators run or are changed to skip removed files, before the plan is archived."
+4. Non-blocking. Count: the archive holds 208 plan files plus 8 folders (236 tracked files), not 210; the manifest names the generators by installed paths under `scripts/`, not `tests/`. State the count as measured at the plan.
+5. Non-blocking. Check 4 (seeded faults) has no set, size or cost; the plan must specify them. Page draft is four categories of prose; an agent can place a test only where a release document names it. Ask the plan to list the document that names each.
+6. Non-blocking. First pass has numbers but no pass or fail line before starting (for example, restores above N). Length: cut Context and the Alternatives bullet on word limits first.
+7. Non-blocking. Decision summary: "promise", "tier", "seeded faults" and "guard" need a one-line gloss; choice 3 is clear.
+
+**Checked myself**: archive count; gate manifest names both generators; always-loaded words (`AGENTS.md` 1,051 plus `RULES.md` 230, third file not counted); closeout text in `dev/plans/_template.md`; board reading of closeout; archive citations (file count, not the note's 295 citations).
+
+**Not covered**: tier choice was read only against the protected-surfaces rule and found right; the note's outside studies; the Maintainer's chat quotes; the second proposal's overlap with code layout; no test run.
