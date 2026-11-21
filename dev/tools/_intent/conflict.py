@@ -640,7 +640,7 @@ def _classify_existing_precommit(hook_file: Path) -> str:
     first = lines[0] if lines else ""
     if not _precommit_shebang_is_shell(first):
         return "non-shell"
-    if not (hook_file.stat().st_mode & 0o111):
+    if os.name != "nt" and not (hook_file.stat().st_mode & 0o111):
         return "non-executable"
     return "foreign"
 
