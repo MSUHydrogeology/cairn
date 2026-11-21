@@ -97,7 +97,7 @@ Maintainer, chat, 2026-11-20: *"You have pointed out how many rules we have all-
 
 - **The trial.** An agent drafts one page for modflow_tools with three lists: what each code folder holds, each class that holds state (what a program stores while it runs), and each central tool (one function or file that does a common job for the whole project). The Maintainer corrects the page as a description of his project. The trial records how long that took him and how many entries he changed. It also gives one agent a small task with the page and another the same task without it, and counts the new copies of a central tool each one writes. It ships nothing.
 - **Its stop rule.** If he cannot correct the page without reading code, or correcting it takes him over an hour, the check and the restructuring guidance are not built, and the proposal returns to him.
-- **Next step.** The [trial's plan](plans/2026-11-20-layout-page-trial.md) is open and awaits its usual review. Its first step, the draft, needs nothing from the Maintainer. The trial then needs up to an hour of his time, when he chooses.
+- **Next step.** The [trial's plan](plans/2026-11-20-layout-page-trial.md) has had its one review and is being carried out. Its first step, an agent's draft of the page from the code, is under way and needs nothing from the Maintainer. The second step waits for him: up to an hour to correct the draft. Owner: the Maintainer. It restarts when he says he is ready to correct the page.
 
 ### 2. Cairn's own releases: simpler, and verified on three hosts
 
