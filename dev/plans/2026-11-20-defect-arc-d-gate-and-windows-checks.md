@@ -1,7 +1,7 @@
 # Plan: Defect arc D1, gate narrowings and release control
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -224,3 +224,15 @@ Differences from the plan: none in code. The planted record is the last in the l
 Not run: the other selected files (test_gate_preflight, test_gate_reanchor, test_oracle_activation, test_reanchor, test_reanchor_driver_disclosures, test_repin, test_repin_ceremony, test_security_marker); the Mac run; any freeze, record, join or signing. Not confirmed here: the D1-1 node and the D1-3 off-Windows node.
 
 Elapsed about 20 minutes (18:55 to 19:15, host clock). Tokens: unknown.
+
+## Coordinator verification -- Claude Fable 5.2 (Strategy) -- 2026-11-20
+
+The four chunks match Detail. The tests that cannot run on the Windows Server host ran in its Linux subsystem (Ubuntu, Python 3.14.4): a development check, not the canonical runtime.
+
+- **One defect found and fixed** (`52cc8095`, under the rule for a cheap defect fix). On Linux, three of D1-3's new nodes failed with "report is stale" before reaching their own check. The `evidence` fixture read the clock and then wrote the report; a file system stamps a new file from a coarser clock, which read earlier than the clock on 200 of 200 new files on Linux (by up to 4.7 ms) and on 129 of 200 on Windows (up to 0.7 ms), measured. `test_minimal_report_passes` failed the same way on Linux at the starting commit; on Windows this is the "timing flake" on the roadmap. The fixture now takes the start from the report's own time. The checker is unchanged.
+- **Linux.** The four edited test files: 257 passed, 2 skipped. D1-1's control: with `tests/_gate_preflight.py` put back to the starting commit the new node fails (it finds no hit in the two tool files); with the change it passes. D1-1's nine selected files: the same 120 failures by id and message before and after, all in the signing tests, and one more pass, the new node.
+- **Windows Server host.** D1-1's nine files: 372 failed and 156 errors before; after, the only new failing id is the new node, which cannot run here (`the ssh-keygen path /usr/bin/ssh-keygen is not absolute`). D1-2's file: the same 2 failures. D1-3's two files, after the fixture fix: 8 failed against 9, none new; `test_minimal_report_passes` failed before and passes now.
+
+Not run: the Mac. Home: `dev/PLANNING.md`, "Waiting on you", the Mac session's second job. Not run: any freeze, record, join or signing. Found on the way and listed for plan D2 in `dev/PLANNING.md`, section 1, "Windows", items (g) to (j) (committed on `0.9-dev` at `f9c02db2`, so not in this branch's copy until the merge): the fixture race, a refusal test that asserts only "FAIL", stray files the ceremony tests leave on Windows, and an unstable gauge test file.
+
+**Elapsed**: 53 minutes from the implementer's record (19:16) to this one, most of it test runs. **Tokens**: unknown.
