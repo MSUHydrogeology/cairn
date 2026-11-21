@@ -263,3 +263,37 @@ The change gives the review page back a scan of new tool files under `tests/`, m
 **Not covered**: the Mac and Linux runs, and the other seven D1-1 files; any freeze, join or signing. Whether the paragraph's statements are true of `release/security_check.py` is left to the Security Review. **Bounding**: no protected, frozen or fixture file beyond the two frozen files and two roster tests the plan names is touched, and no manifest is refreshed. Elapsed: unknown. Tokens: unknown.
 
 **Verdict**: APPROVE
+
+## Code review -- Claude Opus 5.5 (Security Review) -- 2026-11-20
+
+```
+Reviewed commit: 4cf6af350c90579cbf699c4d66b6979bf0203f4c
+```
+
+Range `ecc1a913..HEAD` on `arc-d-impl`; the code is unchanged since `52cc8095`.
+
+**Obligation**: the Security Review the heavy tier adds at the code stage.
+**Findings**: none blocking, three non-blocking.
+
+The change puts new tool files under `tests/` back on the review page, makes one refusal test name its record, lets the checker read pytest's Windows `file=` spelling, and writes down a clean-clone freeze. Nothing in it accepts a case the checker refused before for another file.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. On Windows, every spelling that newly passes (`tests\x.py`, an absolute path in the checkout, a case, trailing-dot or `::$DATA` variant) already passed with forward slashes and resolves to the classname's file; another file, `..`, `\?\`, drive-relative and root-relative spellings are refused. The classname stays the authority. -- `release/check_release_test_members.py:57-74`, `:281`; direct calls of `_file(_report_file(...))` on this host
+2. **Best alternative.** None safer for the scope. -- `tests/_gate_preflight.py:1350-1354`
+3. **What would show it wrong.** I tried 19 names against the scan rule and 16 `file=` spellings, both hosts' branches, and ran the D1-3, minimal, stale and future nodes: 7 passed, 1 skipped (off-Windows node). -- `python -m pytest tests/contract/test_release_members_contract.py -k "file_field or dotdot or minimal_report or stale or future"`
+
+**Findings**
+
+1. I agree with the usual review's three findings. On the fixture fix: it is within the cheap-fix rule and strengthens the file. Before it, on Linux every `test_report_refusals` case could pass on "stale", since that test asserts only `FAIL`; now each reaches its own check, and "stale" and "future" are still refused.
+2. Non-blocking; my words govern over the usual review's Foundations 3. A rename is not `modified`: the range is read with `--no-renames` (`tests/_gate_preflight.py:1207`) and `_scan_range` keys on path (`:1446-1448`), so the new name is `added` and scanned. The error points the safe way.
+3. Non-blocking, for the Maintainer, older than D1. An added `Tests/conftest.py` (any case variant of a root) is not scanned; on a case-insensitive checkout (the Mac's default, Windows) it lands in `tests/` and runs at collection. It is still named on the page by class.
+4. Non-blocking, older than D1. On Windows a `file=` naming a network share (`//host/share/x.py`, possible before D1) is resolved before it is refused, so the checker may contact that host. The report's author is test code already running there, so no new exposure. Fix later: refuse a leading `//` before `resolve`.
+
+**Paragraph.** Each statement holds against `release/security_check.py`: the peel refusal (`:2094-2098`), the join's location and ref comparison (`:2606-2611`), the Windows record comparing refs only in the frozen checkout (`:2459-2462`), and `PASS` naming one commit (`:2639`, `:2648`). The anchor sentence matches `dev/rules/protected-surfaces.md:37-38`. **Does any rule weaken or disappear?** No. **Removed caller-visible faults?** None removed. **Permanent tests worth their runtime?** Yes; no probe left. Security S1 to S5 hold as built.
+
+**Waiting-line check**: no fenced chunk in the range. **Bounding**: ACCEPTED; no protected, frozen or fixture file beyond the plan's four is touched, and no manifest is refreshed.
+
+**Not covered**: the D1-1 node (cannot run here) and its Mac run; the other D1-1 files; any freeze, join or signing; whether `git clone` leaves tree refs out. About 520 words: two findings correct the record. Elapsed: unknown. Tokens: unknown.
+
+**Verdict**: APPROVE
