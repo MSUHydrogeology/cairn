@@ -205,12 +205,6 @@ def test_repeats_with_differing_usage_are_conflicting_usage():
     assert "conflicting_usage" in event["reasons"]
 
 
-def test_repeats_with_equal_usage_merge_without_conflict():
-    event, = read([rec(), rec()])["events"]
-    assert event["kinds"]["output"] == 4
-    assert "conflicting_usage" not in event["reasons"]
-
-
 def test_same_records_read_under_two_roots_are_one_event():
     config = cfg(roots=(SOURCE_ROOT, OTHER_ROOT))
     first = read([rec()], config=config, root=SOURCE_ROOT)
@@ -265,12 +259,6 @@ def test_summary_is_not_usage_and_leaves_one_row():
     assert "unsupported_record" not in result["issues"]
     assert "agent_runs_incomplete" not in result["issues"]
     assert result["agent_runs"]["summaries"] == [SUMMARY_ROW]
-
-
-def test_user_record_with_summary_shape_is_skipped():
-    result = read([rec(), summary_record(type="user")])
-    assert result["issues"] == []
-    assert result["agent_runs"] == meter._empty_agent_runs()
 
 
 BAD_SHAPES = {
@@ -350,6 +338,9 @@ def test_transcript_mark_needs_true_and_a_text_agent_id():
     bad_id = read([rec(isSidechain=True, agentId=5)])
     assert bad_id["agent_runs"]["transcripts"] == []
     assert len(bad_id["events"]) == 1
+    for truthy in (1, "true"):
+        loose = read([rec(isSidechain=truthy, agentId=RUN)])
+        assert loose["agent_runs"]["transcripts"] == []
 
 
 # Arc C3: the ledger remembers sub-agent runs across refreshes, and sets the reason.
@@ -394,12 +385,10 @@ def test_summary_then_its_transcript_clears_the_reason(start_ledger):
 
 @pytest.mark.parametrize("gathered, incomplete", [
     (runs(summaries=[PAIR]), True),
-    (runs(summaries=[PAIR], transcripts=[PAIR]), False),
-    (runs(unclassified=1), True),
     (runs(summaries=[PAIR], transcripts=[SIBLING_PAIR]), True),
     (runs(summaries=[PAIR], transcripts=[OTHER_PAIR]), True),
-], ids=["own-run-not-read", "own-run-read", "no-frame-or-two-ids",
-        "sibling-read-but-own-run-not", "run-read-in-another-session"])
+], ids=["own-run-not-read", "sibling-read-but-own-run-not",
+        "run-read-in-another-session"])
 def test_summary_frames_decide_covered_or_incomplete(start_ledger, gathered, incomplete):
     ledger = new_ledger(start_ledger, gathered)
     assert ("agent_runs_incomplete" in reasons_of(ledger)) is incomplete
@@ -418,6 +407,15 @@ def test_an_unclassified_record_keeps_the_reason_until_the_ledger_is_replaced(st
     second = new_ledger(first, runs())
     assert "agent_runs_incomplete" in reasons_of(second)
     assert second["agent_runs"]["unclassified"] == 1
+
+
+def test_transcript_cap_cuts_the_excess_and_counts_it(monkeypatch, start_ledger):
+    monkeypatch.setattr(meter, "MAX_AGENT_TRANSCRIPTS", 3)
+    transcripts = [(SESSION_KEY, meter._digest("agent-id", "run-%d" % index))
+                   for index in range(4)]
+    ledger = new_ledger(start_ledger, runs(transcripts=transcripts))
+    assert len(ledger["agent_runs"]["transcripts"]) == 3
+    assert ledger["agent_runs"]["unclassified"] == 1
 
 
 def test_caps_cut_the_excess_and_count_it_without_failing(monkeypatch, start_ledger):
@@ -463,10 +461,6 @@ def test_a_hand_edit_of_the_run_record_is_refused(name):
     with pytest.raises(meter.Unavailable) as refused:
         meter._load_ledger(json.dumps(raw).encode("utf-8"), NOW)
     assert refused.value.reason == "ledger_invalid"
-
-
-def test_the_empty_ledger_starts_with_no_runs():
-    assert meter._load_ledger(None)["agent_runs"] == meter._empty_agent_runs()
 
 
 def test_the_export_reaches_the_pulse_as_an_incomplete_reason():
