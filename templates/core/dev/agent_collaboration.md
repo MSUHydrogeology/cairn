@@ -98,14 +98,14 @@ evidence supporting the three answers and name uncovered areas without
 reporting every lens. The nine:
 
 1. **Claims** — Check load-bearing claims against the current tree with committed evidence or adequate reasoning; cite evidence and limits. Forward behavior needs executable evidence; inventory and check every applicable member for a set-wide claim.
-2. **Production path** — Test the failing path through the public entry point, not a helper or stub.
+2. **Production path** — Check the failing path through the public entry point, not a helper or stub.
 3. **Design completeness** — State preconditions, invariants, edge cases and failure modes.
 4. **Fail-closed** — Guards fail loudly, not by degrading or returning empty, across configurations and stages; make fail-open paths intentional.
 5. **Consistency** — Check docs, roadmap, code, tests and doctrine for stale references and reusable tools. Repeat the plan's reuse search and one of your own, testing each against a known positive; an accidental near-copy is a finding satisfied by reuse or generalization.
 6. **Drift** — Match docs, examples, changelog and commit claims to shipped behavior.
 7. **Placement** — For process changes, identify who acts, when, and in which ceremony or serialization point.
 8. **Scientific validity and scope** — Ground and document methods, prevent quiet scope expansion, and justify new abstractions.
-9. **Satisfier** — Every finding names a closing test, guard, doc, scope-cut or explicit `wontfix`; without one it is an observation. At archive, test or guard maps to `guard`, doc or scope-cut to `accept`, and wontfix to `wontfix`. Other real work is `defer`, the Maintainer's call. A scope-cut corrects a claim; only the Maintainer may concede removal of accepted work.
+9. **Satisfier** — Every finding names what closes it: exact words, code, a guard, doc, scope-cut or explicit `wontfix`; without one it is an observation. At archive, test or guard maps to `guard`, doc or scope-cut to `accept`, and wontfix to `wontfix`. Other real work is `defer`, the Maintainer's call. A scope-cut corrects a claim; only the Maintainer may concede removal of accepted work.
 
 Unreviewed trivial changes owe no review record.
 
@@ -120,7 +120,7 @@ units, coordinate systems, numerical edges and resource limits.
 **Code review tries to falsify the change.** A clean pass gives concise,
 evidence-backed results and names what remains uncertain. Mutation
 is optional unless a specific requirement calls for it. Keep existing negative
-controls; a new security check needs a demonstrated failing case. Preserve
+controls; a new security check, or a change to what one accepts, is shown once to refuse one planted bad input, with the command and result recorded; the planted case need not be kept as a test. Preserve
 every applicable security check and review. For scientific work that touches
 an assumption or a published or acted-on result, retain the independent error
 check and positive control even when the intended result is unchanged.
@@ -283,9 +283,9 @@ When asking the Maintainer to choose, show each material option's changes and bu
 
 ## Review rules
 
-A fresh reviewer, not the author, reads a committed version, with one exception (scope the Maintainer adds, below). One review stance applies at every stage; the stage sets the questions. Answer three: should this happen as framed, what is the best alternative, and what would show it wrong? Each answer states its point in a sentence, then gives its evidence. Name what the pass did not cover. Question 3 names a forward test even when there are no findings. There is no finding quota.  Recommend improvements; the author decides.  A further Security Review pass names the unresolved question or newly changed material, why earlier passes and evidence cannot resolve it, its expected value, and the artifact and scope. Clean work and closed findings advance without a clearing review.
+A fresh reviewer, not the author, reads a committed version, with one exception (scope the Maintainer adds, below). One review stance applies at every stage; the stage sets the questions. Answer three: should this happen as framed, what is the best alternative, and what would show it wrong? Each answer states its point in a sentence, then gives its evidence. Name what the pass did not cover. There is no finding quota.  Recommend improvements; the author decides.  A further Security Review pass names the unresolved question or newly changed material, why earlier passes and evidence cannot resolve it, its expected value, and the artifact and scope. Clean work and closed findings advance without a clearing review.
 
-**Closing a blocking finding.** A reviewer who blocks code writes a failing developmental test (scratch work, deleted before archive) into the review, with its command and two or three cases where input regimes differ. The implementer runs it exactly as given before the fix and after it, and records both results with commit ids; a changed test counts as a decline. A test that guards a listed promise joins that promise's existing test. Where no test can express the finding, the reviewer names the exact lines to remove or replace. On a document, the reviewer gives the exact words and the author applies them. The implementer or author may decline, with a reason; a declined blocking finding stays open and goes to the Maintainer with that reason, as at a cap. A premise objection to a proposal or plan has no exact words and goes to the Maintainer with the author's reply. At code review, a design objection means the plan was wrong and takes the plan-amendment path, with its fresh non-author review. A passing test is not proof that a fix is right, so the later verification runs stay; no second read of the fix follows, except after a failed joined integration run.
+**Closing a blocking finding.** A blocking finding is closed by exact words or code; a failing test is given only when words cannot show the fault. The reviewer shows it failing; the implementer runs it once, unchanged, after the fix, and a changed test counts as a decline. This does not bind a Security Review, which may ask for one run or one planted case on the point it raises. A test that guards a listed promise joins that promise's existing test. Where no test can express the finding, the reviewer names the exact lines to remove or replace. On a document, the reviewer gives the exact words and the author applies them. The implementer or author may decline, with a reason; a declined blocking finding stays open and goes to the Maintainer with that reason, as at a cap. A premise objection to a proposal or plan has no exact words and goes to the Maintainer with the author's reply. At code review, a design objection means the plan was wrong and takes the plan-amendment path, with its fresh non-author review. A passing test is not proof that a fix is right. No second read of the fix follows, except after a failed joined integration run.
 
 **Scope the Maintainer adds.** A further proposal or plan review happens only for scope the Maintainer adds. Its brief is the added text and the first review of the same kind. It goes to the first reviewer where the tool can resume that session, otherwise to a reviewer given only those two things, never to the author. An addition that alters what a high-risk surface does or accepts gets one Security Review pass on the same brief, and a Security reviewer may also read any file the addition touches.
 
@@ -350,10 +350,9 @@ Search and reuse before building. Coordinate shared-tree overlaps and claim exac
 Reviewers read a commit, never a shared working tree. Run other writing checks on a separate copy of that commit, and count a figure only if measured on its bytes. A noncooperating writer can defeat shared-file inspection; coordinate that risk.
 
 A defect breaks a promise already in the file. Count person-steps, not machine
-time. A cheap defect fix may restore only a promise already in an edited file, with
-its test, and may add no other file, function, option or public name. It must
+time. A cheap defect fix may restore only a promise already in an edited file, with a test only if no existing test would have caught the fault, and may add no other file, function, option or public name. It must
 change no rule text, contract, high-risk/hash-pinned surface or fenced step.
-Record `Defect fix: <promise> -> <file> -- test <path::node> -- changes no
+Record `Defect fix: <promise> -> <file> -- test <path::node> or none -- changes no
 rule text` in the commit body. A known cheap defect left open needs a plan
 template deferral reason. An explicitly authorized Decision scribe quotes the
 Maintainer verbatim in the Decision and commit body and commits nothing else.
@@ -367,13 +366,13 @@ lines excluding verbatim Decision quotations.
 
 A scoped certification names the tested commit, the components, checks, results and omissions in the work record. It covers only those behaviors; reopen it if a later failure contradicts it. A whole suite runs only when a project requirement calls for it, and a reviewer never runs one.
 
-Scientific model evidence belongs with the work or release that requires it; scientific subject alone adds no run to routine checks. A configured suite member stays required wherever it is required, including slow or scientific runs. Subject and duration waive no run and authorize no rescheduling.
+Scientific model evidence belongs with the work or release that requires it; scientific subject alone adds no run to routine checks. A configured suite member stays required at certification, including slow or scientific runs. Subject and duration waive no run and authorize no rescheduling.
 
-Apply the **Pareto testing principle**: aim for 80% fault coverage in 20% of runtime and maintenance. Permanent tests guard external promises through public entries: primary workflows, scientific or data invariants, and one parameterized check per security or refusal class. Run developmental tests during coding and delete them before archive. Do not keep private-helper tests, change-specific pins or wording tests; do not add separate input variations on the same code branch. Pruning non-promise, private-helper or over-budget tests needs no per-member mutation proof unless specifically required. Simulations use real equations on small domains and analytical or convergence benchmarks. Local effects use affected checks; shared contracts, common infrastructure, language seams, solver behavior and uncertain dependencies widen to owning families and consumers. Agents select routinely, reviewers challenge, and the Maintainer sets high-level needs and material exceptions.
+Run the fewest tests that show the change is right, once: the tests written for it, and at most five test files that can see it. Make no run before the change to compare with, no second host unless the code is specific to that host, and no wide run because a large file was touched. A direct check that proves the point replaces the tests. Something that would fail if the change were wrong must be read, run or checked once. The whole suite runs at certification, before a release is cut. More than this needs the Maintainer's word. Where another text differs, this rule governs. A run that a plan names for a security requirement still stands. Permanent tests guard external promises through public entries: primary workflows, scientific or data invariants, and one parameterized check per security or refusal class. Do not keep private-helper tests, change-specific pins or wording tests; do not add separate input variations on the same code branch. Pruning non-promise, private-helper or over-budget tests needs no per-member mutation proof unless specifically required. Simulations use real equations on small domains and analytical or convergence benchmarks.
 
-Plans finish as in “Plans and records”; they do not wait for later integration. The arc owner runs one joined integration selection under the canonical runtime after connected plans finish, or earlier at a critical shared boundary. Before arc completion or release, record final combined coverage, evidence producers and consumers, results and omissions. Reuse applicable results only for unchanged behavior and inputs; after corrections rerun affected interactions. The arc owner records and repairs post-archive defects without reopening the plan. Missing evidence, failed promises and required checks remain plan work. Routine human trust and release operations remain separate. Cover the clean final combined revision; do not replay the whole selection solely to stamp a new commit ID.
+Plans finish as in “Plans and records”; they do not wait for later integration. Before arc completion or release, one line says what was not checked. The arc owner records and repairs post-archive defects without reopening the plan. Missing evidence, failed promises and required checks remain plan work. Routine human trust and release operations remain separate.
 
-Boundary A is scoped iteration. Boundary C is independent falsification; its `Bounding` verdict is `WIDER RUN REQUIRED` when mapped checks are insufficient. A review fix is closed by the review's own test or exact words ("Review rules"), not by a second read before Boundary B. Change verification, tree certification and release verification are separate.
+Boundary A is scoped iteration. Boundary C is independent falsification; its `Bounding` verdict is `WIDER RUN REQUIRED` when mapped checks are insufficient. A review fix is closed by the review's exact words or code, or its failing test where words cannot show the fault ("Review rules"), not by a second read before Boundary B. Change verification, tree certification and release verification are separate.
 
 
 Implementation verification closes with `**Benefit versus cost**: <verdict>
@@ -384,7 +383,7 @@ aggregate agent elapsed from wall time and use existing records for available
 decision counts, shipped/always-loaded word changes, test count/runtime and
 installed-file deltas. Missing evidence is `unknown`.
 
-Pinned prose is a substantive surface; unpinned prose uses prose gates. Prose-only work runs the claim, link, snippet and neutrality gates plus tests that read the changed file. Search for readers and byte pins; do not assume either is absent. Do not run the suite unless prose bytes are pinned. Name the interpreter with every suite figure.
+Pinned prose is a substantive surface; unpinned prose uses prose gates. Prose-only work runs the claim, link, snippet and neutrality gates. Name the interpreter with every suite figure.
 
 ## Coordination
 
@@ -410,7 +409,7 @@ delegation.
 
 ## Session reflections and handoff
 
-At goodnight commit a handoff and reflection, and leave an uncommitted next-session note; refuse it if its path, `dev/reflections` or `dev` is a link. Goodnight never authorizes a push. The full-handoff owner runs configured fast smoke if present, recording command, result and coverage limits; absence is unavailable, not passed, and failure is failed. Reflection-only participants owe no test. Slow tests remain due at release and when an accepted plan, safety/security requirement or Maintainer requires them. Change checks and joined Boundary B remain due on their schedules; smoke replaces neither them nor required certification.
+At goodnight commit a handoff and reflection, and leave an uncommitted next-session note; refuse it if its path, `dev/reflections` or `dev` is a link. Goodnight never authorizes a push. Reflection-only participants owe no test. Slow tests remain due at release and when an accepted plan, safety/security requirement or Maintainer requires them. Change checks and joined Boundary B remain due on their schedules.
 
 Reflections are **per-agent and ephemeral** — they are pruned. Anything durable
 migrates out to doctrine or the roadmap before then.
