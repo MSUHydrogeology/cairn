@@ -225,3 +225,28 @@ def test_two_wrapper_records_do_not_hide_a_deleted_file(tmp_path, capsys):
     assert "missing: VENDOR.md" in err
     assert f"missing: {script['dst']}" in err
     assert all(p.detail != DELETED_ON_PURPOSE for p in _plans(tmp_path))
+
+
+def test_a_renamed_wrapper_restored_after_retiring_is_finalized(tmp_path, capsys):
+    _install(tmp_path)
+    (tmp_path / WRAPPER).rename(tmp_path / "CLAUDE.md")
+    (tmp_path / "CLAUDE.md").unlink()
+    assert _upgrade(tmp_path, "--retire-wrapper", "CLAUDE.md") == 0
+
+    (tmp_path / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
+    capsys.readouterr()
+    assert [p.kind for p in _plans(tmp_path) if p.dst == "CLAUDE.md"] != []
+    assert _upgrade(tmp_path, "--finalize", "CLAUDE.md", "--force") == 0
+    assert "adopter_deleted" not in _wrapper_record(_lock(tmp_path))
+
+
+def test_a_wrapper_name_with_a_drive_letter_is_never_retired(tmp_path, capsys):
+    _install(tmp_path)
+    lock = _lock(tmp_path)
+    _wrapper_record(lock).update(dst="C:x.md", adopter_deleted=True)
+    _write_lock(tmp_path, lock)
+    (tmp_path / WRAPPER).unlink()
+    capsys.readouterr()
+
+    assert _verify(tmp_path) != 0
+    assert RETIRED_NOTE not in capsys.readouterr().out

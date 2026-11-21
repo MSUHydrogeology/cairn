@@ -918,7 +918,9 @@ def _compute_upgrade(
             continue
         verbatim = bool(rec.get("verbatim"))
         src_rel = rec["src"]
-        if _wrapper_retired(rec, lock.get("files", []), target):
+        if (_wrapper_retired(rec, lock.get("files", []), target)
+                and _resolve_vendor_wrapper(
+                    target, {r["dst"] for r in lock.get("files", [])}) is None):
             plans.append(FilePlan(dst, "up-to-date", None,
                                   "vendor wrapper deleted on purpose", None, None))
             continue
@@ -1868,7 +1870,8 @@ _NOT_A_VENDOR_WRAPPER = ("AGENTS.md", "CHANGELOG.md", "RULES.md", "NOTICE.md")
 def _wrapper_record_fits(rec: dict[str, Any], files: list[Any]) -> bool:
     """The part of the retired-wrapper rule that reads only the lockfile: *rec*
     is the one ``core/VENDOR.md`` record, is not verbatim, and its ``dst`` is a
-    root-level ``.md`` name that Cairn does not ship as its own file. Repeated
+    root-level ``.md`` name, with no ``:``, that Cairn does not ship as its own
+    file. Repeated
     inline in ``install/verify_integrity.py``; change both together."""
     if rec.get("src") != "core/VENDOR.md" or rec.get("verbatim"):
         return False
@@ -1877,7 +1880,8 @@ def _wrapper_record_fits(rec: dict[str, Any], files: list[Any]) -> bool:
         return False
     dst = rec.get("dst")
     return (isinstance(dst, str) and dst.endswith(".md") and "/" not in dst
-            and "\\" not in dst and dst not in _NOT_A_VENDOR_WRAPPER)
+            and "\\" not in dst and ":" not in dst
+            and dst not in _NOT_A_VENDOR_WRAPPER)
 
 
 def _wrapper_retired(rec: dict[str, Any], files: list[Any], target: Path) -> bool:
@@ -3040,7 +3044,8 @@ def _cmd_finalize_lockfile(
         dst_rel = _disk_dst(target, rec, mapped)
         if dst_rel is None:
             continue
-        if _wrapper_retired(rec, files, target):
+        if (_wrapper_retired(rec, files, target)
+                and _resolve_vendor_wrapper(target, mapped) is None):
             continue  # a wrapper the adopter deleted on purpose stays retired
         if "adopter_deleted" in rec and os.path.lexists(target / dst_rel):
             rec.pop("adopter_deleted")  # the file is back: it is checked again
@@ -4633,6 +4638,8 @@ def _layout_heal_findings(lock: dict[str, Any]) -> tuple[list[dict[str, Any]], l
         settings = {}
     tokens = []
     for name, value in settings.items():
+        if not (isinstance(name, str) and re.fullmatch(r"\w+", name, re.ASCII)):
+            continue  # not a name a template can hold; never printed
         for _, _, old, _, _, new in _LAYOUT_MOVES:
             if value == "python " + old and new in dsts and old not in dsts:
                 tokens.append((name, value, new))

@@ -467,6 +467,7 @@ def verify(target: Path) -> int:
         if (rec.get("adopter_deleted") is True and rec.get("src") == "core/VENDOR.md"
                 and not rec.get("verbatim") and vendor_records == 1
                 and dst_rel.endswith(".md") and "/" not in dst_rel and "\\" not in dst_rel
+                and ":" not in dst_rel
                 and dst_rel not in ("AGENTS.md", "CHANGELOG.md", "RULES.md", "NOTICE.md")):
             try:
                 os.lstat(target / dst_rel)

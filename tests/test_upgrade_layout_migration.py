@@ -479,3 +479,18 @@ def test_heal_layout_leaves_a_custom_token_value_alone(layout, capsys):
     assert "Nothing to heal." in capsys.readouterr().out
     assert (target / LOCK).read_bytes() == before
     assert (target / CHECK_DST).read_bytes() == CHECK_OLD
+
+
+def test_heal_layout_prints_no_token_name_from_the_lock_that_is_not_plain(layout, capsys):
+    _, target, _ = layout
+    _claim_check_tree(layout)
+    lock = scaffold.read_lockfile(target)
+    lock["tokens"]["evil\x1b]0;x\x07"] = "python scripts/claim_check.py"
+    _put(target, LOCK, json.dumps(lock).encode("utf-8"))
+    _commit(target, "a token name holding a terminal escape")
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    assert "\x1b" not in capsys.readouterr().out
+    lock = scaffold.read_lockfile(target)
+    assert lock["tokens"]["claim_check_command"] == "python dev/tools/claim_check.py"
+    assert lock["tokens"]["evil\x1b]0;x\x07"] == "python scripts/claim_check.py"
