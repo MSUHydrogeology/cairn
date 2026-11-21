@@ -4266,6 +4266,19 @@ _LAYOUT_MOVES = tuple(row for row in LAYOUT_INSTALLS if row[1:3] != row[4:6])
 _LAYOUT_LOCK_KEYS = ("layout_ancestry", "layout_base_commit", "layout_fork")
 _LAYOUT_NEW_ROWS = {(owner, new_src, new_dst, verbatim)
                     for owner, _, _, verbatim, new_src, new_dst in _LAYOUT_MOVES}
+# The documentation plan moved to dev/ in 0.9; `upgrade --documentation-plan-moved`
+# records the owner's Git move. The steps text is one constant, shown in the
+# report, the refusals and install/UPGRADE.md.
+_DOCPLAN_SRC = "modules/default-on/documentation_plan_template.md"
+_DOCPLAN_OLD = "docs/DOCUMENTATION_PLAN.md"
+_DOCPLAN_NEW = "dev/DOCUMENTATION_PLAN.md"
+_DOCPLAN_STEPS = (
+    "  1. git mv docs/DOCUMENTATION_PLAN.md dev/DOCUMENTATION_PLAN.md",
+    "  2. python install/scaffold.py upgrade --target <repo> --documentation-plan-moved",
+    "  3. git add dev/.cairn/cairn-lock.yml, then git commit",
+)
+_DOCPLAN_LINKS = ("Links in your own files are not changed: search them for "
+                  "docs/DOCUMENTATION_PLAN.md and point each at dev/DOCUMENTATION_PLAN.md.")
 
 
 def _layout_config_path(cairn_root: Path) -> Path | None:
@@ -4815,6 +4828,117 @@ def _cmd_retire_wrapper(target: Path, lock: dict[str, Any], name: str, force: bo
     return 0
 
 
+def _cmd_documentation_plan_moved(target: Path, templates_root: Path,
+                                  lock: dict[str, Any], force: bool) -> int:
+    """`upgrade --documentation-plan-moved`: record that the owner moved
+    docs/DOCUMENTATION_PLAN.md to dev/DOCUMENTATION_PLAN.md with git mv. Reads
+    both places and rewrites only the `dst` of the one documentation-plan record;
+    it creates, moves and deletes no file, and the lockfile is its only write."""
+    files = lock.get("files") if isinstance(lock.get("files"), list) else []
+    recs = [r for r in files if isinstance(r, dict) and r.get("src") == _DOCPLAN_SRC]
+    if not recs:
+        print("Nothing to record: the lockfile has no record of the documentation plan.")
+        return 0
+    if len(recs) > 1:
+        print("error: upgrade --documentation-plan-moved refused: the lockfile records "
+              "the documentation plan more than once. Nothing was changed.",
+              file=sys.stderr)
+        return 1
+    rec = recs[0]
+    if (rec.get("dst") not in (_DOCPLAN_OLD, _DOCPLAN_NEW) or rec.get("verbatim")
+            or any(isinstance(r, dict) and r is not rec and r.get("dst") == _DOCPLAN_NEW
+                   for r in files)):
+        print("error: upgrade --documentation-plan-moved refused: the lockfile's record "
+              "of the documentation plan is not one this command records (it names "
+              "another place, or is marked verbatim). Nothing was changed.",
+              file=sys.stderr)
+        return 1
+    if rec["dst"] == _DOCPLAN_OLD:
+        ahead = _legacy_layout_paths(target, templates_root)
+        if ahead:
+            print("error: upgrade --documentation-plan-moved refused: this project still "
+                  "has the 0.8 layout migration ahead of it "
+                  f"({len(ahead)} file(s) at their old paths). Finish it first (run "
+                  "upgrade --plan and follow it), then run the three steps. Nothing was "
+                  "changed.", file=sys.stderr)
+            return 1
+    contents: list[bytes | None] = []
+    for rel in (_DOCPLAN_NEW, _DOCPLAN_OLD):
+        path = target / rel
+        _assert_safe_write(path, target)
+        contents.append(_read_regular_bytes(path))
+    new, old = contents
+    if rec["dst"] == _DOCPLAN_NEW:
+        note = (" A file is also at docs/DOCUMENTATION_PLAN.md and was left alone."
+                if old is not None else "")
+        print("Nothing to record: the lockfile already records dev/DOCUMENTATION_PLAN.md."
+              + note)
+        return 0
+    if new is None and old is None:
+        print("error: upgrade --documentation-plan-moved refused: the documentation plan "
+              "is at neither docs/DOCUMENTATION_PLAN.md nor dev/DOCUMENTATION_PLAN.md. "
+              "Nothing was changed. Restore it with Git, then run these steps in order:",
+              file=sys.stderr)
+        print("\n".join(_DOCPLAN_STEPS), file=sys.stderr)
+        return 1
+    if new is None:
+        print("error: upgrade --documentation-plan-moved refused: the file is still at "
+              "docs/DOCUMENTATION_PLAN.md. This command records a move you make with "
+              "Git; it does not make it. Nothing was changed. Run these steps in order:",
+              file=sys.stderr)
+        print("\n".join(_DOCPLAN_STEPS), file=sys.stderr)
+        return 1
+    if old is not None:
+        print("error: upgrade --documentation-plan-moved refused: a file is at both "
+              "docs/DOCUMENTATION_PLAN.md and dev/DOCUMENTATION_PLAN.md. Nothing was "
+              "changed. Keep one: compare them, delete the one you do not want (git rm "
+              "-f <that path>), and make sure the one you keep is at "
+              "dev/DOCUMENTATION_PLAN.md. Then run step 2 again.", file=sys.stderr)
+        return 1
+    if not force:
+        try:
+            dirty = _writeset_dirty_collisions(target, [_LOCKFILE_REL])
+        except _EditCheckCannotTell as exc:
+            print(_cannot_tell_refusal("--documentation-plan-moved", exc.reason),
+                  file=sys.stderr)
+            return 1
+        if dirty:
+            print("error: refusing --documentation-plan-moved: the lockfile has unsaved "
+                  "edits; commit them or pass --force", file=sys.stderr)
+            return 1
+    matches = ("sha256:" + _sha256_hex(new) == rec.get("hash"))
+    rec["dst"] = _DOCPLAN_NEW
+    _commit_lock_and_caches(target, lock, [])
+    first = ("Recorded dev/DOCUMENTATION_PLAN.md as the documentation plan. Now do step 3: "
+             "git add dev/.cairn/cairn-lock.yml, then git commit.")
+    if matches:
+        print(first)
+    else:
+        print(first + " The file differs from the version the lockfile recorded. If the "
+              "changes are yours, run python install/scaffold.py upgrade --target <repo> "
+              "--finalize dev/DOCUMENTATION_PLAN.md, then do step 3; if not, restore the "
+              "file from a copy you trust.")
+    print(_DOCPLAN_LINKS)
+    return 0
+
+
+def _documentation_plan_move_lines(target: Path) -> list[str]:
+    """The move steps for the report (after `--plan` and a successful `--apply`).
+    Reads the lockfile only; never raises, whatever the lockfile holds."""
+    try:
+        lock = read_lockfile(target)
+    except (OSError, ScaffoldSecurityError, ValueError):
+        return []
+    files = lock.get("files") if isinstance(lock, dict) else None
+    if not isinstance(files, list):
+        return []
+    recs = [r for r in files if isinstance(r, dict) and r.get("src") == _DOCPLAN_SRC]
+    if len(recs) != 1 or recs[0].get("dst") != _DOCPLAN_OLD:
+        return []
+    return ["The documentation plan moves to dev/ in 0.9. To move it, run these steps "
+            "in order:", *_DOCPLAN_STEPS, _DOCPLAN_LINKS]
+
+
 def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
     """Dispatch the receipt before ordinary cleanup, apply or profile self-heal."""
     pending = _layout_pending(target)
@@ -4823,7 +4947,7 @@ def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
               "Resume with --apply --migration-receipt and the digest printed at stage time.")
         mutable = any((args.apply, args.init_lock, args.finalize, args.adopt_collisions,
                        args.adopt_module, args.remove_retired, args.heal_layout,
-                       args.retire_wrapper))
+                       args.retire_wrapper, args.documentation_plan_moved))
         return 2 if mutable else 0
     if args.migration_receipt:
         raw, saved = _load_layout_receipt(target, args.migration_receipt)
@@ -4853,7 +4977,7 @@ def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
         print(message)
         return 0
     if any((args.init_lock, args.finalize, args.adopt_collisions, args.adopt_module, args.remove_retired,
-            args.heal_layout, args.retire_wrapper)):
+            args.heal_layout, args.retire_wrapper, args.documentation_plan_moved)):
         return None
     if args.reconcile_layout is not None:
         source = SourceRevision(cairn_root, _resolve_layout_revision(cairn_root, "HEAD"))
@@ -4952,6 +5076,9 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                         "layout_fork) that an older layout move left on moved "
                         "records; the security verification refuses them. Commit "
                         "the lockfile afterwards.")
+    p.add_argument("--documentation-plan-moved", action="store_true",
+                   help="Record that you moved docs/DOCUMENTATION_PLAN.md to "
+                        "dev/DOCUMENTATION_PLAN.md with git mv. Changes only the lockfile.")
     p.add_argument("--retire-wrapper", default=None, metavar="NAME",
                    help="Record that you deleted the vendor wrapper NAME (such as "
                         "CLAUDE.md) on purpose, so Cairn treats its absence as "
@@ -4992,6 +5119,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         ("--adopt-collisions", args.adopt_collisions),
         ("--remove-retired", args.remove_retired),
         ("--heal-layout", args.heal_layout),
+        ("--documentation-plan-moved", args.documentation_plan_moved),
     ) if on]
     if args.adopt_module:
         actions.append("--adopt-module")
@@ -5047,7 +5175,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     # above it is refused before either reads, as on `--plan`, `--stage`,
     # `--apply` and `--init-lock`.
     if (args.adopt_module or args.adopt_collisions or args.remove_retired or args.heal_layout
-            or args.retire_wrapper):
+            or args.retire_wrapper or args.documentation_plan_moved):
         refused = _refuse_if_linked(
             target, _PROFILE_REL, f"the profile {_PROFILE_REL}")
         if refused is not None:
@@ -5133,6 +5261,20 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
             return _cmd_heal_layout(target, lock, args.force)
         except ScaffoldSecurityError as exc:
             print("error: upgrade --heal-layout refused (containment): "
+                  f"{exc}", file=sys.stderr)
+            return 2
+
+    if args.documentation_plan_moved:
+        if args.to is not None:
+            print("error: --documentation-plan-moved runs against the running target "
+                  "tree; --to is not supported (run scaffold from the target tree).",
+                  file=sys.stderr)
+            return 2
+        try:
+            return _cmd_documentation_plan_moved(
+                target, templates_root, lock, args.force)
+        except (ScaffoldSecurityError, OSError, ValueError) as exc:
+            print("error: upgrade --documentation-plan-moved refused (containment): "
                   f"{exc}", file=sys.stderr)
             return 2
 
@@ -5252,6 +5394,8 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         if result == 0:
             for line in model_selection_notice_lines(target):
                 print(line)
+            for line in _documentation_plan_move_lines(target):
+                print(line)
         return result
 
     # What is left is the report and `--stage`.  Both size the upgrade under the
@@ -5363,4 +5507,6 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     if _layout_heal_findings(lock)[0]:
         print("Run python install/scaffold.py upgrade --target <repo> --heal-layout "
               "to remove lock keys the security verification refuses.")
+    for line in _documentation_plan_move_lines(target):
+        print(line)
     return 0
