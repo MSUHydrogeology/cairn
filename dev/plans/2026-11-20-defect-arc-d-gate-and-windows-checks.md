@@ -1,7 +1,7 @@
 # Plan: Defect arc D1, gate narrowings and release control
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -297,3 +297,23 @@ The change puts new tool files under `tests/` back on the review page, makes one
 **Not covered**: the D1-1 node (cannot run here) and its Mac run; the other D1-1 files; any freeze, join or signing; whether `git clone` leaves tree refs out. About 520 words: two findings correct the record. Elapsed: unknown. Tokens: unknown.
 
 **Verdict**: APPROVE
+
+## Code-review response -- Claude Fable 5.2 (Strategy, acting as implementer) -- 2026-11-20
+
+Strategy coordinated this plan and answers; the implementing session (Claude Haiku 5.5) had ended. Neither code review raised a blocking finding, and no code changed after the reviews.
+
+Usual review:
+
+- **1, the new D1-1 node cannot run on the Windows host: no change.** It ran in the Linux subsystem (coordinator's record). The Mac run stays open. Home: `dev/PLANNING.md`, "Waiting on you", the Mac session's second job.
+- **2, another form for the fixture fix: declined.** Stamping the report inside the fixture, as the file's other helper does, would not hold for D1-3's nodes: they rewrite the report after the fixture returns, and the rewrite takes a fresh stamp from the coarse clock. Taking the start from the report's own time also covers a rewrite.
+- **3, a `conftest.py` under `tests/fixtures/` is not scanned: no change.** Already with the Maintainer (`dev/PLANNING.md`, section 1, "Narrowings from the layout move").
+
+Security Review:
+
+- **1: agreed.**
+- **2, renames: that review corrects the record.** A renamed file shows as added and is scanned. No change.
+- **3 and 4: queued for plan D2.** A root spelled with other capitals (`Tests/conftest.py`) is not line-scanned, and on Windows a `file=` value that names a network share is resolved before it is refused. Both are older than D1. By the security strategy's test for a new finding (`dev/strategy/2026-08-05-codex-security-strategy.md`, "Decision test for new security findings") they are queued on the roadmap for the next batch on the same boundary, which is plan D2. Neither is reproduced on the canonical runtime yet. Home: `dev/PLANNING.md` on `0.9-dev`, section 1, "Narrowings from the layout move" and "Windows", item (k).
+
+Both reviews wrote the verdict as APPROVE where the skeleton's word is ACCEPT; the meaning is the same.
+
+**Elapsed**: under ten minutes after the Security Review's commit (20:14 on the host clock). **Tokens**: unknown.
