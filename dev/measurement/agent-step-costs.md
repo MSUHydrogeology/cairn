@@ -81,8 +81,10 @@ runs cost machine time, not tokens, and are listed separately.
 | Layout trial, step 1 | draft of the page, from a code-only copy | High | 133,527 | 7 | done, 871 words |
 | | three tasks and their key | Medium | 114,176 | 4 | done |
 | Layout trial, step 2 | counts against the hand-kept account | Medium | 68,119 | 0.3 | done |
+| Plan B, upgrading | usual final code review | Medium | 160,248 | 8 | revise, 1 blocking |
+| | Security Review of the final code | High | 195,473 | 10 | revise, 2 blocking (1 shared) |
 
-Total for the day so far: 8,829,341 tokens across 60 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 9,185,062 tokens across 62 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -134,7 +136,12 @@ Measured:
   Strategy put every design decision in the brief, so the author did no
   design, and Strategy folded the reviews itself, so no agent was resumed or
   spawned for that. Two against two is a small sample.
-- **Thirty review passes so far, and still no return visit.**
+- **Thirty-two review passes so far, and still no return visit.**
+- **The final code review of plan B earned its cost.** Two passes, 355,721
+  tokens and 18 minutes, found two defects that five test groups on two hosts
+  and the end-to-end checks had not: a restored wrapper that was never picked
+  up again, and a setting name printed raw from the lock. Each came with the
+  code that fixes it and a test that fails without it.
 - **Drafting a layout page for a 111,000-line project cost 133,527 tokens.** A
   high-tier agent read a code-only copy by searching and counting, not by
   reading every file, and wrote 871 words in 7 minutes. The trial's first two
