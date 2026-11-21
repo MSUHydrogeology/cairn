@@ -212,9 +212,16 @@ any skip under an adopter-supplied `--required-files` list stay refused. Each
 refusal ends with a bracketed identifier such as `[skip-unlisted]`. This
 exception only says the skip was expected on this host. The separate Mac and
 Windows records that `release/security_check.py` joins (next section) remain
-the proof that each platform-only test ran and passed on its own host.
+the proof that each platform-only test ran and passed on its own host (not at
+v0.8.1; see step 3 of "The cut").
 
 ## Strict release-security evidence
+
+The record and join commands below are not part of the v0.8.1 cut; the
+tightening decides whether to keep, extend or remove them. At v0.8.1 the
+secrets scan runs by itself, as step 3 of "The cut" gives it. The signing,
+the membership check and every other safety, security and release check
+this page names stay due.
 
 At the final release candidate, first freeze the complete source history on the
 clean Mac authority (creating the deterministic sibling `.pack` before
@@ -307,16 +314,36 @@ Two techniques that earned their place in past runs:
 produces the confidence the cut rests on.
 
 **Order of the cut.** The records name one exact commit, so any commit added
-after them starts the records over. The Maintainer may have an agent prepare
-steps 1 to 3; the key, the join, every push and the publication stay with the
-Maintainer.
+after them starts the records over (not at v0.8.1; see step 3: there the three
+results and the scan name the commit). The Maintainer may have an agent prepare
+steps 1 to 3; the key, the join (not at v0.8.1), every push and the publication
+stay with the Maintainer.
 
 1. Finish every content commit on the development branch, the version bump and
    changelog below included.
 2. Merge that commit into `master` with `git merge --ff-only`, so the tagged
    commit is on the protected branch. Do not push yet.
-3. From `master` at that commit, freeze the history, take the Mac and Windows
-   records and join them (see "Strict release-security evidence").
+3. From `master` at that commit, run the whole test suite once on each of
+   the Mac, Linux and Windows, under Python 3.13 on a clean tree. On the Mac,
+   run the first block of "Checks to run" as written (the suite and the
+   membership check), then the remaining gates there. On Linux and Windows,
+   run the suite alone. Write the three results in the release notes
+   (`dev/rules/certifying-runs.md`), with every test skipped on each platform
+   and its reason. Any nonzero exit on any platform, a membership refusal on
+   the Mac included, stops the cut. Then, on the Mac, in a fresh `git clone`
+   of the Mac's repository checked out at that commit, fetch nothing more and
+   run
+   `python dev/tools/run_portable_security_sweeps.py --target . --policy dev/tools/portable_security_policy.json --json`.
+   It scans the tree and every branch and tag in the clone. Only exit 0
+   (CLEAN) passes. Exit 5 (a scan leg did not run fully), 10 (findings) or 20
+   (degraded) stops the cut; triage findings privately with
+   `--triage-record <absolute path>`, and a committed credential means
+   stopping and telling the Maintainer to revoke it. Put the exit, the
+   clone's `git rev-parse HEAD` and the summary in the release notes. For
+   v0.8.1 the gate commit of steps 4 and 5 is that commit: the one all three
+   results and the scan name. The record and join commands of "Strict
+   release-security evidence" are not part of the v0.8.1 cut, and the release
+   notes say so, quoting the Decision.
 4. Push `master`. Then create the signed tag on the gate commit and push the tag.
 5. Publish the GitHub Release and run the publication check.
 6. Ask the Maintainer for the version DOI Zenodo mints for the published

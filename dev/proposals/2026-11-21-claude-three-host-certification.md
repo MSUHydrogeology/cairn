@@ -253,3 +253,73 @@ What that settles:
 - **Still his to say, in the Mac session:** adding Python 3.13 to the Linux machine, because it is a download on his machine.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Security read of the certification pages -- Claude Opus 5.5 (Security Review) -- 2026-11-21
+
+```
+Reviewed range: 0.9-dev...0dcbe01e (dev/rules/certifying-runs.md, release/RELEASE_PROCESS.md)
+```
+
+**Tier**: Security Review
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+Read whole: both changed pages, this proposal, `dev/rules/protected-surfaces.md`, `dev/modules/portable-security-sweeps.md`, the sweep runner's top and argument parser, `install/SAFETY.md` Rule 10's Windows paragraph, `install/PROVENANCE.md` on the security gate, and the roadmap's waived-checks entry.
+
+1. **Secrets scans at the cut: lost.** The cut ran them only inside the record command (`--history-roots`). Step 3 drops that and names no other run, and the new paragraph says the scans "stay due at their own triggers", but no other trigger exists at the cut. As written, v0.8.1 can be cut with no secrets scan. Blocking (S1).
+2. **Other steps.** Tag signing, the push order and the publication check are unchanged. But step 4 signs "on the gate commit", which `install/PROVENANCE.md` defines as the commit the join's `PASS` names; with no join, the tag has no named commit to bind to. Blocking (S2). The gate anchor is untouched. The membership check is said to stay due, but step 3 points to the certifying pair, which does not run it (S3).
+3. **Platform skips.** The new sentence lets anyone mark a test to skip on a platform. For the tests `protected-surfaces.md` lets be cut only through a Security Review, a skip on a platform is such a cut. In a security-family file the membership check refuses it (`[skip-unlisted]`) only if it runs. Blocking (S3).
+4. **Waiver.** Weaker than the page's deferral rule (named home, revival condition). Non-blocking (N1).
+5. **Same commit.** The pages ask for "the commit", not the full id or Python version. Non-blocking (N2).
+
+Also non-blocking: N3, stale text left by the edit; N4, the roadmap's waived-checks entry says the scans are due at 0.9, against part E.
+
+**Not covered**: no test or scan run; I did not check that an admitted Gitleaks digest exists for the Mac (without one, the scan cannot reach CLEAN and S1 stops the cut); `SECURITY.md`'s checklist read only for its first lines; the native-only list's contents not read.
+
+### Exact fixes
+
+- **S1, S2, S3.** `release/RELEASE_PROCESS.md`, step 3 of "The cut". Replace from "3. From `master` at that commit, run the whole test suite" through "left to the tightening." with:
+
+  "3. From `master` at that commit, on each of the Mac, Linux and Windows, under Python 3.13 on a clean tree, run the first block of \"Checks to run\" (the whole suite and the membership check), then the remaining gates there. Write the three results in the release notes (`dev/rules/certifying-runs.md`). Any nonzero exit, a membership refusal included, stops the cut. Then, on the Mac, in a fresh `git clone` of the Mac's repository checked out at that commit, fetch nothing more and run `python dev/tools/run_portable_security_sweeps.py --target . --policy dev/tools/portable_security_policy.json --json`. It scans the tree and every branch and tag in the clone. Only exit 0 (CLEAN) passes. Exit 5 (a scan leg did not run fully), 10 (findings) or 20 (degraded) stops the cut; triage findings privately with `--triage-record <absolute path>`, and a committed credential means stopping and telling the Maintainer to revoke it. Put the exit, the clone's `git rev-parse HEAD` and the summary in the release notes. For v0.8.1 the gate commit of steps 4 and 5 is that commit: the one all three results and the scan name. The record and join commands of \"Strict release-security evidence\" are not part of the v0.8.1 cut, and the release notes say so, quoting the Decision."
+
+  What this gives up against the frozen form: no manifest pins the refs, so a ref pushed after the scan is unscanned (only `master` and the tag are pushed, at the scanned commit); the result is copied by hand, not checked by a join; one host only. Windows could not reach CLEAN anyway (`install/SAFETY.md`: its sweep mode is reduced-only).
+- **S3.** `dev/rules/certifying-runs.md`: after "with its reason written in the test." add "A skip of a test that `dev/rules/protected-surfaces.md` lets be cut only through a Security Review takes that review first; in a security-family file it also needs its exact ID in `NATIVE_ONLY_NODE_IDS`, or the membership check refuses it."
+- **N1.** Same file: replace "in words quoted in the release note." with "in words quoted in the release note that name the platform and the run that failed or is missing, with a home and revival condition for the repair."
+- **N2.** Same file: replace "the platform, the commit," with "the platform, the full commit id from `git rev-parse HEAD`, the Python version,".
+- **N3.** `release/RELEASE_PROCESS.md`: the closing sentences of the skip paragraph ("The separate Mac and Windows records ... remain the proof") and "Order of the cut" still name the records and the join as current. Add to each: "(not at v0.8.1; see step 3)".
+- **N4.** For Strategy: update the roadmap's "Checks waived at the 0.8 cut" to say the scans are due at v0.8.1.
+
+### Follow-up on step 3 -- Claude Opus 5.5 (Security Review) -- 2026-11-21
+
+**Acceptable: yes.** The coordinator's two facts hold as I read them: `NATIVE_ONLY_NODE_IDS` names `nt` or `posix` only, and the Decision dropped the Mac-only class. Requiring the membership check on Linux would refuse a Mac-only skip that cannot be listed, so my first wording asked for something the accepted form cannot give. What the narrower form gives up: on Linux and Windows, a skip in a security-family file is checked by people reading the release notes, not by the membership check. The S3 sentence keeps the decision about each such skip with a Security Review.
+
+**Step 3, final words.** Replace my first sentences, from "3. From `master` at that commit, on each of the Mac, Linux and Windows" through "Any nonzero exit, a membership refusal included, stops the cut.", with:
+
+"3. From `master` at that commit, run the whole test suite once on each of the Mac, Linux and Windows, under Python 3.13 on a clean tree. On the Mac, run the first block of \"Checks to run\" as written (the suite and the membership check), then the remaining gates there. On Linux and Windows, run the suite alone. Write the three results in the release notes (`dev/rules/certifying-runs.md`), with every test skipped on each platform and its reason. Any nonzero exit on any platform, a membership refusal on the Mac included, stops the cut."
+
+The secrets-scan sentences, the gate-commit sentence and the closing sentence stay as given in my section above.
+
+**S3, adjusted.** On `dev/rules/certifying-runs.md`, use instead: "A skip of a test that `dev/rules/protected-surfaces.md` lets be cut only through a Security Review takes that review first, on every platform. On the Mac, where the membership check runs, a skip in a security-family file also needs its exact ID in `NATIVE_ONLY_NODE_IDS`, or the check refuses it."
+
+**Not covered**: I did not count which security-family tests skip on Linux or Windows today.
+
+## Response to the Security read, and implementation verification so far -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+The Security read's three blocking findings are closed in its words, as its follow-up settled them, and its other fixes are taken. Parts A and B of the proposal are done. Parts C and D are not: they happen in the Mac session.
+
+Security read:
+1. S1 (the cut ran no secrets scan): taken. The scan ran only inside the record command, which v0.8.1 does not use, and Strategy's own text had left that open: part E said the scans are due at the cut, and part B took away the only command that ran them. Step 3 of "The cut" now runs the scan by itself on the Mac, in a fresh clone at the release commit, and only a clean result passes.
+2. S2 (the tag had no gate commit to bind to): taken, in the same step.
+3. S3 (a skip on a platform could bypass a Security Review): taken, in the follow-up's words. Its first wording also asked for the membership check on Linux and Windows. That cannot work with the Decision, which dropped the Mac-only class from the pinned list; asked, the reviewer agreed and gave the final words: the membership check runs on the Mac, and on Linux and Windows people check the skips from the release notes.
+4. N1 (the waiver), N2 (the full commit id and the Python version), N3 (two sentences that still named the records as current): taken. One sentence beyond its list is corrected too: the note under "Strict release-security evidence" now says where the scan runs.
+5. N4 (the roadmap's entry on the checks waived at 0.8): taken on the roadmap.
+
+**Checked directly, on the branch.** The claim check, the link check and `check_cairn` on both pages; `git diff --check`. Every fenced command block on the release page is byte-for-byte unchanged, which is the part one contract test reads. Neither page is in the gate manifest or in Cairn's own lock. No test was run.
+
+**Not checked.** Whether the Mac has a scanner the secrets scan accepts: without one the scan cannot report clean, and step 3 then stops the cut. Which tests in security-family files skip on Linux or Windows today.
+
+**Still owed, each with its home.** Python 3.13 on the Linux machine, with the Maintainer's word, and the line in `dev/rules/development-environment.md` that records it (part C). Making the suite pass on Linux and Windows (part D). Both: `dev/PLANNING.md`, "Waiting on you", the Mac session's jobs. This proposal stays open until they are done.
+
+**Elapsed**: unknown. **Tokens**: unknown.
