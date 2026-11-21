@@ -10,7 +10,7 @@ lockfile. Promises, one test per row of Detail D5 of the plan:
   record: no move yet, a file at both places, a file at neither, links or
   folders where the file goes, unsaved lockfile edits, a 0.8 layout move still
   ahead, a duplicate or verbatim record, and a failure to read or write.
-- Its report line, its refusals and install/UPGRADE.md give the same three steps.
+- Its report line, its refusals and install/UPGRADE.md give the same five steps.
 
 Run from the Cairn repo root:
     python -m pytest tests/test_upgrade_documentation_plan_moved.py
@@ -46,12 +46,16 @@ BASE_OLD = "dev/.cairn/base/docs/DOCUMENTATION_PLAN.md"
 SRC = "modules/default-on/documentation_plan_template.md"
 STEPS = [
     "  1. git mv docs/DOCUMENTATION_PLAN.md dev/DOCUMENTATION_PLAN.md",
-    "  2. python install/scaffold.py upgrade --target <repo> --documentation-plan-moved",
-    "  3. git add dev/.cairn/cairn-lock.yml, then git commit",
+    "  2. In the files you wrote yourself, change each link to docs/DOCUMENTATION_PLAN.md "
+    "so it points at dev/DOCUMENTATION_PLAN.md. Leave files Cairn installed alone: "
+    "the ordinary upgrade corrects them.",
+    "  3. python install/scaffold.py upgrade --target <repo> --documentation-plan-moved",
+    "  4. python install/verify_integrity.py --target <repo>, then the project's link "
+    "check: python dev/tools/link_check.py",
+    "  5. git add the files you changed and dev/.cairn/cairn-lock.yml, then git commit",
 ]
-LINKS = ("Links in the files you wrote yourself are not changed: search them for "
-         "docs/DOCUMENTATION_PLAN.md and point each at dev/DOCUMENTATION_PLAN.md. "
-         "Do not edit files Cairn installed; the ordinary upgrade corrects them.")
+LINKS = ("If a check in step 4 names a file Cairn installed, do not edit it: the "
+         "ordinary upgrade (upgrade --plan, then --stage and --apply) corrects it.")
 MOVED = "--documentation-plan-moved"
 
 
@@ -182,7 +186,7 @@ def test_records_a_moved_file(tmp_path, capsys):
     assert _upgrade(tmp_path, MOVED) == 0
     out = capsys.readouterr().out
     assert f"Recorded {NEW} as the documentation plan." in out
-    assert "Now do step 3: git add dev/.cairn/cairn-lock.yml, then git commit." in out
+    assert "Now do steps 4 and 5: run the two checks, then commit." in out
     assert LINKS in out
 
     after_lock = _lock(tmp_path)
@@ -511,13 +515,13 @@ def test_the_report_helper_never_raises(tmp_path):
 
 
 def test_the_steps_read_the_same_everywhere(tmp_path):
-    """The report, the refusal and install/UPGRADE.md give the same three steps.
+    """The report, the refusal and install/UPGRADE.md give the same five steps.
     The UPGRADE.md check is expected to fail until its step is written (chunk C4)."""
     _install(tmp_path)
     _as_0_8(tmp_path)
     assert list(upgrade._DOCPLAN_STEPS) == STEPS
     report = upgrade._documentation_plan_move_lines(tmp_path)
-    assert report[1:4] == STEPS
+    assert report[1:6] == STEPS
     upgrade_md = (CAIRN_ROOT / "install" / "UPGRADE.md").read_text(encoding="utf-8")
     for step in STEPS:
         assert step.strip() in upgrade_md

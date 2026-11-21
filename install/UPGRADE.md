@@ -93,23 +93,25 @@ not list every move. Run `--plan` again after each apply.
 
 ## Moving the documentation plan into dev/
 
-From 0.9 the documentation plan file is `dev/DOCUMENTATION_PLAN.md`; a project installed before 0.9 has it at `docs/DOCUMENTATION_PLAN.md`. Cairn never moves or deletes your copy: you move it with Git, and one Cairn command records the new place in the lockfile. In the lines below, `<repo>` is the project folder.
+From 0.9 the documentation plan file is `dev/DOCUMENTATION_PLAN.md`; a project installed before 0.9 has it at `docs/DOCUMENTATION_PLAN.md`. Cairn is part of your project, and the agent that carries out the upgrade makes this move, as it makes the other changes: it moves the file with Git and corrects the links in your own documents by following the steps below. The installer only records the new place and checks the result; it never moves, edits or deletes your copy. In the lines below, `<repo>` is the project folder.
 
 1. If this project is still on the 0.7 layout, finish [the move to the 0.8 layout](#moving-an-install-from-070-to-the-08-layout) first. `--documentation-plan-moved` refuses to run until that move is done.
-2. Run `python install/scaffold.py upgrade --target <repo> --plan`. At its end, if the documentation plan is still at `docs/`, it prints the three steps in step 3 below.
-3. Run these steps in order:
+2. Run `python install/scaffold.py upgrade --target <repo> --plan`. At its end, if the documentation plan is still at `docs/`, it prints the five steps listed in item 3 below.
+3. Do these steps in order:
 
 ```
   1. git mv docs/DOCUMENTATION_PLAN.md dev/DOCUMENTATION_PLAN.md
-  2. python install/scaffold.py upgrade --target <repo> --documentation-plan-moved
-  3. git add dev/.cairn/cairn-lock.yml, then git commit
+  2. In the files you wrote yourself, change each link to docs/DOCUMENTATION_PLAN.md so it points at dev/DOCUMENTATION_PLAN.md. Leave files Cairn installed alone: the ordinary upgrade corrects them.
+  3. python install/scaffold.py upgrade --target <repo> --documentation-plan-moved
+  4. python install/verify_integrity.py --target <repo>, then the project's link check: python dev/tools/link_check.py
+  5. git add the files you changed and dev/.cairn/cairn-lock.yml, then git commit
 ```
 
-4. Links in the files you wrote yourself are not changed. Search them for `docs/DOCUMENTATION_PLAN.md` and point each at `dev/DOCUMENTATION_PLAN.md`. Do not edit files Cairn installed; the ordinary upgrade corrects them, and an edit to one makes `verify_integrity` fail until you run `--finalize` on it. Text you pasted into the `documentation-discipline` or `documentation-tier-home` slots is yours and is not rewritten.
+4. If a check in the fourth step of that list names a file Cairn installed, do not edit it: the ordinary upgrade (`--plan`, then `--stage` and `--apply`) corrects it, and an edit to it makes `verify_integrity` fail until you run `--finalize` on it. Text you pasted into the `documentation-discipline` or `documentation-tier-home` slots is yours and is not rewritten: search it for `docs/DOCUMENTATION_PLAN.md` too.
 
 The command checks that the file is at the new place and not the old, then changes one field of one lockfile record and nothing else. If it refuses, its message says what to do. Run it again after you fix the cause: a second run prints `Nothing to record` and changes nothing. The ordinary `--stage` and `--apply` merge template changes into the file at whichever place the lockfile names, so you may run them before or after these steps.
 
-**A project upgraded with `--init-lock`** (it had no lockfile before) keeps its old file at `docs/DOCUMENTATION_PLAN.md` and gets the new template written beside it at `dev/DOCUMENTATION_PLAN.md`: two files. Keep one: compare them, delete the one you do not want, and make sure the one you keep is at `dev/DOCUMENTATION_PLAN.md`. Then run the three steps above, leaving out step 1 if the file is already at the new place.
+**A project upgraded with `--init-lock`** (it had no lockfile before) keeps its old file at `docs/DOCUMENTATION_PLAN.md` and gets the new template written beside it at `dev/DOCUMENTATION_PLAN.md`: two files. Keep one: compare them, delete the one you do not want, and make sure the one you keep is at `dev/DOCUMENTATION_PLAN.md`. Then do the steps above, leaving out step 1 if the file is already at the new place.
 
 ## Files Cairn stopped shipping
 

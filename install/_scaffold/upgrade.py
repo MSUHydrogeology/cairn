@@ -4274,12 +4274,16 @@ _DOCPLAN_OLD = "docs/DOCUMENTATION_PLAN.md"
 _DOCPLAN_NEW = "dev/DOCUMENTATION_PLAN.md"
 _DOCPLAN_STEPS = (
     "  1. git mv docs/DOCUMENTATION_PLAN.md dev/DOCUMENTATION_PLAN.md",
-    "  2. python install/scaffold.py upgrade --target <repo> --documentation-plan-moved",
-    "  3. git add dev/.cairn/cairn-lock.yml, then git commit",
+    "  2. In the files you wrote yourself, change each link to docs/DOCUMENTATION_PLAN.md "
+    "so it points at dev/DOCUMENTATION_PLAN.md. Leave files Cairn installed alone: "
+    "the ordinary upgrade corrects them.",
+    "  3. python install/scaffold.py upgrade --target <repo> --documentation-plan-moved",
+    "  4. python install/verify_integrity.py --target <repo>, then the project's link "
+    "check: python dev/tools/link_check.py",
+    "  5. git add the files you changed and dev/.cairn/cairn-lock.yml, then git commit",
 )
-_DOCPLAN_LINKS = ("Links in the files you wrote yourself are not changed: search them for "
-                  "docs/DOCUMENTATION_PLAN.md and point each at dev/DOCUMENTATION_PLAN.md. "
-                  "Do not edit files Cairn installed; the ordinary upgrade corrects them.")
+_DOCPLAN_NOTE = ("If a check in step 4 names a file Cairn installed, do not edit it: the "
+                 "ordinary upgrade (upgrade --plan, then --stage and --apply) corrects it.")
 
 
 def _layout_config_path(cairn_root: Path) -> Path | None:
@@ -4860,7 +4864,7 @@ def _cmd_documentation_plan_moved(target: Path, templates_root: Path,
             print("error: upgrade --documentation-plan-moved refused: this project still "
                   "has the 0.8 layout migration ahead of it "
                   f"({len(ahead)} file(s) at their old paths). Finish it first (run "
-                  "upgrade --plan and follow it), then run the three steps. Nothing was "
+                  "upgrade --plan and follow it), then run the steps. Nothing was "
                   "changed.", file=sys.stderr)
             return 1
     contents: list[bytes | None] = []
@@ -4894,7 +4898,7 @@ def _cmd_documentation_plan_moved(target: Path, templates_root: Path,
               "docs/DOCUMENTATION_PLAN.md and dev/DOCUMENTATION_PLAN.md. Nothing was "
               "changed. Keep one: compare them, delete the one you do not want (git rm "
               "-f <that path>), and make sure the one you keep is at "
-              "dev/DOCUMENTATION_PLAN.md. Then run step 2 again.", file=sys.stderr)
+              "dev/DOCUMENTATION_PLAN.md. Then run step 3 again.", file=sys.stderr)
         return 1
     if not force:
         try:
@@ -4910,16 +4914,16 @@ def _cmd_documentation_plan_moved(target: Path, templates_root: Path,
     matches = ("sha256:" + _sha256_hex(new) == rec.get("hash"))
     rec["dst"] = _DOCPLAN_NEW
     _commit_lock_and_caches(target, lock, [])
-    first = ("Recorded dev/DOCUMENTATION_PLAN.md as the documentation plan. Now do step 3: "
-             "git add dev/.cairn/cairn-lock.yml, then git commit.")
+    first = ("Recorded dev/DOCUMENTATION_PLAN.md as the documentation plan. Now do "
+             "steps 4 and 5: run the two checks, then commit.")
     if matches:
         print(first)
     else:
         print(first + " The file differs from the version the lockfile recorded. If the "
               "changes are yours, run python install/scaffold.py upgrade --target <repo> "
-              "--finalize dev/DOCUMENTATION_PLAN.md, then do step 3; if not, restore the "
+              "--finalize dev/DOCUMENTATION_PLAN.md, then do steps 4 and 5; if not, restore the "
               "file from a copy you trust.")
-    print(_DOCPLAN_LINKS)
+    print(_DOCPLAN_NOTE)
     return 0
 
 
@@ -4937,7 +4941,7 @@ def _documentation_plan_move_lines(target: Path) -> list[str]:
     if len(recs) != 1 or recs[0].get("dst") != _DOCPLAN_OLD:
         return []
     return ["The documentation plan moves to dev/ in 0.9. To move it, run these steps "
-            "in order:", *_DOCPLAN_STEPS, _DOCPLAN_LINKS]
+            "in order:", *_DOCPLAN_STEPS, _DOCPLAN_NOTE]
 
 
 def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
