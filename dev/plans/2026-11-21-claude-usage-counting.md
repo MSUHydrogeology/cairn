@@ -199,3 +199,40 @@ What that settles:
 - **Still due before the plan can be built:** one limited Security Review of the changed summary rule, as the response says. Status stays `revising-plan` until it is in.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Plan amendment review -- Claude Opus 5.5 (`claude-opus-5-5`; Security Review) -- 2026-11-21
+
+**Prior reviewed commit**: e73fc37653537660a0e13606f4e01ff1640f4081
+**Replacement commit**: 647ab29313c35d8c9149a0a171044d0704cc398a
+**Affected cells and dependencies**: Scope, Sequence, Acceptance criteria, C2, C3, C4
+**Obligation**: Internal Security Review
+**Verdict**: ACCEPT
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**:
+
+1. The frame closes blocking 1: text outside a frame is never read, so the sibling's id no longer counts, and the pair with the unread run stays uncovered -- Detail D3.2, D4 (set difference).
+2. Every forged frame beside the tool's own one gives `""`, never covered; the work per record is linear, bounded by the 8 MiB line -- `meter.py` 49, 6613; typed-string timing below.
+3. What would show it wrong: a tool version without its own frame, with a model's frame naming a read run (Limit 6, stated) -- Detail D7, P4.
+
+**Checked.** Walked the old case by hand: INCOMPLETE. Forged frames: sibling beside the tool's frame gives `""`; same run gives one id; a frame split over two strings, in a key, with a 7- or 65-character id, or an upper-case tag is not matched; two cases of one id are two ids, `""`. Timing (`python -I -c`, typed 8 MiB strings, `finditer`): at most 0.14 s. `None` and `""` take one path (D3.3). Ledger rows: hand edits can delete rows, as before (S5). First review: blocking 1 and S1 to S4 are closed by what the response names.
+
+**Non-blocking**
+- N1. A model's result quoting another run's frame makes the summary `""`, INCOMPLETE until the ledger is replaced; state it (block R, 1).
+- N2. Say the pattern runs on each string separately; test the unmatched forms (block R, 2 and 3).
+- N3. Row key set not pinned in validation (block R, 4).
+- N4. The `/6` reason holds only if no chunk lands alone on a branch whose guarded handoff runs `meter.py refresh` (`dev/tools/session.py` 1954-1965) (block R, 5).
+- N5. C2 still says "exactly the three summary fields" with no frame; D6's list now holds names that are not field names (block R, 6 and 7).
+
+Not covered: no log, ledger or consent file; no test run; unparsable summary lines (`invalid_record`, one refresh only) are older behaviour; out-of-scope cells.
+
+### Exact words (block R)
+
+1. Limits (6): after "that summary would be called covered." add "And a model's text that quotes another run's frame makes its summary untied, so the reading says INCOMPLETE until the ledger is replaced."
+2. Detail D3.2: replace "collect the distinct ids that `_SUMMARY_FRAME` finds" with "collect the distinct ids that `_SUMMARY_FRAME.finditer` finds in each string value on its own".
+3. Detail D5, `summary_run` row: add inputs "a frame only inside a key; a frame split across two strings; `<TASK-ID>`; a 7-character id" with expected "`""`" each.
+4. Detail D4, `_validate_agent_runs`: after "the three keys exactly;" add "every row a dict with exactly the keys `session_key` and `agent_key`;".
+5. Sequence: after "before C3." add "The chunks are built in a separate work folder and merged into `0.9-dev` together, so no guarded handoff runs a C1 or C2 meter."
+6. C2: replace "A record with exactly the three summary fields is no event and leaves one summary row." with "A record with exactly the three summary fields and one id in frames is no event and leaves one summary row."
+7. Detail D6: replace "and field names on the list kept in this file; any other field name" with "and names on the list kept in this file; any other name", and "Field names that may be shown" with "Names that may be shown".
