@@ -1,7 +1,7 @@
 # Plan: Count Claude usage toward a project
 
 **Source proposal**: dev/proposals/archive/2026-11-21-claude-usage-counting.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/custom_session_routines.md, dev/rules/protected-surfaces.md, dev/rules/development-environment.md
@@ -119,3 +119,46 @@ Not covered: no test run, no log read, no Windows run of D1; the free-text summa
 ### Exact words (block A)
 
 Replace the Scope delta section with: "**Scope delta**: degraded -- (1) Antigravity counting, **disposition**: defer, as written. (2) The ledger is not rebuilt from logs on disk: a new ledger counts nothing before its first refresh, for every tool, and the old ledger's events are lost. (3) A message repeated across refreshes in one session, with a folder outside every project, stays counted once under its first project. (4) A missing transcript that no summary names leaves the reading whole. **disposition** of (2) to (4): ask the Maintainer; set `**Waiting on Maintainer**`." Then delete "so reviewers decide whether it is a reduction" from Limits (2).
+
+## Plan review -- Claude Opus 5.5 (`claude-opus-5-5`) -- 2026-11-21
+
+```
+Reviewed commit: e73fc37653537660a0e13606f4e01ff1640f4081
+```
+
+**Obligation**: the Internal Security Review of "Plan review: required(Internal + Internal Security Review)".
+**Tier**: Internal Security Review
+**Findings**: raised (1 blocking, 4 non-blocking)
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: log text never chooses what is opened (only a configured project's `.git/config`, read directly, no Git run), and folders and ids reach the ledger only as digests -- `dev/tools/meter.py` 5925-5958, 6096.
+2. **Best alternative.** Comparing the folder as text is the safer choice: opening it would let log text send the meter to any path, a network share included; text lets through only links inside the project (Limit 1) -- `meter.py` 1644-1655.
+3. **What would show it wrong.** A test where a summary names its own run, whose transcript was never read, and one sibling run whose transcript was read: D4 as written calls it covered -- Detail D4, second bullet.
+
+The design fails toward unknown on every path that web or repository text can reach; forged logs stay S5, as for Codex. Old copied messages are dropped by the start and fold rule (`meter.py` 4050-4057), so a fold cannot count twice.
+
+**Agreement.** The usual review's blocking 1 and 2 and N2 to N4 hold. If the Maintainer picks a back-fill for choice 5, it reads logs written before the start rule and needs its own security look.
+
+**Blocking**
+1. **A missing transcript can be called covered.** A summary names its own run; if that transcript was never read (bookmarked at the first refresh, or deleted) and the model-written text also quotes one sibling run, the one match is the sibling and the reading prints whole. Agents quote each other's ids. Maintainer's call: block S, item 1.
+
+**Non-blocking**
+- S1. `_summary_names` collects every run before the cap: one 8 MiB line gave 888,888 runs (pattern linear: 0.4 s, typed strings). Stop at the cap (block S).
+- S2. Merging all of `agent_runs` after every batch repeats the full sort per file. Gather per batch; merge once (block S).
+- S3. `agent_runs` spans every session under every approved root and never ages; two quoted ids or 257 hashes leave every project INCOMPLETE until the ledger is replaced (block S, with N2).
+- S4. Reading question: the D6 rule weakens nothing, but forbids the record type names the plan's tests use (block S).
+
+Not covered: no log, consent file or ledger read; the Windows refresh route and the pulse's printing not traced. Plan S1, S3 and S4 hold; S2 and S5 need blocking 1. Over target: the blocking case needs its path.
+
+### Exact words (block S)
+
+1. In block A, after item (4) add: "(5) A summary whose own transcript was never read counts as covered when its text also names one other run of its session whose transcript was read." and make its disposition cover "(2) to (5)".
+2. Detail D3.2: replace "collect `_digest("agent-id", run)` of each into a set. Return `[]` when the set holds more than `MAX_SUMMARY_NAMES`, else the sorted list." with "add `_digest("agent-id", run)` of each to a set, and return `[]` at once when the set would hold more than `MAX_SUMMARY_NAMES`; otherwise return the sorted list."
+3. Detail D4: replace "`merged = _merge_agent_runs(agent_runs, batch["agent_runs"])`, then `agent_runs.clear()` and `agent_runs.update(merged)`." with "add the batch's transcript and summary rows, as tuples, to two sets kept under `agent_runs`, and its `unclassified` to the count (at most `MAX_COUNTER`); nothing is covered, cut or sorted there. `_new_ledger` turns the sets into D3.5's sorted lists before its one `_merge_agent_runs` call."
+4. Detail D6, README bullet: after "prints INCOMPLETE" add "; the runs are kept for every session under the approved roots, so one untied summary anywhere marks every project, and it clears only when the ledger is replaced".
+5. Detail D6: replace "and the three in `_SUMMARY_FIELDS`. The list is the keys the reader reads, nothing more." with "the three in `_SUMMARY_FIELDS`, and the record type names `assistant`, `attachment`, `user`, `system`, `progress` and `file-history-snapshot`. The list is the keys the reader reads and the type names the plan's tests use, nothing more."
