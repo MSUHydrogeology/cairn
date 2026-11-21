@@ -110,3 +110,48 @@ N/A: no scientific assumption or result touched.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`) -- 2026-11-21
+
+```
+Reviewed commit: 1c084176f4e664bbe718c56a3838b86a9b523a72
+```
+
+**Tier**: usual
+**Findings**: raised (4 blocking, 5 non-blocking)
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: a Claude record names its folder, as a Codex record does, and the folder a log sits in is no proof; the design is sound but four statements are not yet plannable -- `dev/tools/meter.py` lines 6659 and 6829-6832.
+2. **Best alternative.** Do nothing leaves Claude at UNKNOWN, which the Maintainer's quoted word rejects; counting only the exact path (choice 2b) is the safer fallback and is offered -- `dev/tools/pulse.py` line 815.
+3. **What would show it wrong.** A count-only sum of one session that differs from the meter's total, or a session reported whole with summaries outnumbering transcripts: 75 summaries against 70 transcripts in the measured session -- `dev/measurement/agent-step-costs.md` line 203.
+
+The proposal's aim holds up: read the record's own folder, never the log's, so cost data stops depending on a hand-kept record that measured the wrong thing. Most statements about the code are true: the Codex rule is exact string equality (6829-6832), `_enumerate_jsonl` descends sub-folders, repeats with unequal usage become `conflicting_usage`, and `pulse.py` marks PARTIAL on any aggregate row.
+
+**Blocking**
+
+1. **Outcome A's folder rule is left to the plan's author.** Add to A.2 the exact words in block 1 below.
+2. **Outcome B's incomplete rule misses the case measured.** "Summaries and no transcript at all" would print the measured session whole with 5 of 75 runs missing. Replace with block 2.
+3. **Outcome B states something false and leaves the shape undefined.** "Any other non-assistant record carrying `usage` stays `unsupported_record`" is not true of `user`, `system`, `progress` and `file-history-snapshot`, which are skipped before the check (6625-6628). The shape's field names and place are also not given. Replace with block 3.
+4. **The Decision summary omits the ledger effect.** A changed `READER_VERSION` makes `_load_ledger` raise (3042), so the first refresh fails until the old ledger is rebuilt. Add the sentence in block 4 under "What it costs".
+
+**Non-blocking**
+
+5. The request-less sentence (A, last paragraph) cites a test that runs with no configuration, so it pins nothing about the new rule; and today a request-less record falls back to its message id (6633). Say "stays unknown, and a test with a configured project pins it."
+6. A message whose repeats carry different folders already becomes `conflicting_binding` (7099); say so.
+7. Resumed sessions: measure before the plan, as the summary already promises for summaries; list it under the evidence plan. A log under two roots merges by event key, so it counts once.
+8. The summary leaves "table for each agent run", "kind of token" and "Git remote" undefined; the proposal's 3,806 messages differ from the cost record's 3,755 (the session grew?). Say which.
+9. Antigravity: the Maintainer's word was "both should count"; the proposal delivers a look only. Write **Scope delta**: degraded -- Antigravity counting, **disposition**: defer until choice 1 is answered.
+
+Tier heavy and the plan review are right. Not covered: I ran no test, read no log, and judged the summary as prose only; the Security Review owns S1 to S5 and the trust question for "proven".
+
+### Exact words
+
+1. After A.2's sentence, add: "The folder is the record's own `cwd` text. It must be absolute, hold no `.` or `..` part and no control character, and on Windows use a drive letter and backslashes only (no `/`, no `\\\\` prefix), as the Codex check requires; otherwise the record stays unknown with `project_path_unapproved`. It is compared with the configured path as the config file stores it, with no case folding, no trailing-separator trimming, no `..` resolution and no symlink or drive-mapping lookup: a differing letter case or a trailing separator makes it unknown. It counts as inside the project only when it equals the project path or begins with the project path followed by one separator (`/` or `\\`), so `/w/cairn-old` is not inside `/w/cairn`. A folder inside two configured projects (one nested in the other) counts for neither."
+2. Replace B's last sentence with: "The reading is marked incomplete, with a new reason code kept off `_PULSE_BENIGN_REASONS`, when for any session the summaries outnumber the distinct sub-agent transcripts read under approved roots. It compares counts because no id is yet known to tie a summary to its transcript; if the measurement before the plan finds one, the plan matches by id. Recomputed from the files on disk at each refresh, never kept as whole."
+3. Replace B's third sentence with: "A record is a summary only if every `usage` key found in it (anywhere, as `_record_carries_usage` walks) is a dict with exactly the three fields the plan names from the measured record, each a non-negative whole number and not a boolean. Any other `usage` key makes the record `unsupported_record`. Records of the four types the reader already skips (`user`, `system`, `progress`, `file-history-snapshot`) stay skipped; a test pins that, and the Security Review judges it."
+4. Under "What it costs": "A new reader version makes the meter refuse the ledger it holds, so the first refresh fails until that ledger is rebuilt from logs still on disk; usage whose logs were deleted is lost. Yes or no is your call (choice 5)."
