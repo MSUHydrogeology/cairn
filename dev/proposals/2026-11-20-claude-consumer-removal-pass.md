@@ -1,7 +1,7 @@
 # A consumer: a removal pass after each release, and plans that retire
 
 **Author**: Claude (Strategy), drafted by Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the pass removes tests and rules, some beside security guards; it changes the release process and files the gate manifest names; and one page protects a guard from removal.
 **Plan review**: required(Internal + Internal Security Review)
@@ -156,3 +156,54 @@ The strongest version of the proposal: one removing role, run after the tag so t
 **Checked myself**: archive count; gate manifest names both generators; always-loaded words (`AGENTS.md` 1,051 plus `RULES.md` 230, third file not counted); closeout text in `dev/plans/_template.md`; board reading of closeout; archive citations (file count, not the note's 295 citations).
 
 **Not covered**: tier choice was read only against the protected-surfaces rule and found right; the note's outside studies; the Maintainer's chat quotes; the second proposal's overlap with code layout; no test run.
+
+## Review -- Claude Opus 5.5 (`claude-opus-5-5`) -- 2026-11-20
+
+```
+Reviewed commit: 734de816d82af50c1d5b70a892886f4a516e47bd
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: a remover outside the gate, judged by checks that do not trust it, is sound. But the licence protects guards in prose where Cairn already has machine pins and a Security Review route. -- `dev/rules/protected-surfaces.md` ("Tests exempt from the promise-only cut"); `tests/security_manifest.py`; `tests/test_security_marker.py` (`test_the_manifest_still_names_exactly_the_reviewed_set`).
+2. **Best alternative.** The same pass, with guard changes routed through the existing Security Review cut and the control files fenced by the script. Doing nothing leaves the sweep in the gate. -- `release/RELEASE_PROCESS.md` line 43 (sweep G).
+3. **What would show it wrong.** Forward test: on a scratch branch, delete one test function inside a security-family file, record nothing, and edit `dev/must-stay.md`; the script must fail on all three. -- check 3 and finding S-B.
+
+**Does any rule weaken or disappear?** Yes, as written: licence line 4's one-pass review replaces the Security Review the cut rule requires, and nothing stops the pass removing a refusal sentence from governing text without a proposal.
+
+The strongest version: one remover, after the tag, whose calls are checked against Git rather than its own record. The Maintainer's conditions hold: he sees no list (a Security Review shows him none), and the gate loses a step.
+
+I agree with the usual review's findings 2, 3 and 5. Finding 1 is right; S-A's words govern in its place.
+
+**Traced.** A guard test: `security_manifest.py` pins security-family files by name, so deleting a file fails a test; deleting or merging a function inside one fails nothing. A refusal rule: nothing in C or D stops its removal; only a prose line in S4.
+
+**Findings** (exact words follow this section)
+
+- **S-A. Blocking.** Guards and governing text: licence lines 1 and 4.
+- **S-B. Blocking.** The page and the control files are fenced only in prose.
+- **S-C. Blocking.** Check 3 compares files with the tag; most cuts are functions, and the pass may not start at the tag.
+- **S-D. Blocking.** B's 236 deletions can hide a generator or pin change from the Maintainer's signing.
+- S-E. Non-blocking. "A later tier" does not exist: the five tiers in `tests/test_tiers.json` are kinds, and the certifying run runs all; the security family runs only at the release ceremony (`release/security_check.py`).
+- S-F. Non-blocking. The second agent reads the record and script output, both from the remover's run; it should read Git's diff itself and not have run the pass.
+- S-G. Non-blocking. S5 should name the residual: a merge that keeps a test's name but drops its assertion passes checks 1 to 3.
+
+**Checked myself**: 236 tracked archive files, 208 plan files at its top; ten gate-manifest lines name the generators, as pinned `scripts/` paths inside security-stack test IDs, so editing them is a re-anchor; `dev/must-stay.md` absent.
+
+**Not covered**: seeded-fault cost; the tightening proposal's planned ladder; adopter copies of the licence; no test run.
+
+### Exact words for the Security Review findings
+
+**S-A.** Replace licence line 1 with: "1. It removes or merges a test, or moves it between tiers the certifying run still runs. It may remove or merge a rule only by a proposal when the rule is in `AGENTS.md`, `RULES.md`, `dev/rules/`, `dev/agent_collaboration.md` or a shipped template. It adds no rule and changes no behaviour." Replace licence line 4's last two sentences with the usual review's words for finding 1, adding after its second sentence: "That covers any removal, merge, rename or move of a test named in `dev/must-stay.md`, of a test function in a file `tests/security_manifest.py` lists, or of a file a `security` pattern in `tests/test_tiers.json` matches."
+
+**S-B.** Add at the end of D: "The same script fails if the sweep's commits change `dev/must-stay.md`, `tests/security_manifest.py`, the `security` entry of `tests/test_tiers.json`, `tests/fixtures/gate_manifest.json` or the AST baseline. `dev/must-stay.md` joins the high-risk list in `dev/rules/protected-surfaces.md`." Add `dev/rules/protected-surfaces.md` to "Edited in plans".
+
+**S-C.** In D, replace "where "gone" is read from Git's comparison with the tag" with: "where "gone" is read from Git's comparison with the commit the sweep starts from, as collected test IDs and removed rule lines, not only files". Add to C: "It starts on a clean committed tree."
+
+**S-D.** Add to B: "The removal is one commit holding only deletions under `dev/plans/archive/` and the archive README. Any change to the two generators, their pins or the gate manifest is its own commit, follows `release/REANCHOR_RUNBOOK.md`, and is named in the signing record the Maintainer reads."
