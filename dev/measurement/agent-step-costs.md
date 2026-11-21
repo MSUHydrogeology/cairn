@@ -77,8 +77,12 @@ runs cost machine time, not tokens, and are listed separately.
 | Plan C, first session and tools | usual code review | Medium | 157,867 | 5 | accept, 5 notes |
 | | Security Review of the code | High | 144,982 | 6 | accept, 5 notes |
 | Layout-page trial plan | author, from a complete design brief | Medium | 156,038 | 6 | opened, 1,235 words |
+| | usual review | Medium | 105,392 | 2 | revise, 5 blocking |
+| Layout trial, step 1 | draft of the page, from a code-only copy | High | 133,527 | 7 | done, 871 words |
+| | three tasks and their key | Medium | 114,176 | 4 | done |
+| Layout trial, step 2 | counts against the hand-kept account | Medium | 68,119 | 0.3 | done |
 
-Total for the day so far: 8,408,127 tokens across 56 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 8,829,341 tokens across 60 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -130,7 +134,11 @@ Measured:
   Strategy put every design decision in the brief, so the author did no
   design, and Strategy folded the reviews itself, so no agent was resumed or
   spawned for that. Two against two is a small sample.
-- **Twenty-nine review passes so far, and still no return visit.**
+- **Thirty review passes so far, and still no return visit.**
+- **Drafting a layout page for a 111,000-line project cost 133,527 tokens.** A
+  high-tier agent read a code-only copy by searching and counting, not by
+  reading every file, and wrote 871 words in 7 minutes. The trial's first two
+  steps cost 315,822 tokens in three runs.
 - **Plan B is the exception to "building cost less than planning".** Its five
   chunks took three low-tier implementers and 667,252 tokens (190,900,
   232,591 and 243,761), against 308,764 to write the plan. The last chunk
