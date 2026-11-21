@@ -633,7 +633,10 @@ class _WindowsConsentAPI:
                 raise Unavailable
             owner_bytes = self._sid_bytes(owner)
             private_roles = {"meter", "ledger", "lock", "candidate", "export"}
-            if role in {"profile", "cairn", "config", *private_roles} and owner_bytes != user_sid:
+            if role == "profile":
+                if owner_bytes != user_sid and not self._privileged_sid(owner_bytes, ancestor=False):
+                    raise Unavailable
+            elif role in {"cairn", "config", *private_roles} and owner_bytes != user_sid:
                 raise Unavailable
             if role in private_roles:
                 control, revision = self.W.WORD(), self.W.DWORD()
