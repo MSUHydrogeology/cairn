@@ -120,3 +120,24 @@ Not covered: that each new comment is accurate beyond the detail file's wording;
 Dispositions: none.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-21
+
+Reviewed commit: f62cb7dc52251431f39a29de743651f9ff39533f, range `75acc20c..HEAD`.
+
+**Obligation**: the usual code review, the only pass at this stage.
+**Findings**: none blocking, none raised.
+
+The change does what the plan says: sixteen comment lines, no code.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The diff holds exactly the sixteen lines of the detail table, with the listed new text, and no other token -- `git diff -U0 75acc20c..HEAD` over the eleven paths.
+2. **Does it do what it claims?** Yes. The plan's tree command prints `same tree` for all eleven copies against `75acc20c`; `cmp` reports the four pairs identical; the lock commit `c02edfd4` changes only `dev/.cairn/cairn-lock.yml` and `verify_integrity.py --target .` reports OK for 70 files -- those commands.
+3. **What would show it wrong?** A new comment that is false. Every named path exists (`tests/integration`, `tests/quality_gate.py`, `install/verify_integrity.py`, `install/_scaffold/lockfile.py`, `install/scaffold.py`); the adopter-tree name of the security-audit tool is `dev/tools/` in `install/_scaffold/layout_catalog.py` line 90; `_api_access_security` is a sibling of the file as the code beside it shows (`api_access_security.py` lines 54 to 67); the `content_scan_runner.py` comment matches its three branches (lines 84 to 96).
+
+**Checked.** No rule weakens or disappears; only comments changed. The signing will see the eleven frozen files stale, as the plan says.
+
+**Left unproven, and what would prove it.** No test ran, by the Maintainer's direction. An equal syntax tree proves no code changed, so only a test that reads comment text could fail; the certification run covers that. I did not run the signing check, the stale-comment search or any test.
+
+**Verdict**: ACCEPT. Elapsed time: unknown. Tokens: unknown.
