@@ -290,3 +290,17 @@ Also non-blocking: N3, stale text left by the edit; N4, the roadmap's waived-che
 - **N2.** Same file: replace "the platform, the commit," with "the platform, the full commit id from `git rev-parse HEAD`, the Python version,".
 - **N3.** `release/RELEASE_PROCESS.md`: the closing sentences of the skip paragraph ("The separate Mac and Windows records ... remain the proof") and "Order of the cut" still name the records and the join as current. Add to each: "(not at v0.8.1; see step 3)".
 - **N4.** For Strategy: update the roadmap's "Checks waived at the 0.8 cut" to say the scans are due at v0.8.1.
+
+### Follow-up on step 3 -- Claude Opus 5.5 (Security Review) -- 2026-11-21
+
+**Acceptable: yes.** The coordinator's two facts hold as I read them: `NATIVE_ONLY_NODE_IDS` names `nt` or `posix` only, and the Decision dropped the Mac-only class. Requiring the membership check on Linux would refuse a Mac-only skip that cannot be listed, so my first wording asked for something the accepted form cannot give. What the narrower form gives up: on Linux and Windows, a skip in a security-family file is checked by people reading the release notes, not by the membership check. The S3 sentence keeps the decision about each such skip with a Security Review.
+
+**Step 3, final words.** Replace my first sentences, from "3. From `master` at that commit, on each of the Mac, Linux and Windows" through "Any nonzero exit, a membership refusal included, stops the cut.", with:
+
+"3. From `master` at that commit, run the whole test suite once on each of the Mac, Linux and Windows, under Python 3.13 on a clean tree. On the Mac, run the first block of \"Checks to run\" as written (the suite and the membership check), then the remaining gates there. On Linux and Windows, run the suite alone. Write the three results in the release notes (`dev/rules/certifying-runs.md`), with every test skipped on each platform and its reason. Any nonzero exit on any platform, a membership refusal on the Mac included, stops the cut."
+
+The secrets-scan sentences, the gate-commit sentence and the closing sentence stay as given in my section above.
+
+**S3, adjusted.** On `dev/rules/certifying-runs.md`, use instead: "A skip of a test that `dev/rules/protected-surfaces.md` lets be cut only through a Security Review takes that review first, on every platform. On the Mac, where the membership check runs, a skip in a security-family file also needs its exact ID in `NATIVE_ONLY_NODE_IDS`, or the check refuses it."
+
+**Not covered**: I did not count which security-family tests skip on Linux or Windows today.
