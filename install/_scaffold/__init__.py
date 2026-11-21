@@ -252,7 +252,7 @@ from .upgrade import (  # noqa: F401  (re-exported for the facade)
 # ---------------------------------------------------------------------------
 #
 # The install-side ancestor anchor for ``scaffold.py upgrade`` (the
-# token- + slot-aware 3-way merge).  See ``bootstrap/UPGRADE.md`` and the
+# token- + slot-aware 3-way merge).  See ``install/UPGRADE.md`` and the
 # the source ``cairn-module-upgrade-3way-merge`` plan.
 #
 #   * ``dev/.cairn/cairn-lock.yml`` -- a *tracked* machine lockfile: the upgrade

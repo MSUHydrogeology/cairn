@@ -373,3 +373,34 @@ def test_heal_layout_refuses_a_dirty_lock(layout, capsys):
     assert _upgrade(layout, "--heal-layout") == 1
     assert (target / LOCK).read_bytes() == before
     assert "unsaved edits" in capsys.readouterr().err
+
+
+SHALLOW_TEXT = ("unproved ancestry; the Cairn checkout is shallow, so the release "
+                "this copy came from is not in it")
+SHALLOW_FETCH = ("Fetch the full history in the Cairn checkout (git fetch --unshallow "
+                 "--tags), then run this again.")
+
+
+def test_shallow_cairn_checkout_says_to_fetch_the_history(layout, capsys, tmp_path):
+    source, target, _ = layout
+    shallow = tmp_path / "shallow"
+    _git(tmp_path, "clone", "--depth", "1", "file://" + source.as_posix(), str(shallow))
+
+    assert scaffold.main(["upgrade", "--cairn-root", str(shallow), "--target", str(target),
+                          "--plan", "--to", "HEAD"]) == 2
+    error = capsys.readouterr().err
+    assert f"{OLD[0]}: {SHALLOW_TEXT}" in error
+    assert error.count(SHALLOW_FETCH) == 1
+
+
+def test_stale_hash_with_crlf_base_is_planned_as_a_copy(layout, capsys):
+    _, target, _ = layout
+    lock = scaffold.read_lockfile(target)
+    record = next(row for row in lock["files"] if row["dst"] == OLD[0])
+    crlf = ORIGINAL[0].replace(b"\n", b"\r\n")
+    record["hash"] = record["base_hash"] = _digest(crlf)
+    _put(target, LOCK, json.dumps(lock).encode("utf-8"))
+    _commit(target, "lock whose base hash is the CRLF form of the original")
+
+    assert _upgrade(layout, "--plan", "--to", "HEAD") == 0
+    assert "  copy: " + OLD[0] + " -> " + NEW[0] in capsys.readouterr().out

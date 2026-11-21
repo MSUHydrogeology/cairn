@@ -168,6 +168,20 @@ def _cairn_is_git(cairn_root: Path) -> bool:
             and r.stdout.strip() == b"true")
 
 
+def _cairn_git_is_shallow(root: Path) -> bool:
+    """True only when the Git folder of the checkout at *root* holds a ``shallow`` file."""
+    try:
+        r = _git_read_helper().run_git(
+            str(root), ("rev-parse", "--path-format=absolute", "--git-common-dir"),
+            timeout=10, output_limit=4096)
+        if r.state != "completed" or r.returncode != 0:
+            return False
+        common = os.fsdecode(r.stdout.strip())
+        return os.path.isfile(os.path.join(common, "shallow"))
+    except (OSError, RuntimeError, ValueError):
+        return False
+
+
 _GIT_READ_CRLF_TEXT = (
     "Cairn's copy of templates/skills/_lib/git_read.py has Windows line endings, "
     "so the installer cannot trust it. Git did this when it cloned Cairn with "
@@ -4379,6 +4393,8 @@ def _layout_plan(target: Path, source: SourceRevision,
     history: dict = {}
     blocks: list[str] = []
     restore: list[str] = []
+    shallow = _cairn_git_is_shallow(source.root)
+    shallow_blocked = False
     for row in _LAYOUT_MOVES:
         owner, src, dst, verbatim, new_src, new_dst = row
         rec = files.get(dst)
@@ -4412,8 +4428,9 @@ def _layout_plan(target: Path, source: SourceRevision,
         historical = _layout_recorded_source(source.root, source,
             (rec or {}).get("layout_base_commit") or lock.get("cairn_commit"), history)
         old = _layout_blob(historical, row)
-        old_proved = (old is not None and rec is not None
-                      and (rec.get("base_hash") or rec.get("hash")) == _layout_digest(old.raw))
+        old_proved = old is not None and rec is not None and (
+            (rec.get("base_hash") or rec.get("hash")) == _layout_digest(old.raw)
+            or (verbatim and live.raw == old.raw))
         if comparison is not None:
             compared = _layout_blob(comparison, row)
             if compared is None:
@@ -4448,7 +4465,11 @@ def _layout_plan(target: Path, source: SourceRevision,
             tx.actions.append((dst, dst, action))
             continue
         if not old_proved:
-            blocks.append(f"{dst}: unproved ancestry; reconcile the old copy before moving it")
+            if historical is None and shallow:
+                blocks.append(f"{dst}: unproved ancestry; the Cairn checkout is shallow, so the release this copy came from is not in it")
+                shallow_blocked = True
+            else:
+                blocks.append(f"{dst}: unproved ancestry; reconcile the old copy before moving it")
             continue
         if new_dst in files:
             blocks.append(f"{new_dst}: destination already has a lockfile owner")
@@ -4518,6 +4539,8 @@ def _layout_plan(target: Path, source: SourceRevision,
         new_lock = _emit_lock_yaml(lock).encode("utf-8")
         if new_lock != original.raw:
             tx.write(_LOCKFILE_REL, new_lock, original.mode)
+    if shallow_blocked:
+        blocks.append("Fetch the full history in the Cairn checkout (git fetch --unshallow --tags), then run this again.")
     return tx, blocks
 
 

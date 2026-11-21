@@ -9,7 +9,7 @@
 # (a reconstruction -- written 2026-07-11, not contemporaneous).
 
 project_name: "Cairn"
-test_command: "python -m pytest bootstrap/tests"
+test_command: "python -m pytest tests"
 forge: github
 
 # Cairn's own six-axis point: greenfield / medium / moderate / single /

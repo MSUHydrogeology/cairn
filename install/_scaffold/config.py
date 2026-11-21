@@ -38,7 +38,7 @@ from typing import Any, NamedTuple
 #: one most adopters ran and the one Cairn least exercised.  The recognizer
 #: below is now the **sole runtime parser**; PyYAML survives only as a
 #: **test-only oracle** the suite compares against (see
-#: ``bootstrap/tests/test_profile_grammar.py``).  ``_yaml`` stays bound to
+#: ``tests/test_profile_grammar.py``).  ``_yaml`` stays bound to
 #: ``None`` because the engine facade re-exports it.
 _yaml = None  # type: ignore[assignment]
 
@@ -94,7 +94,7 @@ _DEFAULT_ON_MODULES: tuple[str, ...] = (
     # what makes the *route* standard, not the evidence.
     #
     # RESOLVED (api-web-security-modules Chunk G, 2026-08-11): a stock
-    # install's first `scripts/run_security_verification.py local` used to
+    # install's first `dev/tools/run_security_verification.py local` used to
     # exit 5 (INCOMPLETE) instead of the plan's intended 0 (NOT APPLICABLE),
     # because the dispatcher selected capabilities by the `-security` NAME
     # SUFFIX and `content-security` -- default-on since the sibling
@@ -964,7 +964,7 @@ _KNOWN_VENDOR_WRAPPERS: tuple[str, ...] = (
 # values)``: the template installs when the *resolved* profile value for
 # that axis is in the selecting set.  An installed optional template is
 # recorded under ``optional_templates:`` in the fidelity manifest so the
-# gate is auditable (bootstrap/fidelity-check.md).
+# gate is auditable (install/fidelity-check.md).
 _OPTIONAL_TEMPLATES: tuple[tuple[str, str, str, frozenset[str]], ...] = (
     # CONTRIBUTING.md — the human-contributor entry (foldback #10),
     # installed when the repo expects human authors beyond a solo
@@ -1047,7 +1047,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/reflections/README.md", verbatim=True),
         # Fold 2 (foldback-drain-tooling): explicit prune tool the reflections
         # module doctrine prescribes.  Complements the simpler date-cutoff prune
-        # inside tools/session.py session-end (which runs at full-handoff);
+        # inside dev/tools/session.py session-end (which runs at full-handoff);
         # this standalone script allows independent invocation and offers a
         # keep-by-distinct-date window rather than a wall-clock cutoff.
         InstallSpec("default-on/prune_reflections.py",
@@ -1155,7 +1155,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/tools/intent.py", verbatim=True),
         # intent-split (phase A, 2026-06): intent.py is now a thin launcher/facade
         # over an owned `_intent/` engine package; the seven package files install
-        # verbatim beside the facade so `python tools/intent.py` (the CLI + the git
+        # verbatim beside the facade so `python dev/tools/intent.py` (the CLI + the git
         # hooks) resolves its sibling engine at runtime.  Each is byte-for-byte code.
         InstallSpec("team-gated/_intent/__init__.py",
                     "dev/tools/_intent/__init__.py", verbatim=True),
@@ -1242,7 +1242,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # claim-check pattern).  Two verbatim stdlib-only scripts -- the
         # link half and the snippet-sync.  The claim half is NOT shipped
         # here: the default-on claim-check module already installs
-        # scripts/claim_check.py, so the doc-drift gate composes with it
+        # dev/tools/claim_check.py, so the doc-drift gate composes with it
         # rather than duplicating a second checker.  The schema-doc
         # generator is deferred (an adopter slot/hook) -- it cannot ship
         # stack-neutrally.
@@ -1269,7 +1269,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # advisory runner + its policy inputs (audited-roots manifest,
         # reviewed-residual baseline, URL allowlist).  All verbatim -- code +
         # policy data, not token-substituted templates.  The runner resolves
-        # its policy siblings from its own scripts/ directory.
+        # its policy siblings from its own dev/tools/ directory.
         InstallSpec("team-gated/content_scan_runner.py",
                     "dev/tools/content_scan_runner.py", verbatim=True),
         InstallSpec("team-gated/content_scan_roots.txt",
@@ -1318,7 +1318,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     # installer.
     #
     # The three specs are **registered as one group and pinned as one group by
-    # bootstrap/tests/test_portable_security_sweeps.py**.  The engine performs
+    # tests/test_portable_security_sweeps.py**.  The engine performs
     # no group-completeness refusal for _MODULE_MAPPINGS, so the pin is
     # test-side and the comment must not imply otherwise.
     #
@@ -1343,15 +1343,15 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     #
     # **One engine source tree, installed twice.**  The four
     # `team-gated/_security_net/*` members are listed in BOTH groups with
-    # DIFFERENT destinations -- `scripts/_api_access_security/` and
-    # `scripts/_web_hosting_security/`.  install_manifest refuses duplicate
+    # DIFFERENT destinations -- `dev/tools/_api_access_security/` and
+    # `dev/tools/_web_hosting_security/`.  install_manifest refuses duplicate
     # *destinations* and only destinations, so one source feeding two
     # destinations is accepted; two sources feeding one destination is not.
     # The cost is that an adopter selecting both carries two byte-identical
     # copies, each independently hash-pinned; the alternative was two
     # hand-written TLS clients, and one security surface reviewed once is worth
-    # more than a duplicated byte saved.  `scripts/<name>.py` +
-    # `scripts/_<name>/` is also the facade-engine convention
+    # more than a duplicated byte saved.  `dev/tools/<name>.py` +
+    # `dev/tools/_<name>/` is also the facade-engine convention
     # `_facade_engine_dir` already recognises, so a forked facade gets the
     # existing advisory.
     #

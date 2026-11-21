@@ -39,7 +39,7 @@ from .config import PresetError  # the secret-token guard raises this (downward 
 # The fork advisory reads two files off disk and must not be talked out of
 # either root.  It reuses the engine's ONE containment primitive rather than
 # growing a second, unreviewed copy inside this near-leaf; the
-# layering assertion in bootstrap/tests/test_lockfile_module.py admits exactly
+# layering assertion in tests/test_lockfile_module.py admits exactly
 # {config, security} because of this line.
 from .security import ScaffoldSecurityError, _assert_safe_write, _read_regular_bytes
 
