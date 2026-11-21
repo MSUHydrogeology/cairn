@@ -72,8 +72,13 @@ runs cost machine time, not tokens, and are listed separately.
 | Consumer proposal | author, from a complete design brief | Medium | 128,380 | 4 | drafted, 1,700 words |
 | | usual review | Medium | 79,482 | 1 | revise, 3 blocking |
 | | Security Review | High | 94,489 | 2 | revise, 4 blocking |
+| Plan B, upgrading | implementation, chunks C3 and C4 | Low | 232,591 | 24 | done |
+| | implementation, chunk C5 | Low | 243,761 | 13 | done |
+| Plan C, first session and tools | usual code review | Medium | 157,867 | 5 | accept, 5 notes |
+| | Security Review of the code | High | 144,982 | 6 | accept, 5 notes |
+| Layout-page trial plan | author, from a complete design brief | Medium | 156,038 | 6 | opened, 1,235 words |
 
-Total for the day so far: 7,472,888 tokens across 51 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 8,408,127 tokens across 56 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -125,7 +130,11 @@ Measured:
   Strategy put every design decision in the brief, so the author did no
   design, and Strategy folded the reviews itself, so no agent was resumed or
   spawned for that. Two against two is a small sample.
-- **Twenty-seven review passes so far, and still no return visit.**
+- **Twenty-nine review passes so far, and still no return visit.**
+- **Plan B is the exception to "building cost less than planning".** Its five
+  chunks took three low-tier implementers and 667,252 tokens (190,900,
+  232,591 and 243,761), against 308,764 to write the plan. The last chunk
+  alone, one new installer command with its tests, cost 243,761.
 - **An agent's own "elapsed" figure is not data.** Four agents wrote an elapsed
   time into their records this evening, and the harness timed the same runs:
   40 minutes written against 3 measured, 30 against 6, 25 against 7, and 10
