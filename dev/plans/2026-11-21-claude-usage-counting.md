@@ -2,7 +2,6 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-21-claude-usage-counting.md
 **Status**: revising-plan
-**Waiting on Maintainer**: Scope delta items (2) to (4)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/custom_session_routines.md, dev/rules/protected-surfaces.md, dev/rules/development-environment.md
@@ -72,7 +71,7 @@ C1 to C3 each end in the copy and `cmp`, one commit for each chunk, explicit pat
 
 ## Scope delta
 
-**Scope delta**: degraded -- (1) Antigravity counting, **disposition**: defer. Home: the Maintainer's Decision of 2026-11-21 on the proposal, "Yes. Claude and Antigravity are part of v0.8.1. Excluding them was a defect. I use all three every day. The same way that excluding Windows and Linux certification was a defect." So Antigravity gets its own plan, written after the count-only look on his Mac, and built before v0.8.1 is cut. It is not in this plan. (2) The ledger is not rebuilt from logs on disk: a new ledger counts nothing before its first refresh, for every tool, and the old ledger's events are lost. (3) A message repeated across refreshes in one session, with a folder outside every project, stays counted once under its first project. (4) A missing transcript that no summary names leaves the reading whole. **disposition** of (2) to (4): ask the Maintainer; Strategy is asking him.
+**Scope delta**: degraded -- (1) Antigravity counting, **disposition**: defer. Home: the Maintainer's Decision of 2026-11-21 on the proposal, "Yes. Claude and Antigravity are part of v0.8.1. Excluding them was a defect. I use all three every day. The same way that excluding Windows and Linux certification was a defect." So Antigravity gets its own plan, written after the count-only look on his Mac, and built before v0.8.1 is cut. It is not in this plan. (2) The ledger is not rebuilt from logs on disk: a new ledger counts nothing before its first refresh, for every tool, and the old ledger's events are lost. (3) A message repeated across refreshes in one session, with a folder outside every project, stays counted once under its first project. (4) A missing transcript that no summary names leaves the reading whole. **disposition** of (2) to (4): accept. Asked to allow them, or to have a back-fill designed for (2), the Maintainer wrote (chat, 2026-11-21): "Allow all three". His Decision is on the proposal.
 
 ## Verification
 
@@ -184,5 +183,19 @@ Security Review:
 5. S4: taken, with `task-id` added (D6).
 
 Not run: any test, log read or meter run.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## The Maintainer's allowance -- recorded by Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+Strategy put the Scope delta's items (2) to (4) to the Maintainer in these words: "1. The restart. When this lands, the meter's running record starts again at zero for all three tools, and nothing already in the logs is counted. The old record file is kept aside. 2. A rare folder case. If one message's records fall into two meter readings, and the working folder moved outside the project in between, the message stays counted for the project. I did not see it in 4,333 measured messages. 3. Sub-agents started by sub-agents. They leave no summary record. If such a transcript file went missing, the reading would not say INCOMPLETE. When the file is there, its usage counts normally." The choices were "(a) Allow all three", which Strategy recommended, and "(b) Allow 2 and 3, and I design a back-fill for the restart". He wrote (chat, 2026-11-21):
+
+> "Allow all three"
+
+What that settles:
+
+- **Items (2), (3) and (4) are accepted** as written in the Scope delta. No back-fill is designed. The scribed Decision is the last section of the source proposal.
+- **The Waiting line is removed.**
+- **Still due before the plan can be built:** one limited Security Review of the changed summary rule, as the response says. Status stays `revising-plan` until it is in.
 
 **Elapsed**: unknown. **Tokens**: unknown.
