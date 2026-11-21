@@ -2,6 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
 **Status**: revising-plan
+**Waiting on Maintainer**: move it for owners, or record their own move?
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -179,3 +180,20 @@ Elapsed time: unknown. Tokens: unknown.
 ### Exact words for the Security Review's blocking finding
 
 **1. Detail D2 step 7(a)**, replace the whole bullet with: "(a) only when `new is None` (the move proper): `tmp = _stage_exclusive(target / _DOCPLAN_NEW, old, target)`; `staged = tmp.stat(follow_symlinks=False)`. In a `try`: `_assert_safe_write(target / _DOCPLAN_NEW, target)`; if `tmp.stat(follow_symlinks=False)` does not have the `st_dev` and `st_ino` of `staged`, raise `ScaffoldSecurityError("the staged copy changed before the move")`; then `os.link(tmp, target / _DOCPLAN_NEW, follow_symlinks=False)`, catching `FileExistsError` and raising `ScaffoldSecurityError("a file appeared at the new place while the move ran")`. In the `finally`: remove `tmp` only if `tmp.stat(follow_symlinks=False)` still has the identity of `staged`, ignoring `FileNotFoundError`, as `_write_by_replacing` does. There is no `os.chmod`: the new file gets the default mode, as every file the installer writes. `os.link` fails when the name exists, so an adopter's file can never be overwritten, even if one appears after step 3." The usual review's M17 catch of any other `OSError` from `os.link` follows the `FileExistsError` clause unchanged. Add to Detail D5 one row: "staged copy swapped | patch `upgrade._stage_exclusive` to call the real one, then replace the returned name with a link to a file outside the project; skip if links are unavailable | M10, 2; the outside file's bytes and mode unchanged; nothing at `dev/DOCUMENTATION_PLAN.md`; lock unchanged | the identity check and `follow_symlinks=False`".
+
+## Plan response, first part: a choice for the Maintainer -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-21
+
+Both reviews said revise. Their four blocking findings and the words that close them are accepted, and none is declined. They are not folded in yet: the reviews raised a choice that decides which steps this plan has, and the choice is the Maintainer's.
+
+**The choice: how an installed project gets the move.**
+
+- **(a) Cairn moves the file**, as the plan is written. One command copies the owner's file to the new place, records it and removes the old copy. The installer gains three powers in the owner's tree: create a file, delete a file, and remove an emptied folder. Two of the four blocking findings are about making those steps safe.
+- **(b) The owner moves the file and Cairn records it.** The upgrade report prints one Git command, `git mv docs/DOCUMENTATION_PLAN.md dev/DOCUMENTATION_PLAN.md`. The owner runs it, then runs Cairn's command, which rewrites one field of one lock record and nothing else. The plan already holds that route (message M15). About half the messages and half the tests go, with the hard link, the delete and the folder rule.
+
+**What the reviews said.** The usual review: a new command is the right delivery either way; (b) is lighter; the choice is the Maintainer's. The Security Review: (b) is strictly smaller. It gives the installer one power, which two existing commands already have, and that review's own blocking finding does not arise under it. Under (b) an owner who never runs the Git command gets a refusal, and a file planted at the new place is caught by its recorded hash.
+
+**Strategy recommends (b).** Cairn then never moves or deletes a file its owner wrote, and the arc adds less. It costs the owner one more command, printed for them. It needs his word because the accepted arc says the upgrade moves the file; (b) reaches the same end by a lighter route.
+
+**Next.** On his answer the plan is folded once, for the design he picks. If he picks (b), the changed steps get one short Security Review, because they replace steps that were reviewed.
+
+**Elapsed**: unknown. **Tokens**: unknown.
