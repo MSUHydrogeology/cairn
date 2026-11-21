@@ -263,6 +263,55 @@ def test_unbound_git_reader_names_its_cause(layout, capsys, monkeypatch, tmp_pat
     assert (GIT_READ_OTHER if edited else GIT_READ_CRLF) in error
 
 
+def test_exact_copy_is_not_called_line_endings(layout, capsys, monkeypatch, tmp_path):
+    helper = Path(__file__).resolve().parents[1] / "templates/skills/_lib/git_read.py"
+    copy = tmp_path / "git_read.py"
+    copy.write_bytes(helper.read_bytes())
+
+    def unbound():
+        raise RuntimeError("Git read helper binding failed")
+
+    monkeypatch.setattr(upgrade, "_git_read_helper", unbound)
+    monkeypatch.setattr(upgrade, "_git_read_helper_path", lambda: str(copy))
+    assert _upgrade(layout, "--plan") == 2
+    error = capsys.readouterr().err
+    assert GIT_READ_CRLF not in error
+    assert GIT_READ_OTHER in error
+
+
+@pytest.mark.parametrize("case", ("oversize", "missing", "linked"))
+def test_a_helper_that_cannot_be_read_safely_is_not_called_line_endings(
+        layout, capsys, monkeypatch, tmp_path, case):
+    helper = Path(__file__).resolve().parents[1] / "templates/skills/_lib/git_read.py"
+    crlf = helper.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+    copy = tmp_path / "git_read.py"
+    if case == "oversize":
+        copy.write_bytes(crlf + b"#" * (upgrade._GIT_READ_MAX_BYTES + 1))
+    elif case == "linked":
+        real = tmp_path / "real.py"
+        real.write_bytes(crlf)
+        try:
+            copy.symlink_to(real)
+        except OSError:
+            pytest.skip("links cannot be made on this host")
+
+    def unbound():
+        raise RuntimeError("Git read helper binding failed")
+
+    monkeypatch.setattr(upgrade, "_git_read_helper", unbound)
+    monkeypatch.setattr(upgrade, "_git_read_helper_path", lambda: str(copy))
+    assert _upgrade(layout, "--plan") == 2
+    error = capsys.readouterr().err
+    assert GIT_READ_CRLF not in error
+    assert GIT_READ_OTHER in error
+
+
+def test_the_refusal_looks_at_the_pinned_helper_itself():
+    raw = Path(upgrade._git_read_helper_path()).read_bytes()
+    folded = raw.replace(b"\r\n", b"\n")
+    assert hashlib.sha256(folded).hexdigest() == upgrade._GIT_READ_SHA256
+
+
 def _keyed_moved_record(old_rev: str) -> dict:
     return {"src": "skills/_lib/board.py", "dst": NEW[0], "verbatim": True,
             "base_hash": _digest(LATEST[0]), "hash": _digest(LATEST[0]),

@@ -228,7 +228,7 @@ def _git_read_binding_refusal() -> str | None:
     else:
         return None
     raw = _git_read_plain_bytes(_git_read_helper_path())
-    if raw is not None and hashlib.sha256(
+    if raw is not None and b"\r\n" in raw and hashlib.sha256(
             raw.replace(b"\r\n", b"\n")).hexdigest() == _GIT_READ_SHA256:
         return _GIT_READ_CRLF_TEXT
     return _GIT_READ_OTHER_TEXT
