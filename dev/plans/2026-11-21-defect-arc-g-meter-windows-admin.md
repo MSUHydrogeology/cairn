@@ -70,3 +70,30 @@ Run once, on Windows: `C:\ProgramData\Anaconda3\python.exe -m pytest tests/integ
 - Gate manifest: `tests/fixtures/gate_manifest.json` holds a hash of `test_meter.py`; the edit leaves one HOLD, a line added to the Maintainer's next signing.
 
 Run `dev/tools/claim_check.py` on prose changed.
+
+## Plan review -- Reviewer (usual) -- 2026-11-21
+
+Reviewed commit: 328325bb665c671f7057f0f088b99de19e989b38
+
+**Obligation**: the usual plan review
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the design is sound. Under today's rule the access-list loop already skips SYSTEM and Administrators, so they may hold full control of the profile folder; owning it adds no power an administrator cannot take -- `dev/tools/meter.py` lines 629-666.
+2. **Best alternative.** None simpler: the Maintainer chose "Fix the meter"; one condition at the one place the role `profile` is set -- `meter.py` line 741, `dev/PLANNING.md` section 1 entry.
+3. **What would show it wrong.** On the real machine another refusal appears, such as an extra access-list entry that holds write rights on the profile folder -- Strategy's check, after the build.
+
+**Findings**
+
+1. **Blocking: the test is not given as code.** A low-tier builder must invent the stand-in: `check_acl` writes owner, access list and descriptor through `C.byref`, calls `C.string_at` on the access list, and uses `kernel.LocalFree`. Replace Acceptance (b)'s description with the test as code: `api = object.__new__(meter._WindowsConsentAPI)`; set `api.C = ctypes`, `api.W = ctypes.wintypes`, `api.kernel` with a no-op `LocalFree`, and `api.advapi.GetSecurityInfo` setting `owner._obj.value`, `dacl._obj.value` (the address of a buffer holding the 8 bytes `02 00 08 00 00 00 00 00`) and `sd._obj.value` to non-zero, returning 0; `api._sid_bytes = lambda p: owners[0]`. Then the three cases with `user_sid=b"user"`. The author must confirm that code against `check_acl` lines 619-671.
+2. Non-blocking: add case "role `profile`, owner `b"user"`: returns", so "too strict" is also caught.
+3. Non-blocking: "all replace `check_acl`" is not exact; the fault harness near test line 964 wraps the real one. Say "most".
+4. Non-blocking: state that a second refusal on the machine goes back to Strategy; the build does not widen the access-list test.
+
+Checked and right: `check_acl` has 45 call sites (`grep -c "check_acl(" dev/tools/meter.py` gives 46 with the definition); roles `meter`, `ledger`, `lock`, `candidate`, `export`, `cairn`, `config` stay user-owned; every walk and writer passes `ancestor`. Stale records are complete: shipped copy, `dev/.cairn/cairn-lock.yml`, the manifest hash of the test file (`tests/fixtures/gate_manifest.json` line 8457), changelog. The Strategy-only check is stated.
+
+**Verdict**: REVISE
+
+Not covered: the Security Review questions, any run, and the real machine's access lists. Elapsed time: unknown. Tokens: unknown.
