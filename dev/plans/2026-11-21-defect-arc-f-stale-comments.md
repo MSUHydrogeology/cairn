@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
 **Status**: awaiting-plan-review
-**Plan review**: required(Internal + Internal Security Review)
+**Plan review**: required(Internal)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
 **In brief**: Sixteen comment lines in eleven copies of seven tools still name folders that no longer exist, and this plan corrects only those comments, leaving every line of working code unchanged.
@@ -25,7 +25,7 @@ The accepted defect arc counts comment text in tool files among the stale paths 
 
 **Frozen, not protected.** Protected-surfaces names `run_portable_security_sweeps.py` and its shipped copy as high-risk. All eleven copies are frozen in `tests/fixtures/gate_manifest.json` (the manifest lists Cairn's own four under their pre-layout `scripts/` paths and the check-coverage tool under `bootstrap/`). None is in its `protected_roster`. Changing any of them makes the manifest's recorded hash stale; the Maintainer's signing refreshes it, and no agent does. The signing's one sentence is: "Eleven frozen tool files changed only in comments naming old folders; each parses to the same syntax tree as before." Cairn's own lock (`dev/.cairn/cairn-lock.yml`) records the four `dev/tools/` copies, so those four hashes go stale too; the Implementation agent refreshes them in C2.
 
-**Review.** Protected-surfaces gives the heavy tier to a change that alters what a high-risk surface does or accepts, and says "when in doubt, take the Security Review". A comment cannot alter what a tool does, so the lighter tier would be defensible. I take the heavier one: four of the seven tools are security tools, one is named high-risk, and the Maintainer signs for them. The Security Review pass is narrow: it re-runs the syntax-tree check and the stale-comment search, and reads the diff for any non-comment token. Code review carries the same pair.
+**Review.** Protected-surfaces gives the heavy tier to a change that alters what a high-risk surface does or accepts, and says that merely touching a surface does not. A comment cannot alter what a tool does, and the syntax-tree check below proves for every copy that no code changed. So this plan takes the usual review at each stage: one plan review and one code review. The code reviewer re-runs the syntax-tree check and the stale-comment search, and reads the diff for any token that is not a comment. The author first took the heavier tier, as its brief told it to wherever the rules left a choice; Strategy set this one on 2026-11-21, because the rule leaves none here. The Maintainer still sees each changed frozen file at the signing.
 
 No new script, option or test file is added (Maintainer, chat, 2026-11-21: "Yeah no new tooling unless it's needed!"). **Reuse**: N/A: no code added.
 
