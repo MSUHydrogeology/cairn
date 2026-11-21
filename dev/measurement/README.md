@@ -83,7 +83,7 @@ them.
   ```
 
   Keep the config and private ledger under the account's protected `.cairn`
-  directory. The bare `python tools/meter.py --json` command checks only
+  directory. On Windows the Meter runs only when `.cairn` and `meter.json` are owned by your own account; if you made them from an administrator shell, make your account their owner. The bare `python tools/meter.py --json` command checks only
   whether configuration is disabled or unavailable; it does not collect.
   `python tools/meter.py refresh --json` explicitly reads only configured
   source roots, verifies configured projects, updates the private ledger at

@@ -8862,3 +8862,37 @@ def test_events_of_the_clock_day_are_never_folded_even_above_the_target(tmp_path
     ledger = ledger_of(home)
     assert ledger["fold_horizon"] == "2026-11-10"
     assert len(ledger["events"]) == 4 and ledger["daily"] == []
+
+
+def test_windows_profile_owner_may_be_system_or_administrators():
+    acl = ctypes.create_string_buffer(struct.pack("<BBHH", 2, 0, 8, 0), 8)
+    sids = {1: b"user", 2: b"other", 3: b"system", 4: b"admins", 5: b"trusted"}
+    names = {"S-1-5-18": 3, "S-1-5-32-544": 4,
+             "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464": 5}
+    state = {}
+
+    class Advapi:
+        def GetSecurityInfo(self, _handle, _kind, _info, owner, _group, dacl, _sacl, sd):
+            owner._obj.value = state["owner"]
+            dacl._obj.value = ctypes.addressof(acl)
+            sd._obj.value = 99
+            return 0
+
+        def ConvertStringSidToSidW(self, text, out):
+            out._obj.value = names[text]
+            return 1
+
+    api = object.__new__(meter._WindowsConsentAPI)
+    api.C, api.W = ctypes, SimpleNamespace()
+    api.advapi, api.kernel = Advapi(), SimpleNamespace(LocalFree=lambda _p: None)
+    api._sid_bytes = lambda sid: sids[sid.value]
+    cases = [("profile", 1, True), ("profile", 3, True), ("profile", 4, True),
+             ("profile", 2, False), ("profile", 5, False),
+             ("cairn", 4, False), ("config", 4, False)]
+    for role, owner, allowed in cases:
+        state["owner"] = owner
+        if allowed:
+            api.check_acl(7, b"user", role)
+        else:
+            with pytest.raises(meter.Unavailable):
+                api.check_acl(7, b"user", role)

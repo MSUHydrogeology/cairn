@@ -1,7 +1,7 @@
 # Plan: Defect arc G, the meter runs for a Windows administrator
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -185,5 +185,94 @@ Security Review:
 Also changed, by the Maintainer's standing direction on testing of 2026-11-21 ("run the fewest tests possible to make sure it was right"): the build runs the one new test, not the whole file.
 
 Edited directly by Strategy, by exact replacement. Not run: any test.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record -- Implementation (Claude Sonnet 5.5) -- 2026-11-21
+
+Worktree `.claude/worktrees/arc-g`, branch `arc-g-impl`, cut from `0.9-dev` at f7c4498a (usage-counting work already merged; lines re-read before the edit).
+
+**Commits.** 5141720c status implementing; 14cde571 code, test, README sentence, changelog line, shipped copy; 4a40b602 lock only.
+
+**Condition as built**, in `check_acl` (`dev/tools/meter.py`), exactly as the Scope gives it:
+
+```python
+if role == "profile":
+    if owner_bytes != user_sid and not self._privileged_sid(owner_bytes, ancestor=False):
+        raise Unavailable
+elif role in {"cairn", "config", *private_roles} and owner_bytes != user_sid:
+    raise Unavailable
+```
+
+**Test.** `test_windows_profile_owner_may_be_system_or_administrators`, appended as the Security Review gives it; it needed no new import. With the change, on Windows: `1 passed, 554 deselected in 3.16s`.
+
+**Fails without the change.** I stashed only `dev/tools/meter.py` (the old condition), ran the same command once, then restored it: `1 failed, 554 deselected in 3.65s`, with `Unavailable` raised at the old owner line, on the first SYSTEM-owned profile case.
+
+**Checks.** `cmp dev/tools/meter.py templates/skills/_lib/meter.py` printed nothing. `verify_integrity.py --target .` reported OK (70 recorded files match). The lock was refreshed with the plan's `--finalize` command for `meter.py` and the README (both are recorded); its commit holds only the lock.
+
+**Not run.** The rest of `test_meter.py` and the suite (certification). The real machine and the meter itself (Strategy's check). The gate manifest hash of `test_meter.py` is left as the plan says: one HOLD for the Maintainer's next signing.
+
+**Differences from the plan.** None.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-21
+
+Reviewed commit: ea0a2a2f0144235fa44b32a08d63f419687284f6
+Range: f7c4498af5073e604907e1e21a1e0cf865f759c1 (merge-base with `0.9-dev`) to ea0a2a2f0144235fa44b32a08d63f419687284f6
+
+**Obligation**: the usual code review
+**Tier**: Internal
+**Findings**: none blocking
+
+**Foundations**:
+
+1. **Does it do what it claims?** Yes. The condition in `check_acl` matches the plan's Scope character for character. Role `profile` now accepts the user, SYSTEM or Administrators as owner. Roles `cairn`, `config` and the five private roles still accept only the user. Role `ancestor` is untouched and still accepts the user, SYSTEM, Administrators and TrustedInstaller -- `git diff` of `dev/tools/meter.py`, five lines, `check_acl`.
+2. **Best alternative.** None simpler; the Maintainer chose "Fix the meter" -- the plan's Source proposal.
+3. **What would show it wrong.** The test is the Security Review's block word for word. Too strict: the user, SYSTEM and Administrators cases would fail. Too loose: the other-account and TrustedInstaller cases would fail (`ancestor=True` would admit TrustedInstaller). I ran it once: `1 passed, 554 deselected in 2.92s`. That it fails without the change is the record's claim; I did not re-run it, but the old line raises for a SYSTEM owner on the first case -- `tests/integration/test_meter.py` last test.
+
+**Findings**
+
+1. Non-blocking: the README sentence was added inside an existing long line, so the paragraph is not rewrapped. It is true of what shipped (roles `cairn`, `config`) -- `dev/measurement/README.md`.
+
+Also checked: the copies match (`cmp` printed nothing); the lock commit holds one file, the lock; `verify_integrity.py --target .` reports OK; the changelog line is true. No rule weakens beyond the plan; no frozen file changed. The gate-manifest HOLD and the real machine are left to Strategy, as the record says.
+
+**Verdict**: ACCEPT
+
+Not covered: the Security Review questions, the rest of `test_meter.py`, the real machine. Elapsed time: unknown. Tokens: unknown.
+
+## Code review -- Claude Opus 5.5 (Security Review) -- 2026-11-21
+
+Reviewed commit: ea0a2a2f0144235fa44b32a08d63f419687284f6
+Range: f7c4498af5073e604907e1e21a1e0cf865f759c1 (merge-base with `0.9-dev`) to ea0a2a2f0144235fa44b32a08d63f419687284f6
+
+**Obligation**: the Security Review at the code stage
+**Tier**: Internal Security Review
+**Findings**: none
+
+**Foundations**:
+
+1. **No account gains power over consent.** Owning a folder gives the right to rewrite its access list. Administrators and SYSTEM already pass the profile access-list loop with any rights, and an elevated administrator can take ownership anyway. An ordinary second user is neither, so stays refused; a second administrator gains nothing new -- `dev/tools/meter.py` `check_acl`, the loop's `_privileged_sid` skip.
+2. **Identity, not membership.** The owner's SID bytes are compared with exactly `S-1-5-18` and `S-1-5-32-544`; group membership is never consulted, so Domain Admins or any other group stays refused -- `meter.py` `_privileged_sid`, `ancestor=False`.
+3. **Every other role is as strict as before.** `cairn`, `config` and the five private roles still require the user; `ancestor` is untouched; the profile access-list mask (`profile_denied`) is unchanged, so no one but the user, SYSTEM and Administrators may hold write, delete-child or access-list rights there -- `git diff f7c4498a ea0a2a2f -- dev/tools/meter.py`, five lines.
+
+I agree with the usual review's Foundations and its one finding; on the four security questions this review governs.
+
+**Findings**
+
+None. Checked: the test ran once, `1 passed, 554 deselected in 2.18s`; `cmp` printed nothing; `verify_integrity.py --target .` reports OK; the lock commit 4a40b602 holds only the lock.
+
+**Verdict**: ACCEPT
+
+Not covered: the real machine, the POSIX path, the rest of `test_meter.py`, a re-run without the change (the record shows it). Elapsed time: unknown. Tokens: unknown.
+
+## Code-review response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-21
+
+Both code reviews accepted the change, and neither raised a blocking finding. Status is now `ready-to-archive`.
+
+1. Usual review, finding 1 (non-blocking: the README sentence sits inside an existing long line): no change is asked and none is made. Functional prose is edited by exact replacement and never rewrapped, so the line stays as it is.
+2. Security Review: no finding.
+
+Not run for this response: any test.
 
 **Elapsed**: unknown. **Tokens**: unknown.
