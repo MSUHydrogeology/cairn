@@ -1,7 +1,7 @@
 # Plan: Defect arc I, the meter does not judge a project's folders
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -122,5 +122,46 @@ Reviewed commit: 984fcaf7190d3f7a4265a972e20169607aa3a599
 - No Windows test plants a link at a project; the shared `_windows_open_root` refusal is shown by the native log-folder case. Accepted.
 
 **Not covered:** no test run; no Security Review questions (group-write on Mac and Linux, the receipt wording); fixtures `promise_security_leaf_*` not read.
+
+Elapsed time: unknown. Tokens: unknown.
+
+## Security Review -- Security reviewer (Opus 5.5) -- 2026-11-21
+
+```
+Reviewed commit: 635a9dd4
+```
+
+**Obligation**: Security Review at the plan stage (Internal Security Review)
+**Tier**: Internal
+**Findings**: raised
+
+**Verdict**: REVISE. One blocking finding, on wording only; the change is safe as designed, with the test skipped on the whole path from the drive root down.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The account test is only in `check_acl`; the guards that stop a redirect sit in `open` and `info` and do not depend on it (`dev/tools/meter.py` 415, 456, 626-678).
+2. **Best alternative.** Testing only the project's own folder would not run on the `F:` machine, whose refused folders are above the project; no narrower test fits (owner's answer, this round).
+3. **What would show it wrong.** A read or write that lands outside the configured path, or a summary readable by another account; none found in 1689-1722, 5483-5699, 5701-5887.
+
+I agree with both blocking findings of the usual review and its five other notes; for the path above the project, my wording below governs.
+
+**What still stops steering, with no test from the drive root down.** The path comes from the user's own config, which keeps its owner test (773-775). Each part is opened by name without following a link; a reparse point (junction, mount point, link) is refused; the volume must be a local NTFS disk and stay the same (1697, 1710, 1717). Held folders are opened without delete sharing, so they cannot be renamed while held. Between runs another account may swap a folder on the path, but only for one it may already move, on the same volume; the meter then reads that account's `.git/config` and claims and writes its private summary there. Nothing more is needed.
+
+**Worst case per route, with the test gone.** Write outside the project: no. Read outside it: no, only fixed names under the path; Windows refuses a hard-linked file (2483, 6109). Run code: only bytes matching the SHA-256 constant (5927). Read usage: no; the summary is created private, with a protected access list on Windows (493-494) or mode 0600 with `O_EXCL` and a random name on Mac and Linux (5598-5604). Wrong project: no; the remote must match (5493, 5707) and filing compares the logs' own folders (6370). What remains is denial (failed remote check, deleted summary) and a changed claims split, as the plan says.
+
+**The meter's own folder.** The skipped test protected nothing the SHA-256 constant does not. An account that may change that folder may change `meter.py` itself, and its constant, before any test runs; Python does not check it.
+
+**Mac and Linux, group-writable folders.** A group member cannot make the meter write through a link (`O_NOFOLLOW`, `O_EXCL`, rename replaces the entry, not its target) or leave the summary readable (created 0600, owner and one link re-checked, 5613-5635). A planted or linked `meter.json` gives a refusal only.
+
+**Blocking**
+
+1. The Scope and the README sentence speak of "a project's folders"; the test is skipped on every folder above the project and on the meter's own folder too. In Scope, after **Removed:** replace the sentence with: "**Removed:** the owner and who-else-may-change test on a project's tree, on every folder above it from the drive root, and, for the read of `git_read.py`, on the meter's own folder and those above it." Replace the README sentence with: "The Meter does not judge who else may change a project's folders, the folders above them, or the folder it runs from. It refuses a link or a redirected folder on the way, and it makes its summary file private. An account that may change those folders may change the remote check, the work claims, or the Meter itself."
+
+**Non-blocking**
+
+- No warning in the summary or receipt: the sharing is the Maintainer's choice and would warn on every run; the README sentence is enough.
+- Out of this plan: on Mac and Linux the claims and `.git/config` reads do not refuse a hard-linked file (2273-2281, 6035-6042). The bytes reach only the private summary; unchanged here.
+
+**Not covered:** no test run; the meter not run; the test file not read; `_verified_project_remote` and `_claim_snapshot` not read beyond their callers.
 
 Elapsed time: unknown. Tokens: unknown.
