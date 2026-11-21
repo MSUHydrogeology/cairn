@@ -100,3 +100,45 @@ Code review once, after C4; no earlier review point. C4 needs C2 and C3 and the 
 **Hosts.** This Windows machine runs the selected tests; link tests skip without symbolic-link rights and run once in its Linux subsystem (development only). Nothing here certifies; the Python 3.13 run waits for the joined run. **Prose gates**, one file per call: `claim_check.py`, `link_check.py`, `tests/check_cairn.py`, `git diff --check`. **Issues.** None to close; the roadmap row is not an issue.
 
 **Not checked.** Nothing was run. Not measured: the 0.7 path end to end; `os.link` and `chmod` on Windows; the protected test with `dev/modules` as its folder. **Does any rule weaken or disappear?** One sentence of placement doctrine is reworded in two plan files (C1, C3); the rule that a domain's governance lives in that domain is kept, and this file is stated as an operating file in `dev/`.
+
+## Plan review -- Claude Sonnet 5.5 -- 2026-11-21
+
+Reviewed commit: 78a718b38a87ffa176c1ba07a3664be6c8b7140e (installer read at `029532a0` in the plan B worktree)
+
+**Obligation**: the usual plan review; the Security Review follows
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**
+1. **Should this happen as framed?** Yes. The proposal gives plan E "the upgrade move", and a command that moves one file without overwriting is the right shape; every function the companion names exists with the arguments it uses. -- `install/_scaffold/upgrade.py` (`_cmd_heal_layout`, `_cmd_retire_wrapper`, `_legacy_layout_paths`), proposal line 54.
+2. **Best alternative.** A command that only records the new place, after the adopter runs `git mv`, drops the hard link, the delete, the folder rule and half the messages and tests. The plan already builds that route (M15). It is the Maintainer's call (finding 7). -- Detail D2 steps 4 to 7.
+3. **What would show it wrong.** A test that runs an ordinary `--stage` and `--apply` against a real upstream change at the old place and then the move, and finds the change at the new place. The plan has none (finding 2). -- Detail D5.
+
+**Central claim.** It holds in the code: `_compute_upgrade` and `_apply_upgrade` work from the record's `dst`, and the new-file branch skips a source the lock already tracks, so `--plan`, `--stage` and `--apply` act in whichever place the lock names. A stage made before the move is refused afterward, because the whole-lock identity changes. A hand-moved file with `--finalize` fails closed. `--init-lock` leaves two files: finding 6.
+
+**Findings**
+1. **Blocking.** The hard-link write has no message or exit code when the file system refuses it, and no test fails if `os.link` is swapped for an overwriting call. Exact words below.
+2. **Blocking.** The order is not pinned. "Ordinary upgrade after" runs against an unchanged template, so it merges nothing. The M4 setup names a fixture that cannot be reused. Exact words below.
+3. **Blocking.** The edited protected test would fail: the refusal names the first mapped path under the link, and the folder's `README.md` sorts before `documentation-plan.md`. Exact words below.
+4. Non-blocking. A stop between the link and removing its temporary name leaves a second link, so the next run refuses (M10). Say so in S4. Drop the `os.chmod`: a read-only old file on Windows would block that removal.
+5. Non-blocking. No removal condition. Add to Scope: "Remove `--move-documentation-plan` and its tests in the release that stops supporting upgrades from 0.8 installs; the Maintainer names that release."
+6. Non-blocking. UPGRADE.md must say that `--init-lock` leaves the old file in place and adds the new template beside it. C3 says 10 other files; D6 names 9.
+7. For the Maintainer. Choose the record-only command or the moving command.
+
+**Doctrine.** The reworded paragraph still sits under "Domain-local governance" yet no longer shows that rule; wording below, non-blocking.
+
+**Not covered.** No test, no Windows run. Security questions left to the Security Review. The 134 archived files, the other five tests and the AST baseline steps were not read. The pass is over 300 words because three blocking findings carry their exact words.
+
+Elapsed time: unknown. Tokens: unknown.
+
+**Verdict**: REVISE
+
+### Exact words for the blocking findings
+
+**1. Detail D2 step 7(a)**, after "raising `ScaffoldSecurityError(...)`" add: "Catch any other `OSError` from `os.link` (the file system refuses hard links): print M17 to stderr and return 1. Nothing was written, and the `finally` removes `tmp`." Add **M17**, exit 1: `error: upgrade --move-documentation-plan: this file system does not allow the hard link the move relies on. Nothing was changed. Run git mv docs/DOCUMENTATION_PLAN.md dev/DOCUMENTATION_PLAN.md yourself, then run this command again to record the new place.` Add to D5 two rows. "Hard link refused": `monkeypatch.setattr(os, "link", ...)` raises `OSError(errno.EPERM, "no")`; expect M17, 1, tree and lock unchanged, no `*.tmp` in `dev/`. "File appears during the move": patch `upgrade._stage_exclusive` to call the real one, then write other bytes at `dev/DOCUMENTATION_PLAN.md`; expect M10, 2, the planted bytes kept, lock unchanged; control: `os.link` never overwrites.
+
+**2. Detail D5.** Add to the fixture: set the record's `base_cache` to `dev/.cairn/base/docs/DOCUMENTATION_PLAN.md` and move the cache file there. Replace the "ordinary upgrade after" row with two. "Upgrade first, then move": cut the last line from the cache file and the project file, set `base_hash` to the new cache's hash, commit, run `--stage` and `--apply`, commit, then the move; expect the template's last line in the file at `docs/` after `--apply` and nothing at `dev/`, then M13 and `dev/DOCUMENTATION_PLAN.md` holding those bytes. "Move first, then upgrade": same setup, the move first; expect the line at `dev/` and nothing at `docs/`. Replace the M4 setup with: add a lock record `{"src": "core/x.md", "dst": <old path of the first row of upgrade._LAYOUT_MOVES>, "verbatim": True, "hash": "sha256:" + "0" * 64}`.
+
+**3. Detail D5, last edited-test bullet:** the two assertions name the `README.md` inside the installed `dev/modules` folder (written with that folder's name in front), not `documentation-plan.md`, and the file the outside folder holds is `README.md`. Reason: the refusal names the first mapped path below the link in destination order, and that `README.md` sorts first.
+
+**Doctrine (non-blocking), replacing the last three lines of the placement paragraph in D4 and D6:** "...lives in `dev/`.  Where documents go is an operating question for the people and agents who write them, so this file's domain is the project's operating files and the rule above holds: it lives with them, and `docs/` holds only what describes the software."
