@@ -306,6 +306,22 @@ def test_a_helper_that_cannot_be_read_safely_is_not_called_line_endings(
     assert GIT_READ_OTHER in error
 
 
+def test_unbound_git_reader_names_its_cause_for_a_to_upgrade(layout, capsys, monkeypatch, tmp_path):
+    helper = Path(__file__).resolve().parents[1] / "templates/skills/_lib/git_read.py"
+    copy = tmp_path / "git_read.py"
+    copy.write_bytes(helper.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+
+    def unbound():
+        raise RuntimeError("Git read helper binding failed")
+
+    monkeypatch.setattr(upgrade, "_git_read_helper", unbound)
+    monkeypatch.setattr(upgrade, "_git_read_helper_path", lambda: str(copy))
+    code = _upgrade(layout, "--plan", "--to", "HEAD")
+    error = capsys.readouterr().err
+    assert GIT_READ_CRLF in error
+    assert code == 1, (code, error)
+
+
 def test_the_refusal_looks_at_the_pinned_helper_itself():
     raw = Path(upgrade._git_read_helper_path()).read_bytes()
     folded = raw.replace(b"\r\n", b"\n")
