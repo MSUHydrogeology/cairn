@@ -115,6 +115,7 @@
         "test_drift_surfacing",
         "test_meter",
         "test_meter_usage_free_records",
+        "test_meter_claude_usage",
         "test_prune_tools",
         "test_replacement_tools",
         "test_rules_folder_offer",

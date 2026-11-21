@@ -7216,7 +7216,7 @@ def keys_of(ledger):
 
 
 def event_key_for(message_id, session="session-a"):
-    return meter._digest("claude", session, "request-" + message_id, message_id)
+    return meter._digest("claude", "request-" + message_id, message_id)
 
 
 def grow(path, data):

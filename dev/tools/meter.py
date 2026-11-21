@@ -6313,6 +6313,43 @@ def _codex_context(payload, owner):  # vendor-ok: validate the supported input p
             "owner": owner}
 
 
+def _project_for_folder(cwd, projects):
+    """Return the one configured project whose path holds `cwd` as text, or None.
+
+    The folder is never opened, linked or resolved; it is compared as text.
+    """
+    if not isinstance(cwd, str):
+        return None
+    try:
+        cwd = _text(cwd)
+    except ValueError:
+        return None
+    if os.name == "nt":
+        try:
+            _windows_absolute_parts(cwd)
+        except Unavailable:
+            return None
+        sep = "\\"
+    else:
+        if not cwd.startswith("/") or any(part in {".", ".."} for part in cwd.split("/")):
+            return None
+        sep = "/"
+    containing = []
+    for project in projects:
+        path = project.get("path")
+        if not isinstance(path, str):
+            continue
+        if cwd == path:
+            containing.append(project)
+            continue
+        prefix = path if path.endswith(sep) else path + sep
+        if cwd.startswith(prefix):
+            rest = cwd[len(prefix):]
+            if rest and all(rest.split(sep)):
+                containing.append(project)
+    return containing[0] if len(containing) == 1 else None
+
+
 def _codex_identity(payload):  # vendor-ok: extract the supported input protocol
     thread = _codex_uuid(payload["thread_id"])
     session = _codex_uuid(payload["session_id"])
@@ -6631,7 +6668,7 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                 message_id = _text(message["id"])
                 request = record.get("requestId")
                 response = _text(request) if request is not None else message_id
-                event_key = _digest(tool, session, response, message_id)
+                event_key = _digest(tool, response, message_id)
                 try:
                     kinds = _claude_usage(message["usage"])
                     cache_write_ttl = _claude_cache_ttl(
@@ -6656,7 +6693,26 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                         model = None
                         issues.add("invalid_record")
                         model_invalid = True
-                reasons = {"project_path_unapproved"}
+                reasons = set()
+                bound = None
+                folder_project = (_project_for_folder(record.get("cwd"), projects)
+                                  if source_root_approved else None)
+                if request is None:
+                    reasons.add("conflicting_binding")
+                elif account_filter_requested:
+                    pass
+                elif folder_project is None:
+                    reasons.add("project_path_unapproved")
+                else:
+                    cache_key = (folder_project.get("alias"), folder_project.get("path"))
+                    if cache_key not in verified_projects:
+                        verified_projects[cache_key] = verify_project(folder_project,
+                                                                      excluded_roots)
+                    current_remote, remote_reason = verified_projects[cache_key]
+                    if remote_reason is None:
+                        bound = folder_project
+                    else:
+                        reasons.add(remote_reason)
                 if usage_invalid or model_invalid:
                     reasons.add("invalid_record")
                 if account_filter_requested:
@@ -6670,7 +6726,10 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     kinds=kinds, model=model,
                     model_provenance=("usage_record" if model is not None else "unknown"),
                     effective_model=model,
-                    cache_write_ttl=cache_write_ttl, reasons=reasons)
+                    cache_write_ttl=cache_write_ttl, reasons=reasons,
+                    project_alias=bound["alias"] if bound else None,
+                    project_state="current_local_verified" if bound else "unknown",
+                    ownership="proven" if bound else "unknown")
                 candidates.append((candidate, tuple(candidate["kinds"].items()),
                                    (session, None, None, None), None, line_ordinal))
                 continue
