@@ -83,8 +83,11 @@ runs cost machine time, not tokens, and are listed separately.
 | Layout trial, step 2 | counts against the hand-kept account | Medium | 68,119 | 0.3 | done |
 | Plan B, upgrading | usual final code review | Medium | 160,248 | 8 | revise, 1 blocking |
 | | Security Review of the final code | High | 195,473 | 10 | revise, 2 blocking (1 shared) |
+| Plan E, the documentation plan moves | author | Medium | 322,825 | 13 | opened, 2,052 words plus a companion |
+| | usual review | Medium | 218,598 | 7 | revise, 3 blocking |
+| | Security Review | High | 145,619 | 5 | revise, 1 blocking |
 
-Total for the day so far: 9,185,062 tokens across 62 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 9,872,104 tokens across 65 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -136,7 +139,11 @@ Measured:
   Strategy put every design decision in the brief, so the author did no
   design, and Strategy folded the reviews itself, so no agent was resumed or
   spawned for that. Two against two is a small sample.
-- **Thirty-two review passes so far, and still no return visit.**
+- **Thirty-four review passes so far, and still no return visit.**
+- **Plan E was the dearest plan to write: 322,825 tokens.** Its author had to
+  settle a design question from code on an unmerged branch. Both reviews then
+  pointed to a lighter design; had Strategy settled that question in the
+  brief, part of the plan and of both reviews would not have been needed.
 - **The final code review of plan B earned its cost.** Two passes, 355,721
   tokens and 18 minutes, found two defects that four test groups on two hosts
   and the end-to-end checks had not: a restored wrapper that was never picked
