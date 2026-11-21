@@ -236,3 +236,30 @@ The four chunks match Detail. The tests that cannot run on the Windows Server ho
 Not run: the Mac. Home: `dev/PLANNING.md`, "Waiting on you", the Mac session's second job. Not run: any freeze, record, join or signing. Found on the way and listed for plan D2 in `dev/PLANNING.md`, section 1, "Windows", items (g) to (j) (committed on `0.9-dev` at `f9c02db2`, so not in this branch's copy until the merge): the fixture race, a refusal test that asserts only "FAIL", stray files the ceremony tests leave on Windows, and an unstable gauge test file.
 
 **Elapsed**: 53 minutes from the implementer's record (19:16) to this one, most of it test runs. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-20
+
+Reviewed commit: 1e729c4ee4c91928e0d1fd944b0c7f1cf076f88c; range `ecc1a913..HEAD` on `arc-d-impl`.
+
+**Obligation**: the usual code review the heavy tier requires; the Security Review pass follows.
+**Findings**: none blocking, three non-blocking.
+
+The change gives the review page back a scan of new tool files under `tests/`, makes one test name the record it refuses, lets the release checker read pytest's Windows `file=` spelling, and writes down the clean-clone freeze. All four chunks match Detail word for word: the code blocks, the node names and cases, the one changed checker line, the docstring lines, and the single inserted paragraph (`git diff` shows one added line in `release/RELEASE_PROCESS.md`; the `bash` block is untouched).
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. It scans more and accepts nothing new except, on Windows, one spelling of a field that `compare` still checks against the classname. -- `tests/_gate_preflight.py:1450-1454`, `release/check_release_test_members.py:240` and `:281`
+2. **Best alternative.** For the fixture fix, keep `time.time_ns()` and stamp the report with `os.utime`, as the file's other helper does (finding 2). Otherwise none simpler. -- `tests/contract/test_release_members_contract.py:418`
+3. **What would show it wrong.** I tried names near the edge on the `_is_test_module` rule and the `tests/fixtures/` exclusion; `conftest.py`, `Test_a.py`, `tests_tool.py`, `test_a.pyi`, `test_a.sh`, and a `run.py` in a folder named `test_data` or `Fixtures` are all scanned; `test_*.py` at any depth and `tests/fixtures/` (any file) are not, as designed. A rename is `modified`, not `added`, so it is never new-file scanned, as before. I also ran the D1-3 nodes and the fork-advisory node here. -- `C:\ProgramData\Anaconda3\python.exe -m pytest tests/contract/test_release_members_contract.py -k "file_field or minimal_report or test_report_refusals"`: 26 passed, 1 skipped (the off-Windows node), 1 failed (symlink, host privilege, fails at BASE); `tests/test_fork_advisory.py -k node16_f5_parametric_no_lockfile`: 6 passed.
+
+**Findings**
+
+1. Non-blocking. D1-1's node cannot run on this host (record: `ssh-keygen` path). Its control ran only in the Linux subsystem; the Mac run is open and has a home in `dev/PLANNING.md`, "Waiting on you". I did not run it.
+2. Non-blocking, advice. The `evidence` fixture fix is within the cheap defect rule: it restores a promise in an edited file (`test_minimal_report_passes`), adds no file or name, and carries the `Defect fix:` line. The "stale" case still stamps the report one nanosecond before the start (`:194`), and "future" is unchanged, so both refusals are still tested. Taking the start from the report's own time cannot make a checker that ignores or inverts the start comparison pass: a `<=` mistake fails the minimal report, and an ignored start fails "stale". Safer form, not required: keep `time.time_ns()` and `os.utime` the report just after writing it. Then the start does not depend on the file system clock.
+3. Non-blocking. A new `conftest.py` under `tests/fixtures/` still runs unscanned; the plan reviews already sent this to the Maintainer.
+
+**Removed caller-visible faults?** None; the fork-advisory assertion only gains a line, and no test is removed. **Permanent tests worth their runtime?** Yes: four small contract nodes, one range-report node, one added assertion; no probe was left. **Does any rule weaken or disappear?** No; the paragraph adds a rule and the checker still refuses backslashes everywhere except that one Windows field.
+
+**Not covered**: the Mac and Linux runs, and the other seven D1-1 files; any freeze, join or signing. Whether the paragraph's statements are true of `release/security_check.py` is left to the Security Review. **Bounding**: no protected, frozen or fixture file beyond the two frozen files and two roster tests the plan names is touched, and no manifest is refreshed. Elapsed: unknown. Tokens: unknown.
+
+**Verdict**: APPROVE
