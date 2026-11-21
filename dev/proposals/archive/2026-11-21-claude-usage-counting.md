@@ -266,3 +266,18 @@ What that settles:
 - **Choices 2 and 3 stand.** Choice 5 stands under the question recorded on the roadmap: the meter cannot rebuild its record from old logs, and whether the restart is accepted is still his to say.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Decision, three narrowings allowed -- Maintainer (scribed by Claude Fable 5.2) -- 2026-11-21
+
+**Allowed.** Both reviews of the plan found that it gives less than this proposal in three places. Strategy put them to the Maintainer in these words: "1. The restart. When this lands, the meter's running record starts again at zero for all three tools, and nothing already in the logs is counted. The old record file is kept aside. 2. A rare folder case. If one message's records fall into two meter readings, and the working folder moved outside the project in between, the message stays counted for the project. I did not see it in 4,333 measured messages. 3. Sub-agents started by sub-agents. They leave no summary record. If such a transcript file went missing, the reading would not say INCOMPLETE. When the file is there, its usage counts normally." The choices offered were "(a) Allow all three", which Strategy recommended, and "(b) Allow 2 and 3, and I design a back-fill for the restart". He wrote (chat, 2026-11-21):
+
+> "Allow all three"
+
+What that settles:
+
+- **Choice 5 is corrected.** This proposal said the ledger would be rebuilt from the logs still on disk. The meter cannot do that: it counts nothing written before its first reading of a log. The error was Strategy's. The new ledger starts at zero and counts only what is written after its first refresh, for every tool. No back-fill is built.
+- **Two folders (outcome A).** A message repeated across two refreshes, with a folder outside every project the second time, stays counted once under its first project.
+- **The incomplete rule (outcome B).** A run that another agent started leaves no summary, so a missing transcript of such a run does not mark the reading incomplete.
+- The plan records the three as its Scope delta, with the disposition accept.
+
+**Elapsed**: unknown. **Tokens**: unknown.
