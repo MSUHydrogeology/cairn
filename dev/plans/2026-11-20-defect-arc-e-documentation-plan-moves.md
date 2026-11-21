@@ -1,7 +1,7 @@
 # Plan: Defect arc E, the documentation plan moves
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -142,3 +142,40 @@ Elapsed time: unknown. Tokens: unknown.
 **3. Detail D5, last edited-test bullet:** the two assertions name the `README.md` inside the installed `dev/modules` folder (written with that folder's name in front), not `documentation-plan.md`, and the file the outside folder holds is `README.md`. Reason: the refusal names the first mapped path below the link in destination order, and that `README.md` sorts first.
 
 **Doctrine (non-blocking), replacing the last three lines of the placement paragraph in D4 and D6:** "...lives in `dev/`.  Where documents go is an operating question for the people and agents who write them, so this file's domain is the project's operating files and the rule above holds: it lives with them, and `docs/` holds only what describes the software."
+
+## Security Review -- Claude Opus 5.5 -- 2026-11-21
+
+Reviewed commit: f407a749706d9f6b3c3d5b7f87502fd28cc30a6c (installer read at `029532a0` in the plan B worktree)
+
+**Obligation**: the Security Review the heavy tier adds at the plan stage
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Foundations**
+1. **Should this happen as framed?** Yes. Every write and removal names one of two fixed paths, and the lock is written by the same guarded writer as `--heal-layout`. -- Detail D1; `install/_scaffold/upgrade.py` `_commit_lock_and_caches` (only the lock path is written when the cache list is empty).
+2. **Best alternative.** The record-only command: the adopter's `git mv` moves the file and the installer writes only the lock, as `--retire-wrapper` does. -- `upgrade.py` `_cmd_retire_wrapper`.
+3. **What would show it wrong.** A test that, between `_stage_exclusive` and `os.link`, swaps the temporary name for a link to a file outside the project and finds that file's mode changed or given a second name inside the project. -- Detail D2 step 7(a).
+
+**The strongest case.** A hostile lock or tree cannot steer this step: it writes only at two fixed names, refuses links, folders and second hard links before reading, never overwrites, and removes only bytes it read and still finds. I checked each case below in the code at `029532a0`.
+
+**Findings**
+1. **Blocking.** Step 7(a) leaves a gap the installer's other writers close. Between staging and linking, `os.chmod` follows a link and `os.link` follows one by default; neither checks that the temporary file is still the one staged, as `_write_by_replacing` does. Someone who can write `dev/` while the move runs could change the mode of a file outside the project, or link one in. Exact words below; they govern the usual review's finding 4 on `os.chmod`.
+2. Non-blocking. `_documentation_plan_move_lines` re-reads the lock; a `files` that is not a list, or a record that is not an object, raises despite "never raises". Add after "when the lock is missing": "It reads `files` only when it is a list, and skips any record that is not an object, as step 1 does."
+3. Non-blocking. M10 prints `{exc}`. On Windows a folder junction is caught only by the last guard check, whose text names where the junction leads; the D2 sentence "names only the constant paths" is untrue there. No terminal escape can reach it. Also, an error from step 7(c) reaches M10 after the lock is written; the next run tidies (M9).
+4. Non-blocking. Step 3 reads both files whole, with no size limit: the residual already recorded for upgrade reads.
+
+**The usual review.** I agree with findings 1, 4 (my words govern on `os.chmod`), 5 and 6; 2, 3 and the doctrine have no security bearing; 3 keeps the same refusal.
+
+**The S answers.** S1 to S5 hold once finding 1 is closed. The proposal's S4 lists heal and retire as the only added authority; plan E's S4 adds a third: one file removed and one record rewritten.
+
+**For the Maintainer, security only.** The moving command gives the installer three new powers (create a file, delete a file, remove an empty folder) and the race, hard-link and Windows residuals above. The record-only command gives it one, rewriting one lock field, which heal and retire already have; Git does the move. What still goes wrong there: an adopter who never runs `git mv` gets a refusal, and a planted file at the new place is caught by its recorded hash.
+
+**Not covered.** I ran no test, read only one of the four edited tests and none of the 134 archived files, and did not check the shipped-text edits or the AST baseline. One four-line probe of `os.link` on this Windows host's Python 3.13 (scratch folder) showed `follow_symlinks=False` is accepted and a hard link to an existing name fails with `FileExistsError`.
+
+Elapsed time: unknown. Tokens: unknown.
+
+**Verdict**: REVISE
+
+### Exact words for the Security Review's blocking finding
+
+**1. Detail D2 step 7(a)**, replace the whole bullet with: "(a) only when `new is None` (the move proper): `tmp = _stage_exclusive(target / _DOCPLAN_NEW, old, target)`; `staged = tmp.stat(follow_symlinks=False)`. In a `try`: `_assert_safe_write(target / _DOCPLAN_NEW, target)`; if `tmp.stat(follow_symlinks=False)` does not have the `st_dev` and `st_ino` of `staged`, raise `ScaffoldSecurityError("the staged copy changed before the move")`; then `os.link(tmp, target / _DOCPLAN_NEW, follow_symlinks=False)`, catching `FileExistsError` and raising `ScaffoldSecurityError("a file appeared at the new place while the move ran")`. In the `finally`: remove `tmp` only if `tmp.stat(follow_symlinks=False)` still has the identity of `staged`, ignoring `FileNotFoundError`, as `_write_by_replacing` does. There is no `os.chmod`: the new file gets the default mode, as every file the installer writes. `os.link` fails when the name exists, so an adopter's file can never be overwritten, even if one appears after step 3." The usual review's M17 catch of any other `OSError` from `os.link` follows the `FileExistsError` clause unchanged. Add to Detail D5 one row: "staged copy swapped | patch `upgrade._stage_exclusive` to call the real one, then replace the returned name with a link to a file outside the project; skip if links are unavailable | M10, 2; the outside file's bytes and mode unchanged; nothing at `dev/DOCUMENTATION_PLAN.md`; lock unchanged | the identity check and `follow_symlinks=False`".
