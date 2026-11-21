@@ -129,7 +129,7 @@ _ARGV_MODES: frozenset[tuple[str, ...]] = frozenset({
 #: ``base_hash`` are the optional ones ``write_install_lockfile`` may add.
 #: Any OTHER key on a record this dispatcher reads is refused -- DEGRADED,
 #: naming the key -- never ignored. Recorded gap, not closed here:
-#: ``verify()`` in ``bootstrap/verify_integrity.py`` reads the same record
+#: ``verify()`` in ``install/verify_integrity.py`` reads the same record
 #: shape with ``rec.get(...)`` and ignores an unrecognized key; that half is a
 #: lasting truth neither plan in this pair closes (see this module's shipped
 #: doctrine).
@@ -139,9 +139,9 @@ _ALLOWED_RECORD_KEYS: frozenset[str] = frozenset({
 })
 
 #: THIS dispatcher's own authoritative living-state destination set --
-#: distinct from ``bootstrap/_scaffold/lockfile.py``'s ``_LIVING_STATE_DSTS``
+#: distinct from ``install/_scaffold/lockfile.py``'s ``_LIVING_STATE_DSTS``
 #: (an engine-only constant this shipped, adopter-tree file cannot import; an
-#: adopter checkout never has a ``bootstrap/`` directory). Carries exactly the
+#: adopter checkout never has Cairn's ``install/`` directory). Carries exactly the
 #: two policy destinations of the two ``policy_binding_mode: living_state``
 #: entries admitted below,
 #: added in the SAME commit as those registry entries, per this constant's
@@ -150,7 +150,7 @@ _ALLOWED_RECORD_KEYS: frozenset[str] = frozenset({
 #: registry entry -- never before, never separately. The Maintainer ratified
 #: the living-state narrowing before either landed; the policy row
 #: (``701be3a``) added these same two destinations to the DIFFERENT,
-#: engine-side ``_LIVING_STATE_DSTS`` in ``bootstrap/_scaffold/lockfile.py``
+#: engine-side ``_LIVING_STATE_DSTS`` in ``install/_scaffold/lockfile.py``
 #: (what makes the install lockfile mark them ``living_state: true`` in the
 #: first place) -- that landing does not, by itself, populate this
 #: dispatcher's own set; each is a separate source edit, and this one is
@@ -403,7 +403,7 @@ _REGISTRY: dict[str, RegistryEntry] = {
 
 # ---------------------------------------------------------------------------
 # Lockfile (read-only, stdlib JSON -- the lockfile is JSON-encoded YAML;
-# ships as an adopter-tree file with no bootstrap/ engine to import, so this
+# ships as an adopter-tree file with no install/ engine to import, so this
 # is a standalone re-implementation of ``read_lockfile``'s comment-stripping
 # parse, not an import of it).
 # ---------------------------------------------------------------------------

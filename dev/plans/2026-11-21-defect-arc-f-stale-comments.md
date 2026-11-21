@@ -1,7 +1,7 @@
 # Plan: Defect arc F, stale comments in protected tools
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -94,5 +94,56 @@ The review accepted the plan with no blocking finding and confirmed that the usu
 2. Finding 2 (docstrings and strings have no home): taken on the roadmap, in the entry "Comments in protected files", with a count Strategy made on 2026-11-21: 16 strings, 42 lines, in ten of the eleven copies name an old folder (8 docstrings and 8 other strings; a text search, so some may be there on purpose). They are code, not comments, so this plan leaves them, and whether to correct them is the Maintainer's to say.
 
 Edited directly by Strategy, by exact replacement. Not run: any test or the syntax-tree command.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record -- Claude Sonnet 5.5 (Implementation; edits by a Haiku execution agent) -- 2026-11-21
+
+**Conclusion**: C1 and C2 held. Sixteen comment lines changed in eleven copies; every copy parses to the same syntax tree as before, the four twin pairs are identical, and the lock check reports OK. No test was run, by the Maintainer's direction (below).
+
+**C1 (edit commit 4b1ceeb3)**: the diff against the commit before it (a216c969) names exactly the eleven paths, 18 lines added and 16 removed (pair 3's one line became two, in two copies). I read the diff line by line: each changed line is a `#` comment with the text in the detail file. Measured:
+- Syntax tree: the plan's command, run once over all eleven paths with BASE a216c969, printed `same tree`, so each of the eleven copies has an equal `ast.dump` before and after.
+- `cmp`: `claim_check.py`, `content_scan.py`, `content_scan_runner.py` and `run_portable_security_sweeps.py` are each identical between `dev/tools/` and `templates/modules/`.
+- Stale-comment search (the plan's `git grep -nP`) over the eleven paths returned nothing (exit 1). The line the plan leaves alone, `dev/tools/_intent/shared.py` line 19, still matches a loose search, as intended.
+- The Haiku agent also saw old folder names in docstrings (for example `content_scan.py` line 12, `check_module_body_coverage.py` lines 13, 32, 67, `run_security_verification.py` lines 15 and 50); the plan leaves those, since they are code, not comments.
+- The edit commit carried no intent claim: a claim naming eleven files was refused because its record was over 512 bytes.
+
+**C2 (lock commit c02edfd4)**: before it, `install/verify_integrity.py --target .` named the four `dev/tools/` copies as modified. The plan's `scaffold.py upgrade --finalize` command advanced four hashes. After it, the same check reported OK for 70 recorded files, and the commit holds only `dev/.cairn/cairn-lock.yml`.
+
+**Tests: not run.** The plan's 29-file before-and-after run was stopped by Strategy on the Maintainer's standing direction (chat, 2026-11-21): "Just do all of the changes we need. Then run the fewest tests possible to make sure it was right. Then we re-anchor, certify on all three platforms, and cut." For a comment-only change the syntax-tree check replaces the tests; `cmp` covers the twins and the integrity check covers the lock. The whole suite runs at certification. Other agents' test runs held the machine during the wait, so no run was started beside them.
+
+**Gate manifest**: `tests/fixtures/gate_manifest.json` records hashes of all eleven frozen files, so its hash checks fail until the Maintainer's signing refreshes them; the only reason is these comment edits. I did not run the signing check (not read, not measured).
+
+Not run: the plan's 29-file selection at base and after. Home: the Maintainer's direction quoted above.
+Not run: the full suite and the signing verifier. Home: the certification the Maintainer named above.
+Not covered: that each new comment is accurate beyond the detail file's wording; the code review reads that. Home: the code review.
+Dispositions: none.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-21
+
+Reviewed commit: f62cb7dc52251431f39a29de743651f9ff39533f, range `75acc20c..HEAD`.
+
+**Obligation**: the usual code review, the only pass at this stage.
+**Findings**: none blocking, none raised.
+
+The change does what the plan says: sixteen comment lines, no code.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The diff holds exactly the sixteen lines of the detail table, with the listed new text, and no other token -- `git diff -U0 75acc20c..HEAD` over the eleven paths.
+2. **Does it do what it claims?** Yes. The plan's tree command prints `same tree` for all eleven copies against `75acc20c`; `cmp` reports the four pairs identical; the lock commit `c02edfd4` changes only `dev/.cairn/cairn-lock.yml` and `verify_integrity.py --target .` reports OK for 70 files -- those commands.
+3. **What would show it wrong?** A new comment that is false. Every named path exists (`tests/integration`, `tests/quality_gate.py`, `install/verify_integrity.py`, `install/_scaffold/lockfile.py`, `install/scaffold.py`); the adopter-tree name of the security-audit tool is `dev/tools/` in `install/_scaffold/layout_catalog.py` line 90; `_api_access_security` is a sibling of the file as the code beside it shows (`api_access_security.py` lines 54 to 67); the `content_scan_runner.py` comment matches its three branches (lines 84 to 96).
+
+**Checked.** No rule weakens or disappears; only comments changed. The signing will see the eleven frozen files stale, as the plan says.
+
+**Left unproven, and what would prove it.** No test ran, by the Maintainer's direction. An equal syntax tree proves no code changed, so only a test that reads comment text could fail; the certification run covers that. I did not run the signing check, the stale-comment search or any test.
+
+**Verdict**: ACCEPT. Elapsed time: unknown. Tokens: unknown.
+
+## Code-review response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-21
+
+The code review accepted the change and raised no finding, so nothing is revised. Status is now `ready-to-archive`.
 
 **Elapsed**: unknown. **Tokens**: unknown.
