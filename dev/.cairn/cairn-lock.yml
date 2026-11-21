@@ -14,21 +14,21 @@
     },
     {
       "dst": ".agents/skills/session-end/SKILL.md",
-      "hash": "sha256:cc3376c9feab0d43c4bab8fa85c20133382f5fc7b61ad2064223a48c38c5ad79",
+      "hash": "sha256:cb0a5b43f4ca708b69e2441aa7c3b29df43db56beee2cc89cf7cfc6353a449e0",
       "src": "skills/session-end/SKILL.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": ".agents/skills/session-start/SKILL.md",
-      "hash": "sha256:5bead24293bd9fc813adc2f1897747565f38e9446076d2892b2b8ae556e0ee88",
+      "hash": "sha256:e33c0aaa7e4420347588802bc76cec631b2efef4ed174a0646753ed8ee09a41a",
       "src": "skills/session-start/SKILL.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "AGENTS.md",
-      "hash": "sha256:e0768ef340f004cfb4ec94f451fa02c96ba39e21c7868487f36e8d65ddc22e71",
+      "hash": "sha256:412111d773dfe9877917aa3d6447c49c96e378df788556ba3a64b5332981fe2c",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -66,7 +66,7 @@
     },
     {
       "dst": "dev/agent_collaboration.md",
-      "hash": "sha256:873243e1e2b50d0cccb7a525d7ecaab8436d58523fef6ef5b0a52c4745d068a4",
+      "hash": "sha256:e5f4f9ca716a0bd7ec150d9adb7a5bfce30c6b9e29452551031137a685b9bf3a",
       "src": "core/dev/agent_collaboration.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -144,7 +144,7 @@
     },
     {
       "dst": "dev/modules/issue-capture.md",
-      "hash": "sha256:e2c39123ff7dd0ea67d60522a9ead3e14f26e2e6717c3ac3888d42a07341b3ef",
+      "hash": "sha256:1a823b807acdee520424cc4c489986fdf95ee7c5e1cdc0412399655a61845769",
       "src": "modules/team-gated/issue-capture.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -187,14 +187,14 @@
     },
     {
       "dst": "dev/plans/_template.md",
-      "hash": "sha256:03a37f1c2388b199cb7c2f4e54dd70f79712e94dd25996316204f8b2bc95c658",
+      "hash": "sha256:55f5cbefa9d872eeac36d06378955197a350276b26c654d2d4a30e9607e6f724",
       "src": "core/dev/plans/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/proposals/_template.md",
-      "hash": "sha256:5f97ce7df920bfbd28f0a4a22ac73d5fd54d843466ad077a5042ba21020df175",
+      "hash": "sha256:bf85dc31ed3ac45176c1474d984ccb4cac1e6d6206b81660b4d96db67068e5e1",
       "src": "core/dev/proposals/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
