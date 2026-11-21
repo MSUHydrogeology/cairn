@@ -1,3 +1,4 @@
+<!-- claim-check-allow: docs/DOCUMENTATION_PLAN.md -->
 <!-- A release history necessarily names files as they were at each version; a
      path that later stopped existing does not make the entry wrong. -->
 

@@ -1,11 +1,5 @@
 {
-  "links": [
-    {
-      "source": "dev/modules/documentation-plan.md",
-      "target": "dev/DOCUMENTATION_PLAN.md",
-      "reason": "The documentation-plan examples are meant to be copied from the repository root; this target is intentionally absent when the source lives under dev/modules."
-    }
-  ],
+  "links": [],
   "internal_refs": [
     {
       "source": "templates/core/dev/PLANNING.md",

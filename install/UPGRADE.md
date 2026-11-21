@@ -1,3 +1,4 @@
+<!-- claim-check-allow: docs/DOCUMENTATION_PLAN.md -->
 # UPGRADE.md — folding new Cairn doctrine into a customized tree
 
 Cairn keeps evolving. An adopting team that bootstrapped months ago is

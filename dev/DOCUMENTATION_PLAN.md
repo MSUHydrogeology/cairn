@@ -1,3 +1,4 @@
+<!-- claim-check-allow: docs/DOCUMENTATION_PLAN.md -->
 # Documentation Plan -- Cairn
 
 **Status**: living document (Cairn's own self-hosted instance of the
