@@ -1,7 +1,7 @@
 # Plan: A simple usage meter
 
 **Source proposal**: dev/proposals/archive/2026-11-21-claude-simple-meter.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/custom_session_routines.md, dev/rules/development-environment.md
@@ -42,15 +42,17 @@ Surfaces: `dev/tools/meter.py` and its shipped copy `templates/skills/_lib/meter
 | C4 | Tests, shared set-up, pinned list and counts | C3 | test and manifest files |
 | C5 | Documents, changelog, Cairn's lock | C4 | prose; lock alone in its commit |
 
+The kept tests fail between C1 and C4, because they still name deleted code; the per-chunk check is `python -m py_compile dev/tools/meter.py`.
+
 ## Acceptance criteria
 
-**C1.** `read_records` is unchanged. No reading code uses `dir_fd`, `O_NOFOLLOW` or an owner test. A made-up folder holding a linked file, a linked folder and a sub-folder yields exactly its real logs.
+**C1.** `read_records` is unchanged. No reading code uses `dir_fd` or an owner test (a leaf may open with `getattr(os, "O_NOFOLLOW", 0)`). A made-up folder holding a linked file, a linked folder and a sub-folder yields exactly its real logs. `_read_project_claims` refuses `dev` or `dev/intents.jsonl` if it is a link or reparse point: a made-up project whose `dev/intents.jsonl` is a link yields no claims.
 
-**C2.** No `exec` or `git_read` remains. `read_records` differs only in its remote call and two dropped arguments. On a made-up home and project: summary and record are written, user-only where modes exist; a missing or linked `dev` or `dev/measurement` gets no summary and nothing outside changes; an old lock is taken over and a fresh one gives `ledger_busy`; a failed rename leaves the old bytes and no temporary file. Errors carry only closed reasons.
+**C2.** No `exec` or `git_read` remains. `read_records` differs only in its remote call and two dropped arguments. On a made-up home and project: summary and record are written, user-only where modes exist; a missing or linked `dev` or `dev/measurement` gets no summary and nothing outside changes; a fresh lock gives `ledger_busy`, an old one is taken over by the token rule of detail D5, and a finished run removes only its own lock; a failed rename leaves the old bytes and no temporary file. Errors carry only closed reasons.
 
-**C3.** Left named for Windows: the two parsers and the `nt` branches of three functions. All four commands share one path. The file compiles.
+**C3.** Left named for Windows: the two parsers and the `nt` branches of three functions. All four commands share one path, and `main` prints no traceback, path or system text (detail D13). The file compiles.
 
-**C4.** 88 tests deleted, 103 changed, 2 added (a full run on a made-up folder with a sub-folder, every platform; a link out of a log folder not followed, a junction too on Windows); a kept test covers the proposal's third. The 35 `nt` and 48 `posix` meter rows leave `tests/security_manifest.py`: counts 28 and 314, fingerprint recomputed by the validator's own formula, guard line changed there and where `tests/test_security_check.py` quotes it. `python tests/tier_inventory.py check` passes.
+**C4.** 88 tests deleted, 104 changed, 2 added (a full run on a made-up folder with a sub-folder, every platform; a link out of a log folder not followed, a junction too on Windows); a kept test covers the proposal's third. The 35 `nt` and 48 `posix` meter rows leave `tests/security_manifest.py`: counts 28 and 314, fingerprint recomputed by the validator's own formula, guard line changed there and where `tests/test_security_check.py` quotes it. `python tests/tier_inventory.py check` passes.
 
 **C5.** Each document sentence is in place; `cmp` of the meter copies prints nothing; after the lock commit `python install/verify_integrity.py --target .` reports OK.
 
@@ -58,9 +60,11 @@ Security preflight S2: the two promises keep their tests (detail file); the adde
 
 ## Scope delta
 
-**Scope delta**: preserved
+**Scope delta**: lost
 
-Nothing is dropped beyond the proposal's accepted `lost` list; a kept test delivers the omitted third test's outcome.
+- The re-checks before publishing a summary go with the descriptor walks (E). An account that can write the project and swaps `dev` or `dev/measurement` for a link between the check and the rename can put a summary of counts in another folder the user can write, replacing a `meter.json` there. **disposition**: accept, by the Maintainer's words of 2026-11-21: "Accept the gap".
+
+Nothing else is dropped beyond the proposal's accepted `lost` list; a kept test delivers the omitted third test's outcome.
 
 ## Verification
 
@@ -157,3 +161,29 @@ Reviewed commit: 9f64b9ffb3ee0d88f74bfe74c22cd24a43019787
 **Scope delta (B2), disposition accept, Maintainer's word needed.** "The re-checks before publishing a summary go with the descriptor walks (E). An account that can write the project and swaps `dev` or `dev/measurement` for a link between the check and the rename can put a summary of counts in another folder the user can write, replacing a `meter.json` there."
 
 **D13.** "`main` catches every `Exception` around each command and prints only the closed receipt (`unavailable`, `unavailable`) or, for the bare status, `unavailable`; no traceback, path or system text is printed."
+
+## Plan response -- Claude Sonnet 5.5 (Implementation, for the plan's owner) -- 2026-11-21
+
+Both reviews are folded once, in place. Status is `ready-to-implement`. The Security Review governs where the two differ.
+
+Usual review:
+1. B1 (lock lines in the kept test): taken. `test_refresh_persists_normalized_history_and_claims_without_raw_inputs` moves to "Other changes"; the two lock assertions go and the two mode assertions run only on `posix`. Changed tests: 104.
+2. B2 (claims link rule): taken in detail D14 and in C1.
+3. N1 (`test_explicit_refresh_partial_receipt_is_closed_and_nonzero`): taken; now under "Other changes", so kept as is is 106.
+4. N2 (tree fails between C1 and C4): taken, a sentence under Sequence naming `py_compile`.
+5. N3 (how the link is found, temporary file name, removal): taken in detail D14.
+6. N4 (every call of `_verified_project_remote` goes): taken in detail D1.
+7. N5 (killed run leaves its lock): taken in detail D5 and in the README sentence (detail E1).
+
+Security Review:
+1. B1 (lock): taken in its exact words, detail D5, plus the C2 criterion. The lock is removed at the end of a run.
+2. B2 (summary-write gap): accepted by the Maintainer, "Accept the gap" (2026-11-21). The Scope delta line is added in the Review's words; no descriptor write is kept; the six `posix` rows leave as before.
+3. B3 (traceback): taken in its words, detail D13 and the C3 criterion.
+4. N1 (read the limit plus one byte from one open): taken, detail D8.
+5. N2 (skip only symlink and mount-point tags): taken, detail D7.
+6. N3 (leftover `.meter-*.tmp`): taken, detail D14; the next run removes it.
+7. N4 (`O_NOFOLLOW` on a leaf): taken, in C1 and detail D14.
+
+Not run for this response: any test.
+
+**Elapsed**: unknown. **Tokens**: unknown.
