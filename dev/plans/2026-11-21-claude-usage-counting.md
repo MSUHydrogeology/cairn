@@ -1,7 +1,7 @@
 # Plan: Count Claude usage toward a project
 
 **Source proposal**: dev/proposals/archive/2026-11-21-claude-usage-counting.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/custom_session_routines.md, dev/rules/protected-surfaces.md, dev/rules/development-environment.md
