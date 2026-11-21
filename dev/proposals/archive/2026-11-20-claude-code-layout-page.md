@@ -230,3 +230,23 @@ What that settles:
 - **Tier.** He left it to Strategy's judgment. Strategy holds that heavy is needed, by the rule the template gives: outcome A adds an installed file through the installer's own table, and outcome C gives a shipped tool a new project file to read. Both reviews found the tier right.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Decision, scope change -- Maintainer (scribed by Claude Fable 5.2) -- 2026-11-21
+
+**Scope removed.** Told that this proposal's check and its move check are new tooling, and asked "should the layout work drop its check and its move check, so that the page and the plan lines are guidance only? Or keep them as something to decide after the trial?", the Maintainer wrote (chat, 2026-11-21):
+
+> "Yes. Drop the check tooling from layout. Cairn needs to stay nimble."
+
+Earlier the same day he had written: "I think the layout page should be guidance for the agents."
+
+What that settles:
+
+- **Outcome C, the check, is not built.** The code map tool gains no report against the layout page.
+- **The move check in outcome E is not built.** Restructuring by page stays as written guidance: a move changes where code lives and nothing else, a fold replaces one-offs with a central tool, and for a model the reference run shows that the numbers are unchanged.
+- **Choice 3, the languages after Python, falls away** with the check.
+- **Outcomes A, B, D and F stand:** the page, the two lines in each plan, the two kinds of question that reach him, and the trial. The page is guidance for agents.
+- **Tier.** Outcome A still adds an installed file through the installer's table, so the page's plan keeps a usual review and a Security Review.
+
+**Scope delta**: lost -- the check (outcome C) and the move check (part of outcome E), by the Maintainer's words above.
+
+**Elapsed**: unknown. **Tokens**: unknown.
