@@ -6,7 +6,7 @@ Run rules add limits to `AGENTS.md`. Release exception: shipped `AGENTS.md` may 
 
 ## Bright lines
 
-- Run only the tests that read a changed file; for prose, the prose gates (`dev/agent_collaboration.md`, "Verification"). Never set `CAIRN_FULL_SUITE=1` except for the Maintainer's certifying run.
+- Run the fewest tests that show a change is right, once; for prose, the prose gates (`dev/agent_collaboration.md`, "Verification"). Never set `CAIRN_FULL_SUITE=1` except for the Maintainer's certifying run.
 - Only the Maintainer re-anchors, pushes, or merges.
 - Code Cairn ships to adopters is standard-library-only.
 - Never commit a credential, key, token or private data; if one is committed, stop and tell the Maintainer to revoke it; history keeps it.

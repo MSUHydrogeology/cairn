@@ -69,8 +69,8 @@ file or a board row for each claim.
 
 **Run any project-specific close-out steps** recorded in
 `dev/rules/custom_session_routines.md` (the `## Goodnight` section), if present
--- the adopter's concrete routine (doc builds, changelog cadence, test
-invocations, foldback capture) lives there, not in this generic skill. A missing
+-- the adopter's concrete routine (doc builds, changelog cadence,
+foldback capture) lives there, not in this generic skill. A missing
 file or a missing section means no custom steps.
 
 At every explicitly requested goodnight, including reflection-only, run
@@ -85,19 +85,10 @@ valid pulse or closed receipt, report unavailable without the raw diagnostic.
 Do not commit the per-project aggregate. The full-handoff lock's separate
 pre-prune refresh still runs and retains its existing fail-closed behavior.
 
-For a full handoff, run the project's configured fast/default smoke command if
-there is one, and record the command, result and coverage limits. No configured
-command is unavailable, not a pass; a failed command is failed. Reflection-only
-participants acquire no test obligation. Slow tests remain due at release and
+Reflection-only participants acquire no test obligation. Slow tests remain due at release and
 whenever an accepted plan, safety or security requirement, or the Maintainer
 requires them. Change checks and Boundary B remain due on their existing
-schedule; a smoke result does not replace them or required certification.
-
-For example, a project that has configured `python -m pytest tests/smoke` could
-report `python -m pytest tests/smoke: passed; smoke tests only`, or report that
-same command as failed with its exit status. A project with no configured smoke
-command reports `smoke unavailable: no command configured`. These examples do
-not configure a command or establish broader coverage.
+schedule.
 
 ## 3. Give the user the guarded prune command
 

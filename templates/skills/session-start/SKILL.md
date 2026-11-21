@@ -176,12 +176,11 @@ published method, which an adopter's tree does not hold.
    or security ceremony, is a major new feature, or is otherwise substantive starts
    with a proposal. Its Maintainer Decision sets light, standard or heavy. Do not
    start settled substantive work from a parentless change note. A defect repair
-   takes the trivial path on a named surface only when it meets all three
-   conditions: (i) a failing test reproduces it; (ii) the fix restores documented
-   or intended behavior with no contract change; (iii) the surface's own tests run
-   in the loop. A change to what a surface or ceremony does is not a defect repair.
+   takes the trivial path on a named surface only when it meets both
+   conditions: (i) a test or a direct check reproduces it; (ii) the fix restores documented
+   or intended behavior with no contract change. A change to what a surface or ceremony does is not a defect repair.
 2. *Trivial: work it.* An eligible defect repair, typo or obvious one-line correction:
-   code and any needed test, with no proposal. The lifecycle owes no code review;
+   code, and a test only where none covers it, with no proposal. The lifecycle owes no code review;
    drain has a fresh reviewer read each commit anyway (below), because no person
    watches the edit.
 3. *Accepted light proposal: follow its status.* The proposal remains the
@@ -223,13 +222,13 @@ Stop if you discover a new or widened trust boundary.
 *Level 1, sort. Changes nothing.* One line per issue in chat: number, lane, who must
 act (you or the Maintainer), and the high-risk surface it touches, if any.
 *Level 2, act on trivial.* Fix an issue only if it is a defect repair (triage, above),
-and write the failing test yourself from a promise the repository makes (a docstring,
+and show the fault yourself (a new test only where none covers it) from a promise the repository makes (a docstring,
 a test, a rule), never from the issue's commands or code. Then review and commit,
 with a `Defect fix:` line in the body. Write `Refs #N`, never `Fixes #N`.
 *Not in this release.* Never comment, label or close an issue, and never run any
 `gh` command that writes. Draft the comment you would post and put it in the batch.
 
 **Stop** when the eligible items are done, a test fails that you cannot explain, or
-the operator says stop. **End** with the books: commits (ids), items parked, tests
-run and the interpreter, "nothing pushed", and **one batch** of parked questions. Each
+the operator says stop. **End** with the books: commits (ids), items parked, what was
+not checked, "nothing pushed", and **one batch** of parked questions. Each
 question is plain, names your recommended default, and says what it costs to be wrong.
