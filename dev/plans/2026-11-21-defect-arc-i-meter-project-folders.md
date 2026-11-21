@@ -86,3 +86,41 @@ Code review once after C1.
 Change the tests first and run only the two above once (they fail); change the code and run them once more (they pass): the Windows one here, the other in the Linux subsystem. The shim edit waits for certification.
 
 **What goes stale.** The shipped copy (`cp`, then `cmp`). Cairn's own lock, by `install/scaffold.py upgrade --target . --finalize <paths>`, alone in its commit. One `Fixed` line under `Unreleased` in `CHANGELOG.md`: the meter no longer refuses a project because of who owns or may change its folders. The `test_meter.py` hash in the gate manifest, a line at the Maintainer's signing. Run `dev/tools/claim_check.py` on the README and this plan.
+
+## Plan review -- Reviewer (Sonnet 5.5) -- 2026-11-21
+
+```
+Reviewed commit: 984fcaf7190d3f7a4265a972e20169607aa3a599
+```
+
+**Obligation**: usual plan review (Internal)
+**Tier**: Internal
+**Findings**: raised
+
+**Verdict**: REVISE. Two blocking findings; the design is sound.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The owner and access-list test lives only in `check_acl` (`dev/tools/meter.py` 626-678); the plan's five project sites are every project caller, and the log, consent and private-record callers keep their roles (744-775, 2176, 4056-4369, 5168-5352).
+2. **Best alternative.** The early return in `check_acl` is the simplest path; no simpler one found (`meter.py` 626).
+3. **What would show it wrong.** One missed `"ancestor"` site: the real refresh on the `F:` machine would still refuse. That is Strategy's check; no test shows the five sites pass `"project"`.
+
+**What still holds without the test (read in code):** (a) no-follow opens and reparse refusal, 415 and 456; identity re-checks, 1713-1721 and 5752-5791. (b) Windows: private candidate, `"export"` owner and protected-ACL checks, rename by handle, 5731 and 5739-5831; Mac and Linux: owner, mode 0o600, one link, 5598-5635. (c) 5927 and 5932 (the bytes run are the bytes hashed). (d) `_project_for_folder` compares text only, 6370.
+
+**Blocking**
+
+1. The test stand-in has no access entry: its list is `struct.pack("<BBHH", 2, 0, 8, 0)`, count 0 (`tests/integration/test_meter.py` 8886), so the "entry giving another account full control" case cannot be added as written. `"project"` returns before reading anything. Replace the criterion's test text with: add to `cases` at 8907 `("project", 2, True), ("project", 5, True), ("ancestor", 2, False)`.
+2. A sentence that states the old rule is not listed: `dev/rules/development-environment.md` 135-137, "The meter's project `.git/config` read (... role `ancestor`) refuses a project under such a folder, so a real meter read there reports `project_remote_unavailable`." The search skipped `dev/rules/`. Replace it with: "Before the v0.8.1 change, the meter's project `.git/config` read refused a project under such a folder (`check_acl`, role `ancestor`, `project_remote_unavailable`). A project's folders are no longer tested; the refusal still applies to log folders." Add the file to the stale list.
+
+**Non-blocking**
+
+- Say plainly that `"project"` also drops the test for the drive root and every folder above the project, and in `_git_helper_source` for every folder above the meter's own file (`source_path.parent`), which need not be in a project. The SHA-256 test (5927) is what protects the helper's bytes.
+- Give the nine direct lines: 2480, 2487, 5722, 5723, 5760, 5770, 5784, 6098, 6111, not "28 lines".
+- Give the shim: `def open_source_root(api_instance, root, user_sid, role="ancestor"):` and both returns `original_open_root(api_instance, root, user_sid, role)`.
+- Give the Mac and Linux test lines, after 5455: `for folder in (alpha, alpha / "dev", alpha / "dev" / "measurement"): folder.chmod(0o777)`.
+- Add: "The build does not attempt Strategy's check."
+- No Windows test plants a link at a project; the shared `_windows_open_root` refusal is shown by the native log-folder case. Accepted.
+
+**Not covered:** no test run; no Security Review questions (group-write on Mac and Linux, the receipt wording); fixtures `promise_security_leaf_*` not read.
+
+Elapsed time: unknown. Tokens: unknown.
