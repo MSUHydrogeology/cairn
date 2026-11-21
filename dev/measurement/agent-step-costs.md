@@ -128,8 +128,12 @@ runs cost machine time, not tokens, and are listed separately.
 | Strip test pressure | edits, group 5 (other pages), by an Implementation agent | Medium | 99,657 | 2 | 72 rows: 61 kept, 10 rewritten, 1 undecided |
 | | edits, group 1 (the files every agent loads) | Medium | 101,729 | 3 | 54 rows: 28 kept, 12 rewritten, 12 removed, 2 the new rule |
 | | edits, group 2 (the collaboration file, both copies) | Medium | 116,661 | 3 | 110 rows: 61 kept, 24 rewritten, 17 removed, 6 the new rule, 2 undecided |
+| | response to both code reviews, by the plan's agent | Medium | 95,088 | 27 | ready to archive; 5 tests and cases removed |
+| Arc G, the meter runs for a Windows administrator | build, by the plan's agent | Medium | 75,300 | 1 | awaiting code review |
+| Strip test pressure | edits, group 3 (the two templates) | Medium | 145,915 | 4 | 132 rows: 69 kept, 44 rewritten, 19 removed |
+| | edits, group 4 (the published method) | Medium | 185,773 | 8 | 182 rows: 100 kept, 49 rewritten, 29 removed, 2 the new rule, 2 undecided |
 
-Total for the day so far: 15,303,238 tokens across 104 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 15,805,314 tokens across 108 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
