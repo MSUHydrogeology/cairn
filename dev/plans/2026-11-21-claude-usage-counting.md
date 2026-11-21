@@ -80,3 +80,42 @@ Changed promises: which Claude records count toward a project; summaries are not
 Test selection: `python tests/tier_inventory.py for dev/tools/meter.py templates/skills/_lib/meter.py` gave nine files on 2026-11-21. Chunks C1 to C3 run four of them plus the new file, which guard the changed promises: `tests/integration/test_meter.py`, `tests/test_meter_usage_free_records.py`, `tests/test_skills_install.py`, `tests/test_skills_upgrade.py` and the new `tests/test_meter_claude_usage.py` (listed in `tests/test_tiers.json` in C1, then `python tests/tier_inventory.py check`). C5 runs all nine once; the five not run earlier are `tests/security/test_git_read_routes.py`, `tests/test_security_lint.py`, `tests/test_session_failsafe.py`, `tests/test_session_routines.py` and `tests/test_session_writes_contained.py`. The Windows Server host fails many tests before any change, so each group runs once at the starting commit and once after, failing ids and messages are compared, and an id failing only after is rerun alone at both. POSIX-only tests run in the Linux subsystem, one run at a time.
 
 Not run by the build agent: the real-log checks above. The broad selection, the Python 3.13 run and the joined run belong to the arc (`dev/PLANNING.md`, "What the joined run owes"). Prose gates (`claim_check`, `link_check`, `check_cairn`, `git diff --check`) run on every document changed.
+
+## Plan review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`) -- 2026-11-21
+
+```
+Reviewed commit: c385206a
+```
+
+**Obligation**: the usual plan review of "Plan review: required(Internal + Internal Security Review)"; the Security Review pass is still due.
+**Tier**: Internal
+**Findings**: raised (2 blocking, 5 non-blocking)
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes, and the build matches outcomes A to E except two gaps below -- `dev/tools/meter.py` 6623-6676 (today's Claude branch), D1 to D4.
+2. **Best alternative.** No smaller design keeps the summary promise; no script or option is added; the three caps follow the ledger's other lists -- `dev/tools/meter.py` 3022-3110.
+3. **What would show it wrong.** A sub-agent that finished just after the first refresh, so its transcript was only bookmarked and never read, leaves a summary uncovered for good -- `dev/tools/meter.py` 4260-4273.
+
+The plan counts a Claude record by its own folder, ties summaries to transcripts by id, and fails toward unknown or INCOMPLETE. I walked a summary naming its transcript, none, two, one in another session, other-shaped `usage`, two summaries for one transcript, and a transcript with none: each is covered or INCOMPLETE. The folder rule matches D5 for every form the brief lists except three inputs (N1).
+
+**Blocking**
+1. **Choice 5 is not delivered (reduction; the Maintainer's call).** He accepted "rebuild the meter's ledger from the logs still on disk". A new ledger has no `starts`, so every log on disk is only bookmarked (`meter.py` 4260-4273; README: "counts nothing before that, and `rebuild` does not back-fill history"). Nothing comes back from logs on disk, for Codex as well; the old ledger's Codex events and daily totals are lost. D4's last bullet and D7 say so, the opening text does not. No exact words: allow it as a Scope delta (block A) or have Strategy design a back-fill.
+2. **Limits (2) and (5) are reductions, so they belong under Scope delta.** The proposal says two folders make a message unknown, and lists "a reading called whole when transcripts were missing" as a sign of failure. (2) and (5) allow both. Only the Maintainer can allow that (block A).
+
+**Non-blocking**
+- N1. D5 lacks a missing, empty and 4,097-character `cwd`; add them to the `outside_stays_unknown` row.
+- N2. INCOMPLETE can stay on for ever (an unclassified record; a transcript bookmarked or deleted). Clearing it means replacing the ledger, which costs history (blocking 1). Say so in the README sentence (D6).
+- N3. D4 never gives the sort keys: use `(session_key, agent_key)` and `(session_key, names)`; `_validate_agent_runs` should also require `names` sorted and unique.
+- N4. C1 changes the event key under an unchanged reader version; move the `/6` bump to C1, since the Maintainer's own session-end refresh runs this meter.
+- N5. Claude events now reach `_build_mappings` (the claim-to-artifact split), which the plan does not mention or test.
+
+Not covered: no test run, no log read, no Windows run of D1; the free-text summary rule and the consent file are the Security Review's. Over the 300-word target: two reductions need their evidence.
+
+### Exact words (block A)
+
+Replace the Scope delta section with: "**Scope delta**: degraded -- (1) Antigravity counting, **disposition**: defer, as written. (2) The ledger is not rebuilt from logs on disk: a new ledger counts nothing before its first refresh, for every tool, and the old ledger's events are lost. (3) A message repeated across refreshes in one session, with a folder outside every project, stays counted once under its first project. (4) A missing transcript that no summary names leaves the reading whole. **disposition** of (2) to (4): ask the Maintainer; set `**Waiting on Maintainer**`." Then delete "so reviewers decide whether it is a reduction" from Limits (2).
