@@ -40,6 +40,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 ### Major changes
 
 - **Changed: One round of review.** Each review stage (proposal, plan, code) now gets one round, and a reviewer who blocks work supplies the failing test or the exact words that close the finding, so nobody reads the fix a second time. Security Review's normal limit drops from two passes to one, code is reviewed once after a plan's last chunk, and a plan has at most five chunks; the rules apply to proposals and plans opened after the upgrade. ([accepted proposal](dev/proposals/archive/2026-11-20-claude-one-round-reviews.md))
+- **Added: Claude usage counts toward a project.** The usage meter counts Claude's own token use toward a project by the working folder each record names, so the end-of-session report no longer shows Claude usage as unknown. A reading whose sub-agent summaries cannot be tied to their transcripts says INCOMPLETE. ([plan](dev/plans/2026-11-21-claude-usage-counting.md))
 
 ### Minor changes
 
