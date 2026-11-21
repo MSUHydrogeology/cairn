@@ -1,7 +1,7 @@
 # Plan: Count Claude usage toward a project
 
 **Source proposal**: dev/proposals/archive/2026-11-21-claude-usage-counting.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/custom_session_routines.md, dev/rules/protected-surfaces.md, dev/rules/development-environment.md
@@ -342,3 +342,24 @@ Range: 75acc20c..fbd5cee2971829a2c4406863ca13c9f821b55128 (tip 4d5e4368 adds onl
 **Non-blocking**
 - SR1. Any object with a `usage` key, in a record type other than the four skipped, sets INCOMPLETE for every project until the ledger is replaced. If the tool ever stores parsed file content in such a record, repository content can trigger it. It fails safe and is stated (Limit 7, README); the developmental check should also count such records.
 - SR2. The frame is matched in every string of the record, so a summary is covered only when every frame names its run; that is the intended rule, with Limit 6 the one residual.
+
+## Response to the code reviews -- Claude Sonnet 5.5 (`claude-sonnet-5-5`; Implementation, response stage) -- 2026-11-21
+
+**Result**: both reviews accepted with no blocking finding. By the Maintainer's standing direction (chat, 2026-11-21, "Then run the fewest tests possible to make sure it was right."), the tests the usual review named as repeats are removed, two cheap gaps are closed, and the rest are stated limits or the Maintainer's. Only `tests/test_meter_claude_usage.py` changed (commit `2fef7d9d`); `dev/tools/meter.py` did not, so the shipped copy and the lock are unchanged (`cmp` prints nothing; `verify_integrity` reports OK, 70 files). Status is `ready-to-archive`.
+
+**Usual review.**
+- N1: removed three tests, `test_user_record_with_summary_shape_is_skipped`, `test_repeats_with_equal_usage_merge_without_conflict`, `test_the_empty_ledger_starts_with_no_runs`, and two rows, `own-run-read` and `no-frame-or-two-ids`; each criterion keeps a test that proves it (the reviewer named it). `2fef7d9d`.
+- N2: fixed. The mark test now also feeds `isSidechain` as `1` and `"true"` and expects no transcript pair; a new test `test_transcript_cap_cuts_the_excess_and_counts_it` covers the transcript cap. `2fef7d9d`. The ledger's own byte-cap check is not given a test: listed for Strategy as not cheap (it needs an oversized ledger fixture) and not blocking.
+- N3: no change; the Security Review's wording governs (nothing is hidden; `invalid_record` is raised too).
+- N4: the Maintainer's: `tests/integration/test_meter.py` fails the gate check until signed, as the plan says.
+- N5: stated Limit 3; no change.
+
+**Security Review.**
+- SR1: stated Limit 7 and the README; no change. The developmental check should also count such records: listed for Strategy.
+- SR2: intended rule (Limit 6 is the one residual); no change.
+
+**Tests run** (the fewest: the one test file edited, once per host, no run before the change). Linux subsystem (Python 3.14.4): `tests/test_meter_claude_usage.py` 74 passed, 0 failed. Windows: the same file, 74 passed, 0 failed. Earlier it was 78 passed; 78 minus three tests, minus two rows, plus the new cap test is 74. Nothing else was run.
+
+**Not run.** The check of the meter against a real log (and P1 to P4, the developmental check) has not run: the meter is not set up on this machine. The Maintainer is being asked where it runs. No log, home-folder or `AppData` file was opened.
+
+**Elapsed**: unknown. **Tokens**: unknown.
