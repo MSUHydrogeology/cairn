@@ -103,7 +103,7 @@ From 0.9 the documentation plan file is `dev/DOCUMENTATION_PLAN.md`; a project i
   1. git mv docs/DOCUMENTATION_PLAN.md dev/DOCUMENTATION_PLAN.md
   2. In the files you wrote yourself, change each link to docs/DOCUMENTATION_PLAN.md so it points at dev/DOCUMENTATION_PLAN.md. Leave files Cairn installed alone: the ordinary upgrade corrects them.
   3. python install/scaffold.py upgrade --target <repo> --documentation-plan-moved
-  4. python install/verify_integrity.py --target <repo>, then the project's link check: python dev/tools/link_check.py
+  4. python install/verify_integrity.py --target <repo>, then the project's link check if it has one (python dev/tools/link_check.py, installed by doc-drift-prevention)
   5. git add the files you changed and dev/.cairn/cairn-lock.yml, then git commit
 ```
 

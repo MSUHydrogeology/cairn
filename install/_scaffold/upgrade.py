@@ -4279,7 +4279,7 @@ _DOCPLAN_STEPS = (
     "the ordinary upgrade corrects them.",
     "  3. python install/scaffold.py upgrade --target <repo> --documentation-plan-moved",
     "  4. python install/verify_integrity.py --target <repo>, then the project's link "
-    "check: python dev/tools/link_check.py",
+    "check if it has one (python dev/tools/link_check.py, installed by doc-drift-prevention)",
     "  5. git add the files you changed and dev/.cairn/cairn-lock.yml, then git commit",
 )
 _DOCPLAN_NOTE = ("If a check in step 4 names a file Cairn installed, do not edit it: the "
