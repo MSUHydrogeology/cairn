@@ -33,6 +33,7 @@ New function `_cmd_documentation_plan_moved(target, templates_root, lock, force)
    - 0 records: print M1, return 0.
    - more than 1: print M2 to stderr, return 1.
    - the one record `rec`: if `rec.get("dst") not in (_DOCPLAN_OLD, _DOCPLAN_NEW)` or `rec.get("verbatim")` is truthy: print M3 to stderr, return 1.
+   - If any other record's `dst` is `_DOCPLAN_NEW`: print M3, return 1.
 2. **Layout still ahead (only when `rec["dst"] == _DOCPLAN_OLD`).** `ahead = _legacy_layout_paths(target, templates_root)`. If not empty: print M4 with `{n}` = `len(ahead)` to stderr, return 1. (A project from 0.7 has the whole 0.8 move ahead; once finished the list is empty.)
 3. **Read both places.** For `target / _DOCPLAN_NEW` then `target / _DOCPLAN_OLD`: `_assert_safe_write(path, target)`, then `data = _read_regular_bytes(path)` (`None` when absent). A link, folder, special file or link above raises `ScaffoldSecurityError`; the caller prints M9 (exit 2) and nothing has been written. Name the results `new` and `old` (`bytes | None`). `single_link` is not set: the command only reads, and a second hard link changes no outcome. Both files are read whole, with no size limit, as every upgrade read (a residual the plan names).
 4. **Recorded at the new place (`rec["dst"] == _DOCPLAN_NEW`).** Print M8 (with its second sentence when `old is not None`), return 0. Write nothing.
@@ -44,7 +45,7 @@ New function `_cmd_documentation_plan_moved(target, templates_root, lock, force)
 6. **Unsaved edits in the lockfile (skipped by `--force`).** `dirty = _writeset_dirty_collisions(target, [_LOCKFILE_REL])`. `_EditCheckCannotTell`: print `_cannot_tell_refusal("--documentation-plan-moved", exc.reason)` to stderr, return 1. If `dirty`: print M10 to stderr, return 1.
 7. **Record.** `matches = ("sha256:" + _sha256_hex(new) == rec.get("hash"))`; `rec["dst"] = _DOCPLAN_NEW`; `_commit_lock_and_caches(target, lock, [])`; print M11 when `matches`, else M12; return 0.
 
-Dispatch in `cmd_upgrade`, right after the `--heal-layout` block: a `--to` given is refused with M13 (exit 2), as `--heal-layout` refuses it; `ScaffoldSecurityError` is caught and printed as M9 (exit 2). Exits: 0 for M1, M8, M11, M12; 1 for M2 to M7 and M10; 2 for M9 and M13.
+Dispatch in `cmd_upgrade`, right after the `--heal-layout` block: a `--to` given is refused with M13 (exit 2), as `--heal-layout` refuses it; `ScaffoldSecurityError`, and any `OSError` or `ValueError` from step 2, step 3 or the lock write, are caught and printed as M9 (exit 2), as `_layout_command`'s caller does. Exits: 0 for M1, M8, M11, M12; 1 for M2 to M7 and M10; 2 for M9 and M13.
 
 ### Messages
 
@@ -63,7 +64,7 @@ Dispatch in `cmd_upgrade`, right after the `--heal-layout` block: a `--to` given
 | M9 | link, folder, special file or other containment refusal | `error: upgrade --documentation-plan-moved refused (containment): {exc}` | 2 |
 | M10 | lockfile has unsaved edits | `error: refusing --documentation-plan-moved: the lockfile has unsaved edits; commit them or pass --force` | 1 |
 | M11 | recorded, bytes match the record's hash | `Recorded dev/DOCUMENTATION_PLAN.md as the documentation plan. Now do step 3: git add dev/.cairn/cairn-lock.yml, then git commit.` then `LINKS` | 0 |
-| M12 | recorded, bytes differ from the record's hash | the M11 first sentence, then ` The file differs from the version the lockfile recorded, because it was edited. Run python install/scaffold.py upgrade --target <repo> --finalize dev/DOCUMENTATION_PLAN.md, then do step 3.` then `LINKS` | 0 |
+| M12 | recorded, bytes differ from the record's hash | the M11 first sentence, then ` The file differs from the version the lockfile recorded. If the changes are yours, run python install/scaffold.py upgrade --target <repo> --finalize dev/DOCUMENTATION_PLAN.md, then do step 3; if not, restore the file from a copy you trust.` then `LINKS` | 0 |
 | M13 | `--to` given | `error: --documentation-plan-moved runs against the running target tree; --to is not supported (run scaffold from the target tree).` | 2 |
 
 A second run after M11 or M12 prints M8, exit 0, and writes nothing. In M9, `{exc}` is the installer's own guard text. On Windows a folder junction is caught only by the guard's last check, whose text can name where the junction leads; no control character can reach it. The plan accepts this residual.
@@ -121,7 +122,7 @@ Edited, all by exact replacement:
 - `tests/integration/test_link_check_exclusions.py` (ordinary): the two assertions (target string and the message text) name `dev/DOCUMENTATION_PLAN.md`.
 - `tests/test_upgrade_refuses_hostile_project_data.py` (protected), `test_init_lock_refuses_a_mapped_file_below_a_linked_parent`: after the move `docs/` may not exist in the installed test project, so the test uses a folder that does: `world.project / "dev" / "modules"` replaces `world.project / "docs"` (three lines: `rmtree`, the outside folder's file, and `link`). The two assertions name the `README.md` inside the installed `dev/modules` folder (written with that folder's name in front), not `documentation-plan.md`, and the file the outside folder holds is `README.md`. Reason: the refusal names the first mapped path below the link in destination order, and that `README.md` sorts first. If the test then fails for any reason other than these names, stop and report: do not widen it. Other tests in that file create their own `docs` subfolders and are not edited.
 
-New file `tests/test_upgrade_documentation_plan_moved.py` (tier: `workflow`, pattern `test_upgrade_documentation_plan_moved`). One fixture installs a small project with `scaffold.main` and makes it look like a 0.8 install: it moves `dev/DOCUMENTATION_PLAN.md` to `docs/DOCUMENTATION_PLAN.md`, sets the lock record's `dst` to the old path, sets the record's `base_cache` to `dev/.cairn/base/docs/DOCUMENTATION_PLAN.md` and moves the cache file there (helpers as in plan B's retire-wrapper test file: `_install`, `_upgrade`, `_lock`, `_write_lock`). The owner's `git mv` is simulated by `os.replace` of the file to `dev/` (a Git repo is made only in the unsaved-edits test). All tests call `scaffold.main(["upgrade", ...])` and read the exit code and captured output. One test per row; the control is what the test pins, so the test fails if that behaviour is removed.
+New file `tests/test_upgrade_documentation_plan_moved.py` (tier: `workflow`, pattern `test_upgrade_documentation_plan_moved`). One fixture installs a small project with `scaffold.main` and makes it look like a 0.8 install: it moves `dev/DOCUMENTATION_PLAN.md` to `docs/DOCUMENTATION_PLAN.md`, sets the lock record's `dst` to the old path, sets the record's `base_cache` to `dev/.cairn/base/docs/DOCUMENTATION_PLAN.md` and moves the cache file there (helpers as in plan B's retire-wrapper test file: `_install`, `_upgrade`, `_lock`, `_write_lock`). The owner's `git mv` is simulated by `os.replace` of the file to `dev/` (a Git repo is made only in the unsaved-edits test and the two order tests, which commit). All tests call `scaffold.main(["upgrade", ...])` and read the exit code and captured output. One test per row; the control is what the test pins, so the test fails if that behaviour is removed.
 
 | Test | Setup | Expect (id, exit) | Control |
 |---|---|---|---|
@@ -136,6 +137,8 @@ New file `tests/test_upgrade_documentation_plan_moved.py` (tier: `workflow`, pat
 | unsaved lockfile edits | in a Git repo, commit, edit the lock, move the file | M10, 1; with `--force` M11 | the dirty refusal |
 | 0.8 layout ahead | add a lock record `{"src": "core/x.md", "dst": <old path of the first row of upgrade._LAYOUT_MOVES>, "verbatim": True, "hash": "sha256:" + "0" * 64}` | M4, 1, nothing changed | the layout refusal |
 | two records, or a verbatim record | edit the lock | M2 or M3, 1 | the record checks |
+| another record already at the new place | add a lock record whose `dst` is `dev/DOCUMENTATION_PLAN.md` | M3, 1, nothing changed | the duplicate-destination check |
+| cannot tell | make step 2 or the lock write raise `OSError` (monkeypatch) | M9, 2, no traceback, nothing changed | the catch of `OSError` and `ValueError` |
 | no record | module removed from the lock | M1, 0 | the no-op |
 | `--to HEAD` | | M13, 2 | the refusal |
 | the report line | `--plan` before the move; after `--apply`; after the move | `STEPS` and `LINKS` lines printed before, gone after | the report line |

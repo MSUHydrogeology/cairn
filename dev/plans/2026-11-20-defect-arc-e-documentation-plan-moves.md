@@ -1,7 +1,7 @@
 # Plan: Defect arc E, the documentation plan moves
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -82,7 +82,7 @@ Code review once, after C4. C4 needs C2 and C3, which share `install/UPGRADE.md`
 
 **Selector (`python tests/tier_inventory.py for <paths>`, main checkout, 2026-11-20; re-run at the starting commit).** C1 selects 68 test files, over the 40-file limit of `tests/conftest.py`, so it is not split: C1 runs the ten tests that guard the changed promise (Detail D7) and leaves the 68 to the arc's joined run. C2 selects 38, plus the new file: 39. C3 selects 41 and runs the prose gates and five named tests (Detail D7). C4 selects 9. Before each chunk, run its files once with `-rf` and keep each failing test id and first message line; after, a failure is a host failure only if both are on that list.
 
-**The instructions check (developmental, C4).** A fresh low-tier agent gets a scratch project installed from 0.8.0 (tag `v0.8.0`) and only the text the upgrade prints, nothing from this plan. It must finish the move so that `python install/verify_integrity.py --target <project>` passes. The record says what it did, where it hesitated, and what text changed because of it. Not a permanent test.
+**The instructions check (developmental, C4).** A fresh low-tier agent gets a scratch project installed from 0.8.0 (tag `v0.8.0`) and only the text the upgrade prints, nothing from this plan. It passes only if, at the end, `dev/DOCUMENTATION_PLAN.md` exists, `docs/DOCUMENTATION_PLAN.md` does not, the lock's one documentation-plan record names `dev/DOCUMENTATION_PLAN.md`, `git status --porcelain -- dev/.cairn/cairn-lock.yml` prints nothing, and `python install/verify_integrity.py --target <project>` exits 0; otherwise it fails. The record says what it did, where it hesitated, and what text changed because of it. Not a permanent test.
 
 **Hosts.** This Windows machine runs the selected tests; link tests skip without symbolic-link rights and run once in its Linux subsystem (development only). Nothing here certifies. **Prose gates**, one file per call: `claim_check.py`, `link_check.py`, `tests/check_cairn.py`, `git diff --check`. **Issues.** None to close.
 
@@ -256,3 +256,15 @@ Elapsed time: unknown. Tokens: unknown.
 **1. Verification, "The instructions check"**: replace "It must finish the move so that `python install/verify_integrity.py --target <project>` passes." with "It passes only if, at the end, `dev/DOCUMENTATION_PLAN.md` exists, `docs/DOCUMENTATION_PLAN.md` does not, the lock's one documentation-plan record names `dev/DOCUMENTATION_PLAN.md`, `git status --porcelain -- dev/.cairn/cairn-lock.yml` prints nothing, and `python install/verify_integrity.py --target <project>` exits 0; otherwise it fails."
 
 **2. Detail D2, M12**: replace "The file differs from the version the lockfile recorded, because it was edited. Run python install/scaffold.py upgrade --target <repo> --finalize dev/DOCUMENTATION_PLAN.md, then do step 3." with "The file differs from the version the lockfile recorded. If the changes are yours, run python install/scaffold.py upgrade --target <repo> --finalize dev/DOCUMENTATION_PLAN.md, then do step 3; if not, restore the file from a copy you trust."
+
+## Plan response, third part -- Claude Sonnet 5.5 (Implementation, for the author) -- 2026-11-21
+
+The amendment review's findings are closed in the plan and its companion; status is now `ready-to-implement`.
+
+1. Blocking 1 (the instructions check passes without a move): accepted; its exact words replace the pass condition in Verification.
+2. Non-blocking 2 (M12 sends the owner to `--finalize` for any bytes): accepted; its exact words replace M12 in Detail D2.
+3. Non-blocking 3 (another record already at the new place): accepted; one line added to D2 step 1 and one row to the D5 table.
+4. Non-blocking 4 (cannot-tell refusal has no row, `OSError` and `ValueError` give a traceback): accepted; the dispatch sentence in D2 now catches both as M9, and D5 has a row.
+5. Non-blocking 5 (the Git repo in the order tests): accepted; D5 names them.
+
+**Elapsed**: unknown. **Tokens**: unknown.
