@@ -61,9 +61,10 @@ def test_usage_free_record_is_skipped_silently(record):
     {"type": "future-record-type", "usage": {}},
     {"type": "future-record-type", "data": {"message": {"message": {"usage": {}}}}},
 ], ids=["usage-under-message", "usage-at-top", "usage-nested-deep"])
-def test_unknown_record_type_with_usage_is_unsupported(record):
+def test_unknown_record_type_with_usage_is_flagged_incomplete(record):
     result = read_claude(record)
-    assert "unsupported_record" in result["issues"]
+    assert "agent_runs_incomplete" in result["issues"]
+    assert "unsupported_record" not in result["issues"]
 
 
 def test_assistant_with_bad_usage_is_invalid_record():

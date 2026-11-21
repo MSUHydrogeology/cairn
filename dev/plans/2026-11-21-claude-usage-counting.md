@@ -1,7 +1,7 @@
 # Plan: Count Claude usage toward a project
 
 **Source proposal**: dev/proposals/archive/2026-11-21-claude-usage-counting.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/custom_session_routines.md, dev/rules/protected-surfaces.md, dev/rules/development-environment.md
@@ -18,9 +18,6 @@ The Maintainer accepted the proposal at the heavy tier on 2026-11-21 with all fi
 ## Scope
 
 **Result.** The Pulse shows Claude usage for the project by kind of token (fresh input, cache writes, cache reads, output), with cost data that no longer depends on a hand-kept record that measured the wrong thing.
-
-Proposed paths:
-- `tests/test_meter_claude_usage.py`
 
 **Measured by Strategy on 2026-11-21, counts only, one project's logs** (90 log files, 9,609 assistant records with usage): 4,333 distinct messages, none under more than one session id. No record of the four skipped types held a `usage` key. The folder equalled the configured project path exactly in 3,539 records and lay exactly inside it in 59; none differed only by letter case or separators, none lay outside. There were 84 summaries and 89 sub-agent transcripts; no summary's own id equalled a transcript's agent id, but the text of every one of the 84 names exactly one transcript's agent id. Every summary also holds its own run's id inside a fixed frame the tool writes, `<task-id>`, the id, `</task-id>` (87 of 87; Detail D7, P4). The incomplete rule rests on that frame, not on every run of letters in the text: a summary is covered when its frame names exactly one id and a transcript of that run, in the same session, was read; a summary with no frame, or two different ids in frames, or a run not read, makes the reading incomplete. This leans on the tool's wording; a tool version that changes it turns readings incomplete, never whole.
 
@@ -248,5 +245,121 @@ The amendment review accepted the changed summary rule with no blocking finding.
 5. N5 (C2's sentence; the list holds names that are not field names): taken, C2 and Detail D6. The rule sentence now says "names" where the accepted proposal said "field names". It binds every name, so nothing weakens.
 
 Edited directly by Strategy, by exact replacement. Not run: any test, log read or meter run.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record -- Claude Sonnet 5.5 (`claude-sonnet-5-5`; Implementation, build stage) -- 2026-11-21
+
+**Result**: built in five commits on branch `usage-impl`; the two meter copies are byte-identical (`cmp` printed nothing after each code chunk and at the tip); Cairn's lock reports OK; the five test files the plan names pass on Linux and, on Windows, fail only where they also failed before the change. Status is `awaiting-code-review`. The developmental check on a real log is Strategy's and was not attempted; no log, home-folder or `AppData` file was opened, and no meter, pulse or session routine was run on real data.
+
+**Chunks.** Each was written by a fresh Haiku execution agent (model `haiku`), one at a time; I read each diff against the chunk's criterion and Detail.
+
+| Chunk | Commit | What it did |
+|---|---|---|
+| C1 | `5df9e1ab` | `_project_for_folder`; the Claude branch counts by the record's own folder; the event key no longer holds the session; new test file and its tier entry; `event_key_for` in `tests/integration/test_meter.py` |
+| C2 | `40e9e097` | `_usage_values` replaces `_record_carries_usage`; `_summary_run`; transcript pairs; the batch's `agent_runs`; the changed expectation in `tests/test_meter_usage_free_records.py` |
+| C3 | `af36911e` | the ledger's `agent_runs`, its merge and validation, the coverage reason, `/6` versions, both refresh routes, the C3 tests |
+| C3 fix | `136c627a` | a fifth place that named the ledger version (see Differs) |
+| C4 | `bea8181b` | rule sentence and list, README sentences, changelog entry (Haiku's own report; I checked the diff) |
+| C5 | `e2b944bb` | the lock, alone in its commit |
+
+The plan's status was set to `implementing` in `21514a35`.
+
+**Where an execution agent chose words or structure the plan did not give.** C1: `read()` in the new tests defaults to `cfg()`; the "relative path" case is `project\sub`; the Windows-form tests patch `meter.os`; the claim-split and two-roots tests call `_build_mappings` and `_merge_event_batches` directly. C2: `_SUMMARY_FIELDS` and `_SUMMARY_FRAME` sit after `MAX_LEDGER_BYTES`, not beside `MAX_AGENT_*`; a small helper `_summary_shape` holds D3.2's shape test; the early-return batches (invalid config, disabled) also carry an empty `agent_runs`; the summary tests include one assistant record, because `read_records` adds `no_supported_usage` to an otherwise empty batch, so Detail's "issues == []" control would fail without it. C3: helpers `_gather_agent_runs` and `_merge_agent_runs`; new integration helpers `record_in_project` and `sub_agent_summary`; the end-to-end checks read the export and the pulse parse. C4: the rule sentence sits mid-paragraph after "clear yes."; the names list is one comma-separated paragraph under a new last heading; the changelog entry has a second sentence about INCOMPLETE; the shipped commit line says Haiku 5.5, not 4.5 (the agent's own statement of its model).
+
+**Where the build differs from the plan.**
+1. Detail D5 lists four places in `tests/integration/test_meter.py` that name the ledger or reader version; there are five. `test_hand_edited_ledger_is_refused_as_invalid` asserted that the schema ends with `/5`. Its 27 cases failed on Linux at `e2b944bb` and passed after the one-character edit in `136c627a`. That file is in the gate manifest; the edit is that one line, besides what Detail names.
+2. The plan says the lock is refreshed over `dev/tools/meter.py` alone. `verify_integrity` also named `dev/measurement/README.md` (C4 edits it), so the scoped finalize took both paths; the commit holds only the lock.
+3. Between C2 and C3 the meter would put `agent_runs_incomplete` into readings (the plan says the chunks merge together, so no such meter runs outside this folder).
+
+**Tests.** The Maintainer's standing direction on testing (chat, 2026-11-21), passed on by the coordinator: "Just do all of the changes we need. Then run the fewest tests possible to make sure it was right. Then we re-anchor, certify on all three platforms, and cut." So the plan's wider runs, the before-and-after comparison on the whole selection and a nine-file run for C5, are not made; the whole suite's home is the certification.
+
+What was run:
+- Windows, `e2b944bb` (code identical to the tip; the one later edit is a POSIX-only test that Windows skips): the nine selected files at the starting commit `75acc20c` and at `e2b944bb`, and the new file alone. Starting commit: 104 failed, 416 passed, 214 skipped. After: 104 failed, 416 passed, 217 skipped. The comparison tool reports the same 104 failing ids with the same messages (0 only after, 0 only before). Failures by file, the same both times: `tests/integration/test_meter.py` 37, `tests/security/test_git_read_routes.py` 22, `tests/test_session_failsafe.py` 4, `tests/test_session_writes_contained.py` 37, `tests/test_skills_install.py` 1, `tests/test_skills_upgrade.py` 3. So no failure is new on Windows, and the host's own failures are not caused by this change (same id and message before). The new file alone: 78 passed.
+- Linux, `75acc20c`, nine files: 697 passed, 37 skipped, none failed. Linux, `e2b944bb`, nine files plus the new file: 27 failed, 751 passed; the 27 are the cases of item 1 above. Linux, `136c627a`, the four meter test files and the new file (the final code): 627 passed, 36 skipped, none failed. This run includes the two end-to-end tests.
+- `python tests/tier_inventory.py check`: ok, 141 test files, each in one of 5 tiers. `install/verify_integrity.py --target .`: OK, 70 recorded files.
+- Gate-manifest tests: none that I ran fail after the change. `tests/integration/test_meter.py` now differs from its recorded hash, so the manifest check will refuse it until the Maintainer's signing; I did not run that check, and the plan names it as the Maintainer's.
+
+**Not run, each with its home.** The developmental check on a real log, and P1 to P4: Strategy's. The other five selected files on Linux after the final edit (`tests/security/test_git_read_routes.py`, `tests/test_security_lint.py`, `tests/test_session_failsafe.py`, `tests/test_session_routines.py`, `tests/test_session_writes_contained.py`), the Python 3.13 run and the joined run: the certification, under the Maintainer's direction quoted above. The Windows route's end-to-end behaviour (POSIX-only tests): not run on Windows; the Mac and Windows certification. No AST listing was owed (no installer symbol changed).
+
+**Elapsed**: unknown. **Tokens**: unknown for me; the Haiku agents used about 133k, 136k, 186k and 110k (as their tools reported, for C1 to C4).
+
+The two `Proposed paths:` declarations (here and in Detail) named the new test file, which now exists, so `claim_check` flagged them as stale; I deleted those lines in the same commit as this record. Nothing else in the operative text changed.
+
+## Code review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`) (usual reviewer) -- 2026-11-21
+
+```
+Reviewed commit: fbd5cee2971829a2c4406863ca13c9f821b55128
+Range: 75acc20c..fbd5cee2971829a2c4406863ca13c9f821b55128
+```
+
+**Obligation**: the usual code review; the Security Review pass is still due, so Status is unchanged.
+**Findings**: raised (0 blocking, 5 non-blocking)
+**Bounding**: reviewed every hunk of the range and the code around each changed function; not covered: the Windows refresh route end to end, any test run, any real log, the pulse's printing.
+**Verdict**: ACCEPT
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: names, conditions and reason codes match D0 to D4; the two copies are identical and the lock verifies -- `cmp dev/tools/meter.py templates/skills/_lib/meter.py` (no output), `install/verify_integrity.py --target .` (OK, 70 files).
+2. **Best alternative.** None simpler; the three build differences are sound: the fifth version place is a one-character test edit, the lock commit holds only `dev/.cairn/cairn-lock.yml`, and the C2 to C3 gap is closed by merging together -- `git show --stat e2b944bb`, plan "Where the build differs".
+3. **What would show it wrong.** I called `_project_for_folder` on hand-typed folders (project path, inside, `-old` sibling, trailing and doubled separators, other case, `..`, a folder inside two projects, drive-letter case, reserved names, `a:b`, `/`): every result matched D1. `_summary_run` on 8 MiB of unclosed or 64-letter frames: `""` in 0.11 s. A failed remote, no request id and two sessions are covered by the new tests, read by hand against `read_records` 6840-6860.
+
+**Non-blocking**
+- N1. Three whole tests can go: `test_user_record_with_summary_shape_is_skipped` (the skipped-types test already runs `user` with the same shape), `test_repeats_with_equal_usage_merge_without_conflict` (same input as `test_same_message_twice_in_one_session_is_one_proven_event`), `test_the_empty_ledger_starts_with_no_runs` (the existing empty-ledger round trip and `run_ledger` fail without the field). Two rows can also go: `own-run-read` (covered by `test_summary_then_its_transcript_clears_the_reason`) and `no-frame-or-two-ids` (duplicates the unclassified test).
+- N2. Gaps, not blockers: `isSidechain` is tested only as absent, never as a truthy non-`True` value, so `if record.get("isSidechain")` would pass; the transcript cap and the ledger's own cap check have no test.
+- N3. A transcript is registered before its record is parsed, so an invalid assistant record still counts as "read"; `invalid_record` is raised too, so the reading is not called whole.
+- N4. `tests/integration/test_meter.py` is in the gate manifest and now differs; it fails until the Maintainer signs it, as the plan says.
+- N5. Transcripts are never aged: past 100,000 the cut goes to `unclassified` and INCOMPLETE stays (stated Limit 3).
+
+No rule weakens: the D6 sentence adds a bound; the README and changelog say what shipped. Privacy: tests use only synthetic ids and the names on the kept list.
+
+## Code review -- Claude Opus 5.5 (`claude-opus-5-5`) (Security Review) -- 2026-11-21
+
+```
+Reviewed commit: fbd5cee2971829a2c4406863ca13c9f821b55128
+Range: 75acc20c..fbd5cee2971829a2c4406863ca13c9f821b55128 (tip 4d5e4368 adds only the usual review)
+```
+
+**Obligation**: the Security Review of the code; with the usual review, the review stage is complete.
+**Findings**: raised (0 blocking, 2 non-blocking)
+**Bounding**: read every `meter.py` hunk and the scan, merge and load code around it; typed records by hand into a deleted scratch folder. Not covered: any log, ledger or consent file; the Windows refresh route end to end; the pulse's printing; no test file run.
+**Verdict**: ACCEPT
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: log text reaches the decision only as the exact folder text and the frame; every other path leaves usage unknown or the reading INCOMPLETE -- `dev/tools/meter.py` 6786-6876.
+2. **Best alternative.** None safer: dropping the session from the event key turns a message seen in two sessions into one unknown event, where before it could count twice -- `meter.py` 6815.
+3. **What would show it wrong.** I tried, on typed records: a model quoting its own frame (covered, correct), another run's frame (`""`), a frame after a stray tag or inside a nested list (read, same id only), an extra `usage` object of another shape (`None`, INCOMPLETE); 8 MiB of open, unclosed or nearly closed frames (`""`, at most 0.11 s); the POSIX folder forms (`..`, `.`, `//`, sibling, case, nested projects, backslashes: only the project and a true sub-folder bind); four hostile `agent_runs` blocks (each refused) -- `python -I`, scratch probe, deleted.
+
+**Agreement.** The usual review's findings hold; I add nothing to N1, N2, N4, N5. On N3 my wording governs: a record with bad usage still becomes an event with unknown kinds, so nothing is hidden; a line that fails to parse marks only that refresh (older behaviour), and a refresh that fails mid-source writes nothing (`meter.py` 4373-4374).
+
+**Answers to the brief.** Wrong project, hidden or double usage: no path from page, repository or agent text (keys are written by the tool, duplicate keys are refused). Incomplete called whole: only Limit 6. A hostile ledger is refused bare, prints nothing, and the meter writes only its own files. Nothing in a project's files widens the consent file: projects and roots come from it alone. Plan S1 to S5 hold as built.
+
+**Non-blocking**
+- SR1. Any object with a `usage` key, in a record type other than the four skipped, sets INCOMPLETE for every project until the ledger is replaced. If the tool ever stores parsed file content in such a record, repository content can trigger it. It fails safe and is stated (Limit 7, README); the developmental check should also count such records.
+- SR2. The frame is matched in every string of the record, so a summary is covered only when every frame names its run; that is the intended rule, with Limit 6 the one residual.
+
+## Response to the code reviews -- Claude Sonnet 5.5 (`claude-sonnet-5-5`; Implementation, response stage) -- 2026-11-21
+
+**Result**: both reviews accepted with no blocking finding. By the Maintainer's standing direction (chat, 2026-11-21, "Then run the fewest tests possible to make sure it was right."), the tests the usual review named as repeats are removed, two cheap gaps are closed, and the rest are stated limits or the Maintainer's. Only `tests/test_meter_claude_usage.py` changed (commit `2fef7d9d`); `dev/tools/meter.py` did not, so the shipped copy and the lock are unchanged (`cmp` prints nothing; `verify_integrity` reports OK, 70 files). Status is `ready-to-archive`.
+
+**Usual review.**
+- N1: removed three tests, `test_user_record_with_summary_shape_is_skipped`, `test_repeats_with_equal_usage_merge_without_conflict`, `test_the_empty_ledger_starts_with_no_runs`, and two rows, `own-run-read` and `no-frame-or-two-ids`; each criterion keeps a test that proves it (the reviewer named it). `2fef7d9d`.
+- N2: fixed. The mark test now also feeds `isSidechain` as `1` and `"true"` and expects no transcript pair; a new test `test_transcript_cap_cuts_the_excess_and_counts_it` covers the transcript cap. `2fef7d9d`. The ledger's own byte-cap check is not given a test: listed for Strategy as not cheap (it needs an oversized ledger fixture) and not blocking.
+- N3: no change; the Security Review's wording governs (nothing is hidden; `invalid_record` is raised too).
+- N4: the Maintainer's: `tests/integration/test_meter.py` fails the gate check until signed, as the plan says.
+- N5: stated Limit 3; no change.
+
+**Security Review.**
+- SR1: stated Limit 7 and the README; no change. The developmental check should also count such records: listed for Strategy.
+- SR2: intended rule (Limit 6 is the one residual); no change.
+
+**Tests run** (the fewest: the one test file edited, once per host, no run before the change). Linux subsystem (Python 3.14.4): `tests/test_meter_claude_usage.py` 74 passed, 0 failed. Windows: the same file, 74 passed, 0 failed. Earlier it was 78 passed; 78 minus three tests, minus two rows, plus the new cap test is 74. Nothing else was run.
+
+**Not run.** The check of the meter against a real log (and P1 to P4, the developmental check) has not run: the meter is not set up on this machine. The Maintainer is being asked where it runs. No log, home-folder or `AppData` file was opened.
 
 **Elapsed**: unknown. **Tokens**: unknown.

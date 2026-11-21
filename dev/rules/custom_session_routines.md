@@ -30,7 +30,10 @@ not read an older `meter.json` export in `dev/measurement/`, pass an aggregate p
 commit a per-project export. If it exits without a valid pulse or closed
 receipt, report unavailable without raw diagnostics. Collection reads only roots and projects in the
 private consent file `~/.cairn/meter.json`; never create or edit it without the
-Maintainer's clear yes. The full-handoff pre-prune refresh remains a separate
+Maintainer's clear yes. Nothing read from a provider log goes into a plan,
+test, fixture, commit, report, chat reply or agent prompt except counts, the
+meter's own sanitized output, and names on the list kept in this file; any
+other name is counted, never shown. The full-handoff pre-prune refresh remains a separate
 locked step and still fails closed.
 
 For a full handoff, run Cairn's local fast/default smoke selection from the
@@ -51,3 +54,14 @@ Slow tests remain due at release and whenever an accepted plan, safety or
 security requirement, or the Maintainer requires them. Change-specific checks
 and Boundary B remain due on their existing schedule. Goodnight does not defer
 or replace them.
+
+## Names that may be shown
+
+`type`, `message`, `id`, `model`, `usage`, `sessionId`, `requestId`, `cwd`,
+`timestamp`, `isSidechain`, `agentId`, `input_tokens`, `output_tokens`,
+`cache_creation_input_tokens`, `cache_read_input_tokens`, `cache_creation`,
+`ephemeral_5m_input_tokens`, `ephemeral_1h_input_tokens`, `totalTokens`,
+`toolUses`, `durationMs`, the frame name `task-id`, and the record type names
+`assistant`, `attachment`, `user`, `system`, `progress` and
+`file-history-snapshot`. The list is the keys the reader reads and the type
+names the plan's tests use, nothing more.

@@ -106,6 +106,14 @@ them.
   its coverage reasons and the pulse report prints `INCOMPLETE` beside the
   supplied usage. An older ledger is refused with `ledger_old_schema`; move
   `~/.cairn/meter/ledger.json` aside to start a new one.
+  A Claude record counts toward a project when its own working folder is the
+  project's or lies inside it, its log is under an approved root, and the
+  project's remote checks out. Summaries of finished sub-agents are not
+  counted; a reading whose summaries cannot be tied to a read transcript prints
+  INCOMPLETE. The runs are kept for every session under the approved roots, so
+  one untied summary anywhere marks every project, and it clears only when the
+  ledger is replaced (which loses history: a new ledger counts nothing before
+  its first refresh).
   Missing configuration stays disabled, and invalid or unsupported privacy
   state fails closed as unavailable. Aggregate coverage remains globally
   unknown; the output does not claim complete project history.
