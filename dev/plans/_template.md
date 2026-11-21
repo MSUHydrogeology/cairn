@@ -113,7 +113,7 @@ code review each ask three questions:
   deliver.
 * **Code review.** *Should this happen as framed?* Does it really do what it
   claims? Try to break it, in order to fix it. *Best alternative:* a simpler or
-  safer build, if any. *What would show it wrong:* the input or run that breaks
+  safer build, if any. *What would show it wrong:* the input or case that breaks
   it, and what was tried; Answer 3 points to evidence briefly and names any
   remaining uncertainty.
 
@@ -122,9 +122,9 @@ weaken or disappear?** This is a reading question, not a fourth Foundations
 answer.
 
 Each pass opens with a **Foundations** block of three lines, one answer per
-question, each ending in the file, test, line or command that backs it. Each
+question, each ending in the file, line, reasoning or direct check that backs it. Each
 answer states its point in a sentence; it may also point to a finding. Question
-3 names a forward test even when there are no findings.
+3 names what would show it wrong even when there are no findings.
  "No defects found" is allowed only with the three answers
 evidenced and the gaps named.
 
@@ -175,8 +175,8 @@ A plan is one file by default: reviews, responses and records are appended to it
 * **A log entry is a pointer.** Commit bodies hold the facts. The entry names
   the commit and adds only a decision, a finding, or a departure from the
   criteria.
-* **Cite evidence concisely.** Point to reproducible tests or scripts and state
-  their outcome; do not copy probe inventories or mutation-by-mutation results
+* **Cite evidence concisely.** Point to what was read or checked directly and state
+  the result; do not copy probe inventories or mutation-by-mutation results
   into lifecycle records.
 * **Read by section.** Give each pass, log or record its own `##` heading,
   titled by what it holds and when it was written. Readers list them with
@@ -281,8 +281,8 @@ one.
 
 
 
-For each change, name the caller-visible promise it adds or alters and the
-public entry point that checks it. Separate temporary developmental checks
+Add a test only for a behavior that no existing test covers, and then one. A fix
+needs none if an existing test would have caught the fault. Separate temporary developmental checks
 (deleted before archive) from permanent promise tests (often none when an
 existing public promise check covers the branch); do not request a permanent
 test only because the implementation changed.
@@ -347,27 +347,18 @@ not the accepted proposal.
 ## Verification
 
 For each plan, name changed caller-visible promises, public entry points and
-outputs, then select the smallest checks that could expose plausible faults.
-Group equivalent paths. Reuse a result only when its tested bytes, platform,
-input and obligation still apply; cite its source and limit. A changed boundary,
-failed check, uncovered fault or explicit requirement expands the selection.
-For a claim about every member, inventory the set and check each applicable
-path without making a separate mutant for each. Permanent tests guard external
-promises; temporary development probes leave before archive. Forward behavior
-needs executable evidence before completion; forward structure can be checked
-on committed structure. Missing or failed required evidence keeps work open.
+outputs. The rule on tests is in `dev/agent_collaboration.md` > "Verification".
+Permanent tests guard external promises; temporary development probes leave
+before archive. Forward behavior needs evidence before completion: what was
+read, reasoned or checked directly; a run is one kind and is not required.
+Forward structure can be checked on committed structure. Missing or failed required evidence keeps work open.
 Preserve required security checks and reviews, scientific independent error and
 positive controls, and release operations.
 
 
 
 <!-- cairn:slot verification-commands -->
-Before implementation, run `python tests/tier_inventory.py for <paths>` to list
-tests that import or cite each changed file by path or file name. This is the
-iteration scope; do not widen it by judgment. Run applicable standing prose
-gates for prose. For governing text such as AGENTS.md, pass the complete
-reviewed range with `--range BASE..HEAD`. The selector claims no unknown
-dependencies. Keep canonical runtimes and standing project checks in their
+Run applicable standing prose gates for prose. Keep canonical runtimes and standing project checks in their
 existing homes.
 
 
@@ -385,7 +376,7 @@ authorized triggers and required checks.
 
 *Appended at archive-preparation (`docs/methodology/lifecycle.md` > "Archive
 precondition" and `docs/methodology/plans.md` > "Lasting-truth migration
-doctrine").* Say in a few lines whether each acceptance criterion held. Write each check not run, area not covered or work remaining as its own item: `Not run: <what>`, `Not covered: <what>` or `Remaining: <what>`, ending `Home: <roadmap row, issue, proposal or the Maintainer's quoted word>`. An empty Home means the plan is not ready to archive. A deferral of accepted scope or of a required check has the Maintainer's quoted word as its Home; a Home an agent creates alone (an issue or a roadmap row) covers only a follow-up that defers neither. Then record one `Dispositions: ...` line per deferred follow-up:
+doctrine").* Say in a few lines whether each acceptance criterion held. Say in one line what was not checked; tests that were not run need no list and no home, and wait for certification. Write each item of work remaining as its own `Remaining: <what>`, ending `Home: <roadmap row, issue, proposal or the Maintainer's quoted word>`. An empty Home means the plan is not ready to archive. A deferral of accepted scope or of a required check has the Maintainer's quoted word as its Home; a Home an agent creates alone (an issue or a roadmap row) covers only a follow-up that defers neither. Then record one `Dispositions: ...` line per deferred follow-up:
 `accept` (fixed in scope), `guard (<path>::<node>)` (homed in an executing
 test/check, never a comment), `wontfix` (with rationale; ineligible if it
 reaches an adopter, blocks a release, needs a Decision, or was named by a
@@ -421,7 +412,7 @@ words beneath them, verbatim and apart:*
 **Called by**: Maintainer -- Decision at <commit>
 
 **Foundations** (the plan row; one line per answer, each ending in the file,
-test, line or command that backs it):
+line, reasoning or direct check that backs it):
 
 1. **Should this happen as framed?** <the Decision settled the premise; does the plan deliver it> -- <evidence>
 2. **Best alternative.** <a simpler path to the same outcomes> -- <evidence>
@@ -438,16 +429,15 @@ the left margin is what the checker reads.
 Target 300 words for this pass, preserving its verdict, findings and coverage gap.
 Explain any over-target pass in its coverage line.
 Record elapsed time and reported or defensibly estimated token use; write
-`unknown` when unavailable. Report verification and mutation outcomes and any
-unresolved or unmeasured cases concisely; keep repeatable evidence in tests or
-scripts.
+`unknown` when unavailable. Report what was read and checked directly and any
+unresolved or unmeasured cases concisely.
 
 Code review's floor is not the implementing agent; a fresh session clears it. It
 never reopens the Decision. Self-committed by its author; blocking findings move
 the plan to `revising-code`, and the implementer's answer carries it to
 `ready-to-archive`. Code review is one round after the plan's last chunk (a plan
 may name one earlier review point for a high-risk chunk that later chunks build
-on). A blocking finding closes with the reviewer's failing test or exact words
+on). A blocking finding closes with exact words or code, or a failing test only when words cannot show the fault
 (`dev/agent_collaboration.md` > "Review rules"); no second pass re-reads a fix.
 Same basis block, with the range made explicit:
 
@@ -456,11 +446,11 @@ Reviewed commit: <full commit id>
 ```
 
 **Foundations** (the code row; one line per answer, each ending in the file,
-test, line or command that backs it):
+line, reasoning or direct check that backs it):
 
 1. **Should this happen as framed?** <does it really do what it claims; try to break it, in order to fix it> -- <evidence>
 2. **Best alternative.** <a simpler or safer build, if any> -- <evidence>
-3. **What would show it wrong.** <the input or run that breaks it, and what was tried> -- see the review evidence (`dev/agent_collaboration.md` > "The review sweep")
+3. **What would show it wrong.** <the input or case that breaks it, and what was tried> -- see the review evidence (`dev/agent_collaboration.md` > "The review sweep")
 
 When the reviewed change edits functional prose, also answer the reading
 question: **Does any rule weaken or disappear?**
@@ -468,11 +458,6 @@ question: **Does any rule weaken or disappear?**
 For test changes or removals, also answer: **Does every removed caller-visible
 fault remain caught by a retained promise check through its public entry
 point?**
-
-**Bounding**: ACCEPTED | WIDER RUN REQUIRED — recorded only after challenging a
-named surface, mapped test, or stated omission. The second verdict names the
-missing behavior and check; the author adds it and records new final-commit
-evidence before acceptance.
 
 **Waiting-line check.** `git log -p` on the plan must show a Waiting line for
 each fenced chunk whose fence became the next move inside the reviewed range,
