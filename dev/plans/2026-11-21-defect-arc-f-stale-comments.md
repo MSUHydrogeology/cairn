@@ -55,3 +55,33 @@ It must print `same tree`. The search `git grep -nP '^\s*#.*(?<![A-Za-z0-9_./-])
 ## Verification
 
 `python tests/tier_inventory.py for <the eleven paths>` selects 29 test files (run 2026-11-21), under Cairn's 40-file guard, so the run is not split. It includes `tests/test_portable_security_sweeps.py` (the sweep copies must match, line 3079), `tests/test_content_scan.py` (installed copy equals the template, line 171), `tests/test_doc_drift_tools.py` (line 250), the upgrade and lock tests, and `tests/test_gate_manifest.py`. The last uses a built-up sample, not the committed hashes, so a stale manifest is caught only at the signing, which is why the sentence above is recorded. Run the 29 once at BASE and once after C1 with `-rf --tb=line`, and treat only a failure new at the second run as a finding. The arc's joined run repeats these with everything else; that is safe because the trees are identical, so only a twin mismatch, a stale lock hash or a test that reads comment text could fail, and C1 and C2 check each directly. Not run: the full suite, the signing verifier, the AST baseline (nothing under `install/_scaffold/` changes).
+
+## Plan review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-21
+
+Reviewed commit: d095d3614c4638ec259664f3d32f120644ecb9ce
+
+**Obligation**: the usual plan review, the only pass at this stage.
+**Tier**: Internal
+**Findings**: raised (two, both non-blocking)
+
+The plan delivers the Maintainer's "Fix them all now" with the smallest change: comment text only, in eleven copies, proved by a syntax-tree comparison. I found it sound.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. All 16 old lines match the files exactly at the stated line numbers, and each corrected path exists (`tests/integration`, `tests/quality_gate.py`, `install/verify_integrity.py`, `install/_scaffold/lockfile.py`, `install/scaffold.py`; the installed name of `run_security_audit.py` is under `dev/tools/` in an adopter tree, per `install/_scaffold/layout_catalog.py` line 90) -- `sed -n` on each line.
+2. **Best alternative.** Deferring each fix to the file's next edit is cheaper but was declined by the Maintainer; no lighter route delivers the outcome -- `dev/PLANNING.md` line 80.
+3. **What would show it wrong.** A comment a program reads, or a tree that differs. A tokenizer pass found no marker (`noqa`, pragma, type, encoding) among the 16; the tree command takes `ast.dump` of each file, which drops comments and keeps every string, so a changed code token or docstring fails it -- tokenizer search over the seven tools, plus `tests/tier_inventory.py for <paths>` (29 files, confirmed).
+
+**Findings**
+
+1. Non-blocking. The plan says none of the eleven is in the manifest's `protected_roster`. All the frozen entries are listed there, under `preserved_non_test_frozen_paths`; the manifest's `protected_python_paths` holds only test files. The signing count of eleven is still right. Replace "None is in its `protected_roster`." with "Each is also listed in the manifest's `protected_roster` under `preserved_non_test_frozen_paths`; none is in `protected_python_paths`." The manifest names Cairn's own four copies by their pre-layout `scripts/` paths, as the plan already says.
+
+2. Non-blocking. The docstrings and strings left stale (for example `content_scan.py` lines 12 to 38, the `scripts/` fallback in `run_security_verification.py`) have no home on the roadmap: the entry covers comments only. Add one sentence to that entry saying the docstrings and strings that name old folders remain and are left for the file's next edit.
+
+**Checked and found right.** My own search (Python's tokenizer, run on the seven tools) finds exactly the 16 listed lines, so it works. It also flags `run_portable_security_sweeps.py` line 2629 ("The bootstrap executes..."), which is the word used as a noun, rightly left. `_intent/shared.py` line 19 is rightly left. No comment names another pre-0.8 folder. Twins are byte-identical today; the edit is the same in both. Cairn's lock records the four `dev/tools/` copies, and `--finalize` takes paths. The 29-file selection is under the 40-file guard. No script, option or test file is added.
+
+**Review obligation.** Protected-surfaces gives the heavy tier to a change that "alters what a high-risk surface does or accepts"; a comment-only change with an identical tree alters neither, so the usual review is a sound reading. "When in doubt" does not apply, because the tree check removes the doubt. No Security Review is required.
+
+**Not covered.** I ran no test, no tree command, no lock command and no signing step. I did not read the code review's future diff. The tree command shows no code changed; it does not show a new comment is accurate.
+
+**Verdict**: ACCEPT. Elapsed time: unknown. Tokens: unknown.
