@@ -1,7 +1,7 @@
 # Plan: Defect arc B, upgrading
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -409,3 +409,44 @@ The implementer's four choices and its added function stand; both reviews found 
 **Not run**: the 102-file selection; the Linux runs; the scratch 0.7.0 and 0.8.0 upgrades; the `release/AST_BASELINE_RUNBOOK.md` Step 1 listing; the tier-inventory groups; `tests/test_ast_attest.py`; any release, signing or baseline command.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Coordinator's final verification, all five chunks -- Claude Fable 5.2 (Strategy) -- 2026-11-20
+
+All five chunks are built. The comparisons below found one real failure, now fixed: the new test file had no tier. With that fixed, no test fails only after the change on either host once unstable tests are rerun alone.
+
+**What is reviewed.** The tip is `55015944`. The code ends at `7cfb1348`; the one commit after it lists the new test file in a tier.
+
+**The gap these runs found.** C5 added `tests/test_retire_wrapper.py` and did not list it in `tests/test_tiers.json`, so `tests/contract/test_test_tiers.py::test_every_cairn_test_file_is_in_exactly_one_tier` failed after the change, on both hosts. Fixed at `55015944`: the file joins the workflow tier, and `tests/tier_inventory.py check` reports ok. The plan's own selection did not run that test: the selector lists tests that name a changed file, and no test names a new file. The 38-file group caught it. The two test files that name the tier list give the same 11 failures before and after on Windows.
+
+**Tests, Windows Server host**, each group at the start (`ecc1a913`) and at `7cfb1348`, compared by test id and message.
+
+- 17 files: 103 failed before, 105 after, 13 more passes. Four ids fail only after and two only before, all in `tests/integration/test_gauge.py`, which this host runs unstably. Alone, the four behave the same at the start and at the tip: 3 fail on the first run, 4 on the second.
+- 21 files (the 20 selected and the new one): 77 failed before and after, the same ids and messages; 25 more passes.
+- 3 files: 88 failed before, 82 after. Three ids fail only after; all three pass alone at the tip, three runs, and at the start.
+- 38 files: 271 failed before, 279 after. Twelve ids fail only after. Eleven pass alone at the tip. The twelfth is the tier test above.
+
+**Tests, Linux subsystem (Python 3.14.4, a development check)**, at exact commits, compared the same way.
+
+- 17 files: the same 1 failure before and after; 1,106 passed before, 1,122 after.
+- 38 files: 2 failed before, 4 after. One of the two more is the tier test above. The other, a sweep test, passes alone at the start and at the tip.
+- 21 files (the 20 selected and the new one): the same 79 failures before and after, 78 of them in `tests/test_security_check.py`, which does not pass on this Linux setup at the start either; 26 more passes.
+- 3 files: none failed before, 1 after, in `tests/test_intents_tool.py`. Alone it passes at the tip, twice, and at the start. That whole file then passes at the tip: 200 passed, 1 skipped.
+- `tests/contract/test_test_tiers.py` at `55015944`: 40 passed.
+
+A caution about the Linux evidence. For part of the evening two Linux test streams ran at once, which was the coordinator's doing. Both Linux tests that failed only after the change, apart from the tier test, failed in that period, and both pass alone in one stream. The 17-file group ran with one stream and shows no such failure.
+
+**End-to-end checks on scratch projects, at `7cfb1348`, Windows.** Nothing outside a scratch folder was written.
+
+- Upgrading a 0.7.0 install and a 0.8.0 install: no complaint about lock keys, and no lock record carries `layout_ancestry`, `layout_base_commit` or `layout_fork`.
+- Healing a copy of the project that the starting commit's installer had damaged: it rewrote one module page and removed the keys from 17 records. The security verification went from DEGRADED (exit 20) to CLEAN (exit 0). A second heal printed "Nothing to heal." `verify_integrity` reported OK for 46 files.
+- Retiring a wrapper deleted on purpose, in a copy of the upgraded 0.8.0 project: `verify_integrity` reported the file missing and named the command (exit 1); the plan named it too; `upgrade --retire-wrapper VENDOR.md` exited 0 and changed one lock line; `verify_integrity` then reported OK for 63 files with one retired wrapper record. A second call while the lock was uncommitted was refused for unsaved edits (exit 1). With the lock committed, a repeat exited 0 and changed nothing; it printed the same message, which again says to commit the lock. `--retire-wrapper AGENTS.md` was refused (exit 2).
+
+**Baseline listing** (Step 1 of `release/AST_BASELINE_RUNBOOK.md`, read-only), at the tip: CHANGED 4, MISSING 0, DUPLICATE 0, NEW 237 (221 at the start). The four changed symbols are `cmd_upgrade`, `_compute_upgrade` and `_cmd_finalize_lockfile` in `install/_scaffold/upgrade.py` and `main` in `install/_scaffold/cli.py`: the four the plan names. `tests/test_ast_attest.py` fails until the Maintainer's baseline step, as planned.
+
+**Cairn's own lock.** `install/verify_integrity.py --target .` at the tip: OK, 70 files.
+
+**For the reviewers.** C3 to C5 and the two commits after the review point have had no review. The implementers' records list where they chose words or structure the plan did not give.
+
+**Not run.** The 102-file selection as one run; the canonical runtime (Python 3.13 on the Mac); a real adopter's upgrade. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+
+**Elapsed**: 4 hours 26 minutes from status implementing (18:57) to this record, by commit times; test runs took most of it. **Tokens**: implementers 190,900, 232,591 and 243,761; review point 158,151 and 136,088; the coordinating session's own use is not visible to it.
