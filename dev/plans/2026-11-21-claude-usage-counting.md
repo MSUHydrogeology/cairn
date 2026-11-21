@@ -314,3 +314,31 @@ Range: 75acc20c..fbd5cee2971829a2c4406863ca13c9f821b55128
 - N5. Transcripts are never aged: past 100,000 the cut goes to `unclassified` and INCOMPLETE stays (stated Limit 3).
 
 No rule weakens: the D6 sentence adds a bound; the README and changelog say what shipped. Privacy: tests use only synthetic ids and the names on the kept list.
+
+## Code review -- Claude Opus 5.5 (`claude-opus-5-5`) (Security Review) -- 2026-11-21
+
+```
+Reviewed commit: fbd5cee2971829a2c4406863ca13c9f821b55128
+Range: 75acc20c..fbd5cee2971829a2c4406863ca13c9f821b55128 (tip 4d5e4368 adds only the usual review)
+```
+
+**Obligation**: the Security Review of the code; with the usual review, the review stage is complete.
+**Findings**: raised (0 blocking, 2 non-blocking)
+**Bounding**: read every `meter.py` hunk and the scan, merge and load code around it; typed records by hand into a deleted scratch folder. Not covered: any log, ledger or consent file; the Windows refresh route end to end; the pulse's printing; no test file run.
+**Verdict**: ACCEPT
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: log text reaches the decision only as the exact folder text and the frame; every other path leaves usage unknown or the reading INCOMPLETE -- `dev/tools/meter.py` 6786-6876.
+2. **Best alternative.** None safer: dropping the session from the event key turns a message seen in two sessions into one unknown event, where before it could count twice -- `meter.py` 6815.
+3. **What would show it wrong.** I tried, on typed records: a model quoting its own frame (covered, correct), another run's frame (`""`), a frame after a stray tag or inside a nested list (read, same id only), an extra `usage` object of another shape (`None`, INCOMPLETE); 8 MiB of open, unclosed or nearly closed frames (`""`, at most 0.11 s); the POSIX folder forms (`..`, `.`, `//`, sibling, case, nested projects, backslashes: only the project and a true sub-folder bind); four hostile `agent_runs` blocks (each refused) -- `python -I`, scratch probe, deleted.
+
+**Agreement.** The usual review's findings hold; I add nothing to N1, N2, N4, N5. On N3 my wording governs: a record with bad usage still becomes an event with unknown kinds, so nothing is hidden; a line that fails to parse marks only that refresh (older behaviour), and a refresh that fails mid-source writes nothing (`meter.py` 4373-4374).
+
+**Answers to the brief.** Wrong project, hidden or double usage: no path from page, repository or agent text (keys are written by the tool, duplicate keys are refused). Incomplete called whole: only Limit 6. A hostile ledger is refused bare, prints nothing, and the meter writes only its own files. Nothing in a project's files widens the consent file: projects and roots come from it alone. Plan S1 to S5 hold as built.
+
+**Non-blocking**
+- SR1. Any object with a `usage` key, in a record type other than the four skipped, sets INCOMPLETE for every project until the ledger is replaced. If the tool ever stores parsed file content in such a record, repository content can trigger it. It fails safe and is stated (Limit 7, README); the developmental check should also count such records.
+- SR2. The frame is matched in every string of the record, so a summary is covered only when every frame names its run; that is the intended rule, with Limit 6 the one residual.
