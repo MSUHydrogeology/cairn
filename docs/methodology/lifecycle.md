@@ -47,16 +47,15 @@ select a tier or remove an obligation:
    or security ceremony, or (d) is a **major new feature** — a new
    user-facing capability, module, or subsystem, because *what to
    build* is a structure question, not an implementation one. One
-   carve-out crosses this rule: a **defect repair** — all three of
+   carve-out crosses this rule: a **defect repair** — both of
    (i) a failing-test reproduction, (ii) restores documented or
-   intended behavior with no contract change, (iii) the touched
-   surface's own test family runs in the loop — takes the trivial
+   intended behavior with no contract change — takes the trivial
    lane even on a named surface. An edit that changes what a ceremony
    or surface *does* is not a defect repair and stays deliberate,
    whether or not a public contract moved.
 2. **Trivial — just commit** for defect repairs meeting the
    carve-out and the existing just-commit class (a typo, a one-line
-   bug fix, an obvious correction): code + test, no proposal and no
+   bug fix, an obvious correction): code (and a test only where no existing test would have caught the fault), no proposal and no
    code review.
 3. **Proposal path** for all other substantive work. The proposal is reviewed
    and decided before implementation. Its tier determines the required
@@ -115,9 +114,9 @@ its code review then check the implementation, and the evidence it
 produced, against that locked plan — Stage 2.
 
 The proposal names the outcomes and applicable requirements to verify. During
-implementation, the agent maps affected behavior to existing checks and
-consumers using the project's test architecture; independent review challenges
-that mapping. Maintainers set high-level needs and material exceptions rather
+implementation, the agent chooses its checks under the rule on tests
+(`dev/agent_collaboration.md` > "Verification"); independent review reads that
+choice. Maintainers set high-level needs and material exceptions rather
 than designing routine test selections for each change.
 
 What this buys is a defense against *metric p-hacking*. When the

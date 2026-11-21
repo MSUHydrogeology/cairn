@@ -19,7 +19,7 @@ polishing something that should not exist.
 |---|---|---|---|
 | Proposal | Should this exist as framed? Is there a better design, doing nothing included? | The strongest, doing nothing included | What would make the author withdraw |
 | Plan | The Decision settled the premise. Does the plan deliver it? | A simpler path to the same outcomes | The result showing it cannot deliver |
-| Code | Does it really do what it claims? Try to break it, in order to fix it. | A simpler or safer build, if any | The input or run that breaks it, and what was tried; for code review this cites reproducible evidence and states its outcome concisely |
+| Code | Does it really do what it claims? Try to break it, in order to fix it. | A simpler or safer build, if any | The input or run that breaks it, and what was tried; for code review this states what was checked directly and its outcome concisely |
 
 **What "outside the frame" means depends on the artifact.** For a
 proposal it is the design and the problem statement. For an
@@ -30,7 +30,7 @@ which a reviewer never reopens.
 **Each pass opens with a `**Foundations**` block** of three lines, one
 answer per question, each ending in the file, test, line or command
 that backs it. Each answer states its point in a sentence; it may also point
-to a finding. Question 3 names a forward test even when there are no findings.
+to a finding. Question 3 names what would show it wrong even when there are no findings.
 A bare "yes" with nothing behind it is the "checked"
 failure the lenses can help expose. The nine lenses (below) are a reading aid,
 not a required checklist; the answers still need evidence and named gaps.
@@ -148,7 +148,7 @@ not in defect density, which is why the stage questions, and not the
 reviewer's type, carry the verdict.
 
 One portable lesson survives from the cross-type reads and is worth keeping:
-**green unit tests do not clear a review** — exercise the real call chain and
+**green unit tests do not clear a review** — check the real call chain and
 real config, not the unit contracts the author already trusted.
 
 ## Asynchronous and commit-mediated
@@ -240,7 +240,7 @@ A non-blocking finding is not automatically deferrable.
 The author carries the artifact forward after their response or revision.
 Do not escalate a disagreement merely because two passes differ. The author
 states which advice they adopted and why, and the Maintainer reads that
-resolution at Decision. A further pass on scope the Maintainer adds covers only the new material; code gets no second usual pass, because a blocking finding closes by the reviewer's failing test or exact words, or stays open and goes to the Maintainer if declined (`dev/agent_collaboration.md` > "Review rules"). The Security Review exception never clears by an ordinary pass.
+resolution at Decision. A further pass on scope the Maintainer adds covers only the new material; code gets no second usual pass, because a blocking finding closes by exact words or code, or by the reviewer's failing test where words cannot show the fault, or stays open and goes to the Maintainer if declined (`dev/agent_collaboration.md` > "Review rules"). The Security Review exception never clears by an ordinary pass.
 The Decision closes the phase. Later critique becomes a new proposal.
 
 ## Plan review is Internal, always
@@ -332,23 +332,13 @@ different-agent-type read.
 ### Boundary C — Falsification (targeted review before B)
 
 Independent review does not mean repeating every command the implementer ran.
-The reviewer reads the implementation and iteration evidence, then chooses
-targeted checks for changed public paths, negative or edge cases, cross-surface
+The reviewer reads the implementation and iteration evidence, then checks
+directly the changed public paths, negative or edge cases, cross-surface
 assumptions, and claims whose evidence is doubtful. Never run a suite. Point to
 repeatable checks and state outcomes concisely; copying the implementation's
-command alone does not show independent falsification. Name a specific missing
-test when coverage is absent, and have the author add it and check the affected
-interaction. A fix after a failed joined integration selection that changes
+command alone does not show independent falsification. Where a changed behavior
+has no test at all, a review may name one. A fix after a failed certification run that changes
 more than the failing test returns to the same reviewer for a targeted look.
-
-For scoped testing, challenge whether the implementation traced changed
-behavior through callers, imports, configuration and data readers, and public
-paths; whether existing checks cover affected components and consumers; and
-whether shared or uncertain effects widened to owning families and relevant
-workflows. Name a plausible uncovered fault and its missing check. Routine
-selection remains with the agent applying these defaults, while Maintainers set
-high-level needs and material exceptions. Existing project requirements remain
-in force.
 
 Within the scope of an authorized arc, the coordinator decides whether
 related changes share a review scope or receive separate reviews. Shared
@@ -365,7 +355,7 @@ from the tree and check the applicable paths; a diff alone does not establish
 coverage. Reuse applicable committed evidence and state its source and limits.
 Mutation is an optional probe unless a specific requirement calls for it.
 Keep existing negative controls; demonstrate a failing case for a new security
-check. Claims about forward behavior need executable evidence; committed
+check. Claims about forward behavior need a direct check, one run included; committed
 evidence or static calculation may support other claims when adequate. Review
 records state what the checks covered and what remains uncertain, not a probe
 inventory.
@@ -376,14 +366,8 @@ may call for a full run at an integration point. A change-verification record
 remains separate from evidence for any tree certification; that run does not
 supply a missing change check (`docs/methodology/plans.md`).
 
-After challenging a named surface, mapped test, or stated omission, the
-reviewer records `**Bounding**: ACCEPTED | WIDER RUN REQUIRED`. The second
-verdict names the missing behavior and check and returns it to the author for
-an affected interaction check. This is reviewer judgment, not a parser or selector.
-This process does not automatically call for a whole-tree run.
-
-Plan-local verification records changed promises, selected checks or reused
-results, and omissions after the plan's required checks and reviews, before
+Plan-local verification records changed promises, the evidence for them,
+and omissions after the plan's required checks and reviews, before
 archive. Joined Boundary B evidence is recorded after connected plans finish,
 or earlier at a named critical shared boundary, and covers the final combined
 revision before arc completion or release. The arc owner records its selected
@@ -393,23 +377,6 @@ behavior and inputs; corrections rerun only affected interactions. When a
 ceremony explicitly requires full execution, its authorized certifying run
 supplies that tree evidence and its required record; the reviewer does not run
 it.
-
-A replacement joined-evidence record is required when any of these six
-record-replacement triggers applies:
-
-1. no valid Boundary B record exists;
-2. review discovers an unrecorded cross-surface dependency;
-3. a skip, xfail, or xpass lacks an adequate disposition;
-4. a later change affects behavior, inputs, obligations or consumers covered
-   by valid joined evidence;
-5. the accepted plan's trust ceremony explicitly requires independent full
-   execution; or
-6. the reviewer has a concrete reason to distrust or falsify the broad result.
-
-These triggers require evidence for the affected behavior; they do not require
-replaying unaffected checks or automatically call for a whole-tree run. The
-fifth trigger is satisfied only by the authorized ceremony's prescribed full
-execution and record.
 
 This reuse rule is not authentication, malicious-committer protection, or a
 release optimization. Release ceremonies keep their own accepted commands and
@@ -450,11 +417,11 @@ where this change's bug lives.
    tree: "exists / works / is available / is atomic / fails closed /
    will use X." Use applicable committed evidence or static reasoning
    when adequate, and cite the evidence and its limits. A claim about
-   forward behavior needs executable evidence. For a claim about every
+   forward behavior needs a direct check, one run included. For a claim about every
    member of a set, inventory the set from the tree and check applicable
    paths.
-2. **Production path exercised by tests** — the public entry point is
-   tested *through*, not just a helper or a stub of the very thing that
+2. **Production path checked** — the public entry point is
+   checked *through*, not just a helper or a stub of the very thing that
    breaks.
 3. **Design completeness** — preconditions, invariants, edge cases
    (empty / None / zero / single / N≫1 / mismatched units or CRS), and
@@ -478,14 +445,14 @@ where this change's bug lives.
 8. **Domain / scientific validity & scope** — methods are grounded and
    documented; scope has not quietly expanded; each new abstraction
    earns its existence.
-9. **Name the satisfier** — every finding states the test / guard /
+9. **Name the satisfier** — every finding states the exact words, code, guard /
    doc / scope-cut / explicit `wontfix` that would close it. A finding
    with no satisfier is an observation, not yet a finding. At archive
    time each satisfier maps onto a disposition token
    (`docs/methodology/lifecycle.md` > "Archive precondition"), and the mapping
-   is total: *test* → `guard`, *guard* → `guard`, *doc* → `accept`,
+   is total: *test* or *guard* → `guard`, *exact words*, *code* or *doc* → `accept`,
    *scope-cut* → `accept`, *wontfix* → `wontfix`. A finding whose
-   satisfier is **none of the five** — real work that must happen, but
+   satisfier is **none of these** — real work that must happen, but
    not in this artifact — is the `defer` case, and `defer` is the
    Maintainer's call. Naming the satisfier and naming who pays for it
    are then the same act.
@@ -521,7 +488,7 @@ For lens #2 (production path), for example:
   scoped* in the verification plan?
 * **Plan review** — is it *sequenced into a chunk* and protected by
   acceptance criteria?
-* **Code review** — does the landed test *actually call the public
+* **Code review** — does the landed check *actually reach the public
   path* today?
 
 The reading aid does not change or downgrade a declared-`required` review
@@ -701,7 +668,7 @@ so, not several. A brief may state the stage's three questions: they are
 the same for every artifact at that stage, so they do not telegraph a lens.
 
 **Include**: what shipped, where (commits + file paths), the
-reviewer's deliverable, how to run the tests, and procedural
+reviewer's deliverable, and procedural
 constraints (don't commit, append findings, and so on).
 
 **Leave out**: a list of "what to push on," a list of "what's already

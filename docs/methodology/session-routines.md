@@ -97,26 +97,18 @@ from "my session is ending":
   reflection (below), notes open threads, and **stops**.
 * **Designated full-handoff owner** — exactly one agent, named by
   the Maintainer, additionally scrubs the roadmap boards, verifies
-  the docs and changelog, runs the configured fast/default smoke selection,
-  **rewrites the
+  the docs and changelog, **rewrites the
   next session's starting plan from scratch** (see below), and
   lands the handoff commit.
 
-The full-handoff owner records the smoke command, result and coverage limits.
-If no command is configured, report the smoke as unavailable, not passed; a
-failed command is failed. Do not invent a universal command. Reflection-only
-participants acquire no test obligation. For example, a project with a configured
-`python -m pytest tests/smoke` reports that command's actual result and its limited
-coverage; with no configuration it reports unavailable, and a nonzero command
-exit is reported as failed, never green.
+Reflection-only participants acquire no test obligation.
 
 Slow tests remain due at release and whenever an accepted plan, safety or
 security requirement, or the Maintainer requires them. Change-specific checks,
 Boundary B and required certification remain due on their existing schedules;
-a goodnight smoke neither replaces nor defers them. The project's concrete
-command belongs in `dev/rules/custom_session_routines.md`, not in this generic
-routine. Cairn's local selection checks profile parsing, preset expansion and
-scaffold summaries only; it does not certify the tree.
+goodnight neither replaces nor defers them. The project's concrete
+close-out steps belong in `dev/rules/custom_session_routines.md`, not in this generic
+routine.
 
 Applicable roadmap and changelog entries belong at the commit or archive that
 finishes work, under their existing ownership and serialization rules. The

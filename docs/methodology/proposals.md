@@ -166,7 +166,7 @@ implementation. The Decision sets its tier. Light work uses the accepted
 proposal as its implementation record and does not open a plan. Standard and
 heavy work retain plan triage, required reviews and checks. There is no
 parentless change-note route. Genuinely trivial work — a typo, a one-line bug
-with a failing-test reproduction, a self-contained helper, a docstring polish
+with a reproduction, a self-contained helper, a docstring polish
 — is just made, with no proposal or plan.
 
 Once accepted, a light-tier proposal has no plan or code review, regardless of
@@ -175,7 +175,7 @@ after its final implementation commit and archives it with that record.
 
 For standard/heavy proposals, the implementation is **trivial** (a single commit, a
 single area, no follow-ups, and a Boundary B that would run `bounded`,
-except that a defect repair meeting the lifecycle's three conditions stays
+except that a defect repair meeting the lifecycle's two conditions stays
 trivial on a named surface — implemented and the proposal archived together, with no code review) or
 **non-trivial** (multiple commits or areas, multi-stage sequencing,
 deferred follow-ups, or Boundary B in `wide` mode — it opens a plan; see
@@ -332,7 +332,7 @@ commit:
 * For **standard/heavy**, if the implementation will be **trivial** (single commit, single
   area, no multi-stage execution, no deferred follow-ups, and a
   Boundary B that would run `bounded`, except that a defect repair meeting
-  the lifecycle's three conditions stays trivial on a named surface), the implementing commit ships the
+  the lifecycle's two conditions stays trivial on a named surface), the implementing commit ships the
   work AND moves the proposal to `dev/proposals/archive/` in the same
   commit. It has no code review. The implementing commit re-reads each
   plan-skip condition against what it actually touched. If it touched more
