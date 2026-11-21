@@ -117,8 +117,10 @@ runs cost machine time, not tokens, and are listed separately.
 | | usual code review | Medium | 78,216 | 1 | accept, no finding |
 | | response to both code reviews, by the plan's agent | Medium | 127,455 | 49 | ready to archive |
 | | build, five chunks, by the plan's agent with Haiku execution agents | Medium | 193,873 | 150 | awaiting code review |
+| | usual code review | Medium | 136,968 | 3 | accept, 0 blocking; 3 tests can go |
+| | Security Review of the code | High | 126,800 | 4 | accept, 0 blocking |
 
-Total for the day so far: 13,876,140 tokens across 93 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 14,139,908 tokens across 95 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -183,7 +185,7 @@ Measured:
   Strategy put every design decision in the brief, so the author did no
   design, and Strategy folded the reviews itself, so no agent was resumed or
   spawned for that. Two against two is a small sample.
-- **Forty-six review passes so far.** Two were further passes that a design change required: one
+- **Forty-eight review passes so far.** Two were further passes that a design change required: one
   by the Maintainer, and one to close a Security finding with a simpler rule. No pass has yet had to come back to check a fix.
 - **Replies of five lines work.** From 2026-11-21 each agent writes its full account into
   the plan or proposal and answers the coordinating session in a fixed form of five or six
