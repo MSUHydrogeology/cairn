@@ -14,7 +14,7 @@ Maintainer chat the item came from. Finished work leaves the board.
 Lines marked **Waiting on Maintainer** are what `board.py --maintainer` lists,
 together with any proposal awaiting your Decision.
 
-One Decision is waiting on you: the [consumer proposal](proposals/2026-11-20-claude-consumer-removal-pass.md). **Waiting on Maintainer**: push `0.9-dev`, so that a session on the Mac can take the [re-anchor plan](plans/2026-11-20-simpler-reanchor-ceremony.md), which is ready to implement and whose tests run only there. The [testing assessment](strategy/2026-11-20-claude-peer-testing-assessment.md)'s main question is answered (2026-11-20), and its LHM worktree finding was passed to the LHM session the same day at your word.
+Two Decisions are waiting on you: the [consumer proposal](proposals/2026-11-20-claude-consumer-removal-pass.md) and the [proposal to count Claude usage toward a project](proposals/2026-11-21-claude-usage-counting.md). **Waiting on Maintainer**: push `0.9-dev`, so that a session on the Mac can take the [re-anchor plan](plans/2026-11-20-simpler-reanchor-ceremony.md), which is ready to implement and whose tests run only there. The [testing assessment](strategy/2026-11-20-claude-peer-testing-assessment.md)'s main question is answered (2026-11-20), and its LHM worktree finding was passed to the LHM session the same day at your word.
 
 - **Waiting on Maintainer**: fix 16 stale comments in protected tools?
   Fixing them adds up to eleven lines for you to approve at the defect arc's signing. Leaving them needs your word, because the accepted arc counts them. Strategy recommends leaving each until its file is next edited. Nothing waits on this before the signing. Detail: section 1, "Comments in protected files".
