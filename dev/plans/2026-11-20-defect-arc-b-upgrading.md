@@ -1,7 +1,7 @@
 # Plan: Defect arc B, upgrading
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -254,3 +254,16 @@ Not checked: no code or test run; the new function's name and the `_wrapper_reti
 **Not run**: the selections, the developmental checks, the Linux runs, `test_ast_attest.py` (expected red). C3 to C5 not touched.
 
 **Elapsed**: about 30 minutes (first claim 18:58, last commit about 19:15). **Tokens**: unknown.
+
+## Coordinator verification, chunks C1 and C2 -- Claude Fable 5.2 (Strategy) -- 2026-11-20
+
+C1 and C2 do what their criteria say on the Windows host, and the fix for #99 part 1 is shown end to end. The Linux results so far agree; one Linux run is still to come.
+
+- **Developmental checks, Windows.** C1: a clone made with `core.autocrlf=true` has CRLF in the pinned helper at the starting commit (2,162 pairs). Moved to `68dc7726` it keeps those bytes, and `upgrade --target <clone> --to HEAD --plan` exits 1 with the first text, word for word. After doing what the text says, the same command exits 0. A fresh clone whose first checkout is `68dc7726` has LF bytes that hash to the pin, and Git reports no file modified. C2: a scratch project installed from `v0.7.0` and moved by the starting commit's installer keeps the three keys on 17 lock records, and `run_security_verification.py local` exits 20 with "unrecognized lockfile-record key(s)". Moved by this branch's installer, no record carries them and the verification exits 0; the same from `v0.8.0`. On a copy of the damaged project, `--plan` prints the heal hint; `--heal-layout` prints "Removed layout keys from 17 lock record(s)" and changes only the lock (51 lines); the verification then reports CLEAN; a second heal prints "Nothing to heal."
+- **Tests, Linux subsystem (Python 3.14.4, a development check).** C1's 17-file group: 1 failed and 1,106 passed before; the same 1 failed and 1,110 passed after.
+- **Tests, Windows Server host.** The 17-file group: 103 failed before, 100 after. The 11 ids that differ are all in `tests/integration/test_gauge.py`, which is unstable here: 24, 27 and 27 failures in three runs alone at the starting commit, and 26, 27 and 27 at the tip. The 38-file group for `upgrade.py`: 271 failed before, 280 after; 13 ids failed only after and 4 only before. Rerun alone at the tip, all 13 pass or skip within two runs; three failed once more in the first rerun, while other test runs loaded the machine. None of the 17 is in a test of code this branch changes.
+- **For the reviewers.** In the scratch clone, `upgrade --plan` on Cairn's own tree lists the new root `.gitattributes` as a blocked addition, beside three files that were blocked before.
+
+Not run: the 38-file group in the Linux subsystem (queued; the response will record it). Not run: the 102-file selection, Python 3.13 and `tests/test_ast_attest.py`. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+
+**Elapsed**: 76 minutes from the implementer's record (19:20) to this one, most of it test runs (24 and 23 minutes for the 17-file group, 58 and 61 for the 38-file group). **Tokens**: unknown.
