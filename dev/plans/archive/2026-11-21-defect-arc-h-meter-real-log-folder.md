@@ -1,7 +1,7 @@
 # Plan: Defect arc H, the meter reads a real Claude log folder
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -314,5 +314,28 @@ Security Review:
 2. Finding 2 (the reader's link test is also gone from the read of the Git helper's own source): no change; its SHA-256 check holds it, as the review says.
 
 Not run for this response: any test but the one named above.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation closeout -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+The four faults are fixed, both plan reviews and both code reviews are done with no blocking finding left, and one of the plan's two tests has not run to its end anywhere.
+
+- **(a) and (b).** The walk of a log folder accepts a sub-folder, whatever size it reports, and re-reads it at the end like the folders above it.
+- **(c).** A log with a second name is read once, and only when it also passes the stricter access test. Two names inside the folder are refused as before.
+- **(d).** A Claude reply recorded in several pieces keeps the time of its earliest piece.
+- The Windows-only tests' set-up copies `pulse.py`. Cairn's own lock was refreshed alone in `fb400b49`, and the two meter copies are identical.
+
+The branch merged into `0.9-dev` at `f496f85b` with no conflict. On the merged tree `install/verify_integrity.py --target .` reports OK for 70 files, and `cmp` of the two meter copies prints nothing.
+
+**Strategy's check on the Windows Server machine, with the merged meter: met for the walk, the reader and the dates.** The probes print counts and reason codes only. Over a stretch of one session that held three sub-agent runs, the meter recorded 77 replies, and an independent count of the same bytes found 77 (144 records; 49 replies recorded more than once, each with differing times). Token totals by kind are equal: output 65,271; cache read 19,129,210; cache write 312,630; fresh input 160. All 77 have a known time. The three sub-agent runs are recorded as three transcripts, with no summary left untied and none unclassified. Of the 144 records, 81 carry the side-chain mark `true` and 63 do not. No reply is bound to the project: each carries `project_remote_unavailable`, from the access rights on the `F:` drive, which is the Maintainer's to settle (`dev/PLANNING.md`, "Waiting on you").
+
+Tests. The time test, changed: it failed before the code change and passes after, and passes again with one time written as an offset.
+Not run to its end anywhere: the changed native test and the `hardlink` case. On the Windows Server machine the Windows-only tests stop at their own first refresh, for two reasons that are not this plan's (the direct-checks section above). Five planted cases through the real walk stand in their place here. Home: the certification run on the Windows machine, `dev/PLANNING.md`, the Mac session's jobs.
+Not run: the rest of both test files, and the whole suite. Home: the certification.
+Remaining: `tests/integration/test_meter.py` changed, so its hash line at the Maintainer's signing, already owed. Home: `dev/PLANNING.md`, section 1, "What the one signing will show".
+Remaining: the Mac check of the meter against a real log, with a project it can bind. Home: the Mac session.
+Accepted limits: a reply whose records fall in two refreshes still loses its time; and a second name that another account planted for a file of the user's that it can read but not write is no longer refused (the code-review response).
+Seen: on the Windows Server machine an app-capability identifier holds full control of `AppData`, so the meter refuses any path under it; and from a clean temp path the Windows-only tests answer `git_parser_failed`, cause not found. Home: `dev/PLANNING.md`, section 1, "The meter still does not run on the Windows Server machine".
 
 **Elapsed**: unknown. **Tokens**: unknown.
