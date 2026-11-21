@@ -135,8 +135,12 @@ runs cost machine time, not tokens, and are listed separately.
 | Arc G, the meter runs for a Windows administrator | code review, usual | Medium | 76,053 | 1 | accept; one note, no change asked |
 | | code review, Security | High | 78,479 | 1 | accept; no finding |
 | Strip test pressure | read of the whole diff | Medium | 124,007 | 2 | accept; two wording notes |
+| Strip test pressure | Security read of the changed review rules | High | 108,834 | 2 | revise: two blocking, both fixed in its words |
+| Arc H, the meter reads a real Claude log folder | plan, by the plan's agent | Medium | 127,139 | 3 | awaiting plan review; found the Windows-only tests fail in their set-up |
+| | plan review, usual | Medium | 145,226 | 4 | revise: three blocking |
+| | plan review, Security | High | 97,922 | 3 | revise: one blocking |
 
-Total for the day so far: 16,083,853 tokens across 111 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 16,562,974 tokens across 115 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -201,7 +205,7 @@ Measured:
   Strategy put every design decision in the brief, so the author did no
   design, and Strategy folded the reviews itself, so no agent was resumed or
   spawned for that. Two against two is a small sample.
-- **Fifty-five review passes so far.** Two were further passes that a design change required: one
+- **Fifty-eight review passes so far.** Two were further passes that a design change required: one
   by the Maintainer, and one to close a Security finding with a simpler rule. No pass has yet had to come back to check a fix.
 - **Replies of five lines work.** From 2026-11-21 each agent writes its full account into
   the plan or proposal and answers the coordinating session in a fixed form of five or six
