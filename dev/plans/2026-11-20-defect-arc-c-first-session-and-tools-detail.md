@@ -2,9 +2,6 @@
 
 This file is part of `dev/plans/2026-11-20-defect-arc-c-first-session-and-tools.md`. It exists because the plan must leave no design to a low-tier implementer, and the exact texts would push the plan far over its word target. Line numbers are at `02f92d37`; find each site by the function name and text given, not by the number alone. Where a shipped file has a twin, edit both and compare with `cmp` afterwards.
 
-Proposed paths:
-- `tests/test_meter_usage_free_records.py`
-
 ## D1. README (C1)
 
 File pair: `templates/skills/_lib/session.py` and `dev/tools/session.py` (byte copies; edit one, copy it over the other).

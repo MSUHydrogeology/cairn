@@ -1,7 +1,7 @@
 # Plan: Defect arc C, first session and tools
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -19,11 +19,7 @@ The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defec
 
 **Result.** A first session on a fresh Windows install shows true orientation text, and the two tools do what their issues ask without widening any check.
 
-Proposed paths:
-- `tests/test_session_first_session.py`
-- `tests/test_intent_precommit_classify.py`
-- `tests/test_meter_usage_free_records.py`
-- `tests/test_security_audit_threshold.py`
+New test files, all of which now exist: `tests/test_session_first_session.py`, `tests/test_intent_precommit_classify.py`, `tests/test_meter_usage_free_records.py` and `tests/test_security_audit_threshold.py`.
 
 | Item | Chunk | Entry point |
 |---|---|---|
@@ -262,3 +258,21 @@ Not checked: no code or test run; no Bandit run; whether `pulse.py` B314 is the 
 **Not run**: the real-log check (the coordinator's), the Linux subsystem, any whole selection, pip-audit, and the real-Bandit case.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Coordinator record, chunks C1 and C2, and verification of all five -- Claude Fable 5.2 (Strategy) -- 2026-11-20
+
+All five chunks are built. One developmental criterion is not met and waits on the Maintainer (C3, below). No test fails only after the change, on either host, once unstable tests are rerun alone.
+
+**C1 and C2.** Their implementer (Claude Haiku 5.5) stopped before writing a record; this is from its report and the commits. C1, `703c1655`: the README skip, `encode_display_path` at twelve sites (twelve uses and the definition, by text search), `_gitignore_covers`, the handoff text and the `session.py` comment; twins identical (`cmp`). Of its eight new nodes, five failed before the fix and all pass after. C2 was written and tested by the implementer and committed by Strategy at `c68cc6be`, after checking the diff against Detail D5 and D8; the new node failed before with "looks non-executable" and passes after. Strategy read the handoff refusal in bash and in PowerShell in a scratch clone: exit 1 with Detail's text in both, both command forms it gives run, and with the variable set the gate opens.
+
+**C3, criterion not met.** The count-only check on this machine's log (17 record types; structure and counts only; the script is deleted) still reports `unsupported_record` after C3. The 12 usage-free types that are not on the reader's list (6,761 records) no longer raise it. One type does: 60 of 522 `attachment` records carry a `usage` value, a finished sub-agent's total tokens, tool count and duration. Detail D6 says to stop and report this and not to narrow the rule. It is reported to the Maintainer. Home: `dev/PLANNING.md` on `0.9-dev`, "Waiting on you" and section 1, "The rest of #96".
+
+**Tests, Windows Server host**, each group before (`ecc1a913`) and after, compared by id and message. C1's guarding files: the same 67 failures, 8 more passes. C2's group: 162 failed before, 161 after; 4 ids failed only after and 5 only before, in two test files this host runs unstably, and all 4 pass alone at the tip and at the start. C3: 105 before, 104 after, none new. C4: 5 and 4, none new. C5: 129 and 128, none new.
+
+**Tests, Linux subsystem (Python 3.14.4, a development check).** C1's files: 327 passed before and 334 after, no failure. C2's group: 1 failed and 2,063 passed before. The first run after the change tested an uncommitted copy of the tree, and ten gate-manifest tests that compare the tree with Git failed there; all ten pass on Windows in the committed tree. The Linux groups for C2 to C5 are being rerun at exact commits, and the response records them.
+
+Also fixed in this commit and the one before it: the plan's and Detail's `Proposed paths` lines, now that the files exist, and the changelog's Fixed line, which left out C2 (`CHANGELOG.md`).
+
+Not run: the real-Bandit case (Bandit is on neither host); the 42-file selection for C1; Python 3.13 and the canonical runtime. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+
+**Elapsed**: 2 hours 35 minutes from the first implementer's start (18:58) to this record, by the host clock. **Tokens**: unknown.
