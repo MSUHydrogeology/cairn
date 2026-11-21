@@ -86,7 +86,7 @@ fold-back using `dev/upstream/foldback.md` and follow its publication protocol.
 ## The three lanes
 
 1. **Trivial** -- an eligible typo or repair. Make the change and any
-   needed test in one commit, with no proposal or code review.
+   test it needs, where no existing test covers it, in one commit, with no proposal or code review.
 2. **Light proposal** -- a proposal is reviewed and decided before work.
    The accepted proposal also holds implementation and final verification,
    including for multiple chunks; it has no plan.
@@ -103,8 +103,8 @@ commit.
 
 Suppose your README says "scientifc" where it means "scientific".
 
-The agent corrects the word and runs the applicable prose checks and final
-integration selection before recording the result. A README typo has no
+The agent corrects the word and runs the applicable prose checks before
+recording the result. A README typo has no
 behavioral test by itself; prose checks still apply.
 
 That is all: no proposal, no plan, no review, no archive. A change that
