@@ -138,7 +138,7 @@ Measured:
   spawned for that. Two against two is a small sample.
 - **Thirty-two review passes so far, and still no return visit.**
 - **The final code review of plan B earned its cost.** Two passes, 355,721
-  tokens and 18 minutes, found two defects that five test groups on two hosts
+  tokens and 18 minutes, found two defects that four test groups on two hosts
   and the end-to-end checks had not: a restored wrapper that was never picked
   up again, and a setting name printed raw from the lock. Each came with the
   code that fixes it and a test that fails without it.
