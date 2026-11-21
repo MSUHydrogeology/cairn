@@ -212,11 +212,6 @@ ALLOWLIST: dict[tuple[str, str], str] = {
         "matches its explicit caller pin, without reopening, linked-path "
         "components, bytecode or module-cache reuse; this helper API does not "
         "authenticate the caller-supplied pin.",
-    ("templates/skills/_lib/meter.py", "B102"):
-        "`_verified_git_helper` executes only raw helper bytes from the fixed "
-        "source/tools layout after the literal `SAFE_GIT_SOURCE_SHA256` pin "
-        "matches; descriptor-relative or verified NTFS reading precedes "
-        "execution, never target code.",
     ("templates/skills/_lib/pulse.py", "B314"):
         "`_parse_pulse_report` parses only bounded UTF-8 text after rejecting "
         "NUL, non-UTF-8 declarations, DOCTYPE and ENTITY; the input checks "
