@@ -4,85 +4,90 @@ This file is part of `dev/plans/2026-11-20-defect-arc-e-documentation-plan-moves
 
 Proposed paths:
 - `dev/DOCUMENTATION_PLAN.md`
-- `tests/test_upgrade_documentation_plan_move.py`
+- `tests/test_upgrade_documentation_plan_moved.py`
 
-Installer code was read in the Git worktree for plan B (branch `arc-b-impl`, commit `029532a0`). Line numbers below are from that commit and are guides; the function names are the contract.
+The installer code is merged into `0.9-dev` and was read in the main checkout on 2026-11-21 (HEAD `3fb798f5`; the installer files last changed in `029532a0`, the commit the plan first cited). Line numbers are guides; the function names are the contract.
 
 ## D1. Names used by the command
 
-In `install/_scaffold/upgrade.py`, next to `_LAYOUT_LOCK_KEYS`, add three module constants:
+In `install/_scaffold/upgrade.py`, next to `_LAYOUT_LOCK_KEYS`, add module constants:
 
 - `_DOCPLAN_SRC = "modules/default-on/documentation_plan_template.md"` (the lock's `src` for the record).
 - `_DOCPLAN_OLD = "docs/DOCUMENTATION_PLAN.md"`.
 - `_DOCPLAN_NEW = "dev/DOCUMENTATION_PLAN.md"`.
+- `_DOCPLAN_STEPS`, the three step lines below, exactly. The report line (D3), message M6 and the tests use this one constant; `install/UPGRADE.md` carries the same three lines (checked by a test, D5).
 
-No name from the lockfile, the project tree or the command line is ever used as a path to write. Only these two constants are. The record's `base_cache`, `base_hash`, `hash` and every other key stay exactly as they are; only `dst` changes. The saved ancestor file stays where it is (the lock names its path, so nothing else needs to move, and moving it would add a second write to a sequence that is safe because it has only three).
+```
+  1. git mv docs/DOCUMENTATION_PLAN.md dev/DOCUMENTATION_PLAN.md
+  2. python install/scaffold.py upgrade --target <repo> --documentation-plan-moved
+  3. git add dev/.cairn/cairn-lock.yml, then git commit
+```
 
-## D2. The command `upgrade --move-documentation-plan`
+`<repo>` is the project folder, as in the other upgrade lines; `install/UPGRADE.md` says so. Nothing from the lockfile, the tree or the command line is used as a path to write: the command writes only the lockfile, through `_commit_lock_and_caches`. Only `dst` changes. `base_cache`, `base_hash`, `hash` and every other key stay; the saved ancestor stays where it is.
 
-New function `_cmd_move_documentation_plan(target, templates_root, lock, force) -> int` in `install/_scaffold/upgrade.py`. It is built from plan B's own pieces: `_writeset_dirty_collisions`, `_cannot_tell_refusal`, `_commit_lock_and_caches`, `_stage_exclusive`, `_read_regular_bytes`, `_assert_safe_write`, `_remove_unchanged_file`, `_legacy_layout_paths`. `os` and `stat` are already imported there. Steps, in this order; the first that applies decides:
+## D2. The command `upgrade --documentation-plan-moved`
 
-1. **Find the record.** `recs = [r for r in lock.get("files") or [] if isinstance(r, dict) and r.get("src") == _DOCPLAN_SRC]`.
+New function `_cmd_documentation_plan_moved(target, templates_root, lock, force) -> int` in `install/_scaffold/upgrade.py`. It is built from plan B's pieces: `_writeset_dirty_collisions`, `_cannot_tell_refusal`, `_commit_lock_and_caches`, `_read_regular_bytes`, `_assert_safe_write`, `_legacy_layout_paths`, `_sha256_hex`. It calls nothing that creates, moves or removes a file or folder. Steps, in this order; the first that applies decides:
+
+1. **Find the record.** `recs = [r for r in lock.get("files") or [] if isinstance(r, dict) and r.get("src") == _DOCPLAN_SRC]` (read `files` only when it is a list).
    - 0 records: print M1, return 0.
    - more than 1: print M2 to stderr, return 1.
    - the one record `rec`: if `rec.get("dst") not in (_DOCPLAN_OLD, _DOCPLAN_NEW)` or `rec.get("verbatim")` is truthy: print M3 to stderr, return 1.
-2. **Layout still ahead (only when `rec["dst"] == _DOCPLAN_OLD`).** `ahead = _legacy_layout_paths(target, templates_root)`. If it is not empty: print M4 with `{n}` = `len(ahead)` to stderr, return 1. (A project that came from 0.7 has the whole 0.8 move ahead, so this refuses; once that move is finished the list is empty.)
-3. **Read both places.** For each of `target / _DOCPLAN_OLD` and `target / _DOCPLAN_NEW`: `_assert_safe_write(path, target)`, then `data = _read_regular_bytes(path, single_link=True)` (`None` when absent). Any link, folder, special file, or file with more than one hard link raises `ScaffoldSecurityError`; the caller prints the containment line (M10, exit 2) and nothing has been written. Name the results `old` and `new` (`bytes | None`).
-4. **If `rec["dst"] == _DOCPLAN_NEW` (already recorded):**
-   - `old is not None and new is not None and old == new`: `_remove_unchanged_file(target / _DOCPLAN_OLD, target, old, durable=True)`; if it returns true print M9 and return 0; if false print M8 to stderr and return 1.
-   - `old is not None` otherwise: print M7, return 0.
-   - else: print M6, return 0.
-5. **Record is at the old place.**
-   - `old is None and new is None`: print M5 to stderr, return 1.
-   - `old is not None and new is not None and old != new`: print M11 to stderr, return 1.
-6. **Unsaved edits in the lockfile (skipped by `--force`).** `dirty = _writeset_dirty_collisions(target, [_LOCKFILE_REL])`. `_EditCheckCannotTell`: print `_cannot_tell_refusal("--move-documentation-plan", exc.reason)` to stderr, return 1. If `dirty`: print M12 to stderr, return 1. The old file is not checked: its bytes are carried unchanged.
-7. **Write.** In this order; a stop between two steps leaves a state the next run finishes (step 4 or step 5 with equal bytes):
-   - (a) only when `new is None` (the move proper): `tmp = _stage_exclusive(target / _DOCPLAN_NEW, old, target)`; `os.chmod(tmp, stat.S_IMODE(os.lstat(target / _DOCPLAN_OLD).st_mode))`; in a `try`: `os.link(tmp, target / _DOCPLAN_NEW)`, catching `FileExistsError` and raising `ScaffoldSecurityError("a file appeared at the new place while the move ran")`; in the `finally`: `tmp.unlink(missing_ok=True)`. `os.link` fails when the name exists, so an adopter's file can never be overwritten, even if one appears after step 3.
-   - (b) `rec["dst"] = _DOCPLAN_NEW`; `_commit_lock_and_caches(target, lock, [])`.
-   - (c) only when `old is not None`: `_remove_unchanged_file(target / _DOCPLAN_OLD, target, old, durable=True)`. False: print M8 to stderr, return 1. That function removes a folder only if the removal leaves it empty, that one folder and none above it; so `docs/` stays when it holds anything else, and is removed when this file was all it held.
-   - (d) print: M13 when (a) ran; M14 when (a) did not run and `old is not None`; M15 when `old is None`. Return 0.
+2. **Layout still ahead (only when `rec["dst"] == _DOCPLAN_OLD`).** `ahead = _legacy_layout_paths(target, templates_root)`. If not empty: print M4 with `{n}` = `len(ahead)` to stderr, return 1. (A project from 0.7 has the whole 0.8 move ahead; once finished the list is empty.)
+3. **Read both places.** For `target / _DOCPLAN_NEW` then `target / _DOCPLAN_OLD`: `_assert_safe_write(path, target)`, then `data = _read_regular_bytes(path)` (`None` when absent). A link, folder, special file or link above raises `ScaffoldSecurityError`; the caller prints M9 (exit 2) and nothing has been written. Name the results `new` and `old` (`bytes | None`). `single_link` is not set: the command only reads, and a second hard link changes no outcome. Both files are read whole, with no size limit, as every upgrade read (a residual the plan names).
+4. **Recorded at the new place (`rec["dst"] == _DOCPLAN_NEW`).** Print M8 (with its second sentence when `old is not None`), return 0. Write nothing.
+5. **Recorded at the old place.**
+   - `new is None and old is None`: M5, return 1.
+   - `new is None` (old only): M6, return 1.
+   - `new is not None and old is not None`: M7, return 1.
+   - `new is not None and old is None`: continue.
+6. **Unsaved edits in the lockfile (skipped by `--force`).** `dirty = _writeset_dirty_collisions(target, [_LOCKFILE_REL])`. `_EditCheckCannotTell`: print `_cannot_tell_refusal("--documentation-plan-moved", exc.reason)` to stderr, return 1. If `dirty`: print M10 to stderr, return 1.
+7. **Record.** `matches = ("sha256:" + _sha256_hex(new) == rec.get("hash"))`; `rec["dst"] = _DOCPLAN_NEW`; `_commit_lock_and_caches(target, lock, [])`; print M11 when `matches`, else M12; return 0.
 
-Dispatch in `cmd_upgrade`: a `--to` given is refused with M16 (exit 2), exactly as `--heal-layout` refuses it. `ScaffoldSecurityError` is caught and printed as M10 (exit 2).
+Dispatch in `cmd_upgrade`, right after the `--heal-layout` block: a `--to` given is refused with M13 (exit 2), as `--heal-layout` refuses it; `ScaffoldSecurityError` is caught and printed as M9 (exit 2). Exits: 0 for M1, M8, M11, M12; 1 for M2 to M7 and M10; 2 for M9 and M13.
 
-### Messages and exit codes
+### Messages
 
-`LINKS` is the single line `Links in your own files are not changed: search them for docs/DOCUMENTATION_PLAN.md and point each at dev/DOCUMENTATION_PLAN.md.`
+`LINKS` is the single line `Links in your own files are not changed: search them for docs/DOCUMENTATION_PLAN.md and point each at dev/DOCUMENTATION_PLAN.md.` `STEPS` is the three lines of D1.
 
 | Id | Case | Text | Exit |
 |---|---|---|---|
-| M1 | no record (module not installed) | `Nothing to move: the lockfile has no record of the documentation plan.` | 0 |
-| M2 | record twice | `error: upgrade --move-documentation-plan refused: the lockfile records the documentation plan more than once. Nothing was changed.` | 1 |
-| M3 | record not movable | `error: upgrade --move-documentation-plan refused: the lockfile's record of the documentation plan is not one this command moves (it names another place, or is marked verbatim). Nothing was changed.` | 1 |
-| M4 | 0.8 layout move still ahead | `error: upgrade --move-documentation-plan refused: this project still has the 0.8 layout migration ahead of it ({n} file(s) at their old paths). Finish it first (run upgrade --plan and follow it), then run this again. Nothing was changed.` | 1 |
-| M5 | file missing from both places | `error: upgrade --move-documentation-plan refused: neither docs/DOCUMENTATION_PLAN.md nor dev/DOCUMENTATION_PLAN.md exists. Nothing was changed. Restore the file from Git, then run this again.` | 1 |
-| M6 | recorded at new, nothing to do | `Nothing to move: the lockfile already records dev/DOCUMENTATION_PLAN.md.` | 0 |
-| M7 | recorded at new, an old file is also there and differs, or new is missing | M6 text, then ` A file is also at docs/DOCUMENTATION_PLAN.md and was left alone.` (one line) | 0 |
-| M8 | old file changed while the move ran, kept | `error: upgrade --move-documentation-plan: dev/DOCUMENTATION_PLAN.md and the lockfile are in place, but docs/DOCUMENTATION_PLAN.md changed while the move ran and was kept. Compare the two files and delete the one you do not want.` | 1 |
-| M9 | leftover old copy removed | `Removed the leftover copy docs/DOCUMENTATION_PLAN.md; dev/DOCUMENTATION_PLAN.md holds the same bytes. Commit both paths.` | 0 |
-| M10 | link, folder, special file, hard link, or other containment refusal | `error: upgrade --move-documentation-plan refused (containment): {exc}` | 2 |
-| M11 | a different file already at the new place | `error: upgrade --move-documentation-plan refused: dev/DOCUMENTATION_PLAN.md already exists and differs from docs/DOCUMENTATION_PLAN.md. Nothing was changed. Keep the copy you want at dev/DOCUMENTATION_PLAN.md and delete the other, then run this again.` | 1 |
-| M12 | lockfile has unsaved edits | `error: refusing --move-documentation-plan: the lockfile has unsaved edits; commit them or pass --force` | 1 |
-| M13 | moved | `Moved docs/DOCUMENTATION_PLAN.md to dev/DOCUMENTATION_PLAN.md. Commit both paths and dev/.cairn/cairn-lock.yml.` then `LINKS` | 0 |
-| M14 | finished an interrupted move | `Finished the move of docs/DOCUMENTATION_PLAN.md to dev/DOCUMENTATION_PLAN.md. Commit both paths and dev/.cairn/cairn-lock.yml.` then `LINKS` | 0 |
-| M15 | adopter already moved it by hand | `Recorded dev/DOCUMENTATION_PLAN.md as the documentation plan; docs/DOCUMENTATION_PLAN.md was already gone. Commit dev/.cairn/cairn-lock.yml. If you edited the file, run upgrade --finalize dev/DOCUMENTATION_PLAN.md.` then `LINKS` | 0 |
-| M16 | `--to` given | `error: --move-documentation-plan runs against the running target tree; --to is not supported (run scaffold from the target tree).` | 2 |
+| M1 | no record (module not installed) | `Nothing to record: the lockfile has no record of the documentation plan.` | 0 |
+| M2 | record twice | `error: upgrade --documentation-plan-moved refused: the lockfile records the documentation plan more than once. Nothing was changed.` | 1 |
+| M3 | record not usable | `error: upgrade --documentation-plan-moved refused: the lockfile's record of the documentation plan is not one this command records (it names another place, or is marked verbatim). Nothing was changed.` | 1 |
+| M4 | 0.8 layout move still ahead | `error: upgrade --documentation-plan-moved refused: this project still has the 0.8 layout migration ahead of it ({n} file(s) at their old paths). Finish it first (run upgrade --plan and follow it), then run the three steps. Nothing was changed.` | 1 |
+| M5 | missing from both places | `error: upgrade --documentation-plan-moved refused: the documentation plan is at neither docs/DOCUMENTATION_PLAN.md nor dev/DOCUMENTATION_PLAN.md. Nothing was changed. Restore it with Git, then run these steps in order:` then `STEPS` | 1 |
+| M6 | still at the old place only | `error: upgrade --documentation-plan-moved refused: the file is still at docs/DOCUMENTATION_PLAN.md. This command records a move you make with Git; it does not make it. Nothing was changed. Run these steps in order:` then `STEPS` | 1 |
+| M7 | a file at both places | `error: upgrade --documentation-plan-moved refused: a file is at both docs/DOCUMENTATION_PLAN.md and dev/DOCUMENTATION_PLAN.md. Nothing was changed. Keep one: compare them, delete the one you do not want (git rm -f <that path>), and make sure the one you keep is at dev/DOCUMENTATION_PLAN.md. Then run step 2 again.` | 1 |
+| M8 | already recorded at the new place | `Nothing to record: the lockfile already records dev/DOCUMENTATION_PLAN.md.` and, when a file is also at the old place, ` A file is also at docs/DOCUMENTATION_PLAN.md and was left alone.` | 0 |
+| M9 | link, folder, special file or other containment refusal | `error: upgrade --documentation-plan-moved refused (containment): {exc}` | 2 |
+| M10 | lockfile has unsaved edits | `error: refusing --documentation-plan-moved: the lockfile has unsaved edits; commit them or pass --force` | 1 |
+| M11 | recorded, bytes match the record's hash | `Recorded dev/DOCUMENTATION_PLAN.md as the documentation plan. Now do step 3: git add dev/.cairn/cairn-lock.yml, then git commit.` then `LINKS` | 0 |
+| M12 | recorded, bytes differ from the record's hash | the M11 first sentence, then ` The file differs from the version the lockfile recorded, because it was edited. Run python install/scaffold.py upgrade --target <repo> --finalize dev/DOCUMENTATION_PLAN.md, then do step 3.` then `LINKS` | 0 |
+| M13 | `--to` given | `error: --documentation-plan-moved runs against the running target tree; --to is not supported (run scaffold from the target tree).` | 2 |
 
-A second run after M13, M14 or M15 prints M6, exit 0, and writes nothing. In M10 the text of `exc` names only the constant paths and folders above them (`docs`, `dev`); it never names a path from the lockfile.
+A second run after M11 or M12 prints M8, exit 0, and writes nothing. In M9, `{exc}` is the installer's own guard text. On Windows a folder junction is caught only by the guard's last check, whose text can name where the junction leads; no control character can reach it. The plan accepts this residual.
 
-## D3. Wiring and the plan line
+## D3. Wiring and the report line
 
 Mirror plan B's `--heal-layout`, point by point:
 
-1. `p.add_argument("--move-documentation-plan", action="store_true", help="Move docs/DOCUMENTATION_PLAN.md to dev/DOCUMENTATION_PLAN.md and record the new place in the lockfile. Commit both afterwards.")`.
-2. Add `("--move-documentation-plan", args.move_documentation_plan)` to the `actions` list.
-3. Add `args.move_documentation_plan` to both `any(...)` tuples in `_layout_command` (`mutable`, and the `return None` list) and to the profile-link refusal condition in `cmd_upgrade`.
-4. Dispatch right after the `--heal-layout` block: `--to` gives M16; else `_cmd_move_documentation_plan(target, templates_root, lock, args.force)`.
+1. `p.add_argument("--documentation-plan-moved", action="store_true", help="Record that you moved docs/DOCUMENTATION_PLAN.md to dev/DOCUMENTATION_PLAN.md with git mv. Changes only the lockfile.")`.
+2. Add `("--documentation-plan-moved", args.documentation_plan_moved)` to the `actions` list.
+3. Add `args.documentation_plan_moved` to both `any(...)` tuples in `_layout_command` and to the profile-link refusal condition in `cmd_upgrade`.
+4. Dispatch as in D2.
 
-New helper `_documentation_plan_move_lines(target) -> list[str]`: reads the lock with `read_lockfile(target)`; returns `[]` on any `OSError`, `ScaffoldSecurityError`, `ValueError` or when the lock is missing. Otherwise, when exactly one record has `src == _DOCPLAN_SRC`, its `dst == _DOCPLAN_OLD`, and `os.path.lexists(target / _DOCPLAN_OLD)` or `os.path.lexists(target / _DOCPLAN_NEW)` is true, it returns this one line: `The documentation plan moved to dev/ in 0.9. Run python install/scaffold.py upgrade --target <repo> --move-documentation-plan to move docs/DOCUMENTATION_PLAN.md to dev/DOCUMENTATION_PLAN.md. Links in your own files are not changed.` The helper writes nothing and never raises.
+New helper `_documentation_plan_move_lines(target) -> list[str]`. It never raises, whatever the lock holds. It reads the lock with `read_lockfile(target)`; returns `[]` on any `OSError`, `ScaffoldSecurityError` or `ValueError`, or when the lock is missing. It reads `files` only when it is a list and skips any record that is not an object, as D2 step 1 does. When exactly one record has `src == _DOCPLAN_SRC` and its `dst == _DOCPLAN_OLD`, it returns these lines, and otherwise `[]`:
 
-Print that line: (a) at the end of the plain `--plan` report, after the heal line; (b) after a successful `--apply`, after the model-selection lines. A project with the 0.8 layout move still ahead gets the layout plan first (`_layout_command` returns before the ordinary report), so it sees this line only after that move is finished. `--stage` prints nothing new.
+```
+The documentation plan moves to dev/ in 0.9. To move it, run these steps in order:
+<STEPS, three lines>
+Links in your own files are not changed: search them for docs/DOCUMENTATION_PLAN.md and point each at dev/DOCUMENTATION_PLAN.md.
+```
 
-Everything else in `_compute_upgrade`, `_apply_upgrade`, `_write_stage`, `_layout_plan`, `LAYOUT_INSTALLS`, `_LAYOUT_MOVES` and `verify_integrity.py` stays unchanged. The ordinary upgrade merges the template into whichever place the lock records, so the order of the move and an ordinary `--apply` does not matter.
+The helper writes nothing. Print the lines (a) at the end of the plain `--plan` report, after the heal line; (b) after a successful `--apply`, after the model-selection lines. A project with the 0.8 layout move still ahead gets the layout plan first (`_layout_command` returns before the ordinary report), so it sees the lines only after that move is finished. `--stage` prints nothing new.
+
+Everything else in `_compute_upgrade`, `_apply_upgrade`, `_write_stage`, `_layout_plan`, `LAYOUT_INSTALLS`, `_LAYOUT_MOVES` and `verify_integrity.py` stays unchanged. The ordinary upgrade merges the template into whichever place the lock records, so the order of the ordinary upgrade and this command does not matter (tested, D5).
 
 ## D4. Shipped-text edits (chunk C1)
 
@@ -98,11 +103,11 @@ Exact replacement for the placement paragraph in the forkable (the six lines sta
 
 ```
   * **This file** (`dev/DOCUMENTATION_PLAN.md`) governs
-    documentation placement and lives in `dev/`.  It is an
-    operating map for the people and agents who write the
-    project's documents, so it lives with the project's other
-    operating files, and `docs/` holds only what describes the
-    software.
+    documentation placement and lives in `dev/`.  Where documents
+    go is an operating question for the people and agents who write
+    them, so this file's domain is the project's operating files
+    and the rule above holds: it lives with them, and `docs/` holds
+    only what describes the software.
 ```
 
 The `this file in docs/` phrase becomes `this file in dev/`. Leave the test-plan entries in that list as they are.
@@ -114,33 +119,33 @@ Edited, all by exact replacement:
 - `tests/test_documentation_plan_module.py`: `FORKABLE_DST` and its docstring lines name `dev/DOCUMENTATION_PLAN.md`; the "at the docs root" wording in the opening docstring says "under dev/". Ordinary test file.
 - `tests/test_default_security_stance.py` (protected): the one sentinel `"documentation-plan": "dev/DOCUMENTATION_PLAN.md"`.
 - `tests/integration/test_link_check_exclusions.py` (ordinary): the two assertions (target string and the message text) name `dev/DOCUMENTATION_PLAN.md`.
-- `tests/test_upgrade_refuses_hostile_project_data.py` (protected), `test_init_lock_refuses_a_mapped_file_below_a_linked_parent`: after the move `docs/` may not exist in the installed test project, so the test uses a folder that does: `world.project / "dev" / "modules"` replaces `world.project / "docs"` (three lines: `rmtree`, the outside folder's file name `documentation-plan.md` replaces `DOCUMENTATION_PLAN.md`, and `link`), and the two assertions name `dev/modules/documentation-plan.md`. If the test then fails for any reason other than these names, stop and report: do not widen it. Other tests in that file create their own `docs` subfolders and are not edited.
+- `tests/test_upgrade_refuses_hostile_project_data.py` (protected), `test_init_lock_refuses_a_mapped_file_below_a_linked_parent`: after the move `docs/` may not exist in the installed test project, so the test uses a folder that does: `world.project / "dev" / "modules"` replaces `world.project / "docs"` (three lines: `rmtree`, the outside folder's file, and `link`). The two assertions name the `README.md` inside the installed `dev/modules` folder (written with that folder's name in front), not `documentation-plan.md`, and the file the outside folder holds is `README.md`. Reason: the refusal names the first mapped path below the link in destination order, and that `README.md` sorts first. If the test then fails for any reason other than these names, stop and report: do not widen it. Other tests in that file create their own `docs` subfolders and are not edited.
 
-New file `tests/test_upgrade_documentation_plan_move.py` (tier: `workflow`, pattern `test_upgrade_documentation_plan_move`). One fixture installs a small project with `scaffold.main`, then makes it look like a 0.8 install: it moves `dev/DOCUMENTATION_PLAN.md` to `docs/DOCUMENTATION_PLAN.md` and sets the lock record's `dst` to the old path (helpers as in plan B's retire-wrapper test file: `_install`, `_upgrade`, `_lock`, `_write_lock`). All tests call `scaffold.main(["upgrade", ...])` and read the exit code and captured output. One test per row; the control is what each refusal's test pins:
+New file `tests/test_upgrade_documentation_plan_moved.py` (tier: `workflow`, pattern `test_upgrade_documentation_plan_moved`). One fixture installs a small project with `scaffold.main` and makes it look like a 0.8 install: it moves `dev/DOCUMENTATION_PLAN.md` to `docs/DOCUMENTATION_PLAN.md`, sets the lock record's `dst` to the old path, sets the record's `base_cache` to `dev/.cairn/base/docs/DOCUMENTATION_PLAN.md` and moves the cache file there (helpers as in plan B's retire-wrapper test file: `_install`, `_upgrade`, `_lock`, `_write_lock`). The owner's `git mv` is simulated by `os.replace` of the file to `dev/` (a Git repo is made only in the unsaved-edits test). All tests call `scaffold.main(["upgrade", ...])` and read the exit code and captured output. One test per row; the control is what the test pins, so the test fails if that behaviour is removed.
 
-| Test | Setup | Expect (id, exit) | Control: fails if removed |
+| Test | Setup | Expect (id, exit) | Control |
 |---|---|---|---|
-| moves an edited file | write extra bytes into the old file | M13, 0; new file equals the edited bytes; old gone; record `dst` new, `hash`, `base_hash`, `base_cache` unchanged; nothing else in the tree changed | the byte-for-byte move |
-| second run | run twice | M6, 0, tree unchanged | idempotence |
-| plan line | `--plan` before the move | line in D3, tree unchanged; after the move the line is gone | the plan line |
-| different file at new place | write other bytes at new | M11, 1, both files and lock unchanged | the no-overwrite refusal |
-| same bytes at new place | copy old to new | M14, 0, old gone | the resume |
+| records a moved file | move the file; snapshot the tree | M11, 0; record `dst` new, every other key unchanged; the lock is the only file that changed (byte-compare every other file) | the one-field write; no other write |
+| records an edited file | append bytes, then move | M12, 0; file bytes untouched; record `hash` unchanged; `verify_integrity` fails until `--finalize dev/DOCUMENTATION_PLAN.md`, then passes | the hash comparison; a planted file is caught |
+| second run | record, then run again | M8, 0, tree unchanged | idempotence |
+| still at the old place | no move | M6, 1; tree and lock unchanged; the output holds the three `STEPS` lines | the refusal; the steps text |
+| a file at both places | copy to `dev/` and keep `docs/` | M7, 1, both files and lock unchanged | the refusal |
 | missing from both | delete both | M5, 1 | the missing-file refusal |
-| moved by hand | delete old only (new exists) | M15, 0, record `dst` new | the record-only route |
-| already recorded, leftover | record at new, old copy equal | M9, 0 | the tidy route |
-| link at old or new, or `docs` or `dev` a link | `os.symlink`; skip if links are unavailable | M10, 2, nothing outside changed | the guard calls |
-| hard link at old | `os.link` the old file | M10, 2 | `single_link=True` |
-| other files in `docs/` | add another file in `docs/` | M13, 0, that file kept | the folder rule |
-| `docs/` held only this file | default | M13, 0, `docs/` gone | the empty-folder rule |
-| lock unsaved edits | in a Git repo, commit, edit the lock | M12, 1; with `--force` M13 | the dirty refusal |
-| 0.8 layout ahead | add a legacy-path record (use the fixture in `tests/test_upgrade_layout_migration.py`) | M4, 1, nothing changed | the layout refusal |
-| two records or a verbatim record | edit the lock | M2 or M3, 1 | the record checks |
+| recorded, old copy left | record at new, a file also at `docs/` | M8 with its second sentence, 0; `docs/` file kept | nothing is removed |
+| link, folder or special file at new or old, or `docs` or `dev` a link | folder at either place always; `os.symlink` cases skip if links are unavailable | M9, 2; nothing outside changed; lock unchanged | the guard calls |
+| unsaved lockfile edits | in a Git repo, commit, edit the lock, move the file | M10, 1; with `--force` M11 | the dirty refusal |
+| 0.8 layout ahead | add a lock record `{"src": "core/x.md", "dst": <old path of the first row of upgrade._LAYOUT_MOVES>, "verbatim": True, "hash": "sha256:" + "0" * 64}` | M4, 1, nothing changed | the layout refusal |
+| two records, or a verbatim record | edit the lock | M2 or M3, 1 | the record checks |
 | no record | module removed from the lock | M1, 0 | the no-op |
-| `--to HEAD` | | M16, 2 | the refusal |
-| verification after | after a move, `verify_integrity` and `run_security_verification.py local` pass | exit 0 | records still judged |
-| ordinary upgrade after | `--stage` then `--apply` after a move | merges at the new place, exit 0 | order does not matter |
+| `--to HEAD` | | M13, 2 | the refusal |
+| the report line | `--plan` before the move; after `--apply`; after the move | `STEPS` and `LINKS` lines printed before, gone after | the report line |
+| the report line never raises | lock with `files` a string; with a non-object record; with a bad lock | `--plan` or the helper gives no line and no traceback | the helper's guards |
+| one wording | read the report line, M6 and `install/UPGRADE.md` | the three `STEPS` lines are identical in all three | the clear-instructions criterion |
+| upgrade first, then record | cut the last line from the cache file and the project file, set `base_hash` to the new cache's hash, commit, run `--stage` and `--apply`, commit; then move and run the command | after `--apply` the template's last line is in the file at `docs/` and nothing at `dev/`; then M11 and `dev/DOCUMENTATION_PLAN.md` holds those bytes | a real template change merges before the move |
+| record first, then upgrade | same setup; move and run the command first, then `--stage` and `--apply` | the template's last line is in `dev/DOCUMENTATION_PLAN.md`, nothing at `docs/` | the merge follows the lock's `dst` |
+| verification after | after a record, `verify_integrity` and `run_security_verification.py local` | exit 0 | records still judged |
 
-Edit-tests are permanent promise tests through the public command; there are no developmental probes. Add `test_upgrade_documentation_plan_move` to the `workflow` tier in `tests/test_tiers.json` in the same chunk, and run `python tests/tier_inventory.py check`.
+Controls are checked by deleting the behaviour in a scratch copy and seeing the test fail, or by reasoning recorded in the code review if that cannot be done. There are no developmental probes in the test file. Add `test_upgrade_documentation_plan_moved` to the `workflow` tier in `tests/test_tiers.json` in the same chunk, and run `python tests/tier_inventory.py check`.
 
 ## D6. Cairn's own tree (chunk C3) and the lock (chunk C4)
 
@@ -155,10 +160,18 @@ Exact replacement for the placement paragraph in Cairn's own file (the six lines
 ```
   * **This file** (`cairn/dev/DOCUMENTATION_PLAN.md`) governs
     documentation placement and lives in `dev/`.  The Maintainer
-    placed it there (chat, 2026-11-19): it is an operating map for
-    the people and agents who write Cairn's documents, so it lives
-    with Cairn's other operating files, and `docs/` holds only what
+    placed it there (chat, 2026-11-19).  Where documents go is an
+    operating question for the people and agents who write them,
+    so this file's domain is Cairn's operating files and the rule
+    above holds: it lives with them, and `docs/` holds only what
     describes the software.
 ```
 
-C4: `python install/scaffold.py upgrade --target . --move-documentation-plan` on Cairn's own tree (the file was already moved by `git mv`, so this takes the record-only route, M15); then `python install/scaffold.py upgrade --target . --finalize <path>` once for each of `dev/DOCUMENTATION_PLAN.md`, `dev/modules/documentation-plan.md`, `dev/plans/_template.md`, `dev/proposals/_template.md`, `dev/.cairn/scanner-check-allow.json` and `dev/README.md` (the six records, other than the living `dev/PLANNING.md`, that name the old path and carry a hash). Commit `dev/.cairn/cairn-lock.yml` alone, in its own commit. Then `python install/verify_integrity.py --target .` must exit 0 on Cairn's own tree.
+C4: `python install/scaffold.py upgrade --target . --documentation-plan-moved` on Cairn's own tree (C3 already moved the file with `git mv`, the owner-moved case; the moved file was edited in C3, so the output is M12); then `python install/scaffold.py upgrade --target . --finalize <path>` once for each of `dev/DOCUMENTATION_PLAN.md`, `dev/modules/documentation-plan.md`, `dev/plans/_template.md`, `dev/proposals/_template.md`, `dev/.cairn/scanner-check-allow.json` and `dev/README.md` (the six records, other than the living `dev/PLANNING.md`, that name the old path and carry a hash). Commit `dev/.cairn/cairn-lock.yml` alone, in its own commit. Then `python install/verify_integrity.py --target .` must exit 0 on Cairn's own tree. Then write `install/UPGRADE.md`'s numbered step with the three `STEPS` lines of D1 word for word, a sentence saying `<repo>` is the project folder, and the `--init-lock` limit (the old file stays and the new template is written beside it; keep one, then run the steps). Then run the instructions check named in the plan's Verification and write its record into the plan.
+
+
+## D7. Counts and test lists moved out of the plan body
+
+**Mentions of the old path (`git grep`, 2026-11-20).** Shipped: 5 template files, plus `config.py`. Cairn's own live files: 11, plus the lock and a saved ancestor. Tests: 4. Left alone: 134 archived files and four historical mentions (a changelog entry, a dated table, a 2026-10 report, the saved ancestor). Three mentions name another project's file (the reference deployment) and are left.
+
+**Tests each chunk runs (the plan's Verification gives the selector counts).** C1 runs the ten tests that guard the changed promise: `test_documentation_plan_module`, `test_default_security_stance`, `test_upgrade_refuses_hostile_project_data`, `integration/test_link_check_exclusions`, `test_reference_scripts`, `test_upgrade_module_additions`, `test_config_module`, `test_presets`, `test_install_report_slots`, `test_onboarding_seed_roster`. C3 runs the prose gates and five tests: `test_documentation_plan_module`, `integration/test_link_check_exclusions`, `test_check_cairn_content`, `test_module_roster`, `test_core_dev_folders`.

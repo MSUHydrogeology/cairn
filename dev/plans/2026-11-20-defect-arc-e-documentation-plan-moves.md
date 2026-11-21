@@ -5,101 +5,88 @@
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
-**In brief**: The documentation plan file moves from `docs/` into `dev/` for new installs, for Cairn itself and, through one new upgrade command, for every project already installed, without touching what its owner wrote in it.
+**In brief**: The documentation plan file moves from `docs/` into `dev/` for new installs and for Cairn itself; a project already installed moves it with one Git command, then runs one new upgrade command that only records the new place.
 
 ## Build summary
 
-After this plan, a new install and Cairn's own tree keep the documentation plan at `dev/DOCUMENTATION_PLAN.md`. An existing project runs one new command, `upgrade --move-documentation-plan`, which moves the file as its owner left it, byte for byte, and records the new place in the install lockfile. `upgrade --plan` and `--apply` print one line telling the adopter to run it. Shipped texts that name the old place are corrected; nothing the adopter wrote is edited. Four chunks, in the installer engine and the install contract.
+After this plan, a new install and Cairn's own tree keep the documentation plan at `dev/DOCUMENTATION_PLAN.md`. An existing project's owner moves the file with `git mv` and then runs `upgrade --documentation-plan-moved`, which checks the move and rewrites one field (`dst`) of one lock record. It creates, moves, deletes and overwrites no file of the owner's. `upgrade --plan` and `--apply` print the three steps in order. Shipped texts that name the old place are corrected; nothing the adopter wrote is edited. Four chunks, in the installer engine and the install contract.
 
 ## Source proposal
 
-The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defect arc.", chat, 2026-11-20). Plan E is its last part: the roadmap item from his words of 2026-11-19, "I think DOCUMENTATION_PLAN.md should be in dev/ Please put that as a defect to fix for v0.9". The plan executes it and reopens nothing. Exact messages, step order and edit lists are in the companion `dev/plans/2026-11-20-defect-arc-e-documentation-plan-moves-detail.md` ("Detail"), so a low-tier implementer has no design to invent. The companion is part of the plan.
+The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defect arc.", chat, 2026-11-20). Plan E is its last part: the roadmap item from his words of 2026-11-19, "I think DOCUMENTATION_PLAN.md should be in dev/ Please put that as a defect to fix for v0.9". After two reviews he chose the lighter design (Scope delta). Exact messages, steps, edit lists and the test table are in the companion `dev/plans/2026-11-20-defect-arc-e-documentation-plan-moves-detail.md` ("Detail"), so a low-tier implementer has no design to invent. The companion is part of the plan.
 
 ## Scope
 
-**Result.** New installs, Cairn itself and existing projects all keep the documentation plan at `dev/DOCUMENTATION_PLAN.md`, and an upgrade never loses or overwrites an adopter's copy.
+**Result.** New installs, Cairn itself and existing projects all keep the documentation plan at `dev/DOCUMENTATION_PLAN.md`, and an upgrade never loses, moves or overwrites an adopter's copy.
 
 Proposed paths:
 - `dev/DOCUMENTATION_PLAN.md`
-- `tests/test_upgrade_documentation_plan_move.py`
+- `tests/test_upgrade_documentation_plan_moved.py`
 
-**Read, not run.** The installer was read in the plan B worktree (branch `arc-b-impl`, commit `029532a0`). This plan starts after plans B and C are merged into `0.9-dev`, when its work folder is cut.
+**Read, not run.** The installer this plan builds on is merged into `0.9-dev`. It was read in the main checkout on 2026-11-21 (HEAD `3fb798f5`); its files last changed in `029532a0`, the commit the plan first cited. Plans B and C are merged.
 
-**How existing installs get the move (the design question).** A new small step, not the planned layout move and not the heal. The layout move (`_layout_plan`) proves a file against its release in Git history and merges it with the new template (`_layout_merge`); it blocks on "unproved ancestry" or "overlapping edits", which an adopter's rewritten plan is. The heal (`--heal-layout`) repairs lock keys and tokens, not this. The new step is built from plan B's pieces and changes only the lock record's `dst`; every other key stays, so the saved ancestor still serves later ordinary merges, which carry template changes into the file at its new place. It never merges or re-renders. The 0.8 layout catalog row (old place equals new place there) is left as it is.
+**How existing installs get the move.** The owner moves the file with Git; Cairn's command checks both places and writes only the lock record's `dst`. Every other key stays, so the saved ancestor still serves later ordinary merges, which carry template changes into the file at its new place, in either order. It never merges, re-renders, creates, deletes or moves a file, and removes no folder. The layout move (`_layout_plan`) is not used: it blocks on an adopter's rewritten plan. The 0.8 layout catalog row is left as it is. The cases, messages and exit codes are in Detail D2.
 
-**Where the code differs from Strategy's defaults.** (1) Cairn's own record has no saved ancestor; the step needs none. (2) The gate manifest and roster do not name the old path; they go stale only because two protected tests change. (3) Three mentions name another project's file (the reference deployment) and are left. (4) One protected test used `docs/` as its example folder and needs another (Detail D5).
+**Clear instructions are a criterion of their own** (the Maintainer's condition). The three steps are: `git mv docs/DOCUMENTATION_PLAN.md dev/DOCUMENTATION_PLAN.md`; `python install/scaffold.py upgrade --target <repo> --documentation-plan-moved`; then `git add dev/.cairn/cairn-lock.yml` and `git commit`. They come from one constant in the code, and one test fails if the report line, the refusal or `install/UPGRADE.md` words them differently.
 
-**The existing-install cases.** Messages are in Detail D2; ids and exit codes here.
+**The adopter's links.** The command edits none of the adopter's files. After a record it prints one line naming both places, and the report line carries the same words. Five shipped files name the old place (the module document, the forkable plan, its scanner allow-list, the plan and proposal templates); adopters get their corrections through the ordinary merge. Text the adopter pasted into the `documentation-discipline` or `documentation-tier-home` slots is theirs and is not rewritten; the line tells them to search for it.
 
-| Case | Result |
-|---|---|
-| file at old place, nothing at new | moved, M13, 0 |
-| a different file at new place | refused, nothing changed, M11, 1 |
-| the same bytes at new place (an interrupted run) | finished, M14, 0 |
-| missing from both | refused, M5, 1 |
-| adopter moved it by hand | lock record updated only, M15, 0 |
-| link, folder or hard link at either place, or a link above | refused, nothing written, M10, 2 |
-| `docs/` holds other files / only this file | `docs/` kept / removed (that one folder), M13, 0 |
-| lockfile has unsaved edits | refused, M12, 1 (`--force` goes on) |
-| second run | M6, 0, writes nothing |
-| project from 0.7, 0.8 layout move still ahead | refused, M4, 1; finish that move first |
-| module not installed, or record not movable | M1, 0 / M2 or M3, 1 |
+**A project upgraded by `--init-lock`** (no lockfile before) keeps the old file and gets the new template written beside it: two files. `install/UPGRADE.md` says so and tells the owner to keep one.
 
-`upgrade --plan` prints, before anything is written, the line in Detail D3 whenever the file or its new copy is present and the record is at the old place.
+**Removal.** Remove `--documentation-plan-moved` and its tests in the release that stops supporting upgrades from 0.8 installs; the Maintainer names that release.
 
-**The adopter's links.** The step edits none of the adopter's files. It prints one line (`LINKS`, Detail D2) naming both places. Five shipped files that Cairn renders for adopters name the old place: the module document, the forkable plan, its scanner allow-list, and the plan and proposal templates. Adopters get their corrections through the ordinary merge. Text pasted into the `documentation-discipline` slot of `AGENTS.md` or the `documentation-tier-home` slots is the adopter's, is not rewritten, and the line tells them to search for it.
-
-**Mentions of the old path (`git grep`, 2026-11-20).** Shipped: 5 template files, plus `config.py`. Cairn's own live files: 11, plus the lock and a saved ancestor. Tests: 4. Left alone: 134 archived files and four historical mentions (a changelog entry, a dated table, a 2026-10 report, the saved ancestor).
+**Mentions of the old path (`git grep`, 2026-11-20).** Shipped: 5 template files, plus `config.py`. Cairn's own live files: 11. Tests: 4. Left alone: 134 archived files, four historical mentions and three that name another project's file. Detail D7 lists them.
 
 **Protected and counted files, and the reason the Maintainer will see at the signing.**
-- `install/_scaffold/upgrade.py` (engine, AST baseline): a new command moves one named file safely.
-- `install/_scaffold/config.py` (cascade-mutable, no HOLD): one install row and one table entry name the new place.
-- `tests/test_default_security_stance.py` and `tests/test_upgrade_refuses_hostile_project_data.py` (protected, so each adds a line to the signing): one expected path names the new place; one test uses a folder that still exists after the move, and checks the same refusal.
-- The always-loaded files name no path to change. Measured 2026-11-20 with `wc -w`: Cairn's 1,051 + 311 + 230 = 1,592 against 2,000; shipped 1,262 + 162 + 73 = 1,497 against 1,500. Re-measured after C3.
-- Doctrine: the "this file lives in docs/" paragraph in both plan files (Detail D4 and D6) changes meaning, not only a path; it is functional prose, edited by exact replacement, and reviewers answer "does any rule weaken or disappear?".
+- `install/_scaffold/upgrade.py` (engine, AST baseline): a new command records one file's place. `install/_scaffold/config.py` (cascade-mutable, no HOLD): one install row and one table entry.
+- `tests/test_default_security_stance.py` and `tests/test_upgrade_refuses_hostile_project_data.py` (protected; each adds a line to the signing): one expected path; one test uses a folder that still exists after the move and checks the same refusal.
+- The always-loaded files name no path to change (words measured 2026-11-20: Cairn's 1,592 of 2,000, shipped 1,497 of 1,500); re-measured after C3.
+- Doctrine: the "this file lives in docs/" paragraph in both plan files (Detail D4, D6) changes meaning, not only a path. It is edited by exact replacement, and reviewers answer "does any rule weaken or disappear?".
 
-**Stale records.** (1) The AST baseline: `Assign:_MODULE_MAPPINGS` changes, `cmd_upgrade` changes again, new functions join the known-new list; it stays red until the Maintainer's baseline step, and after C2 the implementer runs the runbook's Step 1 listing and records the counts. (2) The gate manifest's `mapping_symbols` digest and the roster's hashes for the two protected tests: refreshed at the signing. (3) Cairn's own lock: refreshed in C4 by the installer, alone in its commit.
+**Stale records.** The AST baseline (`Assign:_MODULE_MAPPINGS` and `cmd_upgrade` change; new functions) stays red until the Maintainer's baseline step; after C2 the implementer runs the runbook's Step 1 listing and records the counts. The gate manifest's `mapping_symbols` digest and the roster's hashes for the two protected tests are refreshed at the signing. Cairn's own lock is refreshed in C4, alone in its commit.
 
-**Reuse.** Plan B's guards and lock writer (named in Detail D2). Searched `install/_scaffold/` for `documentation`, `move` and `relocate`: only the layout table, which this does not extend.
+**Reuse.** The guards and lock writer plan B built. Searched `install/_scaffold/` for `documentation`, `move` and `relocate`: only the layout table, which this does not extend.
 
-### Documentation / doctrine surface
-
-`install/UPGRADE.md` (this step, the 0.7 order, and the limit that a project with no lockfile, upgraded by `--init-lock`, is not moved), `CHANGELOG.md` (one entry), the roadmap row, and the shipped texts. No rule is added.
+**Documentation surface.** `install/UPGRADE.md`, `CHANGELOG.md` (one entry), the roadmap row, and the shipped texts. No rule is added.
 
 ## Sequence
 
-Code review once, after C4; no earlier review point. C4 needs C2 and C3 and the merged plans B and C, which edit the same `install/UPGRADE.md`, `CHANGELOG.md`, roadmap and lock.
+Code review once, after C4. C4 needs C2 and C3, which share `install/UPGRADE.md`, `CHANGELOG.md`, the roadmap and the lock with the merged plans B and C.
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
 | C1 | New installs and shipped text | plan review | `config.py` rows, 5 shipped templates, 4 tests |
-| C2 | The upgrade step | C1 | `--move-documentation-plan`, the plan line, new test file and its tier |
-| C3 | Cairn's own tree | C1 | `git mv`, 10 live files corrected |
-| C4 | Records and Cairn's own lock | C2, C3 | notes, changelog, roadmap, lock commit |
+| C2 | The recording command | C1 | `--documentation-plan-moved`, the report line, new test file and its tier |
+| C3 | Cairn's own tree | C1 | `git mv`, 9 other live files corrected |
+| C4 | Records and Cairn's own lock | C2, C3 | UPGRADE.md step, changelog, roadmap, lock commit |
 
 ## Acceptance criteria
 
-**C1.** A default install through `scaffold.main` writes `dev/DOCUMENTATION_PLAN.md` and no file under `docs/`; its lock record names the new place; the module-discovery text names it. Each shipped text in Detail D4 names the new place, and the three references to another project's file are unchanged (`grep -c` before and after, as Detail D4 says). Entry point: `scaffold.main`. The four tests are edited as Detail D5 says; `tests/test_documentation_plan_module.py` fails if the install row is not changed, and the refusal test keeps checking that a linked parent of a mapped file is refused, in a folder that exists.
+**C1.** A default install through `scaffold.main` writes `dev/DOCUMENTATION_PLAN.md` and no file under `docs/`; its lock record and the module-discovery text name the new place. Each shipped text in Detail D4 names it, and the three references to another project's file are unchanged (`grep -c` before and after). The four tests are edited as Detail D5 says; `tests/test_documentation_plan_module.py` fails if the install row is not changed, and the refusal test keeps checking that a linked parent of a mapped file is refused, in a folder that exists.
 
-**C2.** `upgrade --move-documentation-plan` does what the table above says, with the messages of Detail D2, through `scaffold.main(["upgrade", ...])`. It writes nothing outside the project, follows no link, never overwrites a file, and uses no path from the lock. A tampered record is refused and changes nothing. After a move, `verify_integrity` and `run_security_verification.py local` pass, and an ordinary `--stage` and `--apply` merge at the new place. `--plan` and `--apply` print the one line. New `tests/test_upgrade_documentation_plan_move.py` has one test per row of Detail D5, each with the control named there. It is listed in `tests/test_tiers.json` in this chunk and `python tests/tier_inventory.py check` passes. `_compute_upgrade`, `_apply_upgrade`, `_layout_plan`, `layout_catalog.py` and `verify_integrity.py` stay unchanged.
+**C2.** `upgrade --documentation-plan-moved` does what Detail D2 says in each case, through `scaffold.main(["upgrade", ...])`. It writes only the one `dst` field of the lock, follows no link and uses no path from the lock. After a record, `verify_integrity` and `run_security_verification.py local` pass, and an ordinary `--stage` and `--apply` merge at the new place, in either order with the command. `--plan` and `--apply` print the report line; its helper never raises. New `tests/test_upgrade_documentation_plan_moved.py` has one test per row of Detail D5, each with its control, and is listed in `tests/test_tiers.json` in this chunk (`python tests/tier_inventory.py check` passes). `_compute_upgrade`, `_apply_upgrade`, `_layout_plan`, `layout_catalog.py` and `verify_integrity.py` stay unchanged.
 
-**C3.** `dev/DOCUMENTATION_PLAN.md` exists by `git mv`, `docs/DOCUMENTATION_PLAN.md` does not, and the 10 other live files named in Detail D6 name the new place. `git grep DOCUMENTATION_PLAN` outside the left-alone set finds no `docs/` form except the two reference-deployment mentions in the moved file and the one in the module copy. The prose gates pass on each edited file, and the always-loaded word totals are unchanged.
+**C3.** `dev/DOCUMENTATION_PLAN.md` exists by `git mv`, `docs/DOCUMENTATION_PLAN.md` does not, and the 9 other live files named in Detail D6 name the new place. `git grep DOCUMENTATION_PLAN` outside the left-alone set finds no `docs/` form except the reference-deployment mentions. The prose gates pass on each edited file, and the always-loaded word totals are unchanged.
 
-**C4.** `install/UPGRADE.md` explains the step in the order an adopter follows it (finish the 0.7 layout move first; run `--plan`; run the command; commit; search for links). `CHANGELOG.md` has one entry. The roadmap row for this file is marked settled and plan E's share of the joined run is listed. Cairn's own lock is refreshed as Detail D6 says, in a commit that holds only the lockfile, and `install/verify_integrity.py` exits 0 on Cairn's own tree.
+**C4.** `install/UPGRADE.md` has the three steps as a numbered step in the order an adopter follows (finish the 0.7 layout move; run `--plan`; the three steps; search for links), plus the `--init-lock` limit. `CHANGELOG.md` has one entry. The roadmap row is marked settled and plan E's share of the joined run is listed. Cairn's own lock is refreshed as Detail D6 says, with this command, in a commit that holds only the lockfile; `install/verify_integrity.py` exits 0 on Cairn's own tree. The instructions check (Verification) is run and recorded.
 
-**Security (re-answered).** S1, who supplies the input: the lock (`src`, `dst`, `verbatim`), the project tree and the flag; none reaches a write as a path, because only two constants do. S2, can it fail: each refusal has the control in Detail D5 (the no-overwrite test controls the exclusive create). S3, what runs it: the adopter, by `upgrade --move-documentation-plan`; `verify_integrity.py` and `run_security_verification.py local` then judge the result and are unchanged. S4, which way it breaks: refuse, name the file, write nothing; an interrupted run leaves a state the next run finishes. It adds one write route into the lock, for one record, and removes one file whose bytes it holds. S5, what still gets through: someone who can write the lock can make the step run for a record whose `src` is the plan template; that only moves `docs/DOCUMENTATION_PLAN.md` to `dev/DOCUMENTATION_PLAN.md` inside the project. No record leaves the integrity check, and the moved file is still judged by its recorded hash.
+**Security (re-answered).** S1, who supplies the input: the lock, the project tree and the flag; none reaches a write as a path, because the command writes only the lockfile. S2, can it fail: each refusal has the control in Detail D5. S3, what runs it: the adopter, by the flag; `verify_integrity.py` and `run_security_verification.py local` then judge the result and are unchanged. S4, which way it breaks: refuse, name the file, write nothing; the one write is the lock, by the writer `--heal-layout` and `--retire-wrapper` already use, so it adds no new power. S5, what still gets through: someone who can write the lock can point the record's `dst` at the new place; a file planted there is caught by its recorded hash. Residuals: the whole-file read of both places has no size limit, as every upgrade read; on Windows a folder junction is caught only by the guard's last check, whose text can name where the junction leads.
 
 ## Scope delta
 
-**Scope delta**: preserved. Every outcome the proposal assigns to plan E is delivered: the move in Cairn's tree, the upgrade move, and the corrected shipped files.
+**Scope delta**: degraded
+
+- The accepted arc says the upgrade moves the file for an existing project. This plan has the owner move it with Git and Cairn record the new place. **disposition**: accept. The end is the same (the file at `dev/DOCUMENTATION_PLAN.md`, its record updated, nothing of the owner's lost); the route is lighter and gives the installer no power to create or delete a file. The Maintainer allowed it (chat, 2026-11-21): "Let's go with your recommended plan E. But the instructions have to be clear."
 
 ## Verification
 
-**Selector (`python tests/tier_inventory.py for <paths>`, run in the main checkout on 2026-11-20; re-run at the starting commit).** C1 selects 68 test files, over the 40-file limit of `tests/conftest.py`. The run is not split: C1 runs the ten tests that guard the changed promise (`test_documentation_plan_module`, `test_default_security_stance`, `test_upgrade_refuses_hostile_project_data`, `integration/test_link_check_exclusions`, `test_reference_scripts`, `test_upgrade_module_additions`, `test_config_module`, `test_presets`, `test_install_report_slots`, `test_onboarding_seed_roster`) and leaves the 68 to the arc's joined run. C2 selects 38 for `upgrade.py`, plus the new file: 39. C3 selects 41 for its prose files; it runs the prose gates and five tests (`test_documentation_plan_module`, `integration/test_link_check_exclusions`, `test_check_cairn_content`, `test_module_roster`, `test_core_dev_folders`). C4 selects 9. Before each chunk, run its files once with `-rf` and keep each failing test id and first message line; after, a failure is a host failure only if both are on that list.
+**Selector (`python tests/tier_inventory.py for <paths>`, main checkout, 2026-11-20; re-run at the starting commit).** C1 selects 68 test files, over the 40-file limit of `tests/conftest.py`, so it is not split: C1 runs the ten tests that guard the changed promise (Detail D7) and leaves the 68 to the arc's joined run. C2 selects 38, plus the new file: 39. C3 selects 41 and runs the prose gates and five named tests (Detail D7). C4 selects 9. Before each chunk, run its files once with `-rf` and keep each failing test id and first message line; after, a failure is a host failure only if both are on that list.
 
-**Hosts.** This Windows machine runs the selected tests; link tests skip without symbolic-link rights and run once in its Linux subsystem (development only). Nothing here certifies; the Python 3.13 run waits for the joined run. **Prose gates**, one file per call: `claim_check.py`, `link_check.py`, `tests/check_cairn.py`, `git diff --check`. **Issues.** None to close; the roadmap row is not an issue.
+**The instructions check (developmental, C4).** A fresh low-tier agent gets a scratch project installed from 0.8.0 (tag `v0.8.0`) and only the text the upgrade prints, nothing from this plan. It must finish the move so that `python install/verify_integrity.py --target <project>` passes. The record says what it did, where it hesitated, and what text changed because of it. Not a permanent test.
 
-**Not checked.** Nothing was run. Not measured: the 0.7 path end to end; `os.link` and `chmod` on Windows; the protected test with `dev/modules` as its folder. **Does any rule weaken or disappear?** One sentence of placement doctrine is reworded in two plan files (C1, C3); the rule that a domain's governance lives in that domain is kept, and this file is stated as an operating file in `dev/`.
+**Hosts.** This Windows machine runs the selected tests; link tests skip without symbolic-link rights and run once in its Linux subsystem (development only). Nothing here certifies. **Prose gates**, one file per call: `claim_check.py`, `link_check.py`, `tests/check_cairn.py`, `git diff --check`. **Issues.** None to close.
+
+**Not checked.** Nothing was run. Not measured: the 0.7 path end to end; the protected test with `dev/modules` as its folder. **Does any rule weaken or disappear?** One sentence of placement doctrine is reworded in two plan files (C1, C3); the rule that a domain's governance lives in that domain is kept.
 
 ## Plan review -- Claude Sonnet 5.5 -- 2026-11-21
 
@@ -210,5 +197,30 @@ What that settles:
 - **Scope.** The accepted arc says the upgrade moves the file. Design (b) reaches the same end by a lighter route, and his words above allow it. The fold states this in the plan's Scope delta.
 
 The Waiting line is removed. The plan is folded once, for design (b); the changed steps then get one short Security Review, as the first part of the response said.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Plan response, second part -- Claude Sonnet 5.5 (for the author) -- 2026-11-21
+
+The plan and its companion are folded once for the Maintainer's design: the owner moves the file with Git, and `upgrade --documentation-plan-moved` records the new place. Status stays `revising-plan`; the changed steps go to one short Security Review.
+
+Usual review:
+1. Blocking 1 (hard-link write): falls away; no file is written. The new file is named `tests/test_upgrade_documentation_plan_moved.py`.
+2. Blocking 2 (order test, M4 setup): accepted, Detail D5 (two order rows, the layout-refusal record).
+3. Blocking 3 (protected test): accepted, Detail D5, the `README.md` words.
+4. Non-blocking 4: falls away (no hard link, no `chmod`).
+5. Non-blocking 5 (removal condition): accepted, Scope.
+6. Non-blocking 6 (`--init-lock` leaves two files; 10 against 9): accepted, Scope, C3, Detail D6.
+7. For the Maintainer: closed by his choice.
+8. Doctrine wording: accepted, Detail D4 and D6.
+
+Security Review:
+1. Blocking 1 (race between staging and link): falls away; nothing is staged or linked.
+2. Non-blocking 2 (helper never raises): accepted, Detail D3, with a test.
+3. Non-blocking 3: first half accepted (the junction text, Detail D2 and Security); second half falls away (no step c).
+4. Non-blocking 4 (whole-file reads): accepted as a named residual.
+5. The S answers are rewritten for the lighter design.
+
+Code against brief: none differed. The command reads both places with no `single_link`, since it only reads.
 
 **Elapsed**: unknown. **Tokens**: unknown.
