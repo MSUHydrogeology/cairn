@@ -1,7 +1,7 @@
 # A simple usage meter: read the logs, write the summary
 
 **Author**: Claude Fable 5.2 (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -19,9 +19,9 @@
 
 **Two cheap habits stay.** It does not follow a link out of a log folder or write through one. It writes its summary and its own record beside their place and renames them in, so a crash cannot leave half a file.
 
-**What it gives up.** An account on the same machine that can already write into your log folder or your project could skew your counts or delete the summary. It could not read your logs through the meter, before or after.
+**What it gives up.** An account on the same machine that can already write into your log folder or your project could skew your counts or delete the summary. It could not read your logs through the meter, before or after. A consent file is trusted as written, whoever wrote it. On Windows the summary takes the access of the project folder, so whoever may read that folder may read the counts.
 
-**What it costs.** It is the largest change in v0.8.1. By a rough count, up to half of the meter's code and a quarter or more of its tests go, 35 of them from the pinned list of Windows-only tests, which adds lines to your signing. Plan I is withdrawn. The owner rule of plan G and the folder-walk fixes of plan H go with the code they patched; plan H's fix to reply dates stays.
+**What it costs.** It is the largest change in v0.8.1. By a rough count, up to half of the meter's code and a quarter or more of its tests go. The pinned list of platform-only tests loses its 35 Windows rows for the meter and some of its 52 Mac-and-Linux rows, which adds lines to your signing. Plan I is withdrawn. The owner rule of plan G and the folder-walk fixes of plan H go with the code they patched; plan H's fix to reply dates stays.
 
 **Not in this proposal.** The Antigravity reader, which is built afterwards on the simple meter. The table of token weights, which has no entry for the newest model.
 
@@ -31,17 +31,17 @@ Measured on 2026-11-21 (`dev/PLANNING.md`, section 1, "The meter still does not 
 
 ## Proposal
 
-**A. The two promises,** unchanged. Consent: the meter reads only the log folders and projects listed in `~/.cairn/meter.json`, and installing Cairn creates no such file. Counts only: nothing read from a log leaves it except counts, times, and names on the closed list the reader already keeps.
+**A. The two promises.** Consent: the meter reads only the log folders and projects listed in `~/.cairn/meter.json`, and installing Cairn creates no such file. The consent file's content is still checked in full; who owns it and who may write it is no longer checked, so a consent file written by another account is trusted as written. Counts only: nothing read from a log leaves it except counts, times, the names of models, each limited to letters, digits, `.`, `_` and `-` and to 80 characters, and the tool's name from a fixed list.
 
-**B. Reading.** For each listed log folder the meter walks it with ordinary calls, skips any link or redirected folder, and reads each log from where it last stopped, up to the last whole line. A log it cannot open is left for the next run, and the reading is marked incomplete. It no longer tests owners, access lists or the number of names a file has, and no longer re-checks folders while it reads.
+**B. Reading.** For each listed log folder the meter walks it with ordinary calls, skips any link or redirected folder, and reads each log from where it last stopped, up to the last whole line. A log it cannot open is left for the next run, and the reading is marked incomplete. It no longer tests owners, access lists or the number of names a file has, and no longer re-checks folders while it reads. A failure maps to one of the closed reasons; no system error text, path or file name is printed or stored. The check that a log still begins as it did when it was last read stays: it is how the meter knows a log was replaced. The project's work claims (`dev/intents.jsonl`) are read the same way, and not through a link. On Windows a redirected folder is known by its reparse mark.
 
-**C. Writing.** The summary goes to `dev/measurement/meter.json` in the project, and the meter's record stays under `~/.cairn/meter/`. Each is written to a new file beside its place and renamed in. Where the system has file modes, the record is made readable by the user alone. The meter refuses to write a summary when `dev` or `dev/measurement` is a link. One run writes at a time, by a plain lock file.
+**C. Writing.** The summary goes to `dev/measurement/meter.json` in the project, and the meter's record stays under `~/.cairn/meter/`. Each is written to a new file beside its place and renamed in. Where the system has file modes, the record is made readable by the user alone. The meter refuses to write a summary when `dev` or `dev/measurement` is a link. The meter never creates `dev` or `dev/measurement`; a project with no such real folder gets no summary. Where the system has file modes, the summary is made readable by the user alone; on Windows it takes the access of the project folder. It holds per-day counts, times, model names and plan names for sessions run in that project. One run writes at a time, by a plain lock file; a lock left by a run that died is taken over after a set time. On Windows a rename can fail while another program holds the summary open; the run then gives a closed reason and the next run writes it.
 
-**D. Which project.** A record counts toward a project when the folder the record names is the project's folder or inside it. The project's remote is taken from the consent file, where the user wrote it. The project's Git settings are no longer opened, so the meter no longer uses the checked Git helper. Where a tool's own log names the repository a session ran in, as Codex's does, that name is still compared with the remote in the consent file.
+**D. Which project.** A record counts toward a project when the folder the record names is the project's folder or inside it. The project's remote is taken from the consent file, where the user wrote it. The project's Git settings are no longer opened, so the meter no longer uses the checked Git helper. Where a tool's own log names the repository a session ran in, as Codex's does, that name is still compared with the remote in the consent file. The words the summary uses for a project tie stay; the README says they now mean that the folder matched, not that the folder's Git settings were read.
 
-**E. One code path.** The Windows-only layer and the descriptor walks used on the Mac and Linux are removed. The end-to-end tests that ran only on the Mac and Linux run on all three platforms.
+**E. One code path.** The Windows-only layer and the descriptor walks used on the Mac and Linux are removed. The end-to-end tests that ran only on the Mac and Linux run on all three platforms. The same plain calls serve the `rebuild` command, the report a refresh can print, and the bare status command.
 
-**F. Tests.** Tests of the removed checks go, and their 35 rows leave the pinned list of Windows-only tests; the list's count and fingerprint, and the test that quotes them, follow. Tests of reading, counting and the two promises stay. Added, at most three: a full run on a made-up log folder that has a sub-folder, on every platform; a link out of a log folder is not followed; a summary is not written through a link.
+**F. Tests.** Tests of the removed checks go. Their 35 `nt` rows leave the pinned list, as do the `posix` meter rows whose test goes or now runs on all three platforms; the two counts in `tests/security_manifest.py` (now 63 and 362), the policy fingerprint, and the guard that `tests/test_security_check.py` quotes follow. Tests of reading, counting and the two promises stay. Added, at most three: a full run on a made-up log folder that has a sub-folder, on every platform; a link out of a log folder is not followed; a summary is not written through a link.
 
 One plan, at most five chunks. The consent file, the record and the summary keep their shapes.
 
@@ -56,7 +56,7 @@ Every check removed here guards against an account that can already write the us
 
 ## Documentation / doctrine surface
 
-`dev/measurement/README.md`: the meter's section, rewritten shorter. `dev/rules/development-environment.md` and `dev/rules/custom_session_routines.md`, where they state a removed check; the rule on what may leave a provider log is untouched. `CHANGELOG.md`. The shipped copy of the meter and of each changed document.
+`dev/measurement/README.md`: the meter's section, rewritten shorter. `dev/rules/development-environment.md` and `dev/rules/custom_session_routines.md`, where they state a removed check; the rule on what may leave a provider log is untouched. `CHANGELOG.md`. The shipped copy of the meter and of each changed document, `templates/core/dev/measurement/README.md` among them. `tests/security_manifest.py`, and a refresh of Cairn's own lock.
 
 ## Evidence / verification plan
 
@@ -73,9 +73,9 @@ The two real-machine checks above, by Strategy, with probes that print counts on
 #### Security preflight
 
 - **S1. What is protected.** The content of private logs. The reader, which emits counts only, and the consent file protect it. Neither changes.
-- **S2. What is weakened.** The meter's numbers, and the place its summary lands, are no longer guarded against another account on the same machine.
-- **S3. Who could use that.** Only an account that can already write the user's log folder, project or profile.
-- **S4. If it goes wrong:** wrong counts, a missing summary, or a summary file in a folder the user can write. Never text from a log.
+- **S2. What is weakened.** The meter's numbers, and the place its summaries land, are no longer guarded. A consent file can list any folder as a project, including one above many projects. Who wrote the consent file is no longer checked.
+- **S3. Who could use that.** Only an account that can write the user's profile, log folders or project; that account can already act as the user. Run with administrator or root rights, the meter can count other accounts' logs that the consent file lists.
+- **S4. If it goes wrong:** wrong counts, a missing summary, or a summary of counts in a folder that others may read. Never text from a log.
 - **S5. What still gets through.** Usage planted in a log folder is counted. A log changed while it is read is read as found.
 
 ### Independent scientific check
@@ -174,3 +174,26 @@ Replace S2: "The meter's numbers, and the place its summaries land, are no longe
 Replace S3: "Only an account that can write the user's profile, log folders or project; that account can already act as the user. Run with administrator or root rights, the meter can count other accounts' logs that the consent file lists."
 
 Replace S4: "Wrong counts, a missing summary, or a summary of counts in a folder that others may read. Never text from a log."
+
+## Response -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+Both reviews are folded once, in place. Status is now `awaiting-decision`.
+
+Usual review:
+1. B1 (promise A is not "unchanged"): taken in its words, in A, in "What it gives up" and in S2. Its question, keep an owner check on the consent file or trust the file as written: trusted as written, which the Security Review judged right.
+2. B2 (model names are not a closed list): taken in A.
+3. B3 (the pinned list also holds 52 Mac-and-Linux rows for the meter): taken in F and in "What it costs".
+4. B4 (an error's text can carry a path): taken in B.
+5. N1 to N5: taken, in D (what the summary's words now mean), B (the work claims; the reparse mark; the check that a log still begins as before), C (the lock; the rename on Windows; the summary's mode), E (the other commands) and the documents list. N6 is for the plan.
+
+Security Review:
+1. B1 (where a summary can go and who reads it): taken in its words, in C and in S2 to S4.
+2. N1 (refuse a consent file, or `~/.cairn`, that is a link): not taken. People keep settings files as links on purpose, and a link there lets an account do nothing that replacing the file would not.
+3. N2 (nothing else in Cairn relies on the removed checks): noted.
+
+### Withdrawn / superseded commitments
+
+- "The two promises, unchanged". Replaced: the content of the consent file is still checked; who wrote it is not.
+- "Names on the closed list". Replaced by what the reader does: a model's name passes if it is short and made of plain characters.
+
+**Elapsed**: unknown. **Tokens**: unknown.
