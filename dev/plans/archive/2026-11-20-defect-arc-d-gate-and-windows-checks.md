@@ -1,7 +1,7 @@
 # Plan: Defect arc D1, gate narrowings and release control
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -13,7 +13,7 @@ After this plan, the ceremony's review page again shows the lines a new tool fil
 
 ## Source proposal
 
-The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defect arc.", chat, 2026-11-20). Plan D is its gate-and-Windows part. Reviewers called it full, so it is cut in two; this is D1, the items that need no measuring. Exact code, texts and fixtures are in the companion `dev/plans/2026-11-20-defect-arc-d-gate-and-windows-checks-detail.md` ("Detail"), part of this plan: it exists because they would double its length, and a low-tier implementer must not invent them. The plan reopens nothing.
+The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defect arc.", chat, 2026-11-20). Plan D is its gate-and-Windows part. Reviewers called it full, so it is cut in two; this is D1, the items that need no measuring. Exact code, texts and fixtures are in the companion `dev/plans/archive/2026-11-20-defect-arc-d-gate-and-windows-checks-detail.md` ("Detail"), part of this plan: it exists because they would double its length, and a low-tier implementer must not invent them. The plan reopens nothing.
 
 ## Scope
 
@@ -317,3 +317,20 @@ Security Review:
 Both reviews wrote the verdict as APPROVE where the skeleton's word is ACCEPT; the meaning is the same.
 
 **Elapsed**: under ten minutes after the Security Review's commit (20:14 on the host clock). **Tokens**: unknown.
+
+## Implementation closeout -- Claude Fable 5.2 (Strategy) -- 2026-11-20
+
+Every criterion held; one could be shown only off Windows. D1-1: the restored scan matches Detail. Its new node passes in the Linux subsystem and fails there when the scan file is put back to the starting commit; it cannot run on the Windows host. D1-2: the node asserts the record's number and passes (6 of 6 on Windows). D1-3: the Windows node fails before the change and passes after, on Windows; the other three nodes pass in the Linux subsystem. D1-4: one paragraph inserted and the `bash` block untouched; both code reviews read it against `release/security_check.py`. One cheap defect fix rode along (`52cc8095`, the contract fixture's race with the file system's clock). The branch, 11 commits changing 7 files, merged into `0.9-dev` at `5642228e` with no conflict.
+
+Not run: the Mac run of D1-1's nine files. Home: `dev/PLANNING.md`, "Waiting on you", the Mac session's second job.
+Not run: anything on the canonical runtime; the new scan node and the off-Windows contract node passed only under Python 3.14.4 in the Linux subsystem. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+Not run: a freeze from a fresh clone carried through to a join. Home: `dev/PLANNING.md`, section 1, "The history freeze in a live repository".
+Not covered: the v0.9 signing page, which shows the last signed version's own scan; six new files are not on it. Home: `dev/PLANNING.md`, section 1, "Narrowings from the layout move", and its row under "Waiting on you".
+Remaining: plan D2, the Windows measurements and repairs, with the four test defects and the two older security findings found here. Home: `dev/PLANNING.md`, section 1, "Windows" (the measuring list and items (g) to (k)) and "Narrowings from the layout move".
+Remaining: two HOLD lines at the signing, for `tests/_gate_preflight.py` and `release/check_release_test_members.py`; the gate manifest is regenerated there. Home: `dev/PLANNING.md`, section 1, "The re-anchor".
+
+Dispositions: no follow-up of this plan is deferred without a home above. The two older security findings are not this plan's follow-ups: they are new findings, queued by the security strategy's rule and reported to the Maintainer at this milestone.
+
+**Benefit versus cost**: unknown -- from the first signing after v0.9's, a new tool file under `tests/` is back on the Maintainer's review page, and the release check reads Windows test reports; cost: 11 commits and one merge, four review passes with no return visit, 1,071,086 subagent tokens in seven runs as the harness reported them (Strategy's own use is unknown), and about an hour of machine time for tests on two hosts; remaining burden: one small function in each of two gate files and five test nodes. Revisit at the D6 recount at the end of v0.9.
+
+**Elapsed**: 1 hour 54 minutes from the plan's opening (18:24) to the merge (20:18), by commit times. **Tokens**: unknown beyond the subagent figure above.

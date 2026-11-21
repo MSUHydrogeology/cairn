@@ -1,6 +1,6 @@
 # Plan D1 detail: exact code, texts and cases
 
-Companion to `dev/plans/2026-11-20-defect-arc-d-gate-and-windows-checks.md`, part of that plan. It exists because the exact code shapes and fixture cases would push the plan past its word budget, and a low-tier implementer must not have to invent them. Nothing here widens the plan's Scope. Line numbers are at the commit the plan was opened on; find each by the quoted text if they have moved.
+Companion to `dev/plans/archive/2026-11-20-defect-arc-d-gate-and-windows-checks.md`, part of that plan. It exists because the exact code shapes and fixture cases would push the plan past its word budget, and a low-tier implementer must not have to invent them. Nothing here widens the plan's Scope. Line numbers are at the commit the plan was opened on; find each by the quoted text if they have moved.
 
 ## D1. Chunk 1, restore the new-file scan (`tests/_gate_preflight.py`)
 
