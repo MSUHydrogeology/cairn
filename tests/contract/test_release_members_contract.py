@@ -163,8 +163,12 @@ def _check(root: Path, report: Path, start: int, *, configured: bool = True):
 def evidence(project: Path):
     report = project / "report.xml"
     (project / "required.json").write_text(json.dumps([VICTIM]))
-    start = time.time_ns()
     ET.ElementTree(_xml()).write(report, encoding="utf-8")
+    # The checker refuses a report older than the run's start. A file system stamps a
+    # file from a coarse clock that can read earlier than time.time_ns() (always on
+    # Linux, often on Windows), so take the start from the report's own time: a test
+    # that rewrites the report then never makes it look older than the start.
+    start = report.stat().st_mtime_ns
     return project, report, start
 
 
