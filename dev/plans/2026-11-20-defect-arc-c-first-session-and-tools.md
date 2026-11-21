@@ -276,3 +276,44 @@ Also fixed in this commit and the one before it: the plan's and Detail's `Propos
 Not run: the real-Bandit case (Bandit is on neither host); the 42-file selection for C1; Python 3.13 and the canonical runtime. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
 
 **Elapsed**: 2 hours 35 minutes from the first implementer's start (18:58) to this record, by the host clock. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`, usual reviewer) -- 2026-11-20
+
+```
+Reviewed commit: aefe4246783a5a41ac7fd495679cd627c65705fb
+Range: ecc1a913..aefe4246 on arc-c-impl
+```
+
+**Obligation**: Internal code review (heavy tier; a Security Review follows)
+**Findings**: raised (none blocking)
+**Verdict**: ACCEPT
+
+The change does what it says. Session start, the hook, the meter and the lock all match Detail. One line in the audit threshold path prints Bandit's output a second time.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Twelve sites use `encode_display_path` (counted, `dev/tools/session.py`); Detail's unchanged lines are unchanged; the two session copies and the two tool pairs are byte-identical (`cmp`); `verify_integrity --target .` reports OK for 70 files; the lock commit holds four hash lines.
+2. **Best alternative.** None simpler. The JSON route keeps below-threshold findings visible (`run_security_audit.py:951`).
+3. **What would show it wrong.** I tried 11 hand-written meter records (nested lists, a non-dict `usage`, a 100,000-deep record, a wide record) and 19 policy files (missing, folder, oversize, repeated key, list, null, NaN, control characters in a key). Every result matched Detail; finding 1 is the only departure from the intended design.
+
+**Findings**
+
+1. Non-blocking, for the Security Review to weigh. `run_bandit_pass` calls `print(run.stdout)` (line 1001). `_run_tool` has already printed that output through `escape_controls` (line 790), so the JSON appears twice and the second copy is raw. I could not make it unsafe: valid JSON cannot hold a raw control character, and `json.dumps` escapes DEL (measured). It rests on Bandit emitting JSON that way, and Bandit is not installed here. Delete the line; the summary's "printed above" is already true.
+2. Non-blocking. `load_bandit_policy` calls `path.lstat()` outside its `try`, so on POSIX a `NotADirectoryError` would escape. Unreachable in practice: the lockfile load needs `dev/.cairn` first. Move the call inside the `try`, with `except FileNotFoundError: return default` nested.
+3. Non-blocking. The changelog says the meter no longer marks "usage-free" records. Say "Claude records that carry no `usage` field", since attachments with one are still flagged.
+4. Non-blocking. `test_session_failsafe.py::test_interpreter_resolved_from_local_env_and_reported` (frozen) can no longer pass on Windows. I ran it: it now fails on the `/` path. It needs a home (the Maintainer's signing, or the joined run's list).
+5. Non-blocking. Records that carry usage under another key (`usageMetadata`) are now skipped silently. The plan accepted this.
+
+**The criterion not met.** The code is right and the criterion's expectation is stale. The plan-time count looked at two places; the Security Review then widened the walk to any dict, and the 60 `attachment` records carry `usage` deeper. Flagging them fails closed and follows D6 and the S3 fixture. The instruction (stop, report, do not narrow) was followed. It is the Maintainer's call, as the roadmap says.
+
+**Implementers' choices.** All six are sound: the repeated-key subclass, the module page naming the file in words, the DEGRADED wording, the repeated installed-check and the longer page. None needs the author.
+
+**Tests.** None removed. The new ones go through public entry points and each fails under its fault (C2's node needs Windows). The pinned threshold lines are wording pins, but plan S2 asks for them. **Does any rule weaken or disappear?** No.
+
+**Bounding**: ACCEPTED, after challenging each chunk's mapped test and the C4 parse path. One omission stays open and has a home: no host has run real Bandit (it is on neither), so the JSON parse is tested only against hand-written output. The joined run owns it.
+
+**Not covered.** The Linux reruns, any full selection, the gate manifest, macOS, and a real Bandit run. This pass runs over the 300-word target.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+No blocking finding, so no replacement block is owed. The non-blocking edits are the ones named in findings 1 to 3.
