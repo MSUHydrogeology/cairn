@@ -180,10 +180,16 @@ def test_one_message_under_two_sessions_is_one_unknown_event():
 
 
 def test_same_message_twice_in_one_session_is_one_proven_event():
-    event, = read([rec(), rec()])["events"]
+    # A real reply is one record for each of its parts, each with its own time. The last copy
+    # here is the latest instant though its text sorts first: times are compared as instants.
+    event, = read([rec(timestamp="2026-11-05T12:00:02Z"), rec(),
+                   rec(timestamp="2026-11-05T11:00:05-01:00")])["events"]
     assert event["ownership"] == "proven"
     assert event["project_alias"] == "alpha"
     assert "conflicting_binding" not in event["reasons"]
+    assert event["time_coverage"] == "known"
+    assert event["observed_at"] == read([rec()])["events"][0]["observed_at"]
+    assert "ambiguous_time" not in event["reasons"]
 
 
 @pytest.mark.parametrize("second_cwd", [OTHER_PROJECT, BASE + SEP + "elsewhere"],

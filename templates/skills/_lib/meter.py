@@ -1776,8 +1776,7 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
             except (Unavailable, OSError, ValueError, TypeError, AttributeError):
                 reason = "source_read_unavailable"
                 return
-            if (before["directory"] or before["links"] != 1
-                    or before["identity"][0] != volume):
+            if before["directory"] or before["identity"][0] != volume:
                 reason = "source_read_unavailable"
                 return
             if not self.piece and before["size"] > self.budget:
@@ -2178,6 +2177,7 @@ def _enumerate_windows_jsonl(root, api, user_sid, *, retain_snapshot=False):
     all_handles = list(handles)
     links = list(root_links)
     files, entries = [], 0
+    seen = set()
     root_handle = handles[-1]
     root_identity = api.info(root_handle)
     snapshots = {handle: api.info(handle) for handle in all_handles}
@@ -2204,17 +2204,21 @@ def _enumerate_windows_jsonl(root, api, user_sid, *, retain_snapshot=False):
                     info = api.info(child)
                     if (info["identity"] != (volume_info["identity"][0], row["file_id"])
                             or info["directory"] != directory
-                            or info["size"] != row["size"]):
+                            or (not directory and info["size"] != row["size"])):
                         raise Unavailable("source_changed")
                     api.check_acl(child, user_sid, "ancestor")
                     if directory:
                         all_handles.append(child)
+                        snapshots[child] = info
                         links.append((parent, name, child, info))
                         stack.append((child, relative, depth + 1))
                         child = -1
                     else:
                         if info["links"] != 1:
-                            raise Unavailable("source_read_unavailable")
+                            if info["identity"] in seen:
+                                raise Unavailable("source_read_unavailable")
+                            api.check_acl(child, user_sid, "profile")
+                        seen.add(info["identity"])
                         if name.lower().endswith(".jsonl"):
                             files.append((relative, {
                                 "dev": info["identity"][0], "ino": info["identity"][1],
@@ -7302,7 +7306,17 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
             merge_signatures[key] = (usage_signature, binding_signature)
             continue
         prior_usage, prior_binding = merge_signatures[key]
+        earlier = None
+        if tool == "claude":
+            first, second = merged[key]["observed_at"], event["observed_at"]
+            if first is not None and second is not None and first != second:
+                earlier = min(first, second, key=lambda text: datetime.fromisoformat(
+                    text.replace("Z", "+00:00")))
         _merge_normalized_event(merged[key], event)
+        if earlier is not None:
+            merged[key]["observed_at"] = earlier
+            merged[key]["time_coverage"] = "known"
+            merged[key]["reasons"] = sorted(set(merged[key]["reasons"]) - {"ambiguous_time"})
         if prior_usage != usage_signature:
             merged[key]["kinds"] = _unknown_kinds()
             merged[key]["cache_write_ttl"] = {

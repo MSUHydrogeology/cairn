@@ -1,7 +1,7 @@
 # Plan: Defect arc H, the meter reads a real Claude log folder
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -39,7 +39,7 @@ seen.add(info["identity"])
 
 So a file with a second name is read once, and only if it also passes the stricter `profile` access test, which refuses any other account's right to write it. The reader's `before["links"] != 1` test in `_WindowsApprovedLineStream.__iter__` is removed; its directory and volume tests stay. A refused file cannot reach the reader: the walk raises, so the refresh stops before any read. What still ties the file that is read to the file the walk accepted: `_check_stream_identity` (volume and file id, at open and at close), the reader's own `ancestor` access test, and the walk's `verify` after all reads.
 
-*For Security Review.* The old refusal did two things. It kept one file from being read twice under two names: kept, by `seen`. And it was the only thing that stopped another account from planting, inside the log folder, a name for a file the user owns but that account can write: kept, by the `profile` test. A second name outside the folder gives a reader no content the log does not already hold. The owner and access-list tests on every file are untouched. The `hardlink` case (both names inside the folder) is still refused. A second name in another approved folder is read twice, and `_merge_event_batches` keeps one event for each key. Measured on the Windows Server machine with the meter's own `check_acl`, reading no file's data: all 16 logs with two names, and all 120 with one, pass the `profile` test.
+*For Security Review.* The old refusal did two things. It kept one file from being read twice under two names: kept, by `seen`. And it was the only thing that stopped another account from planting, inside the log folder, a name for a file the user owns but that account can write: kept, by the `profile` test. A second name that the user's own app made gives a reader no content the log does not already hold. A name that another account planted for a file of the user's that it can read but not write is no longer refused: it can add only the user's own real records, and a record counts toward a project only when the folder it names is that project's. The owner and access-list tests on every file are untouched. The `hardlink` case (both names inside the folder) is still refused. A second name in another approved folder is read twice, and `_merge_event_batches` keeps one event for each key. Measured on the Windows Server machine with the meter's own `check_acl`, reading no file's data: all 16 logs with two names, and all 120 with one, pass the `profile` test.
 
 **(d) Reply times.** In the merge loop of `read_records`, around the call `_merge_normalized_event(merged[key], event)`:
 
@@ -201,5 +201,118 @@ Security Review:
 Changed in this fold beyond the findings, for the code review to judge: both tests are existing tests, changed, where the plan first named three new ones. The time test becomes `test_same_message_twice_in_one_session_is_one_proven_event`, whose two copies carried one time; that is why the usage-counting plan's tests did not see the fault.
 
 Not run for this response: any test.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation closeout -- Claude Sonnet 5.5 (Implementation) -- 2026-11-21
+
+**Commits** (branch `arc-h-impl`): `d0e4d9d7` status to implementing; `82df2b85` code, shipped copy, the two changed tests, README, changelog; `fb400b49` Cairn's lock (`verify_integrity` reports OK).
+
+**As built.** (a) the size test applies to files only. (b) `snapshots[child] = info` when a sub-folder's handle is added. (c) `seen` set; a file with a second name is refused if already met, else must pass `check_acl(..., "profile")`; the reader's link-count test is removed. (d) the plan's code in the `read_records` merge loop, for Claude only. The fixture now copies `pulse.py` with its byte check. Both changed tests are as the plan gives them.
+
+**Difference from the plan.** In (d) the time key is `lambda text: datetime.fromisoformat(text.replace("Z", "+00:00"))`, because plain `fromisoformat` reads `Z` only from Python 3.11, and the meter elsewhere strips it. In the time test the earliest-time assertion compares with the time a single record reads as (`read([rec()])`), since the stored form is `+00:00`, not `Z`.
+
+**Command, before the code change** (the plan's one command): native Claude test failed, `hardlink` failed, time test failed on its new assertion (`unknown` not `known`). Both native cases failed at their first ordinary refresh (`_native_meter_successful_refresh`), before any of this plan's conditions: the receipt was `unavailable` with reason `unavailable`. This is this machine (probably the project folder's access rights on `F:`, the fifth finding), not the change. Two diagnostic reruns of `hardlink` alone, with traceback and locals, gave that location and reason.
+**After:** time test passed (one further run of that test alone, after I corrected its expected time form). Both native cases failed at the same first refresh. So (a) to (c) are not exercised by any test here; they stay unproven until a Windows run where the fixture's first refresh answers `ok`.
+
+**Not run.** Any other test; the real machines (Strategy's checks); the native tests to completion; the gate-manifest hash (the Maintainer's signing line).
+Home: Strategy's checks after merge, and certification on a Windows machine whose test folder passes the access tests.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Strategy's direct checks before code review -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+The Windows-only tests cannot run on this machine, so Strategy checked (a) to (d) directly, on the branch at `5aa8f5ce`. All four behave as the plan says.
+
+**Why the native tests fail here** (two causes found, one not). Under the default temp folder the first refresh answers `unavailable`: an app-capability identifier holds full control of `AppData`, which the meter's access test refuses on the way to the test's folder (read with `Get-Acl`). From a temp folder on a path the meter accepts, the same refresh answers `git_parser_failed`. The meter's own Git helper reads a made-up project's remote correctly from such a path with the machine's real Git, so that cause lies in the tests' stand-in Git, and it is not found. It is not the project's folder on the `F:` drive: the tests work in a temp folder on `C:`.
+
+**Five planted cases, through the real `_enumerate_windows_jsonl` and the real Windows calls,** on made-up files in a throw-away folder on a path the meter accepts. Run once with the meter of `0.9-dev` and once with this branch's:
+
+| Case | Before | After |
+|---|---|---|
+| A sub-folder that reports 4,096 bytes, holding a log | refused, `source_changed` | accepted, 2 logs |
+| A log with a second name outside the folder | refused, `source_read_unavailable` | accepted, 1 log |
+| A log with both names inside the folder | refused, `source_read_unavailable` | refused, `source_read_unavailable` |
+| A log with a second name that the Users group may write | refused, `source_read_unavailable` | refused, `unavailable` |
+| A log with one name that the Users group may write | accepted | accepted |
+
+The fourth row is the planted bad input for the new access test: it is refused. The fifth is not changed by this plan and is shown for comparison. The cases use plain folders: a folder made by Python's `tempfile.mkdtemp` carries an access list of its own, which the walk refuses.
+
+**A real refresh with this branch's meter on the Windows Server machine** (reason codes and code locations only). It gets through the walk and the reader over 137 log files, with no `source_changed`, no `source_read_unavailable` and no failed lookup. Its only refusals are the access test on the project's folders on `F:`, and the receipt is `project_remote_unavailable`, which is the Maintainer's to settle.
+
+**Reply times on a real log.** Two refreshes with this branch's meter around a short stretch of one session: 1 reply, written as 2 records with different times. The meter recorded 1 event with its time known and no `ambiguous_time`, and its token totals by kind equal an independent count (output 1,202; cache read 548,108). A longer stretch, with sub-agent runs in it, is checked after the code reviews.
+
+Not checked: the native test's new last stage and the `hardlink` case as tests, which have not passed anywhere since the change; the Mac and Linux paths.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-21
+
+Reviewed range: `02dfe045e669ecc326ec129b7b25ba6aa6f01bc9` (merge base with `0.9-dev`) to `d8f675d5485494eff768d8903cd6351504f0ae9d`; code ends at `fb400b49`.
+
+**Obligation**: usual code review. Status left as is for the Security Review pass.
+
+**Verdict**: ACCEPT. Conditions (a) to (d) are as the plan states and nothing else in `meter.py` changed. No blocking finding.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the diff of `dev/tools/meter.py` is 22 lines, in the three named places only -- `git diff 02dfe045 HEAD -- dev/tools/meter.py`.
+2. **Best alternative.** None simpler; changing two existing tests instead of adding three keeps the frozen files untouched -- `git diff --stat` on `tests/security_manifest.py` and `tests/test_security_check.py` is empty.
+3. **What would show it wrong.** A Windows run where the fixture's first refresh answers `ok` and the new last stage fails; Strategy's real refresh -- plan "Strategy's direct checks".
+
+**Findings**
+
+1. Non-blocking: the time test fails if (d) is wrong either way. The three copies are dated 12:00:02, 12:00:00 and 12:00:05; keeping the first (02), the last (05) or losing the time all fail an assertion. It does not test text order against instant order (an offset time); the `fromisoformat` key is read, not run on such a case.
+2. Non-blocking: the native stage fails if (a) or (b) is wrong (refresh not `ok`) or (c) refuses the second name. It would not catch a file read twice, since `_merge_event_batches` keeps one event per key. Reading twice is covered by `seen` in code and by Strategy's planted case 3, not by a test.
+3. Non-blocking: the native stage cannot run on this machine; it and `hardlink` have passed nowhere since the change. The `hardlink` case is unedited (not in the diff). Strategy's planted cases cover (a) to (c) through the real walk; they do not cover (b)'s "folder changes during a refresh" cost.
+4. The fixture fix copies `pulse.py` with the same byte check; nothing else in the set-up changed. Copies: `cmp` prints nothing; the lock commit holds only `dev/.cairn/cairn-lock.yml`; `verify_integrity.py` reports OK. README and changelog lines match what shipped. The record says what was and was not run.
+
+I ran the time test once: passed.
+
+**Not covered**: the Windows-only tests; Security Review questions; real logs; the Mac and Linux paths.
+
+Elapsed time: unknown. Tokens: unknown.
+
+## Code review -- Claude Opus 5.5 (Security Review) -- 2026-11-21
+
+Reviewed range: `02dfe045e669ecc326ec129b7b25ba6aa6f01bc9` (merge base with `0.9-dev`) to `8d91e35f534a765e13d0c7a980bbc35d191538a3`; code ends at `fb400b49`.
+
+**Obligation**: Internal Security Review. No blocking finding in either review, so Status stays.
+
+**Verdict**: ACCEPT. I agree with the usual review's findings 1 to 4; on the security questions below, my wording governs.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: each other check on the walk and the reader is unchanged; only the size test (folders), the folder reading, the link tests and the merge loop moved -- `git diff 02dfe045 fb400b49 -- dev/tools/meter.py`.
+2. **Best alternative.** None safer at this size; the `profile` test denies every other account write, append, attribute, access-list and owner rights -- `check_acl`, `dev/tools/meter.py` lines 656-657.
+3. **What would show it wrong.** A two-name file that another account may write being read; Strategy's planted fourth case shows it refused -- plan "Strategy's direct checks".
+
+**Answers.** A planted name for a file another account can write is refused (`profile`). One file is never read twice in one walk: `seen` refuses a second meeting, and a link added mid-walk changes a folder's write time, which `verify` catches. The file read is tied to the file accepted by volume and file id at open and close (`_check_stream_identity`); its access list cannot be loosened by another account, since both tests deny it that right. (d) compares only records in one file read, all timestamps carry a zone, so no one without write access can move usage between days. (a) and (b) keep identity and directory checks; `verify` still compares each folder's write time and size.
+
+**Findings**
+
+1. Non-blocking: a co-user who may add files to the log folder (the `ancestor` test allows it) can still plant a name for a user-owned file it can open but not write, such as a log outside the approved roots. No usage can be invented, since the content is the user's own; at worst real usage from outside an approved root is counted. The plan's "a second name outside the folder gives a reader no content the log does not already hold" holds only for names the user's app made. Before this change such a name was refused.
+2. Non-blocking: removing the reader's link test also reaches the Git helper's read (line 5911), which has no walk; its SHA-256 check keeps it safe.
+
+I ran the time test once: passed. `cmp` printed nothing; `verify_integrity.py` reports OK; the frozen files are untouched.
+
+**Not covered**: whether Windows lets an account link a file it cannot write (not tested); the Windows-only tests; real logs; Mac and Linux.
+
+Elapsed time: unknown. Tokens: unknown.
+
+## Code-review response -- Claude Fable 5.2 (Strategy, for the author) -- 2026-11-21
+
+Both code reviews accepted the change, and neither raised a blocking finding. Status is now `ready-to-archive`.
+
+Usual review:
+1. Finding 1 (the time test does not set text order against instant order): fixed. The third copy's time is now written with an offset, so it is the latest instant though its text sorts first. Run once: passed.
+2. Finding 2 (the native stage would not catch a file read twice): no change. The unedited `hardlink` case and the third planted case hold that refusal.
+3. Finding 3 (the native stage has passed nowhere since the change): it stands. Home: the certification run on the Windows machine.
+
+Security Review:
+1. Finding 1 (a name planted for a file of the user's that another account can read but not write is no longer refused). Its question, refuse it in a later plan or accept it and correct the plan's sentence: accepted, and the sentence in (c) is corrected. Such a name can add only the user's own real records, and a record counts toward a project only when the folder it names is that project's, so nothing can be invented or moved to another project.
+2. Finding 2 (the reader's link test is also gone from the read of the Git helper's own source): no change; its SHA-256 check holds it, as the review says.
+
+Not run for this response: any test but the one named above.
 
 **Elapsed**: unknown. **Tokens**: unknown.

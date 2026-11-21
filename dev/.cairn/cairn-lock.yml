@@ -73,7 +73,7 @@
     },
     {
       "dst": "dev/measurement/README.md",
-      "hash": "sha256:98d5a0fc21d455ec1eb4b85d44942407fb4ddc41c301f3e3beed4df77e0a5359",
+      "hash": "sha256:52ba7c15f301b1452895cb604bc75c4ce1fafe4ff861da3bfd93f38bfe86d8bf",
       "src": "core/dev/measurement/README.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -507,7 +507,7 @@
     {
       "base_hash": "sha256:9cd9141086c2776aaaef557af3886983723c4f374717332dd5b3f00127f8b4b3",
       "dst": "dev/tools/meter.py",
-      "hash": "sha256:072408369aeca3244f5f6fe5a5fa06062f68baf0f0688fbf2e03a5305aeefda6",
+      "hash": "sha256:7ab5a5045aaf104f9a1c475ce1cf04dda1a90389dfc2988ac85236fc9067b913",
       "src": "skills/_lib/meter.py",
       "verbatim": true
     },

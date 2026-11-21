@@ -108,7 +108,11 @@ them.
   `~/.cairn/meter/ledger.json` aside to start a new one.
   A Claude record counts toward a project when its own working folder is the
   project's or lies inside it, its log is under an approved root, and the
-  project's remote checks out. Summaries of finished sub-agents are not
+  project's remote checks out. On Windows a log may have a second name (the
+  Claude desktop app keeps one for each background sub-agent); the Meter reads
+  it once, and only when no other account may write it. A Claude reply logged
+  in several pieces is dated by its earliest piece, unless the pieces fall in
+  two refreshes. Summaries of finished sub-agents are not
   counted; a reading whose summaries cannot be tied to a read transcript prints
   INCOMPLETE. The runs are kept for every session under the approved roots, so
   one untied summary anywhere marks every project, and it clears only when the
