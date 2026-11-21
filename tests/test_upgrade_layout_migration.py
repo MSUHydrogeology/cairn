@@ -12,6 +12,7 @@ import pytest
 
 from install import scaffold
 from install._scaffold import layout_migration as migration
+from install._scaffold import upgrade
 
 
 LOCK = "dev/.cairn/cairn-lock.yml"
@@ -164,7 +165,8 @@ def test_layout_migration_resumes_on_either_side_of_lock(layout, capsys, monkeyp
     records = {row["dst"]: row for row in scaffold.read_lockfile(target)["files"]}
     assert records[NEW[1]]["hash"] == _digest(FORK)
     assert records[NEW[1]]["base_hash"] == _digest(LATEST[1])
-    assert records[NEW[1]]["layout_fork"] is True
+    for key in ("layout_ancestry", "layout_base_commit", "layout_fork"):
+        assert key not in records[NEW[1]]
     assert records["CLAUDE.md"]["hash"] == _digest(b"@AGENTS.md\nProject wrapper\n")
 
 
@@ -224,3 +226,271 @@ def test_packaged_source_only_needs_history_for_legacy_paths(layout, capsys):
     _put(target, LOCK, json.dumps(lock).encode("utf-8"))
     assert _upgrade(layout, "--plan") == 0
     assert not (target / RECEIPT).exists()
+
+
+GIT_READ_CRLF = (
+    "Cairn's copy of templates/skills/_lib/git_read.py has Windows line endings, "
+    "so the installer cannot trust it. Git did this when it cloned Cairn with "
+    "core.autocrlf=true. In the Cairn checkout run `git config core.autocrlf "
+    "false`, delete that file, and run `git checkout -- "
+    "templates/skills/_lib/git_read.py`. Then run this command again. A new clone "
+    "made with `git clone -c core.autocrlf=false` also works."
+)
+GIT_READ_OTHER = (
+    "Cairn's copy of templates/skills/_lib/git_read.py does not match the copy "
+    "this installer is pinned to (it was edited, is a link, or is another "
+    "version). Restore it from the Cairn release you are installing from, then "
+    "run this command again."
+)
+
+
+@pytest.mark.parametrize("edited", (False, True), ids=("crlf-copy", "edited-copy"))
+def test_unbound_git_reader_names_its_cause(layout, capsys, monkeypatch, tmp_path, edited):
+    helper = Path(__file__).resolve().parents[1] / "templates/skills/_lib/git_read.py"
+    raw = helper.read_bytes().replace(b"\n", b"\r\n")
+    if edited:
+        raw += b"# edited\r\n"
+    copy = tmp_path / "git_read.py"
+    copy.write_bytes(raw)
+
+    def unbound():
+        raise RuntimeError("Git read helper binding failed")
+
+    monkeypatch.setattr(upgrade, "_git_read_helper", unbound)
+    monkeypatch.setattr(upgrade, "_git_read_helper_path", lambda: str(copy))
+    assert _upgrade(layout, "--plan") == 2
+    error = capsys.readouterr().err
+    assert (GIT_READ_OTHER if edited else GIT_READ_CRLF) in error
+
+
+def test_exact_copy_is_not_called_line_endings(layout, capsys, monkeypatch, tmp_path):
+    helper = Path(__file__).resolve().parents[1] / "templates/skills/_lib/git_read.py"
+    copy = tmp_path / "git_read.py"
+    copy.write_bytes(helper.read_bytes())
+
+    def unbound():
+        raise RuntimeError("Git read helper binding failed")
+
+    monkeypatch.setattr(upgrade, "_git_read_helper", unbound)
+    monkeypatch.setattr(upgrade, "_git_read_helper_path", lambda: str(copy))
+    assert _upgrade(layout, "--plan") == 2
+    error = capsys.readouterr().err
+    assert GIT_READ_CRLF not in error
+    assert GIT_READ_OTHER in error
+
+
+@pytest.mark.parametrize("case", ("oversize", "missing", "linked"))
+def test_a_helper_that_cannot_be_read_safely_is_not_called_line_endings(
+        layout, capsys, monkeypatch, tmp_path, case):
+    helper = Path(__file__).resolve().parents[1] / "templates/skills/_lib/git_read.py"
+    crlf = helper.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+    copy = tmp_path / "git_read.py"
+    if case == "oversize":
+        copy.write_bytes(crlf + b"#" * (upgrade._GIT_READ_MAX_BYTES + 1))
+    elif case == "linked":
+        real = tmp_path / "real.py"
+        real.write_bytes(crlf)
+        try:
+            copy.symlink_to(real)
+        except OSError:
+            pytest.skip("links cannot be made on this host")
+
+    def unbound():
+        raise RuntimeError("Git read helper binding failed")
+
+    monkeypatch.setattr(upgrade, "_git_read_helper", unbound)
+    monkeypatch.setattr(upgrade, "_git_read_helper_path", lambda: str(copy))
+    assert _upgrade(layout, "--plan") == 2
+    error = capsys.readouterr().err
+    assert GIT_READ_CRLF not in error
+    assert GIT_READ_OTHER in error
+
+
+def test_unbound_git_reader_names_its_cause_for_a_to_upgrade(layout, capsys, monkeypatch, tmp_path):
+    helper = Path(__file__).resolve().parents[1] / "templates/skills/_lib/git_read.py"
+    copy = tmp_path / "git_read.py"
+    copy.write_bytes(helper.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+
+    def unbound():
+        raise RuntimeError("Git read helper binding failed")
+
+    monkeypatch.setattr(upgrade, "_git_read_helper", unbound)
+    monkeypatch.setattr(upgrade, "_git_read_helper_path", lambda: str(copy))
+    code = _upgrade(layout, "--plan", "--to", "HEAD")
+    error = capsys.readouterr().err
+    assert GIT_READ_CRLF in error
+    assert code == 1, (code, error)
+
+
+def test_the_refusal_looks_at_the_pinned_helper_itself():
+    raw = Path(upgrade._git_read_helper_path()).read_bytes()
+    folded = raw.replace(b"\r\n", b"\n")
+    assert hashlib.sha256(folded).hexdigest() == upgrade._GIT_READ_SHA256
+
+
+def _keyed_moved_record(old_rev: str) -> dict:
+    return {"src": "skills/_lib/board.py", "dst": NEW[0], "verbatim": True,
+            "base_hash": _digest(LATEST[0]), "hash": _digest(LATEST[0]),
+            "layout_ancestry": "verified", "layout_base_commit": old_rev,
+            "layout_fork": False}
+
+
+def test_heal_layout_removes_keys_from_moved_records_only(layout, capsys):
+    _, target, old_rev = layout
+    _put(target, NEW[0], LATEST[0])
+    lock = scaffold.read_lockfile(target)
+    lock["files"].append(_keyed_moved_record(old_rev))
+    for row in lock["files"]:
+        if row["dst"] == OLD[0]:
+            row.update(layout_ancestry="verified", layout_base_commit=old_rev, layout_fork=False)
+    _put(target, LOCK, json.dumps(lock).encode("utf-8"))
+    _commit(target, "lock with layout keys on a moved record and an old path")
+    expected = scaffold.read_lockfile(target)
+    for row in expected["files"]:
+        if row["dst"] == NEW[0]:
+            for key in ("layout_ancestry", "layout_base_commit", "layout_fork"):
+                row.pop(key)
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    assert "Removed layout keys from 1 lock record(s). Commit dev/.cairn/cairn-lock.yml." \
+        in capsys.readouterr().out
+    assert scaffold.read_lockfile(target) == expected
+    records = {row["dst"]: row for row in scaffold.read_lockfile(target)["files"]}
+    assert records[OLD[0]]["layout_base_commit"] == old_rev
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    assert "Nothing to heal." in capsys.readouterr().out
+
+
+def test_heal_layout_refuses_a_dirty_lock(layout, capsys):
+    _, target, old_rev = layout
+    _put(target, NEW[0], LATEST[0])
+    lock = scaffold.read_lockfile(target)
+    lock["files"].append(_keyed_moved_record(old_rev))
+    _put(target, LOCK, json.dumps(lock).encode("utf-8"))
+    before = (target / LOCK).read_bytes()
+
+    assert _upgrade(layout, "--heal-layout") == 1
+    assert (target / LOCK).read_bytes() == before
+    assert "unsaved edits" in capsys.readouterr().err
+
+
+SHALLOW_TEXT = ("unproved ancestry; the Cairn checkout is shallow, so the release "
+                "this copy came from is not in it")
+SHALLOW_FETCH = ("Fetch the full history in the Cairn checkout (git fetch --unshallow "
+                 "--tags), then run this again.")
+
+
+def test_shallow_cairn_checkout_says_to_fetch_the_history(layout, capsys, tmp_path):
+    source, target, _ = layout
+    shallow = tmp_path / "shallow"
+    _git(tmp_path, "clone", "--depth", "1", "file://" + source.as_posix(), str(shallow))
+
+    assert scaffold.main(["upgrade", "--cairn-root", str(shallow), "--target", str(target),
+                          "--plan", "--to", "HEAD"]) == 2
+    error = capsys.readouterr().err
+    assert f"{OLD[0]}: {SHALLOW_TEXT}" in error
+    assert error.count(SHALLOW_FETCH) == 1
+
+
+def test_stale_hash_with_crlf_base_is_planned_as_a_copy(layout, capsys):
+    _, target, _ = layout
+    lock = scaffold.read_lockfile(target)
+    record = next(row for row in lock["files"] if row["dst"] == OLD[0])
+    crlf = ORIGINAL[0].replace(b"\n", b"\r\n")
+    record["hash"] = record["base_hash"] = _digest(crlf)
+    _put(target, LOCK, json.dumps(lock).encode("utf-8"))
+    _commit(target, "lock whose base hash is the CRLF form of the original")
+
+    assert _upgrade(layout, "--plan", "--to", "HEAD") == 0
+    assert "  copy: " + OLD[0] + " -> " + NEW[0] in capsys.readouterr().out
+
+
+CHECK_DST = "dev/modules/claim-check.md"
+CHECK_BASE = "dev/.cairn/base/" + CHECK_DST
+CHECK_TEMPLATE = b"Run `{{claim_check_command}}` on a document.\n"
+CHECK_OLD = b"Run `python scripts/claim_check.py` on a document.\n"
+CHECK_NEW = b"Run `python dev/tools/claim_check.py` on a document.\n"
+CHECK_EDITED = b"Run `python scripts/claim_check.py` on a document. Mine.\n"
+
+
+def _claim_check_tree(layout, *, edited: bytes = CHECK_OLD, token: str = "python scripts/claim_check.py"):
+    """A lock whose claim_check_command still names the pre-0.8 script, with the
+    moved script's record and the rendered module doc as an adopter has it."""
+    _, target, _ = layout
+    _put(target, CHECK_BASE, CHECK_TEMPLATE)
+    _put(target, CHECK_DST, edited)
+    _put(target, "dev/tools/claim_check.py", b"# claim check\n")
+    lock = scaffold.read_lockfile(target)
+    lock["tokens"] = {"claim_check_command": token}
+    lock["files"].append({"src": "modules/default-on/claim-check.md", "dst": CHECK_DST,
+                          "verbatim": False, "base_cache": CHECK_BASE,
+                          "base_hash": _digest(CHECK_TEMPLATE), "hash": _digest(edited)})
+    lock["files"].append({"src": "modules/default-on/claim_check.py",
+                          "dst": "dev/tools/claim_check.py", "verbatim": True,
+                          "base_hash": _digest(b"# claim check\n"),
+                          "hash": _digest(b"# claim check\n")})
+    _put(target, LOCK, json.dumps(lock).encode("utf-8"))
+    _commit(target, "pre-0.8 claim-check setting")
+
+
+def test_heal_layout_corrects_the_token_and_an_unedited_file(layout, capsys):
+    _, target, _ = layout
+    _claim_check_tree(layout)
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    lock = scaffold.read_lockfile(target)
+    assert lock["tokens"]["claim_check_command"] == "python dev/tools/claim_check.py"
+    assert (target / CHECK_DST).read_bytes() == CHECK_NEW
+    record = next(row for row in lock["files"] if row["dst"] == CHECK_DST)
+    assert record["hash"] == _digest(CHECK_NEW)
+    assert record["base_hash"] == _digest(CHECK_TEMPLATE)
+
+
+def test_heal_layout_keeps_and_names_an_edited_file(layout, capsys):
+    _, target, _ = layout
+    _claim_check_tree(layout, edited=CHECK_EDITED)
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    assert (f"kept {CHECK_DST}: you edited it, so it still names the old path; "
+            "correct it by hand") in capsys.readouterr().out
+    assert (target / CHECK_DST).read_bytes() == CHECK_EDITED
+    lock = scaffold.read_lockfile(target)
+    assert lock["tokens"]["claim_check_command"] == "python dev/tools/claim_check.py"
+    record = next(row for row in lock["files"] if row["dst"] == CHECK_DST)
+    assert record["hash"] == _digest(CHECK_EDITED)
+
+
+def test_heal_layout_second_run_has_nothing_to_heal(layout, capsys):
+    _claim_check_tree(layout)
+    assert _upgrade(layout, "--heal-layout") == 0
+    capsys.readouterr()
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    assert "Nothing to heal." in capsys.readouterr().out
+
+
+def test_heal_layout_leaves_a_custom_token_value_alone(layout, capsys):
+    _, target, _ = layout
+    _claim_check_tree(layout, token="python tools/my_check.py")
+    before = (target / LOCK).read_bytes()
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    assert "Nothing to heal." in capsys.readouterr().out
+    assert (target / LOCK).read_bytes() == before
+    assert (target / CHECK_DST).read_bytes() == CHECK_OLD
+
+
+def test_heal_layout_prints_no_token_name_from_the_lock_that_is_not_plain(layout, capsys):
+    _, target, _ = layout
+    _claim_check_tree(layout)
+    lock = scaffold.read_lockfile(target)
+    lock["tokens"]["evil\x1b]0;x\x07"] = "python scripts/claim_check.py"
+    _put(target, LOCK, json.dumps(lock).encode("utf-8"))
+    _commit(target, "a token name holding a terminal escape")
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    assert "\x1b" not in capsys.readouterr().out
+    lock = scaffold.read_lockfile(target)
+    assert lock["tokens"]["claim_check_command"] == "python dev/tools/claim_check.py"
+    assert lock["tokens"]["evil\x1b]0;x\x07"] == "python scripts/claim_check.py"

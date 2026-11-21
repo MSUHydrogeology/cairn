@@ -19,8 +19,11 @@ path is confirmed within the Cairn root before it executes.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import os
 import re
 import secrets
+import stat
 import sys
 import unicodedata
 from pathlib import Path
@@ -79,6 +82,7 @@ from .layout_catalog import (
     ONBOARDING_GUIDES,
     SELF_HOST_UNLISTED,
 )
+from . import lockfile as _lockfile
 from .lockfile import (
     _BASE_CACHE_REL,
     _LIVING_STATE_DSTS,
@@ -89,6 +93,8 @@ from .lockfile import (
     _cairn_commit,
     _cairn_provenance,
     _cairn_version,
+    _GIT_READ_MAX_BYTES,
+    _GIT_READ_SHA256,
     _git_read_helper,
     _git_read_version,
     _resolve_commit_oid,
@@ -160,6 +166,86 @@ def _cairn_is_git(cairn_root: Path) -> bool:
         return False
     return (r.state == "completed" and r.returncode == 0
             and r.stdout.strip() == b"true")
+
+
+def _cairn_git_is_shallow(root: Path) -> bool:
+    """True only when the Git folder of the checkout at *root* holds a ``shallow`` file."""
+    try:
+        r = _git_read_helper().run_git(
+            str(root), ("rev-parse", "--path-format=absolute", "--git-common-dir"),
+            timeout=10, output_limit=4096)
+        if r.state != "completed" or r.returncode != 0:
+            return False
+        common = os.fsdecode(r.stdout.strip())
+        return os.path.isfile(os.path.join(common, "shallow"))
+    except (OSError, RuntimeError, ValueError):
+        return False
+
+
+_GIT_READ_CRLF_TEXT = (
+    "Cairn's copy of templates/skills/_lib/git_read.py has Windows line endings, "
+    "so the installer cannot trust it. Git did this when it cloned Cairn with "
+    "core.autocrlf=true. In the Cairn checkout run `git config core.autocrlf "
+    "false`, delete that file, and run `git checkout -- "
+    "templates/skills/_lib/git_read.py`. Then run this command again. A new clone "
+    "made with `git clone -c core.autocrlf=false` also works."
+)
+_GIT_READ_OTHER_TEXT = (
+    "Cairn's copy of templates/skills/_lib/git_read.py does not match the copy "
+    "this installer is pinned to (it was edited, is a link, or is another "
+    "version). Restore it from the Cairn release you are installing from, then "
+    "run this command again."
+)
+
+
+def _git_read_helper_path() -> str:
+    """The pinned Git reader's path, built as ``lockfile._git_read_helper`` builds it."""
+    return os.path.abspath(os.path.join(
+        os.path.dirname(_lockfile.__file__), "..", "..", "templates", "skills",
+        "_lib", "git_read.py"))
+
+
+def _git_read_plain_bytes(path: str) -> bytes | None:
+    """The file's bytes when no part of *path* is a link and the file is a
+    regular file of at most ``_GIT_READ_MAX_BYTES``; otherwise ``None``, read
+    nothing. A missing file counts as not regular."""
+    current = os.path.splitdrive(path)[0] + os.sep
+    info = None
+    try:
+        for part in path[len(current):].split(os.sep):
+            if not part:
+                continue
+            current = os.path.join(current, part)
+            info = os.lstat(current)
+            attrs = getattr(info, "st_file_attributes", 0)
+            if (stat.S_ISLNK(info.st_mode)
+                    or attrs & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)):
+                return None
+        if info is None or not stat.S_ISREG(info.st_mode):
+            return None
+        if info.st_size > _GIT_READ_MAX_BYTES:
+            return None
+        with open(path, "rb") as handle:
+            raw = handle.read(_GIT_READ_MAX_BYTES + 1)
+    except OSError:
+        return None
+    return None if len(raw) > _GIT_READ_MAX_BYTES else raw
+
+
+def _git_read_binding_refusal() -> str | None:
+    """None when the pinned Git reader binds; otherwise the fixed text that
+    says why. Never returns file bytes."""
+    try:
+        _git_read_helper()
+    except RuntimeError:
+        pass
+    else:
+        return None
+    raw = _git_read_plain_bytes(_git_read_helper_path())
+    if raw is not None and b"\r\n" in raw and hashlib.sha256(
+            raw.replace(b"\r\n", b"\n")).hexdigest() == _GIT_READ_SHA256:
+        return _GIT_READ_CRLF_TEXT
+    return _GIT_READ_OTHER_TEXT
 
 
 def _commit_has_path(cairn_root: Path, commit: str, rel_path: str) -> bool:
@@ -832,6 +918,12 @@ def _compute_upgrade(
             continue
         verbatim = bool(rec.get("verbatim"))
         src_rel = rec["src"]
+        if (_wrapper_retired(rec, lock.get("files", []), target)
+                and _resolve_vendor_wrapper(
+                    target, {r["dst"] for r in lock.get("files", [])}) is None):
+            plans.append(FilePlan(dst, "up-to-date", None,
+                                  "vendor wrapper deleted on purpose", None, None))
+            continue
         # Renamed vendor wrapper (#45): the lockfile records the thin
         # wrapper under its canonical dst ``VENDOR.md`` (``write_install_
         # lockfile`` does not resolve the rename), but an adopter renames it
@@ -957,9 +1049,12 @@ def _compute_upgrade(
                 ancestor_reason = (
                     "saved ancestor differs only in line endings (core.autocrlf?); "
                     "see UPGRADE.md (review-only diff)")
+            wrapper_hint = (
+                f"; if you deleted it on purpose, run upgrade --retire-wrapper {dst}"
+                if ours_bytes is None and src_rel == "core/VENDOR.md" else "")
             plans.append(FilePlan(
                 dst, "review-only", None,
-                ("file missing on disk; " + ancestor_reason
+                ("file missing on disk; " + ancestor_reason + wrapper_hint
                  if ours_bytes is None else ancestor_reason),
                 theirs_raw, cache_rel if isinstance(cache_rel, str) else None,
                 ancestor_evidence={
@@ -1001,7 +1096,10 @@ def _compute_upgrade(
             # A missing destination still owes manual reconciliation. Carry
             # the checked ancestor identity so apply can bind recovery to it.
             plans.append(FilePlan(
-                dst, "review-only", None, "file missing on disk",
+                dst, "review-only", None,
+                "file missing on disk" + (
+                    f"; if you deleted it on purpose, run upgrade --retire-wrapper {dst}"
+                    if src_rel == "core/VENDOR.md" else ""),
                 theirs_raw, cache_rel, ancestor_evidence=evidence))
             continue
         # Size the ancestor sides for the merge view only: base under the OLD
@@ -1763,6 +1861,44 @@ def _linked_vendor_wrapper_names(target: Path, mapped_dsts: set[str]) -> list[st
     reading it, and nothing here reads through one.  Names only."""
     return [name for name in _KNOWN_VENDOR_WRAPPERS
             if name not in mapped_dsts and (target / name).is_symlink()]
+
+
+#: Root names that are never a vendor wrapper, whatever a lockfile record says.
+_NOT_A_VENDOR_WRAPPER = ("AGENTS.md", "CHANGELOG.md", "RULES.md", "NOTICE.md")
+
+
+def _wrapper_record_fits(rec: dict[str, Any], files: list[Any]) -> bool:
+    """The part of the retired-wrapper rule that reads only the lockfile: *rec*
+    is the one ``core/VENDOR.md`` record, is not verbatim, and its ``dst`` is a
+    root-level ``.md`` name, with no ``:``, that Cairn does not ship as its own
+    file. Repeated
+    inline in ``install/verify_integrity.py``; change both together."""
+    if rec.get("src") != "core/VENDOR.md" or rec.get("verbatim"):
+        return False
+    if sum(1 for other in files if isinstance(other, dict)
+           and other.get("src") == "core/VENDOR.md") != 1:
+        return False
+    dst = rec.get("dst")
+    return (isinstance(dst, str) and dst.endswith(".md") and "/" not in dst
+            and "\\" not in dst and ":" not in dst
+            and dst not in _NOT_A_VENDOR_WRAPPER)
+
+
+def _wrapper_retired(rec: dict[str, Any], files: list[Any], target: Path) -> bool:
+    """One rule decides whether a lockfile record is a vendor wrapper the adopter
+    deleted on purpose (``upgrade --retire-wrapper``). All must hold:
+    ``adopter_deleted`` is true; the record fits (`_wrapper_record_fits`); and
+    ``lstat`` of its ``dst`` says the file is absent. ``verify_integrity``
+    repeats this inline; change both together."""
+    if rec.get("adopter_deleted") is not True or not _wrapper_record_fits(rec, files):
+        return False
+    try:
+        os.lstat(target / rec["dst"])
+    except FileNotFoundError:
+        return True
+    except OSError:
+        return False
+    return False
 
 
 def _find_manifest_path(target: Path) -> tuple[Path, bool] | None:
@@ -2908,6 +3044,11 @@ def _cmd_finalize_lockfile(
         dst_rel = _disk_dst(target, rec, mapped)
         if dst_rel is None:
             continue
+        if (_wrapper_retired(rec, files, target)
+                and _resolve_vendor_wrapper(target, mapped) is None):
+            continue  # a wrapper the adopter deleted on purpose stays retired
+        if "adopter_deleted" in rec and os.path.lexists(target / dst_rel):
+            rec.pop("adopter_deleted")  # the file is back: it is checked again
         orig_dst = rec["dst"]  # lockfile-recorded dst, pre rename-resolution
         if dst_rel != orig_dst:
             rec["dst"] = dst_rel
@@ -4120,6 +4261,9 @@ def _self_heal_profile_config(target: Path, lock: dict[str, Any]) -> bool:
 
 
 _LAYOUT_MOVES = tuple(row for row in LAYOUT_INSTALLS if row[1:3] != row[4:6])
+# Keys the layout move used to leave on moved records; the security verification
+# refuses them, so the final stage no longer writes them.
+_LAYOUT_LOCK_KEYS = ("layout_ancestry", "layout_base_commit", "layout_fork")
 _LAYOUT_NEW_ROWS = {(owner, new_src, new_dst, verbatim)
                     for owner, _, _, verbatim, new_src, new_dst in _LAYOUT_MOVES}
 
@@ -4165,6 +4309,9 @@ def _layout_target(cairn_root: Path, to_ref: str | None, *,
             if not remaining:
                 return None
             if not _cairn_is_git(cairn_root):
+                refusal = _git_read_binding_refusal()
+                if refusal is not None:
+                    raise ScaffoldSecurityError(refusal)
                 raise ScaffoldSecurityError(
                     "use a Cairn Git checkout with the legacy installer history to "
                     "verify these old copies: " + ", ".join(remaining))
@@ -4301,6 +4448,8 @@ def _layout_plan(target: Path, source: SourceRevision,
     history: dict = {}
     blocks: list[str] = []
     restore: list[str] = []
+    shallow = _cairn_git_is_shallow(source.root)
+    shallow_blocked = False
     for row in _LAYOUT_MOVES:
         owner, src, dst, verbatim, new_src, new_dst = row
         rec = files.get(dst)
@@ -4334,8 +4483,9 @@ def _layout_plan(target: Path, source: SourceRevision,
         historical = _layout_recorded_source(source.root, source,
             (rec or {}).get("layout_base_commit") or lock.get("cairn_commit"), history)
         old = _layout_blob(historical, row)
-        old_proved = (old is not None and rec is not None
-                      and (rec.get("base_hash") or rec.get("hash")) == _layout_digest(old.raw))
+        old_proved = old is not None and rec is not None and (
+            (rec.get("base_hash") or rec.get("hash")) == _layout_digest(old.raw)
+            or (verbatim and live.raw == old.raw))
         if comparison is not None:
             compared = _layout_blob(comparison, row)
             if compared is None:
@@ -4370,7 +4520,11 @@ def _layout_plan(target: Path, source: SourceRevision,
             tx.actions.append((dst, dst, action))
             continue
         if not old_proved:
-            blocks.append(f"{dst}: unproved ancestry; reconcile the old copy before moving it")
+            if historical is None and shallow:
+                blocks.append(f"{dst}: unproved ancestry; the Cairn checkout is shallow, so the release this copy came from is not in it")
+                shallow_blocked = True
+            else:
+                blocks.append(f"{dst}: unproved ancestry; reconcile the old copy before moving it")
             continue
         if new_dst in files:
             blocks.append(f"{new_dst}: destination already has a lockfile owner")
@@ -4392,9 +4546,8 @@ def _layout_plan(target: Path, source: SourceRevision,
         if cache is not None:
             path, raw = cache
             tx.write(path.relative_to(target).as_posix(), raw, 0o644, absent=True)
-        entry = {**rec, **entry, "layout_base_commit": source.oid,
-                 "layout_ancestry": rec.get("layout_ancestry", "verified"),
-                 "layout_fork": action == "fork"}
+        entry = {key: value for key, value in {**rec, **entry}.items()
+                 if key not in _LAYOUT_LOCK_KEYS}
         files[dst] = entry
         if new_dst != dst:
             tx.retire[dst] = new_dst
@@ -4403,7 +4556,8 @@ def _layout_plan(target: Path, source: SourceRevision,
     # Keep the existing wrapper, including a known renamed or recorded custom
     # wrapper. Adopt its observed bytes without rebasing its existing ancestor.
     wrapper = next((row for row in files.values() if row["src"] == "core/VENDOR.md"), None)
-    if wrapper is not None and tx.actions:
+    if (wrapper is not None and tx.actions
+            and not _wrapper_retired(wrapper, list(files.values()), target)):
         recorded = wrapper["dst"]
         if "/" in recorded:
             raise ScaffoldSecurityError("the existing vendor wrapper is not a root file")
@@ -4441,6 +4595,8 @@ def _layout_plan(target: Path, source: SourceRevision,
         new_lock = _emit_lock_yaml(lock).encode("utf-8")
         if new_lock != original.raw:
             tx.write(_LOCKFILE_REL, new_lock, original.mode)
+    if shallow_blocked:
+        blocks.append("Fetch the full history in the Cairn checkout (git fetch --unshallow --tags), then run this again.")
     return tx, blocks
 
 
@@ -4465,6 +4621,200 @@ def _layout_guard(force: bool, after: bool, tx: LayoutTransaction) -> None:
                                     + "; commit them or pass --force")
 
 
+def _layout_heal_findings(lock: dict[str, Any]) -> tuple[list[dict[str, Any]], list[tuple[str, str, str]]]:
+    """Two kinds of finding. Records: lock records that carry a layout-move key
+    and whose ``dst`` is not an old path of ``_LAYOUT_MOVES`` (an old-path record
+    is left for the reconcile). Settings: ``(name, value, new)`` for each lock
+    token whose value is ``"python " + old`` for a row of ``_LAYOUT_MOVES``, when
+    the file ``new`` has a record and no record has ``old``."""
+    files = lock.get("files") or []
+    old_paths = {row[2] for row in _LAYOUT_MOVES}
+    records = [rec for rec in files
+               if rec.get("dst") not in old_paths
+               and any(key in rec for key in _LAYOUT_LOCK_KEYS)]
+    dsts = {rec.get("dst") for rec in files}
+    settings = lock.get("tokens") or {}
+    if not isinstance(settings, dict):
+        settings = {}
+    tokens = []
+    for name, value in settings.items():
+        if not (isinstance(name, str) and re.fullmatch(r"\w+", name, re.ASCII)):
+            continue  # not a name a template can hold; never printed
+        for _, _, old, _, _, new in _LAYOUT_MOVES:
+            if value == "python " + old and new in dsts and old not in dsts:
+                tokens.append((name, value, new))
+    return records, tokens
+
+
+def _layout_heal_rendered(target: Path, rec: dict[str, Any], profile: dict[str, Any],
+                          old_tokens: dict[str, Any], new_tokens: dict[str, Any],
+                          tokens: list[tuple[str, str, str]]
+                          ) -> tuple[bytes | None, str | None]:
+    """For one non-verbatim record: ``(bytes, None)`` to rewrite the file,
+    ``(None, message)`` to keep it and name it, ``(None, None)`` when its saved
+    ancestor names none of the settings. The ancestor is read as
+    ``_compute_upgrade`` reads a merge ancestor; the project file with
+    ``_assert_safe_write`` then ``_read_regular_bytes``."""
+    dst = rec["dst"]
+    unreadable = f"kept {dst}: could not be read safely; correct it by hand"
+    try:
+        base_path = target / rec["base_cache"]
+        _assert_safe_write(base_path, target)
+        base_bytes = _read_regular_bytes(base_path)
+        if base_bytes is None or "sha256:" + _sha256_hex(base_bytes) != rec.get("base_hash"):
+            raise ValueError("saved ancestor digest does not match")
+        base_text = base_bytes.decode("utf-8")
+    except (OSError, UnicodeError, ValueError, ScaffoldSecurityError):
+        return None, unreadable
+    if not any("{{" + name + "}}" in base_text for name, _, _ in tokens):
+        return None, None
+    row = next((r for r in LAYOUT_INSTALLS if r[5] == dst), None)
+    if row is None:
+        return None, unreadable
+    old_render = _layout_render(base_bytes, row[4], profile, old_tokens)
+    new_render = _layout_render(base_bytes, row[4], profile, new_tokens)
+    if old_render is None or new_render is None:
+        return None, unreadable
+    try:
+        path = target / dst
+        _assert_safe_write(path, target)
+        raw = _read_regular_bytes(path)
+        if raw is None:
+            raise ValueError("project file is missing")
+        ours = raw.decode("utf-8")
+    except (OSError, UnicodeError, ValueError, ScaffoldSecurityError):
+        return None, unreadable
+    if ours in (old_render, new_render):
+        return new_render.encode("utf-8"), None
+    return None, (f"kept {dst}: you edited it, so it still names the old path; "
+                  "correct it by hand")
+
+
+def _cmd_heal_layout(target: Path, lock: dict[str, Any], force: bool) -> int:
+    """`upgrade --heal-layout`: remove the layout-move keys from the records
+    that carry them, correct each setting that still names a pre-0.8 path and
+    the files it renders, so the security verification accepts the lockfile.
+    Files are written first; the lockfile is committed last."""
+    findings, tokens = _layout_heal_findings(lock)
+    if not findings and not tokens:
+        print("Nothing to heal.")
+        return 0
+    if not force:
+        try:
+            dirty = _writeset_dirty_collisions(target, [_LOCKFILE_REL])
+        except _EditCheckCannotTell as exc:
+            print(_cannot_tell_refusal("--heal-layout", exc.reason), file=sys.stderr)
+            return 1
+        if dirty:
+            print("error: refusing --heal-layout: the lockfile has unsaved edits; "
+                  "commit them or pass --force", file=sys.stderr)
+            return 1
+    profile = lock.get("profile") or {}
+    old_tokens = dict(lock.get("tokens") or {})
+    new_tokens = dict(old_tokens)
+    for name, _, new in tokens:
+        new_tokens[name] = "python " + new
+    writes: list[tuple[dict[str, Any], bytes]] = []
+    if tokens:
+        for rec in lock.get("files") or []:
+            if rec.get("verbatim") or not isinstance(rec.get("base_cache"), str):
+                continue
+            data, message = _layout_heal_rendered(
+                target, rec, profile, old_tokens, new_tokens, tokens)
+            if message is not None:
+                print(message)
+            if data is not None:
+                writes.append((rec, data))
+        profile_path = target / _PROFILE_REL
+        try:
+            _assert_safe_write(profile_path, target)
+            profile_raw = _read_regular_bytes(profile_path) or b""
+        except (OSError, ScaffoldSecurityError):
+            profile_raw = b""
+        for name, value, new in tokens:
+            if value.encode("utf-8") in profile_raw:
+                print(f"note: {_PROFILE_REL} also names {value}; change it there to "
+                      f"python {new}.")
+    for rec, data in writes:
+        _write_by_replacing(target / rec["dst"], data, target)
+        rec["hash"] = _layout_digest(data)
+        print(f"Rewrote {rec['dst']}.")
+    for rec in findings:
+        for key in _LAYOUT_LOCK_KEYS:
+            rec.pop(key, None)
+    for name, _, new in tokens:
+        lock["tokens"][name] = "python " + new
+    _commit_lock_and_caches(target, lock, [])
+    if findings:
+        print(f"Removed layout keys from {len(findings)} lock record(s). "
+              f"Commit {_LOCKFILE_REL}.")
+    for name, _, new in tokens:
+        print(f"Set {name} to python {new}. Commit {_LOCKFILE_REL}.")
+    return 0
+
+
+def _cmd_retire_wrapper(target: Path, lock: dict[str, Any], name: str, force: bool) -> int:
+    """`upgrade --retire-wrapper NAME`: record that the adopter deleted the vendor
+    wrapper on purpose. Sets ``adopter_deleted`` on the one ``core/VENDOR.md``
+    record and writes the lockfile only. The record stays, so the wrapper is not
+    planned back in as a new core file. Repeating it is exit 0."""
+    files = lock.get("files") or []
+    wrappers = [rec for rec in files
+                if isinstance(rec, dict) and rec.get("src") == "core/VENDOR.md"]
+    if len(wrappers) != 1:
+        print("error: --retire-wrapper needs exactly one lockfile record for "
+              f"core/VENDOR.md; {_LOCKFILE_REL} has {len(wrappers)}. "
+              "Nothing was changed.", file=sys.stderr)
+        return 1
+    rec = wrappers[0]
+    dst = rec.get("dst")
+    root_dst = isinstance(dst, str) and "/" not in dst and "\\" not in dst
+    if name != "VENDOR.md" and name not in _KNOWN_VENDOR_WRAPPERS and not (
+            root_dst and name == dst):
+        print("error: --retire-wrapper takes the vendor wrapper's file name: "
+              "VENDOR.md, a known wrapper name, or the name the lockfile records. "
+              "Nothing was changed.", file=sys.stderr)
+        return 2
+    if not _wrapper_record_fits(rec, files):
+        print("error: --retire-wrapper refuses: the wrapper's lockfile record is not "
+              "a root-level Markdown record of its own that Cairn does not ship. "
+              "Nothing was changed.", file=sys.stderr)
+        return 1
+    mapped = {row.get("dst") for row in files if isinstance(row, dict)}
+    names = {name, dst, _resolve_vendor_wrapper(target, mapped, include_directories=True)}
+    names.discard(None)
+    try:
+        for candidate in sorted(names):
+            _assert_safe_write(target / candidate, target)
+    except ScaffoldSecurityError:
+        print("error: --retire-wrapper refuses: a link lies above the wrapper's "
+              "name. Nothing was changed.", file=sys.stderr)
+        return 1
+    present = sorted(candidate for candidate in names
+                     if os.path.lexists(target / candidate))
+    if present:
+        print("error: --retire-wrapper refuses: a wrapper file is present ("
+              + ", ".join(present) + "). Only a deleted wrapper can be retired. "
+              "Nothing was changed.", file=sys.stderr)
+        return 1
+    if not force:
+        try:
+            dirty = _writeset_dirty_collisions(target, [_LOCKFILE_REL])
+        except _EditCheckCannotTell as exc:
+            print(_cannot_tell_refusal("--retire-wrapper", exc.reason), file=sys.stderr)
+            return 1
+        if dirty:
+            print("error: refusing --retire-wrapper: the lockfile has unsaved edits; "
+                  "commit them or pass --force", file=sys.stderr)
+            return 1
+    rec["adopter_deleted"] = True
+    _commit_lock_and_caches(target, lock, [])
+    print(f"Retired the record of {name}: Cairn treats its absence as intended. "
+          f"Commit {_LOCKFILE_REL}. To bring a wrapper back, restore the file and "
+          f"run upgrade --finalize {name}.")
+    return 0
+
+
 def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
     """Dispatch the receipt before ordinary cleanup, apply or profile self-heal."""
     pending = _layout_pending(target)
@@ -4472,7 +4822,8 @@ def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
         print(f"An unfinished layout transaction is at {_LAYOUT_RECEIPT}. "
               "Resume with --apply --migration-receipt and the digest printed at stage time.")
         mutable = any((args.apply, args.init_lock, args.finalize, args.adopt_collisions,
-                       args.adopt_module, args.remove_retired))
+                       args.adopt_module, args.remove_retired, args.heal_layout,
+                       args.retire_wrapper))
         return 2 if mutable else 0
     if args.migration_receipt:
         raw, saved = _load_layout_receipt(target, args.migration_receipt)
@@ -4494,10 +4845,15 @@ def _layout_command(args, target: Path, cairn_root: Path) -> int | None:
             raise ScaffoldSecurityError("\n".join(blocked))
         tx.apply(raw, _LOCKFILE_REL, _PROFILE_REL,
                  lambda after, transaction: _layout_guard(args.force, after, transaction))
-        print("Layout reconciliation complete." if comparison else
-              "Layout migration complete. Run --stage for ordinary upgrades.")
+        message = ("Layout reconciliation complete." if comparison else
+                   "Layout migration complete. Run --stage for ordinary upgrades.")
+        state = _read_layout_state(target, _LOCKFILE_REL)
+        if state is not None and _layout_heal_findings(_layout_decode_lock(state.raw))[1]:
+            message += " A setting still names a pre-0.8 path; run upgrade --heal-layout."
+        print(message)
         return 0
-    if any((args.init_lock, args.finalize, args.adopt_collisions, args.adopt_module, args.remove_retired)):
+    if any((args.init_lock, args.finalize, args.adopt_collisions, args.adopt_module, args.remove_retired,
+            args.heal_layout, args.retire_wrapper)):
         return None
     if args.reconcile_layout is not None:
         source = SourceRevision(cairn_root, _resolve_layout_revision(cairn_root, "HEAD"))
@@ -4591,6 +4947,15 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                         "that differs, or that git's last commit does not "
                         "hold, is kept and named. `--plan` shows first what "
                         "it would do.")
+    p.add_argument("--heal-layout", action="store_true",
+                   help="Remove the lock keys (layout_ancestry, layout_base_commit, "
+                        "layout_fork) that an older layout move left on moved "
+                        "records; the security verification refuses them. Commit "
+                        "the lockfile afterwards.")
+    p.add_argument("--retire-wrapper", default=None, metavar="NAME",
+                   help="Record that you deleted the vendor wrapper NAME (such as "
+                        "CLAUDE.md) on purpose, so Cairn treats its absence as "
+                        "intended. Commit the lockfile afterwards.")
     p.add_argument("--adopt-module", default=None, metavar="NAME",
                    help="Record an already-on-disk opt-in module NAME into the "
                         "lockfile so it 3-way-merges on later upgrades (#49). "
@@ -4626,9 +4991,12 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         ("--apply", args.apply),
         ("--adopt-collisions", args.adopt_collisions),
         ("--remove-retired", args.remove_retired),
+        ("--heal-layout", args.heal_layout),
     ) if on]
     if args.adopt_module:
         actions.append("--adopt-module")
+    if args.retire_wrapper:
+        actions.append("--retire-wrapper")
     if len(actions) > 1:
         print(f"error: {', '.join(sorted(actions))} are mutually exclusive; "
               "run one upgrade action at a time.", file=sys.stderr)
@@ -4678,7 +5046,8 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     # `--adopt-collisions` through `_compute_upgrade`), so a link at its name or
     # above it is refused before either reads, as on `--plan`, `--stage`,
     # `--apply` and `--init-lock`.
-    if args.adopt_module or args.adopt_collisions or args.remove_retired:
+    if (args.adopt_module or args.adopt_collisions or args.remove_retired or args.heal_layout
+            or args.retire_wrapper):
         refused = _refuse_if_linked(
             target, _PROFILE_REL, f"the profile {_PROFILE_REL}")
         if refused is not None:
@@ -4741,6 +5110,32 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         return _cmd_finalize_lockfile(
             target, lock, only=only, force=args.force, templates_root=templates_root)
 
+    if args.retire_wrapper:
+        if args.to is not None:
+            print("error: --retire-wrapper runs against the running target "
+                  "tree; --to is not supported (run scaffold from the target "
+                  "tree).", file=sys.stderr)
+            return 2
+        try:
+            return _cmd_retire_wrapper(target, lock, args.retire_wrapper, args.force)
+        except ScaffoldSecurityError as exc:
+            print("error: upgrade --retire-wrapper refused (containment): "
+                  f"{exc}", file=sys.stderr)
+            return 2
+
+    if args.heal_layout:
+        if args.to is not None:
+            print("error: --heal-layout runs against the running target "
+                  "tree; --to is not supported (run scaffold from the target "
+                  "tree).", file=sys.stderr)
+            return 2
+        try:
+            return _cmd_heal_layout(target, lock, args.force)
+        except ScaffoldSecurityError as exc:
+            print("error: upgrade --heal-layout refused (containment): "
+                  f"{exc}", file=sys.stderr)
+            return 2
+
     if args.remove_retired:
         if args.to is not None:
             print("error: --remove-retired runs against the running target "
@@ -4774,6 +5169,10 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
             return 2
 
     if args.to is not None and not _cairn_is_git(cairn_root):
+        refusal = _git_read_binding_refusal()
+        if refusal is not None:
+            print(f"error: {refusal}", file=sys.stderr)
+            return 1
         print("error: --to <ref> needs a git-checkout Cairn source; a "
               "packaged release can upgrade only to the currently-running "
               "tree (omit --to).", file=sys.stderr)
@@ -4961,4 +5360,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
               "the exact bytes you review.")
     for line in model_selection_notice_lines(target):
         print(line)
+    if _layout_heal_findings(lock)[0]:
+        print("Run python install/scaffold.py upgrade --target <repo> --heal-layout "
+              "to remove lock keys the security verification refuses.")
     return 0

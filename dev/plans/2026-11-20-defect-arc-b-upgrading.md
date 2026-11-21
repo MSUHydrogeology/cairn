@@ -1,7 +1,7 @@
 # Plan: Defect arc B, upgrading
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -19,9 +19,7 @@ The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defec
 
 **Result.** An upgrade from 0.7.0 or 0.8.0 runs to the end on a test tree, and `run_security_verification.py local` is not left unable to run by it.
 
-Proposed paths:
-- `.gitattributes`
-- `tests/test_retire_wrapper.py`
+New files, both of which now exist: the root `.gitattributes` and `tests/test_retire_wrapper.py`.
 
 | Item | Chunk | Entry point |
 |---|---|---|
@@ -83,7 +81,7 @@ One review point before the end: after C2 (usual and Security), because C4 build
 
 **C4.** `_layout_heal_findings` also returns tokens: each `(name, value, new)` where `value == "python " + old` for a row of `_LAYOUT_MOVES`, the file `new` has a record, and no record has `old`. `--heal-layout` then sets the token to `"python " + new`. For each non-verbatim record whose saved ancestor (`base_cache`, digest equal to `base_hash`) contains `{{name}}`: it reads the ancestor as `_compute_upgrade` reads a merge ancestor (`_assert_safe_write`, `_read_regular_bytes`, raw digest against `base_hash` before decoding) and the project file with `_assert_safe_write` then `_read_regular_bytes`; on any failure it keeps the file and prints `kept <dst>: could not be read safely; correct it by hand`. Otherwise it renders that ancestor with `_layout_render` under the old and the new tokens, using the matching `LAYOUT_INSTALLS` row's new source. If the file on disk equals the old rendering (or already the new one), it is rewritten with `_write_by_replacing` and its `hash` set. Otherwise it is kept and named: `kept <dst>: you edited it, so it still names the old path; correct it by hand`. Files first, lock last, so a stop leaves a state that a second run finishes. If `dev/.cairn/profile.yml` also holds the old value, print a note to change it there. The final-stage apply message gains `A setting still names a pre-0.8 path; run upgrade --heal-layout.` when findings exist. **Permanent tests**: token and unedited file corrected, edited file kept and named, second run `Nothing to heal.`, a custom token value untouched.
 
-**C5.** `upgrade --retire-wrapper NAME` (`_cmd_retire_wrapper`). Wire it as C2 wires `--heal-layout`: `p.add_argument("--retire-wrapper", default=None, metavar="NAME")`; append `--retire-wrapper` to `actions` when `args.retire_wrapper` is set, as `--adopt-module` is; add `args.retire_wrapper` to both `any(...)` tuples in `_layout_command` and to the profile-link refusal condition; refuse `--to` as `--remove-retired` does. Dispatch it right after the `--finalize` branch of `cmd_upgrade`, with the lock already read, and ask `_writeset_dirty_collisions` about the lock as C2 does. Refuses, exit 1, unless the lock has exactly one record with source `core/VENDOR.md`; exit 2 unless `NAME` is `VENDOR.md`, one of `_KNOWN_VENDOR_WRAPPERS`, or that record's own root-level `dst`; exit 1 if `NAME`, the record's `dst`, or any file `_resolve_vendor_wrapper` finds exists (`os.path.lexists`), or if a link lies above it (`_assert_safe_write`). Otherwise sets `adopter_deleted: true` on that record, writes the lock, and prints `Retired the record of <NAME>: Cairn treats its absence as intended. Commit dev/.cairn/cairn-lock.yml. To bring a wrapper back, restore the file and run upgrade --finalize <NAME>.` Repeating it is exit 0. One rule decides whether a record is a retired wrapper: `_wrapper_retired(rec, files, target)` in `upgrade.py`, repeated inline in `verify_integrity` (which imports only the lockfile reader). All must hold: `rec.get("adopter_deleted") is True`; `rec.get("src") == "core/VENDOR.md"`; `rec.get("verbatim")` is falsy; no other record in `files` has that `src`; `dst` is text with no `/` or `\`, ends in `.md`, and is not `AGENTS.md`, `CHANGELOG.md`, `RULES.md` or `NOTICE.md`; and `os.lstat(target / dst)` raises `FileNotFoundError`. For such a record `_compute_upgrade` returns `up-to-date` (`vendor wrapper deleted on purpose`) before the `layout_keep` check; `_cmd_finalize_lockfile` skips it, and removes the key when its file is present; `_layout_plan` skips its wrapper section; `verify_integrity` skips it after the `living_state` branch and adds `(1 vendor wrapper record retired by the adopter)` to its OK line. `--retire-wrapper` refuses, exit 1, a record failing any part but the `lstat` one. A record with the key that fails the rule is checked like any other. Only the wrapper record's `missing:` line adds `(deleted on purpose? upgrade --retire-wrapper <name>)`, the name through `_plain`. Other missing files still fail. The review-only text for a missing wrapper names the command. **Permanent tests** in `tests/test_retire_wrapper.py`: after retiring, `--plan`, `--finalize` and `verify_integrity` pass; a present modified wrapper still fails; `NAME` of a non-wrapper, a present file, or a lock with no wrapper is refused; a retired record whose file is later restored is checked again. Tampered-lock controls: remove the wrapper record, give a shipped `dev/tools/` script's record `src: core/VENDOR.md` and `adopter_deleted: true` without `verbatim`, delete the script: `verify_integrity` exits 1 naming it `missing:`, and `upgrade --plan` does not call it `up-to-date`. The same for `AGENTS.md`, and for two `core/VENDOR.md` records. `install/UPGRADE.md`: a subsection after the `RULES.md` one for the command; a `--heal-layout` step in plan A's layout section; the Cairn-checkout note replaced by the new message and the `.gitattributes`; one sentence on shallow clones. `CHANGELOG.md`: one Minor entry. Then `upgrade --heal-layout --target .` on Cairn's own tree, its lock committed alone.
+**C5.** `upgrade --retire-wrapper NAME` (`_cmd_retire_wrapper`). Wire it as C2 wires `--heal-layout`: `p.add_argument("--retire-wrapper", default=None, metavar="NAME")`; append `--retire-wrapper` to `actions` when `args.retire_wrapper` is set, as `--adopt-module` is; add `args.retire_wrapper` to both `any(...)` tuples in `_layout_command` and to the profile-link refusal condition; refuse `--to` as `--remove-retired` does. Dispatch it right after the `--finalize` branch of `cmd_upgrade`, with the lock already read, and ask `_writeset_dirty_collisions` about the lock as C2 does. Refuses, exit 1, unless the lock has exactly one record with source `core/VENDOR.md`; exit 2 unless `NAME` is `VENDOR.md`, one of `_KNOWN_VENDOR_WRAPPERS`, or that record's own root-level `dst`; exit 1 if `NAME`, the record's `dst`, or any file `_resolve_vendor_wrapper` finds exists (`os.path.lexists`), or if a link lies above it (`_assert_safe_write`). Otherwise sets `adopter_deleted: true` on that record, writes the lock, and prints `Retired the record of <NAME>: Cairn treats its absence as intended. Commit dev/.cairn/cairn-lock.yml. To bring a wrapper back, restore the file and run upgrade --finalize <NAME>.` Repeating it is exit 0. One rule decides whether a record is a retired wrapper: `_wrapper_retired(rec, files, target)` in `upgrade.py`, repeated inline in `verify_integrity` (which imports only the lockfile reader). All must hold: `rec.get("adopter_deleted") is True`; `rec.get("src") == "core/VENDOR.md"`; `rec.get("verbatim")` is falsy; no other record in `files` has that `src`; `dst` is text with no `/`, `\` or `:`, ends in `.md`, and is not `AGENTS.md`, `CHANGELOG.md`, `RULES.md` or `NOTICE.md`; and `os.lstat(target / dst)` raises `FileNotFoundError`. For such a record `_compute_upgrade` returns `up-to-date` (`vendor wrapper deleted on purpose`) before the `layout_keep` check; `_cmd_finalize_lockfile` skips it, and removes the key when its file is present; `_layout_plan` skips its wrapper section; `verify_integrity` skips it after the `living_state` branch and adds `(1 vendor wrapper record retired by the adopter)` to its OK line. `--retire-wrapper` refuses, exit 1, a record failing any part but the `lstat` one. A record with the key that fails the rule is checked like any other. Only the wrapper record's `missing:` line adds `(deleted on purpose? upgrade --retire-wrapper <name>)`, the name through `_plain`. Other missing files still fail. The review-only text for a missing wrapper names the command. **Permanent tests** in `tests/test_retire_wrapper.py`: after retiring, `--plan`, `--finalize` and `verify_integrity` pass; a present modified wrapper still fails; `NAME` of a non-wrapper, a present file, or a lock with no wrapper is refused; a retired record whose file is later restored is checked again. Tampered-lock controls: remove the wrapper record, give a shipped `dev/tools/` script's record `src: core/VENDOR.md` and `adopter_deleted: true` without `verbatim`, delete the script: `verify_integrity` exits 1 naming it `missing:`, and `upgrade --plan` does not call it `up-to-date`. The same for `AGENTS.md`, and for two `core/VENDOR.md` records. `install/UPGRADE.md`: a subsection after the `RULES.md` one for the command; a `--heal-layout` step in plan A's layout section; the Cairn-checkout note replaced by the new message and the `.gitattributes`; one sentence on shallow clones. `CHANGELOG.md`: one Minor entry. Then `upgrade --heal-layout --target .` on Cairn's own tree, its lock committed alone.
 
 **Security (re-answered).** S1: the checkout's helper bytes, the lock and the saved ancestors come from the thing judged; messages use fixed words and never echo them, and unreadable input is skipped and named. S2: negative controls are the C1 refusals, the C2 old-path record kept, the C4 edited file kept and the C5 refusals. S3: `upgrade --plan`, `--heal-layout`, `--finalize`, `verify_integrity` and `run_security_verification.py local` fire the checks. S4: two routes add authority and are adopter-run: the heal removes only three named keys and rewrites unedited files; the retire sets one key on the wrapper record, only when the file is absent. S5: someone who writes the lock can retire the record of a missing wrapper only when it passes `_wrapper_retired` (source `core/VENDOR.md`, unique, not verbatim, a root-level `.md` name other than `AGENTS.md`, `CHANGELOG.md`, `RULES.md` and `NOTICE.md`); that hides only a deleted vendor wrapper, and a record moved onto any other file is still reported missing.
 
@@ -225,3 +223,374 @@ Both reviews said REVISE. Every blocking finding is applied with its reviewer's 
 Not checked: no code or test run; the new function's name and the `_wrapper_retired` details against the code.
 
 **Elapsed**: about 15 minutes. **Tokens**: unknown.
+
+## Implementation record, chunks C1 and C2 -- Claude Haiku 5.5 (Implementation, Low) -- 2026-11-20
+
+**BASE**: `ecc1a913`. Step 0 (`1b0510a7`) set the header to implementing.
+
+**Commits**
+- `68dc7726` C1: root `.gitattributes` (byte copy); `_git_read_binding_refusal` and its two uses; calm first-install line.
+- `df96fe64` C2: final layout stage stops writing the three keys; `_cmd_heal_layout` and `--heal-layout`.
+
+**Tests** (node, result)
+- `test_skipped_vendor_absent_is_a_calm_no_action_line` (changed): pass.
+- `test_unbound_git_reader_names_its_cause`, two cases (new): pass.
+- `test_layout_migration_resumes_on_either_side_of_lock` (changed): pass.
+- `test_heal_layout_removes_keys_from_moved_records_only` (new; covers "Nothing to heal."): pass.
+- `test_heal_layout_refuses_a_dirty_lock` (new): pass.
+- `test_layout_migration_refuses_or_reconciles` (unchanged reconcile test): pass.
+
+**Whole files**
+- `test_first_session_report.py`: 3 passed.
+- `test_upgrade_layout_migration.py`: 8 passed, 1 skipped (links), 1 failed. The failure, `test_packaged_source_only_needs_history_for_legacy_paths`, is a PermissionError in `shutil.rmtree` of `.git` on the first line of the test. The BASE output shows the same test and message.
+
+**Differences from the plan**
+- A missing helper file counts as "not regular", so it gets the second text. The plan does not say.
+- The dirty-lock message and the `--heal-layout` help text are my wording. The plan gives neither.
+- `--plan` prints `<repo>` literally, as the plan's text does.
+
+**Not run**: the selections, the developmental checks, the Linux runs, `test_ast_attest.py` (expected red). C3 to C5 not touched.
+
+**Elapsed**: about 30 minutes (first claim 18:58, last commit about 19:15). **Tokens**: unknown.
+
+## Coordinator verification, chunks C1 and C2 -- Claude Fable 5.2 (Strategy) -- 2026-11-20
+
+C1 and C2 do what their criteria say on the Windows host, and the fix for #99 part 1 is shown end to end. The Linux results so far agree; one Linux run is still to come.
+
+- **Developmental checks, Windows.** C1: a clone made with `core.autocrlf=true` has CRLF in the pinned helper at the starting commit (2,162 pairs). Moved to `68dc7726` it keeps those bytes, and `upgrade --target <clone> --to HEAD --plan` exits 1 with the first text, word for word. After doing what the text says, the same command exits 0. A fresh clone whose first checkout is `68dc7726` has LF bytes that hash to the pin, and Git reports no file modified. C2: a scratch project installed from `v0.7.0` and moved by the starting commit's installer keeps the three keys on 17 lock records, and `run_security_verification.py local` exits 20 with "unrecognized lockfile-record key(s)". Moved by this branch's installer, no record carries them and the verification exits 0; the same from `v0.8.0`. On a copy of the damaged project, `--plan` prints the heal hint; `--heal-layout` prints "Removed layout keys from 17 lock record(s)" and changes only the lock (51 lines); the verification then reports CLEAN; a second heal prints "Nothing to heal."
+- **Tests, Linux subsystem (Python 3.14.4, a development check).** C1's 17-file group: 1 failed and 1,106 passed before; the same 1 failed and 1,110 passed after.
+- **Tests, Windows Server host.** The 17-file group: 103 failed before, 100 after. The 11 ids that differ are all in `tests/integration/test_gauge.py`, which is unstable here: 24, 27 and 27 failures in three runs alone at the starting commit, and 26, 27 and 27 at the tip. The 38-file group for `upgrade.py`: 271 failed before, 280 after; 13 ids failed only after and 4 only before. Rerun alone at the tip, all 13 pass or skip within two runs; three failed once more in the first rerun, while other test runs loaded the machine. None of the 17 is in a test of code this branch changes.
+- **For the reviewers.** In the scratch clone, `upgrade --plan` on Cairn's own tree lists the new root `.gitattributes` as a blocked addition, beside three files that were blocked before.
+
+Not run: the 38-file group in the Linux subsystem (queued; the response will record it). Not run: the 102-file selection, Python 3.13 and `tests/test_ast_attest.py`. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+
+**Elapsed**: 76 minutes from the implementer's record (19:20) to this one, most of it test runs (24 and 23 minutes for the 17-file group, 58 and 61 for the 38-file group). **Tokens**: unknown.
+
+## Code review, review point after C2 -- Claude Sonnet 5.5 (`claude-sonnet-5-5`) (usual reviewer) -- 2026-11-20
+
+Reviewed commit: `d7f967b8b406e2a3dbf997dfe94c8e60420bdc10`; range `ecc1a913..HEAD` on `arc-b-impl`, chunks C1 and C2 only.
+**Obligation**: the usual code review at this review point; a Security Review pass follows.
+
+**Verdict: REVISE, one blocking finding.** The change does what C1 and C2 say. One error text is wrong in a case that can happen.
+
+**Foundations**
+1. **Should this happen as framed?** Yes. Messages, names, exit codes and wiring match C1 and C2 line by line; `.gitattributes` is a byte copy and changes no tracked file (`cmp`; `git ls-files --eol`; `git status` clean). -- `upgrade.py` 171-235, 4545-4580, 4707, 4747, 4800, 4863; `cli.py` 584-601.
+2. **Best alternative.** None simpler. Duplicating the helper path recipe keeps `lockfile.py` unchanged (AST baseline). -- AST listing: CHANGED is only `cmd_upgrade` and `main`.
+3. **What would show it wrong.** I tried a CRLF, an exact, a partly CRLF, an edited, a folder, a missing, an oversize and a CRCRLF helper copy; heal with `--to`, a dirty lock, a cannot-tell check, `--force`, a bad lock. Only the exact copy misbehaved. -- scratch probes in a `git archive` copy; the Linux-only link case was not run.
+
+**Findings**
+1. **Blocking.** If the helper fails to bind but its bytes are the pinned ones (no CR at all), `_git_read_binding_refusal` says "has Windows line endings". It sends the adopter to delete and restore a file that is already right. Constructed: the exact bytes with `_git_read_helper` raising returns the first text. Fix, in `upgrade.py`, replace `if raw is not None and hashlib.sha256(` with `if raw is not None and b"\r\n" in raw and hashlib.sha256(`; the exact copy then gets the second text. Test below; it fails now and passes with the fix (run in the copy).
+2. Non-blocking. No permanent test runs the real `_git_read_helper_path()`; both tests patch it. A wrong path would give the second text on every real clone unnoticed.
+3. Non-blocking. The `cmd_upgrade` `--to` use of the refusal (exit 1) has no permanent test, nor does `_git_read_plain_bytes` for a link or oversize file. The coordinator's clone check covers the first.
+4. Non-blocking, needs a home. `upgrade --plan` on Cairn's own tree lists the new root `.gitattributes` as a blocked addition (I ran it). C5's own-lock step does not say how it is settled.
+
+**Implementer's choices.** (1) missing file gets the second text: sound. (2) the dirty-lock wording and help text: sound. (3) literal `<repo>`: sound, as other hints. (4) the path function in `upgrade.py`: sound. `_git_read_plain_bytes` is needed to read after the checks; it checks every part, the size before and during the read, and returns bytes only to the caller. None needs the author or the Maintainer; finding 4 needs the author.
+
+**C2.** Final-stage records drop the three keys; the reconcile branch and `layout_keep` are unchanged. The heal touches only records whose `dst` is not an old path and that carry a key; nothing else reads the keys from moved records (grep). Twice-run, dirty, `--to` and cannot-tell all exit with a code and a message. A profile link was not run here (no link privilege); it is wired in the refusal tuple.
+
+**Tests.** The new tests go through `scaffold.main`, and each fails under its fault. The two long text pins are what C1 asks for. The removed `layout_fork is True` and "no action needed" assertions pinned behaviour or wording being removed. The heal test compares the parsed lock, not bytes; enough for the faults named.
+
+**Protected files.** Only `cmd_upgrade` and `main` are CHANGED against the AST baseline, as the plan expects; no frozen file is touched.
+
+**Bounding**: ACCEPTED for C1 and C2 once finding 1 is fixed; the Linux 38-file group stays open in the coordinator's record, homed at "What the joined run owes".
+
+Not covered: Security Review questions; the Linux subsystem; links; Git older than 2.31; the Waiting-line check; whether the frozen test manifest names `tests/test_first_session_report.py` under its old path. **Elapsed**: unknown. **Tokens**: unknown.
+
+### Test that closes finding 1
+
+Add to `tests/test_upgrade_layout_migration.py` after `test_unbound_git_reader_names_its_cause`; command: `python -m pytest tests/test_upgrade_layout_migration.py::test_exact_copy_is_not_called_line_endings`.
+
+```python
+def test_exact_copy_is_not_called_line_endings(layout, capsys, monkeypatch, tmp_path):
+    helper = Path(__file__).resolve().parents[1] / "templates/skills/_lib/git_read.py"
+    copy = tmp_path / "git_read.py"
+    copy.write_bytes(helper.read_bytes())
+
+    def unbound():
+        raise RuntimeError("Git read helper binding failed")
+
+    monkeypatch.setattr(upgrade, "_git_read_helper", unbound)
+    monkeypatch.setattr(upgrade, "_git_read_helper_path", lambda: str(copy))
+    assert _upgrade(layout, "--plan") == 2
+    error = capsys.readouterr().err
+    assert GIT_READ_CRLF not in error
+    assert GIT_READ_OTHER in error
+```
+
+## Code review, review point after C2 -- Claude Opus 5.5 (`claude-opus-5-5`) (Security Review) -- 2026-11-20
+
+```
+Reviewed commit: 2e8cf4f9b72eb2ae0405d48c1668d9870d34e948
+```
+
+Range `ecc1a913..2e8cf4f9` on `arc-b-impl`, chunks C1 and C2 only; code unchanged since `df96fe64`.
+**Obligation**: Internal Security Review (heavy tier, review point after C2).
+
+**Verdict: REVISE**, on the usual review's finding 1 alone. This pass adds no blocking finding. C1 and C2 add one lock-writing route and one diagnosis, and neither widens what a tampered lock or helper can do.
+
+**Foundations**
+1. **Should this happen as framed?** Yes. The heal drops three named keys from non-old-path records and writes only the lock, after the lock and profile link refusals and the record-shape check. -- `upgrade.py` 4545-4577, 4790-4823; `_commit_lock_and_caches(target, lock, [])`.
+2. **Best alternative.** None safer. The heal needs no new authority: it removes only keys the verification refuses. -- `_layout_heal_findings`; repository-wide grep for the three keys.
+3. **What would show it wrong.** I gave the heal two malformed locks, a forged `hash`, an unknown key, `--to` and `--plan`, and gave the diagnosis an exact helper copy. Only the exact copy misbehaved. -- probe tests in a `git archive` copy; the real `_git_read_helper_path()` binds there.
+
+**Findings**
+1. **Blocking: I agree with the usual review's finding 1, its fix and its test.** A tampered helper cannot be called "line endings": the pinned bytes hold no CR, and the diagnosis never runs the file.
+2. Non-blocking. `_git_read_plain_bytes` opens with `open()`, so a link swapped in after the `lstat` walk is followed, and a FIFO would hang. Only someone who can already edit the installer could do this, and the read only picks a fixed text. Optional: open as `lockfile.py` 89-91 does.
+3. Non-blocking. `--force`, or no Git above the project, skips the unsaved-edit check, as on the other commands. Unable to tell refuses.
+
+**Checked, holds.** Malformed locks exit 2 with no traceback. A forged `hash` and an unknown key survive the heal. The heal leaves old-path records alone, so `layout_ancestry: unknown` still blocks a merge (`upgrade.py` 4351). No moved record's key is read later; no move keeps its path (47 moves). A pending transaction refuses. The folder name comes from Cairn's `vendor_targets.yml`. Messages echo no lock, helper or path. S1-S3 and S4's heal half hold for C1 and C2. S4's file half and S5 wait for C4 and C5.
+
+**Tests.** Removed checks pinned removed behaviour; I agree with the usual review.
+
+**Bounding**: ACCEPTED for C1 and C2 once finding 1 closes.
+
+**Not covered.** No link or file-mode case (Linux not run), Git before 2.31, `--migration-receipt` with `--heal-layout`. The plan has no fenced chunk, so there is no Waiting line to check. Over the word target, because each Security question gets its evidence. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Code-review response, review point after C2 -- Claude Fable 5.2 (Strategy, acting as implementer) -- 2026-11-20
+
+Strategy coordinates this plan and answers; the implementing session for C1 and C2 (Claude Haiku 5.5) had ended. One finding was blocking. It is closed with the reviewer's own clause and test.
+
+Usual review:
+
+- **1, blocking: closed** (`074b74fd`). The "has Windows line endings" text now needs a CRLF pair in the helper's bytes. The reviewer's test `test_exact_copy_is_not_called_line_endings` is added unchanged. The Security Review reproduced the fault and adopted the same fix.
+- **2, no test reads the real helper path: fixed** (`074b74fd`). One node checks that the path the refusal reads holds the pinned helper. It tests a private function, and is kept because no public entry can show a drifted path; the final code review may strike it.
+- **3, untested cases: fixed** (`074b74fd`, `3bfe64ce`). One parametrized node covers an oversize helper, a missing one and a link to a CRLF copy (skipped where links cannot be made). One node drives the `--to` use and expects exit 1 with the first text.
+- **4, the root `.gitattributes` on Cairn's own tree: no change in this plan.** Measured: `upgrade --plan` on Cairn's own tree lists three blocked core additions and one blocked module file at the starting commit, and four and one at this branch's tip. Cairn's own lock advances file by file with `--finalize`, so nothing stops. Whether Cairn adopts those files into its own lock is a separate question. Home: `dev/PLANNING.md` on `0.9-dev`, section 1, "Cairn's own install lists blocked additions".
+
+Security Review:
+
+- **1: the same finding, closed as above.**
+- **2, the plain `open()` in `_git_read_plain_bytes`: declined.** The exposure needs someone who can already write the Cairn checkout, and so the installer itself, and the read only chooses between two fixed texts. The review calls the fix optional.
+- **3, `--force`, or a project with no Git above it, skips the unsaved-edit check: no change.** The other commands behave the same, and a check that cannot tell still refuses.
+
+The implementer's four choices and its added function stand; both reviews found them sound. The four nodes that answer findings 2 and 3 are Strategy's and have had no review; the final code review reads them.
+
+**Tests after the fix.** Windows Server host, the whole of `tests/test_upgrade_layout_migration.py` at `074b74fd`: 12 passed, 2 skipped (links), 1 failed with the same id and message as at the starting commit; the `--to` node passes at `3bfe64ce`. Not run yet after the fix: the Linux subsystem, where the link case can run, and the 17-file and 38-file groups. They run again after C5.
+
+**Disposition**: chunks C3 to C5 may proceed.
+
+**Elapsed**: seven minutes from the Security Review's commit (20:47) to the last fix commit (20:54), by commit times. **Tokens**: unknown.
+
+## Implementation record, chunks C3 and C4 -- Claude Haiku 5.5 (Implementation, Low) -- 2026-11-20
+
+**Commits**: `9dcb802b` C3 (shallow message, stale-hash fix, 14 comment lines, `profile.yml` `test_command`). `bfaaabb3` C4 (heal corrects `claim_check_command` and its rendered file).
+
+**#99.4, outcome 1.** Before any code change, the stale-hash test exited 2: `blocked: tools/board.py: unproved ancestry; reconcile the old copy before moving it`. I changed `old_proved` as the criterion gives it (split over lines). The test now exits 0 and prints `copy`, and it is kept.
+
+**Comments.** 14 lines changed in `config.py` (12), `__init__.py` (1) and `lockfile.py` (1): 14 insertions, 14 deletions. `ast.dump` equal before and after for all three files.
+
+**Test nodes.** Shallow text (`test_shallow_cairn_checkout_says_to_fetch_the_history`): passed. Stale hash (`test_stale_hash_with_crlf_base_is_planned_as_a_copy`): passed. C4: `test_heal_layout_corrects_the_token_and_an_unedited_file`, `test_heal_layout_keeps_and_names_an_edited_file`, `test_heal_layout_second_run_has_nothing_to_heal`, `test_heal_layout_leaves_a_custom_token_value_alone`: all passed. The C4 tests were written in the same edit as the code, so I did not see them fail first.
+
+**Whole-file runs.** After C3: 15 passed, 2 skipped, 1 failed. After C4: 19 passed, 2 skipped, 1 failed. The failure is the host's `test_packaged_source_only_needs_history_for_legacy_paths`.
+
+**Profile runs (`profile.yml` edit).** Three files: pytest reported 80 failed, 269 passed, 43 skipped. The JUnit report lists 79 failing cases; all 79 are on the BASE list (`base-B3p.txt`). The eightieth failure is not in the report, so its ID was not checked. No test that passed at the start fails now, as far as the report shows; nothing was reverted.
+
+**Choices where the plan gave no wording or structure.** `_layout_heal_findings` returns a pair (records, settings). Messages: `Rewrote <dst>.`, `Set <name> to python <new>. Commit dev/.cairn/cairn-lock.yml.`, and `note: dev/.cairn/profile.yml also names <old>; change it there to python <new>.`. A file with no matching row, or whose render returns nothing, is kept with the "could not be read safely" message. A non-verbatim record with no `base_cache` is skipped silently. The apply message appends its sentence to the same line.
+
+**Left as found.** `profile.yml` line 4 already names `install/scaffold.py`, so the criterion's header requirement held. Line 5 still says "see BOOTSTRAP.md Act II-2", a file that is not in the repository. The criterion says nothing about that wording, so I did not change it.
+
+**Not run.** The 102-file selection, the Linux runs, the tier-inventory groups, `tests/test_ast_attest.py`, the scratch upgrade checks, and any release, signing or baseline command. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record, chunk C5 -- Claude Haiku 5.5 (Implementation, Low) -- 2026-11-20
+
+**Commits**
+- `21667cd9` C5: `upgrade --retire-wrapper`, `_wrapper_retired` and its consult points, the `verify_integrity` side, `tests/test_retire_wrapper.py`.
+- `09e1828b` C5: `install/UPGRADE.md` (retire subsection, heal step, shallow sentence, line-ending paragraph); one `CHANGELOG.md` entry.
+- `076cb6b4` C5: Cairn's own lock, refreshed by `--heal-layout`; nothing else.
+
+**Tests.** `tests/test_retire_wrapper.py` (new, 10 nodes). Written before the engine change: 7 failed (the flag did not exist), and the 3 tampered-lock controls passed. After it: all 10 pass.
+
+**Whole-file run**: the three files in one call: 22 failed, 112 passed, 5 skipped. All 22 failure lines (id and message) are in `base-B5.txt`.
+
+**Heal on Cairn's own tree**: printed `Removed layout keys from 35 lock record(s). Commit dev/.cairn/cairn-lock.yml.`, exit 0. `verify_integrity` then reported OK. The lock diff is 105 deleted lines and no added ones.
+
+**Differences and wording chosen** (the plan gave none): every exit 1 and 2 refusal text; the review-only hint; the `--retire-wrapper` help text; the dirty-lock refusal (bypassed by `--force`, as C2 does); the OK line's file count leaves out the retired record. Code choices: `_wrapper_record_fits` split out of `_wrapper_retired`; `--finalize` drops `adopter_deleted` when the file is back; the retired check in `_compute_upgrade` runs before the renamed-wrapper resolution; the controls also assert on `_compute_upgrade` output, since `--plan` prints no up-to-date rows.
+
+**Not run**: the 102-file selection; the Linux runs; the scratch 0.7.0 and 0.8.0 upgrades; the `release/AST_BASELINE_RUNBOOK.md` Step 1 listing; the tier-inventory groups; `tests/test_ast_attest.py`; any release, signing or baseline command.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Coordinator's final verification, all five chunks -- Claude Fable 5.2 (Strategy) -- 2026-11-20
+
+All five chunks are built. The comparisons below found one real failure, now fixed: the new test file had no tier. With that fixed, no test fails only after the change on either host once unstable tests are rerun alone.
+
+**What is reviewed.** The tip is `55015944`. The code ends at `7cfb1348`; the one commit after it lists the new test file in a tier.
+
+**The gap these runs found.** C5 added `tests/test_retire_wrapper.py` and did not list it in `tests/test_tiers.json`, so `tests/contract/test_test_tiers.py::test_every_cairn_test_file_is_in_exactly_one_tier` failed after the change, on both hosts. Fixed at `55015944`: the file joins the workflow tier, and `tests/tier_inventory.py check` reports ok. The plan's own selection did not run that test: the selector lists tests that name a changed file, and no test names a new file. The 38-file group caught it. The two test files that name the tier list give the same 11 failures before and after on Windows.
+
+**Tests, Windows Server host**, each group at the start (`ecc1a913`) and at `7cfb1348`, compared by test id and message.
+
+- 17 files: 103 failed before, 105 after, 13 more passes. Four ids fail only after and two only before, all in `tests/integration/test_gauge.py`, which this host runs unstably. Alone, the four behave the same at the start and at the tip: 3 fail on the first run, 4 on the second.
+- 21 files (the 20 selected and the new one): 77 failed before and after, the same ids and messages; 25 more passes.
+- 3 files: 88 failed before, 82 after. Three ids fail only after; all three pass alone at the tip, three runs, and at the start.
+- 38 files: 271 failed before, 279 after. Twelve ids fail only after. Eleven pass alone at the tip. The twelfth is the tier test above.
+
+**Tests, Linux subsystem (Python 3.14.4, a development check)**, at exact commits, compared the same way.
+
+- 17 files: the same 1 failure before and after; 1,106 passed before, 1,122 after.
+- 38 files: 2 failed before, 4 after. One of the two more is the tier test above. The other, a sweep test, passes alone at the start and at the tip.
+- 21 files (the 20 selected and the new one): the same 79 failures before and after, 78 of them in `tests/test_security_check.py`, which does not pass on this Linux setup at the start either; 26 more passes.
+- 3 files: none failed before, 1 after, in `tests/test_intents_tool.py`. Alone it passes at the tip, twice, and at the start. That whole file then passes at the tip: 200 passed, 1 skipped.
+- `tests/contract/test_test_tiers.py` at `55015944`: 40 passed.
+
+A caution about the Linux evidence. For part of the evening two Linux test streams ran at once, which was the coordinator's doing. Both Linux tests that failed only after the change, apart from the tier test, failed in that period, and both pass alone in one stream. The 17-file group ran with one stream and shows no such failure.
+
+**End-to-end checks on scratch projects, at `7cfb1348`, Windows.** Nothing outside a scratch folder was written.
+
+- Upgrading a 0.7.0 install and a 0.8.0 install: no complaint about lock keys, and no lock record carries `layout_ancestry`, `layout_base_commit` or `layout_fork`.
+- Healing a copy of the project that the starting commit's installer had damaged: it rewrote one module page and removed the keys from 17 records. The security verification went from DEGRADED (exit 20) to CLEAN (exit 0). A second heal printed "Nothing to heal." `verify_integrity` reported OK for 46 files.
+- Retiring a wrapper deleted on purpose, in a copy of the upgraded 0.8.0 project: `verify_integrity` reported the file missing and named the command (exit 1); the plan named it too; `upgrade --retire-wrapper VENDOR.md` exited 0 and changed one lock line; `verify_integrity` then reported OK for 63 files with one retired wrapper record. A second call while the lock was uncommitted was refused for unsaved edits (exit 1). With the lock committed, a repeat exited 0 and changed nothing; it printed the same message, which again says to commit the lock. `--retire-wrapper AGENTS.md` was refused (exit 2).
+
+**Baseline listing** (Step 1 of `release/AST_BASELINE_RUNBOOK.md`, read-only), at the tip: CHANGED 4, MISSING 0, DUPLICATE 0, NEW 237 (221 at the start). The four changed symbols are `cmd_upgrade`, `_compute_upgrade` and `_cmd_finalize_lockfile` in `install/_scaffold/upgrade.py` and `main` in `install/_scaffold/cli.py`: the four the plan names. `tests/test_ast_attest.py` fails until the Maintainer's baseline step, as planned.
+
+**Cairn's own lock.** `install/verify_integrity.py --target .` at the tip: OK, 70 files.
+
+**For the reviewers.** C3 to C5 and the two commits after the review point have had no review. The implementers' records list where they chose words or structure the plan did not give.
+
+**Not run.** The 102-file selection as one run; the canonical runtime (Python 3.13 on the Mac); a real adopter's upgrade. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+
+**Elapsed**: 4 hours 26 minutes from status implementing (18:57) to this record, by commit times; test runs took most of it. **Tokens**: implementers 190,900, 232,591 and 243,761; review point 158,151 and 136,088; the coordinating session's own use is not visible to it.
+
+## Code review -- Claude Sonnet 5.5 (`claude-sonnet-5-5`) (usual reviewer) -- 2026-11-20
+
+Reviewed commit: `e4cf7523a2096c5dcca9fe327e404016cede38f5`; range `ecc1a913..HEAD` on `arc-b-impl` (last code commit `55015944`).
+**Obligation**: the usual final code review; a Security Review pass follows. The change raised a blocking finding, so the header Status is `revising-code`.
+
+**Verdict: REVISE, one blocking finding.** The change does what C3, C4 and C5 say, with the messages, names, exit codes and wiring they give. One printed promise fails for a renamed wrapper.
+
+**Foundations**
+1. **Should this happen as framed?** Yes. The two `_wrapper_retired` copies agree (parts, order, the four excluded names); `verify_integrity` is stricter, since it checks the hash, containment and `..` first. No other rule weakens. -- `upgrade.py` 1864-1898, `verify_integrity.py` 463-473.
+2. **Best alternative.** None simpler. The key on the existing record keeps `VENDOR.md` from being re-added as a new file. -- `upgrade.py` 4750-4806.
+3. **What would show it wrong.** I tried: the retire route on a renamed wrapper, then restore and finalize (it fails, finding 1); tampered records on a script, `AGENTS.md` and two wrapper records (the three controls hold); the heal on an edited file (kept and named); `ast.dump` equality of `config.py`, `lockfile.py` and `__init__.py` against the base (equal). The root-level `.md` records an install can hold are only the five shipped ones, four of them excluded. -- scratch installs under a temp folder; `tests/test_retire_wrapper.py` 10 passed; `tests/test_upgrade_layout_migration.py` 19 passed, 2 skipped, 1 failed (the host's `rmtree` failure, same id as the base).
+
+**Findings**
+1. **Blocking.** The retire message and `install/UPGRADE.md` say "restore the file and run `upgrade --finalize <NAME>`". With the lock recording `VENDOR.md` and the adopter's file named `CLAUDE.md` (the plan's own example), `--finalize CLAUDE.md` exits 1 ("not tracked in the lockfile"), `--plan` still prints `up-to-date: VENDOR.md`, and the restored file is never merged or finalized. `_wrapper_retired` looks only at the recorded name. Reproduced; the fix and a test are below.
+2. Non-blocking. Heal messages echo lock text: `kept <dst>`, `Rewrote <dst>` and `Set <name> ...`. The Security Review should judge whether they need `_plain`.
+3. Non-blocking. With a token to fix, every non-verbatim record with an unreadable saved ancestor prints "could not be read safely", though it does not name the token. Noise, not harm.
+4. Non-blocking. `--plan` prints the heal hint only for lock keys, not for a token alone. The hint says "lock keys", so this is sound; the apply message covers the token.
+
+**Implementers' choices.** All sound: the refusal texts, `_wrapper_record_fits` split out, the key dropped by `--finalize` when the file is back, the hint on `missing:`, and the pair return of `_layout_heal_findings`. None needs the author or the Maintainer.
+
+**C3.** Moves newly planned are verbatim files whose live bytes equal the blob from Cairn's own history; each one is a byte-equal release file. The shallow text is given only when the history lookup found nothing and the checkout is shallow; its Git form is on the helper's allowed list (`git_read.py` line 55). **C4.** The heal can rewrite only a file whose bytes equal the old or the new render of its saved ancestor, read and written by the protected routines; files first, lock last, so a stopped run finishes on the second run. An edited file is kept and named.
+
+**Review-point fixes.** The one clause is right. The five nodes are sound. The private-path node stays: no public entry shows a drifted path.
+
+**Tests.** Each new node goes through `scaffold.main` or `verify_integrity.main` and fails under its fault. The long text pins are what C1 and C3 ask for. The retire file covers the criterion's refusals but not finding 1.
+
+**Cairn's own lock.** The commit deletes 105 lines (35 records, three keys) and nothing else; `verify_integrity --target .` reports OK for 70 files. **Protected files.** Changed symbols are the four the plan names; no other frozen file is touched.
+
+**Bounding**: ACCEPTED once finding 1 is fixed. The Linux runs and the joined run stay open in the coordinator's record, homed at `dev/PLANNING.md`, "What the joined run owes".
+
+**Not covered.** Security Review questions; the Linux subsystem and links; Git before 2.31; a `dst` holding a NUL byte; Windows drive-relative `dst` values; the prose gates; the 40-file test groups. **Elapsed**: unknown. **Tokens**: unknown.
+
+### Exact code that closes finding 1
+
+In `install/_scaffold/upgrade.py`, `_cmd_finalize_lockfile`, replace
+`        if _wrapper_retired(rec, files, target):` with
+```
+        if (_wrapper_retired(rec, files, target)
+                and _resolve_vendor_wrapper(target, mapped) is None):
+```
+and in `_compute_upgrade`, replace `        if _wrapper_retired(rec, lock.get("files", []), target):` with
+```
+        if (_wrapper_retired(rec, lock.get("files", []), target)
+                and _resolve_vendor_wrapper(
+                    target, {r["dst"] for r in lock.get("files", [])}) is None):
+```
+`verify_integrity.py` stays as it is, so the two copies of the rule stay equal. Test to add at the end of `tests/test_retire_wrapper.py`; command `python -m pytest tests/test_retire_wrapper.py -k renamed_wrapper_restored`. It fails now (`assert [] != []`) and passes with the fix; the other 10 nodes pass with the fix (run in a `git archive` copy).
+```python
+def test_a_renamed_wrapper_restored_after_retiring_is_finalized(tmp_path, capsys):
+    _install(tmp_path)
+    (tmp_path / WRAPPER).rename(tmp_path / "CLAUDE.md")
+    (tmp_path / "CLAUDE.md").unlink()
+    assert _upgrade(tmp_path, "--retire-wrapper", "CLAUDE.md") == 0
+
+    (tmp_path / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
+    capsys.readouterr()
+    assert [p.kind for p in _plans(tmp_path) if p.dst == "CLAUDE.md"] != []
+    assert _upgrade(tmp_path, "--finalize", "CLAUDE.md", "--force") == 0
+    assert "adopter_deleted" not in _wrapper_record(_lock(tmp_path))
+```
+
+## Code review -- Claude Opus 5.5 (`claude-opus-5-5`) (Security Review) -- 2026-11-20
+
+Reviewed commit: `1dbdaa1e12e23dfc1fb2f7e8ca21dcee343f3140`; range `ecc1a913..HEAD` on `arc-b-impl` (last code commit `55015944`).
+**Obligation**: the Security Review the heavy tier adds at the code stage. Status stays `revising-code`.
+
+**Verdict: REVISE, two blocking findings** (the usual review's finding 1, and one of mine). The two new routes add little authority. A lock edit can excuse only the one wrapper record. The heal can only swap a setting for a fixed Cairn path, and only in files nobody edited.
+
+**Foundations**
+1. **Should this happen as framed?** Yes. `cmd_upgrade` checks every `dst` and `base_cache` (printable, contained, no drive or `..`) before either command runs; the heal writes only rows of `LAYOUT_INSTALLS`, through `_assert_safe_write` and `_write_by_replacing`. -- `upgrade.py` 5062-5066, 4642-4747.
+2. **Best alternative.** None safer. Excusing a deleted file by hand-editing the lock already works by deleting its record, which upgrade then plans back in. The new key adds only "do not re-add the wrapper". -- `verify_integrity.py` 417-482.
+3. **What would show it wrong.** I tried: a token name holding a terminal escape (printed raw, finding 2); a drive-relative wrapper `dst` (finding 4); the usual review's renamed-wrapper restore, also with `--finalize VENDOR.md` (both fail before its fix, pass after); the three tampered-lock controls. -- probe tests in a `git archive` copy.
+
+**Findings**
+1. **Blocking: I agree with the usual review's finding 1, its fix and its test.** The fix only stops honouring the key once a wrapper file is back, so the installer checks more, never less. `verify_integrity` still excuses the record until `--finalize`. The restored file is not yet in the lock, and `verify_integrity` never checks unrecorded files, so nothing recorded is hidden.
+2. **Blocking.** `upgrade --heal-layout` prints `Set <name> to ...` with the token name taken raw from the lock. A name holding an escape sequence reaches the terminal. S1 is untrue until this closes, and `_contained_lockfile_path` refuses such names for paths for exactly this reason. Fix and failing test below. Every `dst` the heal prints is already checked; the usual review's finding 2 needs nothing more.
+3. Non-blocking. The heal reads ancestors and project files with no size limit. It matches the merge-ancestor read the plan names.
+4. Non-blocking. On Windows, `verify_integrity` accepts a retired wrapper record with `dst: C:x.md` (OK), but upgrade refuses the whole lock (exit 2). This excuses only the wrapper record. Upgrade is the stricter of the two.
+
+**Checked, holds.** `old_proved` now accepts only a verbatim file whose bytes equal a blob from Cairn's own history. Before this change, a lock writer could already get that by setting `base_hash`. The shallow check uses an allowed helper form (`git_read.py` 55); if it fails, the plan gives the old text. A heal stopped part-way is finished by a second run. `adopter_deleted` is not checked by the dispatcher's record-key check, which reads only runner and policy records. Once findings 1 and 2 are fixed, S1 to S5 hold.
+
+**Implementers' choices and tests.** I agree with the usual review: the choices are sound and the tests are worth their runtime.
+
+**Bounding**: ACCEPTED once findings 1 and 2 are fixed. The joined run stays homed in `dev/PLANNING.md`, "What the joined run owes".
+
+**Not covered.** Linux, links and file modes; Git before 2.31; the 40-file groups; the prose gates for `install/UPGRADE.md`. **Elapsed**: unknown. **Tokens**: unknown.
+
+### Exact code that closes finding 2 (Security Review)
+
+In `install/_scaffold/upgrade.py`, `_layout_heal_findings`, replace
+`    for name, value in settings.items():` followed by `        for _, _, old, _, _, new in _LAYOUT_MOVES:` with
+```
+    for name, value in settings.items():
+        if not (isinstance(name, str) and re.fullmatch(r"\w+", name, re.ASCII)):
+            continue  # not a name a template can hold; never printed
+        for _, _, old, _, _, new in _LAYOUT_MOVES:
+```
+Test to add at the end of `tests/test_upgrade_layout_migration.py`; command `python -m pytest "tests/test_upgrade_layout_migration.py::test_heal_layout_prints_no_token_name_from_the_lock_that_is_not_plain"`. Run in a `git archive` copy, it fails now (`'\x1b' is contained here`) and passes with the fix. With both this fix and the usual review's fix, that file gives 20 passed, 2 skipped and the host's one known failure, and `tests/test_retire_wrapper.py` with its added node gives 11 passed.
+```python
+def test_heal_layout_prints_no_token_name_from_the_lock_that_is_not_plain(layout, capsys):
+    _, target, _ = layout
+    _claim_check_tree(layout)
+    lock = scaffold.read_lockfile(target)
+    lock["tokens"]["evil\x1b]0;x\x07"] = "python scripts/claim_check.py"
+    _put(target, LOCK, json.dumps(lock).encode("utf-8"))
+    _commit(target, "a token name holding a terminal escape")
+
+    assert _upgrade(layout, "--heal-layout") == 0
+    assert "\x1b" not in capsys.readouterr().out
+    lock = scaffold.read_lockfile(target)
+    assert lock["tokens"]["claim_check_command"] == "python dev/tools/claim_check.py"
+    assert lock["tokens"]["evil\x1b]0;x\x07"] == "python scripts/claim_check.py"
+```
+
+## Code-review response, final -- Claude Fable 5.2 (Strategy, acting as implementer) -- 2026-11-21
+
+Both final reviews said revise. Each blocking finding came with exact code and a failing test; both are applied as written, at `029532a0`. Every other finding is fixed, recorded with its trigger, or left with the reason.
+
+- **Usual 1, Security 1 (blocking), a renamed wrapper put back after retiring was never picked up: fixed.** The retired key is honoured at the two consult points only while no wrapper file is back under any known name. The reviewers' test failed before and passes after. On a scratch project, a wrapper kept as `CLAUDE.md` was deleted, retired, restored and finalized: its record names `CLAUDE.md` again, the key is gone, and `verify_integrity` reports OK.
+- **Security 2 (blocking), a setting name printed raw from the lock: fixed**, with its code. Its test failed before and passes after.
+- **Security 4, a wrapper name like a drive-relative path passed `verify_integrity` on Windows: fixed.** A name holding `:` is never a retired wrapper, in both copies of the rule, and C5's criterion now says so. The review named this without code, so the change and its test are the coordinator's and have had no review. The test failed before (`verify_integrity` exited 0) and passes after.
+- **Security 3, reads with no size limit: recorded**, in the security strategy's register of triggered residuals on `0.9-dev`, because the same reader serves the ordinary merge.
+- **Usual 2, heal messages echo lock text: no change.** The Security Review found that every path the heal prints is checked first; the setting name was the one unchecked value and is fixed above.
+- **Usual 3, a "could not be read safely" line for files that may not name the setting: no change.** C4's criterion says to keep the file and print that line on any read failure, and the heal cannot tell what an unreadable file names.
+- **Usual 4, the plan hint speaks only of lock keys: no change**; the review judged it sound.
+
+**Seen by the coordinator, left as specified.** A repeat of `--retire-wrapper` after the lock is committed exits 0 and changes nothing, as C5 says, and prints the same message, which again says to commit the lock. On a busy machine one scratch run of the command was refused because the edit check's Git call timed out; a second run went through. The third place that consults the rule, in the layout move, is unchanged: it only skips keeping a wrapper during that move, and the two fixed places pick a restored wrapper up afterwards.
+
+**Checked after the fixes, Windows Server host, at `029532a0`**, compared by test id and message.
+
+- The two test files that hold the three new nodes: 32 passed, 2 skipped, 1 failed. The failure is the host's `rmtree` failure, present at the start.
+- The 21-file group: 77 failed, the same ids and messages as before the fixes and at the start; 3 more passes than before the fixes.
+- The 38-file group: 266 failed, against 279 before the fixes and 271 at the start. Two ids fail only after, both in `tests/test_security_stack.py`, which this host runs unstably; both pass alone, twice.
+
+**Checked after the fixes, Linux subsystem (Python 3.14.4, a development check), one stream, at `029532a0`.** The 21-file group: the same 79 failures as before the fixes and at the start, 3 more passes. The 38-file group: 2 failed, the same two as at the start; the tier test and the sweep test that failed before the fixes pass.
+
+**Also at `029532a0`.** The end-to-end checks on scratch projects give the same results as at the earlier tip. The baseline listing still shows the same four changed symbols, two of them with new digests. `install/verify_integrity.py --target .` reports OK for 70 files.
+
+**Not run.** The 17-file and 3-file groups at `029532a0`, since the fixes touch neither `cli.py` nor the profile; the 102-file selection as one run; the canonical runtime. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
+
+Status: `ready-to-archive`.
+
+**Elapsed**: 1 hour 20 minutes from the first final review's commit (23:30) to this response, by commit times; the reruns took most of it. **Tokens**: the two final reviews 160,248 and 195,473; the coordinating session's own use is not visible to it.

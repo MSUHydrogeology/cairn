@@ -409,8 +409,11 @@ def verify(target: Path) -> int:
     customized: list[str] = []
     accepted: list[tuple[dict, bytes]] = []
     living: list[dict] = []
+    retired_wrappers: list[str] = []
     skipped = 0
     target_resolved = target.resolve()
+    vendor_records = sum(1 for row in files
+                         if isinstance(row, dict) and row.get("src") == "core/VENDOR.md")
     for rec in files:
         dst_rel = rec.get("dst")
         recorded = rec.get("hash", "")
@@ -458,8 +461,25 @@ def verify(target: Path) -> int:
                 f"{sorted(_LIVING_STATE_DSTS)} may set living_state "
                 f"(tamper / malformed lockfile)")
             continue
+        # A vendor wrapper the adopter deleted on purpose (`upgrade
+        # --retire-wrapper`). One rule, repeated from `_wrapper_retired` in
+        # install/_scaffold/upgrade.py: change both together.
+        if (rec.get("adopter_deleted") is True and rec.get("src") == "core/VENDOR.md"
+                and not rec.get("verbatim") and vendor_records == 1
+                and dst_rel.endswith(".md") and "/" not in dst_rel and "\\" not in dst_rel
+                and ":" not in dst_rel
+                and dst_rel not in ("AGENTS.md", "CHANGELOG.md", "RULES.md", "NOTICE.md")):
+            try:
+                os.lstat(target / dst_rel)
+            except FileNotFoundError:
+                retired_wrappers.append(dst_rel)
+                continue
+            except OSError:
+                pass
         if not dst.is_file():
-            violations.append(f"  missing: {_plain(dst_rel)}")
+            hint = (f" (deleted on purpose? upgrade --retire-wrapper {_plain(dst_rel)})"
+                    if rec.get("src") == "core/VENDOR.md" else "")
+            violations.append(f"  missing: {_plain(dst_rel)}{hint}")
             continue
         on_disk = dst.read_bytes()
         actual = "sha256:" + hashlib.sha256(on_disk).hexdigest()
@@ -517,9 +537,11 @@ def verify(target: Path) -> int:
                   file=sys.stderr)
         _run_slot_note(target, files, accepted, living, lock.get("tokens"))
         return 1
-    checked = len(files) - skipped
+    checked = len(files) - skipped - len(retired_wrappers)
     extra = (f" ({skipped} adopter-authored living-state file(s) tracked for "
              f"upgrade but excluded from the tamper check)" if skipped else "")
+    if retired_wrappers:
+        extra += " (1 vendor wrapper record retired by the adopter)"
     print(f"verify_integrity: OK -- {checked} recorded file(s) match "
           f"{_LOCKFILE_REL}{extra}.")
     _run_slot_note(target, files, accepted, living, lock.get("tokens"))

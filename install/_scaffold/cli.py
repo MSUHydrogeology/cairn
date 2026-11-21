@@ -51,7 +51,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from .security import ScaffoldSecurityError
@@ -92,6 +92,7 @@ from .install import (
     install_onboarding,
     install_optional,
     install_skills,
+    load_vendor_targets,
     model_selection_notice_lines,
     print_report,
     run_module_merge_pass,
@@ -583,13 +584,20 @@ def main(argv: list[str] | None = None) -> int:
         if status == "skipped-vendor-absent":
             # The normal first-install state: the harness config
             # dir doesn't exist until the adopter's first launch, so this
-            # is expected, not a fault -- a calm no-action line, never
-            # "skipped"/"error" (session-start's self-heal fans out the
-            # link automatically once the dir exists, lifecycle.py's
-            # _heal_skills_fanout).
+            # is expected, not a fault -- a calm line that says what to do,
+            # never "skipped"/"error" (session-start's self-heal fans out the
+            # link once the dir exists, lifecycle.py's _heal_skills_fanout).
+            row = next(r for r in load_vendor_targets(templates_root)
+                       if r["target"] == name)
+            folder = PurePosixPath(row["path"]).parent
             print(
-                f"  Skills fan-out [{tier}] {name}: link automatically the "
-                f"first time you launch your harness -- no action needed."
+                f"  Skills fan-out [{tier}] {name}: not linked yet, because "
+                f"the folder {folder} does not exist."
+            )
+            print(
+                f"    Create it (`mkdir {folder}`) or let your harness create "
+                f"it, then run `python dev/tools/session.py session-start`; "
+                f"that links the skills."
             )
         elif status != "noop":
             print(f"  Skills fan-out [{tier}] {name}: {status}")
