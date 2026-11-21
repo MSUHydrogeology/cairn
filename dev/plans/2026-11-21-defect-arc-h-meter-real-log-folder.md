@@ -272,3 +272,30 @@ I ran the time test once: passed.
 **Not covered**: the Windows-only tests; Security Review questions; real logs; the Mac and Linux paths.
 
 Elapsed time: unknown. Tokens: unknown.
+
+## Code review -- Claude Opus 5.5 (Security Review) -- 2026-11-21
+
+Reviewed range: `02dfe045e669ecc326ec129b7b25ba6aa6f01bc9` (merge base with `0.9-dev`) to `8d91e35f534a765e13d0c7a980bbc35d191538a3`; code ends at `fb400b49`.
+
+**Obligation**: Internal Security Review. No blocking finding in either review, so Status stays.
+
+**Verdict**: ACCEPT. I agree with the usual review's findings 1 to 4; on the security questions below, my wording governs.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: each other check on the walk and the reader is unchanged; only the size test (folders), the folder reading, the link tests and the merge loop moved -- `git diff 02dfe045 fb400b49 -- dev/tools/meter.py`.
+2. **Best alternative.** None safer at this size; the `profile` test denies every other account write, append, attribute, access-list and owner rights -- `check_acl`, `dev/tools/meter.py` lines 656-657.
+3. **What would show it wrong.** A two-name file that another account may write being read; Strategy's planted fourth case shows it refused -- plan "Strategy's direct checks".
+
+**Answers.** A planted name for a file another account can write is refused (`profile`). One file is never read twice in one walk: `seen` refuses a second meeting, and a link added mid-walk changes a folder's write time, which `verify` catches. The file read is tied to the file accepted by volume and file id at open and close (`_check_stream_identity`); its access list cannot be loosened by another account, since both tests deny it that right. (d) compares only records in one file read, all timestamps carry a zone, so no one without write access can move usage between days. (a) and (b) keep identity and directory checks; `verify` still compares each folder's write time and size.
+
+**Findings**
+
+1. Non-blocking: a co-user who may add files to the log folder (the `ancestor` test allows it) can still plant a name for a user-owned file it can open but not write, such as a log outside the approved roots. No usage can be invented, since the content is the user's own; at worst real usage from outside an approved root is counted. The plan's "a second name outside the folder gives a reader no content the log does not already hold" holds only for names the user's app made. Before this change such a name was refused.
+2. Non-blocking: removing the reader's link test also reaches the Git helper's read (line 5911), which has no walk; its SHA-256 check keeps it safe.
+
+I ran the time test once: passed. `cmp` printed nothing; `verify_integrity.py` reports OK; the frozen files are untouched.
+
+**Not covered**: whether Windows lets an account link a file it cannot write (not tested); the Windows-only tests; real logs; Mac and Linux.
+
+Elapsed time: unknown. Tokens: unknown.
