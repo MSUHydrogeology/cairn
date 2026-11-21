@@ -2,7 +2,7 @@
 # Plan: Defect arc E, the documentation plan moves
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -416,3 +416,37 @@ The Maintainer named the place (chat, 2026-11-21): "Should that path actually be
 
 - lines 257, 417 and 525: `target = world.project / "docs" / "profile-copy.yml"` becomes `target = world.project / "dev" / "scratch" / "profile-copy.yml"`.
 - line 338: `target = world.project / "docs" / "linked-agents.md"` becomes `target = world.project / "dev" / "scratch" / "linked-agents.md"`.
+
+## The Maintainer's answer on the protected test -- recorded by Claude Sonnet 5.5 (Implementation) -- 2026-11-21
+
+Strategy asked: "(a) Add one line at each of the four places, to make the folder first. ... (b) Point the four at another folder." The Maintainer first wrote "Yes, add the lines", then corrected it (chat, 2026-11-21): "Sorry, don't change the lines to point do a docs/ folder that no longer exists. That doesn't make sense at all." He added: "Make the test point to where they are supposed to point", and named the place: "Should that path actually be dev/scratch/linked_profile.yml or whatever?" Design (b) is therefore applied with the Security Review addendum's exact lines (`dev/scratch/`); no line makes a `docs` folder, and the usual review's lines for (a) are not used. Only the four target lines of `tests/test_upgrade_refuses_hostile_project_data.py` changed.
+
+## Plan response to the code reviews -- Claude Sonnet 5.5 (Implementation) -- 2026-11-21
+
+Both blocking findings and the protected-test question are closed in `e20f1ef7`; status is `ready-to-archive`.
+
+Usual review:
+1. Blocking 1 (six protected cases): fixed in `e20f1ef7` with the Security Review addendum's lines, per the Maintainer's answer above.
+2. Blocking 2 (changelog clause): fixed in `e20f1ef7`, with the reviewer's words.
+3. Non-blocking 3 (how to tell a Cairn-installed file): fixed in `e20f1ef7`; the Security Review's step 2 words ("every file named as a `dst` in `dev/.cairn/cairn-lock.yml`") govern and carry it. Constant, `install/UPGRADE.md` and the steps test changed together.
+4. Non-blocking 4: the stale docstring sentence is deleted in `e20f1ef7`. Not changed: `test_the_report_helper_never_raises` still calls a private helper (it guards that the report never raises, which `--plan` alone does not isolate), and the plan body's "three steps" stands, as the review said the record states the change. Listed for Strategy, not deferred by me.
+
+Security Review:
+1. Blocking 1 (step 2 unbounded): fixed in `e20f1ef7` with the reviewer's exact text in the installer constant, the steps test and `install/UPGRADE.md`.
+2. Protected test: done, as above.
+3. Non-blocking 3 (case-variant second record): the review left it as is; nothing done.
+4. Agreement with the usual review's findings 2 and 4: covered above.
+
+The release name: the printed line, a comment in the installer, the new test's docstring, `install/UPGRADE.md` and the plan's companion now say 0.8.1; other 0.9 mentions are untouched.
+
+**Test choice (Strategy's direction, 2026-11-21).** Strategy told me to run only the test files that can see these fixes, not the wide selection for `install/_scaffold/upgrade.py` again. Its reason: that 39-file group was already compared before and after on both hosts at the build, and the whole suite runs on the Mac before the release is cut.
+
+**Tests at `e20f1ef7`** (one run at a time on each host; two files: the hostile-data test and `tests/test_upgrade_documentation_plan_moved.py`). Linux subsystem, Python 3.14: 176 passed, 0 failed, 0 skipped (the six cases pass). Windows, Python 3.13: 137 passed, 39 skipped, 0 failed (the six cases skip: no link rights; the 39 skips are for both files together, and I did not count the six apart). Failing only after: 0.
+
+**Instructions check, rerun on the new step 2 wording.** A scratch project installed from `v0.8.0`, upgraded with this commit's installer, with a link to the old place added to its `README.md`, was given to a fresh Haiku agent with only the printed text. All five pass conditions held: the new file exists, the old one does not, the lock's one record names the new place, `git status --porcelain` for the lock printed nothing, `verify_integrity` exited 0. It edited only `README.md`, skipped the five Cairn-installed files, and hesitated once on a tool-owned base copy (it left it alone). The project had no `dev/tools/link_check.py`, so that check was not run; step 4 says "if it has one".
+
+**Cairn's own tree.** `verify_integrity` still reports OK (70 files); no lock refresh was needed. `claim_check`, `link_check` and `check_cairn` pass on `install/UPGRADE.md` and `CHANGELOG.md`; `git diff --check` is clean.
+
+**Not rerun, with its home.** The 39-file group for `install/_scaffold/upgrade.py` and the wider C1, C2 and C4 selections (home: the joined run and the Mac suite before the cut); the `ast_step1` listing (the installer's symbols changed only in a string constant and a comment); the Python 3.13 run on Linux and the macOS run.
+
+**Elapsed**: unknown. **Tokens**: unknown.
