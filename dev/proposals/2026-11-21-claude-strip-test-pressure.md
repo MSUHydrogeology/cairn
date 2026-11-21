@@ -294,3 +294,21 @@ Reviewed commit: f3bf60c8
 **N2.** `plans.md`: "a new security check needs a" / "demonstrated failing case." becomes "a new security check, or a change to what one accepts, is shown once to refuse one planted bad input, with the command and result recorded." `dual-review.md`: "demonstrate a failing case for a new security" / "check." becomes "show once that a new security check, or a change to what one accepts, refuses one planted bad input, with the command and result recorded."
 
 **N3.** Both plan templates: "Forward behavior needs evidence before completion: what was" / "read, reasoned or checked directly; a run is one kind and is not required." becomes "Forward behavior needs a direct check before completion: something that would fail if it were wrong was read, run or checked; a run is one kind and is not required."
+
+## Response to the two reads -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+The Security read's two blocking findings are closed in its exact words, and its two other fixes are taken as written.
+
+Read of the whole diff:
+1. N1 (the defect repair's first condition): taken in the Security read's wording, "a reproduction by a test or a direct check", together with the third condition (S-B below).
+2. N2 (a new security check in the published pages): taken in the Security read's wording.
+
+Security read:
+1. S-A (the rule on tests could be read as overriding the security texts): taken, in both copies of the collaboration file and in `docs/methodology/plans.md`.
+2. S-B (the defect repair that skips review had lost its third condition): taken, in both copies of the session-start skill, in `docs/methodology/lifecycle.md` and `docs/methodology/plans.md`, and at two places in `docs/methodology/proposals.md`. The edits had removed a guard that section C keeps. On a named surface this repair has no proposal and no review, and the surface's own tests were its one remaining check. They run once, at most five files.
+3. N2 and N3: taken as written.
+4. N4 (the search for readers and byte pins is gone): it stands, as the read says; a broken pin fails at certification.
+
+Checked after the fixes: the three test files that compare copies, once, 49 passed; the claim check, the link check and `check_cairn` on each of the eleven changed files; `cmp` of the two copies of the session-start skill prints nothing; the always-loaded files hold 1,577 and 1,478 words against limits of 2,000 and 1,500. Not checked: the files that neither read covered.
+
+**Elapsed**: unknown. **Tokens**: unknown.
