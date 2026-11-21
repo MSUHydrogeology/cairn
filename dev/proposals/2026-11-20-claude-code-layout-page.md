@@ -1,7 +1,7 @@
 # A layout page for each project's code
 
 **Author**: Claude (Strategy), drafted by Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — outcome A adds an installed file through the installer's table of module files, and outcome C gives a shipped tool a new project file to read.
 **Plan review**: required(Internal + Internal Security Review) — for the plans that build outcomes A and C; the plans for B, E and F are text and a trial and take required(Internal).
@@ -153,3 +153,43 @@ The proposal tries to give the scientist one page he can correct as a descriptio
 2. Add to C: "In E's plans, a move check reports each function whose body differs after a move." Change the Plan review line to: "required(Internal + Internal Security Review) for the plans that build A, C and E's move check; required(Internal) for B, F and the rest of E."
 3. Add to F: "Stop rule: if the Maintainer cannot correct the page without reading code, or correcting it takes over an hour, C and E are not built and the proposal returns to him. The trial also gives one agent the same small task with the page and one without, and counts new copies of a central tool in each."
 4. Add to A: "`dev/architecture_review.md` keeps its Critical Helper Homes table and the notes on intended copies until the page's central-tool entries each carry a limits-and-preserving-checks field covering every row."
+
+## Review -- Claude Opus 5.5 (`claude-opus-5-5`) -- 2026-11-20
+
+```
+Reviewed commit: 6eb2adafc3edf46f877ae6dabb004788a1c34f4f
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, once the page reader, the page-change review and the move check are bounded; the existing reader already refuses links and runs isolated -- `dev/tools/code_map.py` lines 1-17 and `_changed_paths`.
+2. **Best alternative.** Keep the page as text agents read, with no tool reading it, until the trial passes; that removes the new input path -- `install/_scaffold/config.py` "architecture-review" entry.
+3. **What would show it wrong.** Forward test: a planted page naming `..\x`, `\\host\share` and a link draws "rejected" for each and opens nothing -- no such case is named under C.
+
+The proposal makes the page a checked description, not a rule, and keeps the check advisory. That is the right risk posture.
+
+I agree with usual findings 1, 3 and 4. On finding 2 I agree on the review tier; my wording of the claim governs. My finding 4 governs over usual finding 6.
+
+**Findings**
+
+1. **Blocking (S4).** "Follows no link out of the project" is weaker than the code map today, which follows no link at all. Paths named in the page are not bounded; on Windows a `\\host\share` path can make the machine contact another host.
+2. **Blocking (S2).** A one-off can still be blessed unseen: a page edit made during implementation, a new "long on purpose" file, a new intended twin, or a removed central tool each silence a warning, and nothing shows them to the Maintainer.
+3. **Blocking (E).** "Otherwise unchanged" is false when a moved body is the same text but its names resolve to different things in the new home, its decorators or defaults change, the old copy stays, or a caller now reaches a different function of the same name.
+4. **Blocking (install).** The page changes the install table, the layout catalog, lockfile entries and the published manifest, and nothing says how existing installs get it or that an adopter's file at that path survives.
+5. Non-blocking. Agents read the page as data; a central-tool entry never makes an agent run a command named in it.
+
+**Not covered**: the trial's design, Decision-summary wording, numbers in Context, and whether upgrade adds new files to an already-adopted module (I read `tests/test_upgrade.py` 2425-2460 only). No test run.
+
+### Closing words for the Security Review findings (2026-11-20)
+
+1. Replace S4's last sentence with: "The page is opened only through the code map's existing root-relative, no-follow reader, under its existing size limit (`MAX_SOURCE`) and time limits; a link, or a page over the limit, is reported as unreadable. Each path or folder pattern in the page must pass the rule `--changed` paths pass (root-relative, no `..`, no backslash) and also contain no colon, so no drive letter, or is reported as rejected and never opened; patterns are matched against the files already collected, never expanded on disk. The report prints names and paths only, ASCII-escaped and cut to 200 characters, never page prose. A missing page is reported once as missing, never as a clean result."
+2. Add to S2: "The code reviewer lists every line of `dev/code-layout.md` added, removed or changed in the reviewed range. Each must match a page change in the plan the Maintainer accepted. Any other page change, including a new long-on-purpose file, a new intended twin or a removed central tool, goes to the Maintainer as a question of kind D before archive." Add to S5: "a page change listed but not questioned."
+3. In E, replace "the check confirms each function is otherwise unchanged" with: "the move check reports, for each moved function, whether its text is the same apart from its file; it does not claim the same behaviour. It reports as changed any difference in decorators, default values, signature or class; any name the body uses that is bound differently in the new home; an old copy left in place; and any caller that now reaches a different function under the same name. For a model, the reference run, not this check, shows the numbers are unchanged. The test helper's layout map changes only in the move's own commit and is shown in its review."
+4. Add to "Why heavy": "Adding `dev/code-layout.md` changes the architecture-review entry in `install/_scaffold/config.py`, `install/_scaffold/layout_catalog.py`, lockfile entries and the published install manifest. The plan for A states that the page installs as an adopter-owned, substituted file; that an existing file at that path is never overwritten and draws the existing differs advisory; how a project that already has the module receives the page on upgrade; and the test case for each in `tests/security/test_code_map.py` and `tests/test_upgrade.py`."
