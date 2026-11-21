@@ -7,7 +7,9 @@ can see which practices keep costs down. The Maintainer asked for it on
 down."
 
 **How to read it.** A token is the unit a model provider bills by. "Tokens" is
-the total the harness reported for one subagent run. Minutes are the wall time
+the total the harness reported for one subagent run. Measured on 2026-11-21, that
+total is close to the size of the agent's last request, not the tokens it used
+(see "What the harness figure is"). Minutes are the wall time
 the harness reported. Tiers follow the model mapping (`dev/.cairn/model-selection-mapping.yml`): High for
 Strategy and Security Review, Medium for authoring and ordinary reviews, Low for
 carrying out a reviewed plan.
@@ -176,6 +178,42 @@ My reading, not measured:
 - The rule that every review records its elapsed time gets a guess unless the
   harness supplies the number. A candidate for the tightening: take time from
   the harness or from commit times, or write `unknown`.
+- Most of this session's token use was the coordinating session reading its own
+  long history again at every step. Shorter coordinating sessions, fewer and
+  larger steps, and self-contained work handed to fresh agents would cut it.
+  Every earlier reading in this file that compares costs between steps rests
+  on the harness figure and should be read as a comparison of context size.
+
+## What the harness figure is (measured 2026-11-21)
+
+The token column above does not measure what an agent used. It is close to how
+large the agent's context had grown by its last request.
+
+**How it was measured.** A count-only read of the coordinating session's own log
+and of the 70 sub-agent transcripts kept beside it. Only sums and counts left
+the logs; the scripts are deleted. Each message is counted once, by its message
+id and request id, because a transcript repeats a message's usage on every
+record of that message (counting every record doubles the sum).
+
+| | Messages | Fresh input | Cache writes | Cache reads | Output | All four |
+|---|---|---|---|---|---|---|
+| 70 sub-agent runs | 2,478 | 4,976 | 9,689,381 | 317,938,859 | 2,190,114 | 329,823,330 |
+| The coordinating session | 1,277 | 2,728 | 5,054,589 | 648,437,977 | 2,645,870 | 656,141,164 |
+
+- **The harness's per-run totals for those sub-agents sum to 11,133,732** (75
+  summaries). 70 of the 75 lie within one percent of the size of some
+  transcript's last request, and 44 equal it exactly. The sub-agents' real use
+  was 329.8 million tokens, about 30 times that sum.
+- **The whole session used about 986 million tokens, and 98 percent were cache
+  reads**: text the model had already seen, read again at each step.
+- **The coordinating session used twice what all 70 sub-agents did.** It re-read
+  about 508,000 tokens for each of its 1,277 messages.
+- **What the column is still good for.** It ranks runs by how much they had to
+  hold in mind. It says nothing about how many steps a run took, and steps
+  multiply the cost.
+
+Not known: the price of each kind of token. Cache reads are billed below fresh
+input; the rates were not looked up, so no figure in money is given here.
 
 ## Keeping it
 
