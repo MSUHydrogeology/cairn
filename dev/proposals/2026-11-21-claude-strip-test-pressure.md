@@ -1,7 +1,7 @@
 # Take the pressure to test out of Cairn's texts
 
 **Author**: Claude Fable 5.2 (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -135,3 +135,42 @@ Add to C: "Sentences that say a claim of tested, checked or covered may be made 
 **Non-blocking.** (a) Row 2 (session-end smoke run) is "removed" with no rule A in that file; say that it is removed. (b) Disposition 7 "each recorded" needs one place; name it. (c) S2 relies on tests that compare copies; they check twins agree, not that the words are right.
 
 **Not covered.** I read ten rows' sentences only; the other 665 not at all. I ran no test and read no `templates/modules/` file in full.
+
+## Review -- Claude Opus 5.5 (Security Review) -- 2026-11-21
+
+```
+Reviewed commit: bbf6dcf9
+```
+
+**Tier**: Security Review
+**Findings**: raised (3 blocking, 2 non-blocking)
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the texts, not one rule, carry the pressure, and stripping them is the Maintainer's direction. But the dispositions work by kind, and some sentences of each kind do security work -- `dev/PLANNING.md` line 106; `dev/agent_collaboration.md` lines 106-115, 283, 287.
+2. **Best alternative.** The same strip with the security modules and the anti-persuasion sentences held whole -- `templates/modules/default-on/security-verification.md` lines 59-82.
+3. **What would show it wrong.** A security check ships that has never refused anything, or a test loses protection because no shipped file names it as a guard any more -- `dev/rules/protected-surfaces.md` line 43.
+
+The proposal's strongest form: Cairn's texts out-vote any one rule on tests, so the texts must change together. I agree with the usual review's findings 1 to 3 and non-blocking (c). Where we overlap, my words for C (block X below) govern, because they include the usual review's sentence.
+
+**Finding S1 (blocking).** Section B does not say that C wins over B. A medium agent on row 594 (`content-security.md` line 37, the merge-time scan of a pull request, kind run-tests) reads disposition 1, "removed elsewhere". Rows 582 and 584 require "an executed run, never a design argument" for admitting a security check; disposition 4 says a run "is not required". Row 586 calls policy tests "required companion evidence"; disposition 2 weakens it. Rows 38, 43 and 47 keep a reviewer from being talked out of a finding. Words: block X.
+
+**Finding S2 (blocking).** Disposition 5 is not enough. A written account of how a check could fail is a design argument; a check that fails open passes exactly like one that works. One planted bad input, run once, is the fewest test that shows it is right. Words: block Y.
+
+**Finding S3 (blocking).** Disposition 3 forbids a Security Review the run that disposition 5 lets it ask for, and its last sentence drops line 283's guards: the test must be shown failing, and a changed test is a decline. A reviewer can still stop an unsafe change only through that decline path to the Maintainer. Words: block Z.
+
+**Non-blocking.** (a) S1 of the preflight is not right: after disposition 4 the author's own reasoning is evidence, so the party judged supplies it; block X's "unsupported assertion" keeps the reviewer's check. (b) S4 names "the reviews of the diff", but a light proposal has no plan and no code review; say who reads the 57-file diff for kept sentences.
+
+**Not covered.** I read the security rows of the inventory and six sources around them, not the other rows; I did not check whether a test is named as a guard only in a sentence that would be removed. I ran no test.
+
+### Exact words
+
+**X.** Replace C with: "**C. Kept as they are, whatever their kind.** Section C wins over section B. Kept: the items under "What does not change" above; every sentence of the security modules (the files with `security` in their names under `dev/modules/` and `templates/modules/`) and of the protected-surfaces rule; a sentence that names a test as a guard; a sentence that says a claim of tested, checked or covered may be made only when it is true, or that an unsupported assertion does not clear a review; a sentence that keeps existing refusals, checks or negative controls, or says a failing check may not be weakened; a sentence that says a pass by finding nothing needs a known-positive case; and the review rules on declining a blocking finding and sending it to the Maintainer (`dev/agent_collaboration.md` lines 283 and 287 and their twins), changed only as Z says."
+
+**Y.** Replace disposition 5 with: "5. *A control:* existing controls and the tests that hold them stay. A new security check, or a change to what one accepts, is shown once to refuse one planted bad input, with the command and result recorded; the planted case need not be kept as a test."
+
+**Z.** In disposition 3, replace the last sentence with: "A blocking finding is closed by exact words or code; a failing test is given only when words cannot show the fault. The reviewer shows it failing; the implementer runs it once, unchanged, after the fix, and a changed test counts as a decline. This does not bind a Security Review, which may ask for one run or one planted case on the point it raises."
