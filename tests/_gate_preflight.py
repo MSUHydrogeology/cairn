@@ -1342,9 +1342,16 @@ _DIFF_MAX_LINES = 10_000
 #: candidate-sized file in memory to look for a line in it.
 SCAN_MAX_BLOB_BYTES = 1 << 20
 
-#: Added files under these roots are scanned (outside `tests/`).
-_SCAN_NEW_FILE_ROOTS = ("install/", "release/", "dev/tools/")
-_SCAN_NEW_FILE_EXCLUDED = ("tests/",)
+#: Added files under these roots are scanned, except test modules and fixtures.
+_SCAN_NEW_FILE_ROOTS = ("install/", "release/", "dev/tools/", "tests/")
+_SCAN_NEW_FILE_EXCLUDED = ("tests/fixtures/",)
+
+
+def _is_test_module(rel: str) -> bool:
+    """A file under tests/ named test_*.py: pytest runs it as a test, and the
+    layout before 0.8 left it out of the new-file scan on purpose."""
+    return (rel.startswith("tests/") and rel.endswith(".py")
+            and rel.rsplit("/", 1)[-1].startswith("test_"))
 
 #: Tree modes a changed path is listed for, beyond a plain file.
 _LISTED_MODES = ("100755", "120000", "160000")
@@ -1420,7 +1427,8 @@ def _scan_range(anchor_tree: str, candidate_tree: str, changed: list[bytes],
     """The line scan over a range, and the per-path facts the report carries.
 
     Scope: every *decides* path, every sensitive-roster path, and every file the
-    range adds under `install/`, `release/`, or `dev/tools/`. Everything
+    range adds under `install/`, `release/`, `dev/tools/`, or `tests/` (test
+    modules and `tests/fixtures/` excepted). Everything
     else is counted by class and named in the report's path list, never
     silently skipped. Every hit is kept, escaped as :func:`_display_path`
     escapes a path; nothing is truncated."""
@@ -1442,7 +1450,8 @@ def _scan_range(anchor_tree: str, candidate_tree: str, changed: list[bytes],
         in_scope = (rel in decides or R.A.is_sensitive(rel)
                     or (change == "added"
                         and rel.startswith(_SCAN_NEW_FILE_ROOTS)
-                        and not rel.startswith(_SCAN_NEW_FILE_EXCLUDED)))
+                        and not rel.startswith(_SCAN_NEW_FILE_EXCLUDED)
+                        and not _is_test_module(rel)))
         facts[raw] = {"change": change, "mode": mode, "scanned": False}
         if mode in _LISTED_MODES:
             listed.append((raw, f"mode {mode}"))
