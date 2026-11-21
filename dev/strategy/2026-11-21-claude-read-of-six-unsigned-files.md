@@ -58,3 +58,27 @@ I ran no test. I loaded both versions of `security_manifest.py` in a scratch fol
 **What to do.** Have an agent read the three `default-on` files, 638 lines, as the six were. They ship to adopters and differ from Cairn's own copies in `tests/`, which are scanned (the shipped `measurements.py` adds 74 lines and drops 115). The pulse copy needs nothing more.
 
 **Not determined without the ceremony.** That the real scan matches this reading of the code; which class the new manifest gives the template files; whether the page heading should be corrected, a wording change in a frozen file.
+
+## Follow-up: three module files read -- Claude Opus 5.5 -- 2026-11-21
+
+**Conclusion.** Sign all three as they are. None touches the network, writes a file, or runs a shell. One runs Git through the hash-pinned reader.
+
+Git shows each added since `e5b7fd0a` (the anchor ref is absent here). No identical copy exists; the `tests/` versions differ and none was read before. The installer copies them to an adopter's `dev/tools/` (`install/_scaffold/config.py` lines 1061-1066, 1125-1126).
+
+**`measurements.py`** (304 lines) holds the four allowed counts: lines, files, Python definitions, and commits in a Git range. It reads the adopter's registry, shipped empty. It loads `dev/tools/git_read.py` only if that file is unlinked and matches a fixed fingerprint, which both copies of `git_read.py` in the tree match. Every counted path must stay inside the project. A commit range must match a strict pattern and is passed to Git without a shell (lines 133, 229-246).
+
+**`verify_counts.py`** (221) finds verify marks in documents you name and compares the number before each mark with the registry. Unknown keys, malformed marks and failures exit 1; a missing folder exits 3.
+
+**`token_budget.py`** (113) estimates the size of the files read every turn (characters divided by four) and prints it. It reads only the files you name, or six fixed names at the project root.
+
+**Findings.**
+
+1. **should fix** `verify_counts.py:76-77` checks the last number before the mark, not the one immediately before it, as lines 55-58 say. A date placed between them would be checked instead.
+2. **note** `verify_counts.py:213-217`: a document with no marks reports "0 ok" and exits 0.
+3. **note** `measurements.py:125` loads Git support on every run, so any change to `git_read.py` stops the whole check. It fails safe.
+4. **note** `token_budget.py:109`: over the cap it only warns unless `--strict` is given, as documented.
+5. **note** `measurements.py:114` labels the reader with the old path `tools/git_read.py`.
+
+No secrets or personal data appear beyond your name in copyright lines.
+
+**Not checked.** I ran none of the three. I did not read `git_read.py`, so the no-shell claim rests on its fingerprint and the earlier read. I did not confirm that every adopter install includes `git_read.py`.
