@@ -1,7 +1,7 @@
 # Plan: Defect arc G, the meter runs for a Windows administrator
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -97,3 +97,70 @@ Checked and right: `check_acl` has 45 call sites (`grep -c "check_acl(" dev/tool
 **Verdict**: REVISE
 
 Not covered: the Security Review questions, any run, and the real machine's access lists. Elapsed time: unknown. Tokens: unknown.
+
+## Plan review -- Security Review -- 2026-11-21
+
+Reviewed commit: fc060059
+
+**Obligation**: the Security Review at the plan stage
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Foundations**:
+
+1. **What the owner test guards.** An owner can always rewrite a folder's access list. Requiring the user as owner stops another ordinary account from doing that and planting `.cairn`. SYSTEM and Administrators already pass the access-list loop, so letting them own the profile adds nothing -- `dev/tools/meter.py` lines 629, 660-661.
+2. **The consent file stays the user's.** `.cairn` and `meter.json` still need the user as owner, and the meter does not create them on Windows -- `meter.py` lines 755, 763; `grep -n '"\.cairn"' dev/tools/meter.py`.
+3. **The pair is exact.** `ancestor=False` gives only `S-1-5-18` and `S-1-5-32-544`. It compares the owner's identity, not group membership, so a domain group such as Domain Admins stays refused -- `meter.py` lines 386-400.
+
+I agree with the usual review's Foundations and findings 2-4. For its finding 1, the code below governs.
+
+**Findings**
+
+1. **Blocking: a second refusal is likely.** An administrator whose new files are owned by Administrators probably created `.cairn` and `meter.json` the same way, and roles `cairn` and `config` still require the user. Add to Scope: "Before the build, Strategy asks the Maintainer to run `(Get-Acl $HOME\.cairn).Owner` and `(Get-Acl $HOME\.cairn\meter.json).Owner`. If either names Administrators, the build waits for his Decision: change those owners to his account, or widen this plan to the roles `cairn` and `config`."
+2. **Blocking: the stand-in hides the SID list.** The plan replaces `_privileged_sid`, so a wrong SID list or `ancestor=True` would still pass. Use the test below, which runs the real `_privileged_sid`.
+3. Non-blocking: TrustedInstaller stays out of the profile rule. No profile is owned by it.
+
+Not covered: the real machine, any run, the POSIX path. Elapsed time: unknown. Tokens: unknown.
+
+**Verdict**: REVISE
+
+### The test, as code (for Acceptance (b))
+
+Append to `tests/integration/test_meter.py`; it needs no new import.
+
+```python
+def test_windows_profile_owner_may_be_system_or_administrators():
+    acl = ctypes.create_string_buffer(struct.pack("<BBHH", 2, 0, 8, 0), 8)
+    sids = {1: b"user", 2: b"other", 3: b"system", 4: b"admins", 5: b"trusted"}
+    names = {"S-1-5-18": 3, "S-1-5-32-544": 4,
+             "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464": 5}
+    state = {}
+
+    class Advapi:
+        def GetSecurityInfo(self, _handle, _kind, _info, owner, _group, dacl, _sacl, sd):
+            owner._obj.value = state["owner"]
+            dacl._obj.value = ctypes.addressof(acl)
+            sd._obj.value = 99
+            return 0
+
+        def ConvertStringSidToSidW(self, text, out):
+            out._obj.value = names[text]
+            return 1
+
+    api = object.__new__(meter._WindowsConsentAPI)
+    api.C, api.W = ctypes, SimpleNamespace()
+    api.advapi, api.kernel = Advapi(), SimpleNamespace(LocalFree=lambda _p: None)
+    api._sid_bytes = lambda sid: sids[sid.value]
+    cases = [("profile", 1, True), ("profile", 3, True), ("profile", 4, True),
+             ("profile", 2, False), ("profile", 5, False),
+             ("cairn", 4, False), ("config", 4, False)]
+    for role, owner, allowed in cases:
+        state["owner"] = owner
+        if allowed:
+            api.check_acl(7, b"user", role)
+        else:
+            with pytest.raises(meter.Unavailable):
+                api.check_acl(7, b"user", role)
+```
+
+Before the change, the profile cases with SYSTEM and Administrators raise, so the test fails. If the rule is too loose, the cases for another account or TrustedInstaller fail.
