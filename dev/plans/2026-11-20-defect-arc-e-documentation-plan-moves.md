@@ -2,7 +2,6 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
 **Status**: revising-plan
-**Waiting on Maintainer**: move it for owners, or record their own move?
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -195,5 +194,21 @@ Both reviews said revise. Their four blocking findings and the words that close 
 **Strategy recommends (b).** Cairn then never moves or deletes a file its owner wrote, and the arc adds less. It costs the owner one more command, printed for them. It needs his word because the accepted arc says the upgrade moves the file; (b) reaches the same end by a lighter route.
 
 **Next.** On his answer the plan is folded once, for the design he picks. If he picks (b), the changed steps get one short Security Review, because they replace steps that were reviewed.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## The Maintainer's choice -- recorded by Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+Asked "(a) Cairn moves the documentation plan file for a project's owner, or (b) the owner moves it with one Git command and Cairn only records it? I recommend (b).", the Maintainer wrote (chat, 2026-11-21):
+
+> "Let's go with your recommended plan E. But the instructions have to be clear."
+
+What that settles:
+
+- **Design (b).** The owner moves the file with Git, and Cairn's command records the new place in the lock and does nothing else to the owner's files.
+- **His condition.** The instructions an owner follows have to be clear. The fold makes that a criterion of its own: what the upgrade prints, what a refusal prints, and the step in `install/UPGRADE.md`.
+- **Scope.** The accepted arc says the upgrade moves the file. Design (b) reaches the same end by a lighter route, and his words above allow it. The fold states this in the plan's Scope delta.
+
+The Waiting line is removed. The plan is folded once, for design (b); the changed steps then get one short Security Review, as the first part of the response said.
 
 **Elapsed**: unknown. **Tokens**: unknown.
