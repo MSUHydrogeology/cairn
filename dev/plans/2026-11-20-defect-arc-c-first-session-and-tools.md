@@ -226,3 +226,39 @@ Both reviews said REVISE. Every blocking finding is applied with its reviewer's 
 Not checked: no code or test run; no Bandit run; whether `pulse.py` B314 is the one the allow-list names, beyond the usual review's citation.
 
 **Elapsed**: about 20 minutes. **Tokens**: unknown.
+
+## Implementation record, chunks C3 to C5 -- Claude Haiku 5.5 (Implementation, Low) -- 2026-11-20
+
+**Result**: C3, C4 and C5 are built and committed on `arc-c-impl`. Each new test failed for its stated reason before the fix and passes after it. No failure in an existing run is outside the baseline list. Nothing was pushed or merged.
+
+**Commits**
+- `c13e8844`: C3, usage-free records, both `meter.py` copies and the new test file.
+- `8caaffeb`: C4, audit threshold, `run_security_audit.py`, the module page and the new test file.
+- `1c28278a`: C5, the comment in `measurements.py` and two changelog lines.
+- `c9e9e87d`: C5, the lock refreshed by the scoped `--finalize`, alone.
+
+**New tests**
+- `tests/test_meter_usage_free_records.py`: before the fix, 6 failed (the usage-free cases raised `unsupported_record`) and 8 passed. After it, 14 passed.
+- `tests/test_security_audit_threshold.py`: before the fix, 19 failed, 4 passed and 2 skipped. After it, 23 passed and 2 skipped. The skips are the symlink case (this host cannot make links) and the real-Bandit case (Bandit is not installed).
+
+**Existing runs**
+- `tests/integration/test_meter.py`: 37 failed, 311 passed, 203 skipped. All 37 failure ids are on the BASE list. The BASE file covered eight files, so only the ids were compared.
+- `tests/test_security_stack.py -k "audit or bandit"`: 21 passed, 2 skipped, 0 failed.
+
+**Checks**
+- `cmp` on the two `meter.py` copies: identical.
+- `measurements.py` ast dump, before and after: equal.
+- `verify_integrity` before the finalize: four modified files, exactly the four named. After it: OK for 70 recorded files.
+- `git diff --check` clean. `claim_check`, `link_check` and `check_cairn` pass on each changed `.md` file.
+
+**Where the code differs from the plan**
+1. The module page does not cite the adopter's policy file as a path. `claim_check` flags it as unresolved, because it is an adopter file not on the exempt list. The page names the file and folder in words.
+2. A bad policy file makes the Bandit pass DEGRADED and the audit exits 20. The audit still runs its other passes. The page says that, not "stops the audit".
+3. Repeated-key detection uses a private `ValueError` subclass. The plan leaves that mechanism open.
+4. The non-default path repeats the two-line Bandit-installed check. `_run_bandit_default` is unchanged.
+5. The module-page subsection runs about 200 words, not 165.
+6. The changelog Fixed line covers C1 and C3, as the brief says. C2 (the execute bit) is not mentioned.
+
+**Not run**: the real-log check (the coordinator's), the Linux subsystem, any whole selection, pip-audit, and the real-Bandit case.
+
+**Elapsed**: unknown. **Tokens**: unknown.
