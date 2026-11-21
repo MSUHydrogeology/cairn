@@ -1,7 +1,7 @@
 # A simple usage meter: read the logs, write the summary
 
 **Author**: Claude Fable 5.2 (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -195,5 +195,25 @@ Security Review:
 
 - "The two promises, unchanged". Replaced: the content of the consent file is still checked; who wrote it is not.
 - "Names on the closed list". Replaced by what the reader does: a model's name passes if it is short and made of plain characters.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Decision -- Maintainer (scribed by Claude Fable 5.2) -- 2026-11-21
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's instruction came before this proposal was written, and it is what the proposal carries out. Asked whether to replace the narrow plan with the simple meter now, before certification, he wrote (chat, 2026-11-21):
+
+> "Yes, simplify now. That is way too much for a log that doesn't actually do anything."
+
+Just before, he had set the direction: "The meter is literally just measuring a folder and writing a file inside of our measurement folder, right? There's no reason it needs elaborate permission checks, just read the right location for each agent".
+
+What this records, plainly:
+
+- **He has not read this text.** Strategy told him in chat the same day what it holds: the two promises that stay, the two habits that stay, what is removed and what it gives up. He gave no further word on it, and none is claimed here.
+- **Added by the reviews after he wrote.** A consent file is trusted as written, whoever wrote it. On Windows the summary takes the access of the project folder, so whoever may read that folder may read the counts. Strategy reports both to him in chat in the turn that scribes this.
+- **Scope.** The proposal as revised after its two reviews. Its Scope delta is `lost`, accepted in his words quoted there.
+- **Tier: heavy,** as proposed; it was not put to him as a separate question. One plan, with a usual review and a Security Review at the plan stage and at the code stage.
+- **If he redirects,** every edit is a commit on the development branch and can be taken back.
 
 **Elapsed**: unknown. **Tokens**: unknown.
