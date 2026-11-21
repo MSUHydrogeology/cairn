@@ -40,7 +40,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit, urlunsplit
 
 
-READER_VERSION = "cairn-source-readers/5"
+READER_VERSION = "cairn-source-readers/6"
 CODEX_CONTRACT = "49f0c6022596c361fe676a5c4738fb2be34e3a93"  # vendor-ok: pins reviewed input contract
 MAX_COUNTER = 2**63 - 1
 TOOLS = ("codex", "claude", "antigravity")  # vendor-ok: source adapters
@@ -75,8 +75,9 @@ def _load_shared_pulse():
 
 
 _PULSE = _load_shared_pulse()
-LEDGER_SCHEMA = "cairn-meter-ledger/5"
-_OLD_LEDGER_SCHEMAS = frozenset({"cairn-meter-ledger/3", "cairn-meter-ledger/4"})
+LEDGER_SCHEMA = "cairn-meter-ledger/6"
+_OLD_LEDGER_SCHEMAS = frozenset({"cairn-meter-ledger/3", "cairn-meter-ledger/4",
+                                 "cairn-meter-ledger/5"})
 RATIO_VERSION = "cairn-api-token-index/2026-11-06"
 _RATIO_INDEX = {
     "version": RATIO_VERSION,
@@ -132,6 +133,8 @@ MAX_WAIT_EXPORT_WORK = 100_000
 MAX_CLAIM_BYTES = 8 * 1024 * 1024
 MAX_CLAIM_LINE = 64 * 1024
 MAX_LEDGER_BYTES = 64 * 1024 * 1024
+MAX_AGENT_SUMMARIES = 1_000
+MAX_AGENT_TRANSCRIPTS = 100_000
 # The three counts a finished sub-agent's summary record holds (Detail D0, P1).
 _SUMMARY_FIELDS = frozenset({"totalTokens", "toolUses", "durationMs"})
 # The frame the tool writes around a run's id inside its summary (Detail D0, P4).
@@ -2595,7 +2598,7 @@ _WAIT_REASONS = {
 _LEDGER_FIELDS = {
     "schema", "reader_version", "ratio_version", "ratio_index", "events", "claims", "cursors",
     "mappings", "project_remotes", "aggregates", "lineages", "waits", "coverage",
-    "starts", "fold_horizon", "daily",
+    "starts", "fold_horizon", "daily", "agent_runs",
 }
 
 
@@ -3023,6 +3026,28 @@ def _validate_aggregate_row(aggregate):
             raise ValueError
 
 
+def _validate_agent_runs(value):
+    if not isinstance(value, dict) or set(value) != {"transcripts", "summaries", "unclassified"}:
+        raise ValueError
+    _counter(value["unclassified"])
+    for name, cap in (("transcripts", MAX_AGENT_TRANSCRIPTS),
+                      ("summaries", MAX_AGENT_SUMMARIES)):
+        rows = value[name]
+        if not isinstance(rows, list) or len(rows) > cap:
+            raise ValueError
+        keys = []
+        for row in rows:
+            if not isinstance(row, dict) or set(row) != {"session_key", "agent_key"}:
+                raise ValueError
+            for field in ("session_key", "agent_key"):
+                if (not isinstance(row[field], str)
+                        or not re.fullmatch(r"[0-9a-f]{64}", row[field])):
+                    raise ValueError
+            keys.append((row["session_key"], row["agent_key"]))
+        if keys != sorted(keys) or len(set(keys)) != len(keys):
+            raise ValueError
+
+
 def _load_ledger(raw, now=None):
     if raw is None:
         return {
@@ -3031,6 +3056,7 @@ def _load_ledger(raw, now=None):
             "events": [], "claims": [], "cursors": [],
             "mappings": [], "project_remotes": [], "aggregates": [], "lineages": [],
             "waits": [], "starts": [], "fold_horizon": None, "daily": [],
+            "agent_runs": _empty_agent_runs(),
             "coverage": {"global": "unknown", "reasons": []},
         }
     try:
@@ -3051,6 +3077,7 @@ def _load_ledger(raw, now=None):
                 "events", "claims", "cursors", "mappings", "project_remotes",
                 "aggregates", "lineages", "waits", "starts", "daily")):
             raise ValueError
+        _validate_agent_runs(ledger["agent_runs"])
         now = _now_utc() if now is None else now
         if ledger["fold_horizon"] is not None and (
                 not isinstance(ledger["fold_horizon"], str)
@@ -4196,7 +4223,7 @@ def _read_fork_parents(source, config, files, previous, source_batches, spent, *
 
 
 def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=None,
-                           windows_api=None, windows_user_sid=None):
+                           windows_api=None, windows_user_sid=None, agent_runs=None):
     windows = os.name == "nt" or windows_api is not None
     windows_api = (_WindowsConsentAPI() if windows and windows_api is None
                    else windows_api)
@@ -4367,6 +4394,8 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                 if not resumed:
                     batch["started_at"] = started_at
                 batches.append(batch)
+                if agent_runs is not None:
+                    _gather_agent_runs(agent_runs, batch)
             if source["tool"] == "codex":
                 parents, dropped, used = _read_fork_parents(
                     source, config, files, previous, batches[first_batch:],
@@ -4624,9 +4653,19 @@ def _build_mappings(events, claims, config):
 
 def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incoming_claims,
                 project_remotes, capture_status, scan_reasons, verified_forks,
-                fork_conflicts, starts=None, now=None):
+                fork_conflicts, starts=None, now=None, agent_runs=None):
     starts = prior["starts"] if starts is None else starts
     now = _now_utc() if now is None else now
+    if agent_runs is None:
+        incoming_runs = _empty_agent_runs()
+    else:
+        incoming_runs = {
+            "transcripts": [{"session_key": session_key, "agent_key": agent_key}
+                            for session_key, agent_key in sorted(agent_runs["transcripts"])],
+            "summaries": [{"session_key": session_key, "agent_key": agent_key}
+                          for session_key, agent_key in sorted(agent_runs["summaries"])],
+            "unclassified": agent_runs["unclassified"]}
+    runs = _merge_agent_runs(prior["agent_runs"], incoming_runs)
     events = _merge_events(prior["events"], incoming_events)
     waits = _merge_wait_rows(prior["waits"], incoming_waits)
     old_remotes = {item["alias"]: item["remote"] for item in prior["project_remotes"]}
@@ -4702,6 +4741,8 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
     lineages = _drop_folded_lineages(lineages, events, waits)
     mappings = _build_mappings(events, claims, config)
     reasons = set(scan_reasons)
+    if runs["summaries"] or runs["unclassified"] > 0:
+        reasons.add("agent_runs_incomplete")
     if reasons & {"catching_up", "source_too_large"}:
         reasons.add("incomplete")
     reasons.update(status for status in capture_status if status != "captured")
@@ -4717,7 +4758,7 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
                              key=_aggregate_sort_key),
         "lineages": lineages,
         "starts": sorted(starts, key=lambda item: item["source_alias"]),
-        "fold_horizon": fold_horizon, "daily": daily,
+        "fold_horizon": fold_horizon, "daily": daily, "agent_runs": runs,
         "coverage": {"global": "unknown", "reasons": sorted(reasons)},
     }
 
@@ -5015,15 +5056,16 @@ def _refresh_ledger(home, *, report_current_directory=None):
         old_fd, old_raw, old_identity = _read_optional_ledger(meter_fd)
         now = _now_utc()
         prior = _load_ledger(old_raw, now)
+        runs = {"transcripts": set(), "summaries": set(), "unclassified": 0}
         (incoming_events, cursors, scan_reasons, verified_forks, fork_conflicts,
          incoming_waits, starts) = _scan_approved_sources(
             config, prior["cursors"], starts=prior["starts"], now=now,
-            fold_horizon=prior["fold_horizon"])
+            fold_horizon=prior["fold_horizon"], agent_runs=runs)
         incoming_claims, project_remotes, capture_status = _capture_all_claims(config)
         candidate = _new_ledger(prior, config, incoming_events, incoming_waits, cursors,
                                 incoming_claims, project_remotes,
                                 capture_status, scan_reasons, verified_forks,
-                                fork_conflicts, starts=starts, now=now)
+                                fork_conflicts, starts=starts, now=now, agent_runs=runs)
         result = _atomic_replace_ledger(
             home, home_fd, cairn_fd, meter_fd, lock_fd, lock_identity,
             old_fd if isinstance(old_fd, int) and old_fd >= 0 else None,
@@ -5362,17 +5404,18 @@ def _refresh_ledger_windows(profile, api, user_sid, *, opened=None,
 
         def build_candidate(prior):
             now = _now_utc()
+            runs = {"transcripts": set(), "summaries": set(), "unclassified": 0}
             (events, cursors, scan_reasons, verified_forks,
              fork_conflicts, waits, starts) = _scan_approved_sources(
                 config, prior["cursors"], starts=prior["starts"], now=now,
                 fold_horizon=prior["fold_horizon"],
-                windows_api=api, windows_user_sid=user_sid)
+                windows_api=api, windows_user_sid=user_sid, agent_runs=runs)
             claims, remotes, claim_status = _capture_all_claims(
                 config, windows_api=api, windows_user_sid=user_sid)
             result = _new_ledger(prior, config, events, waits, cursors, claims,
                                  remotes, claim_status, scan_reasons,
                                  verified_forks, fork_conflicts,
-                                 starts=starts, now=now)
+                                 starts=starts, now=now, agent_runs=runs)
             built[:] = [result]
             return result
 
@@ -6559,6 +6602,39 @@ def _usage_values(record):
 
 def _empty_agent_runs():
     return {"transcripts": [], "summaries": [], "unclassified": 0}
+
+
+def _gather_agent_runs(gathered, batch):
+    """Add one batch's sub-agent rows to a refresh's sets; nothing is covered here."""
+    runs = batch["agent_runs"]
+    gathered["transcripts"].update(
+        (row["session_key"], row["agent_key"]) for row in runs["transcripts"])
+    gathered["summaries"].update(
+        (row["session_key"], row["agent_key"]) for row in runs["summaries"])
+    gathered["unclassified"] = min(MAX_COUNTER,
+                                   gathered["unclassified"] + runs["unclassified"])
+
+
+def _merge_agent_runs(first, second):
+    """Union two sub-agent records, drop covered summaries, then apply the caps."""
+    transcripts = {(row["session_key"], row["agent_key"])
+                   for row in [*first["transcripts"], *second["transcripts"]]}
+    summaries = {(row["session_key"], row["agent_key"])
+                 for row in [*first["summaries"], *second["summaries"]]}
+    unclassified = min(MAX_COUNTER, first["unclassified"] + second["unclassified"])
+    summaries -= transcripts
+    kept_transcripts = sorted(transcripts)
+    kept_summaries = sorted(summaries)
+    cut = max(0, len(kept_transcripts) - MAX_AGENT_TRANSCRIPTS)
+    cut += max(0, len(kept_summaries) - MAX_AGENT_SUMMARIES)
+    kept_transcripts = kept_transcripts[:MAX_AGENT_TRANSCRIPTS]
+    kept_summaries = kept_summaries[:MAX_AGENT_SUMMARIES]
+    return {
+        "transcripts": [{"session_key": session_key, "agent_key": agent_key}
+                        for session_key, agent_key in kept_transcripts],
+        "summaries": [{"session_key": session_key, "agent_key": agent_key}
+                      for session_key, agent_key in kept_summaries],
+        "unclassified": min(MAX_COUNTER, unclassified + cut)}
 
 
 def _summary_shape(value):

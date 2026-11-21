@@ -10,6 +10,7 @@ where the plan names them.
 import importlib.util
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -22,6 +23,9 @@ METER = ROOT / "dev/tools/meter.py"
 spec = importlib.util.spec_from_file_location("meter_claude_usage_reader", METER)
 meter = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(meter)
+pulse_spec = importlib.util.spec_from_file_location("pulse_claude_usage", ROOT / "dev/tools/pulse.py")
+pulse = importlib.util.module_from_spec(pulse_spec)
+pulse_spec.loader.exec_module(pulse)
 
 STAMP = "2026-11-05T12:00:00Z"
 REMOTE = "https://example.test/team/project.git"
@@ -346,3 +350,127 @@ def test_transcript_mark_needs_true_and_a_text_agent_id():
     bad_id = read([rec(isSidechain=True, agentId=5)])
     assert bad_id["agent_runs"]["transcripts"] == []
     assert len(bad_id["events"]) == 1
+
+
+# Arc C3: the ledger remembers sub-agent runs across refreshes, and sets the reason.
+
+NOW = datetime(2026, 11, 5, tzinfo=timezone.utc)
+OTHER_SESSION_KEY = meter._digest("claude", "session-b")
+SIBLING = meter._digest("agent-id", "b1b2c3d4e5f6g7h8j")
+PAIR = (SESSION_KEY, DIGEST)
+SIBLING_PAIR = (SESSION_KEY, SIBLING)
+OTHER_PAIR = (OTHER_SESSION_KEY, DIGEST)
+
+
+def runs(transcripts=(), summaries=(), unclassified=0):
+    """The sets one refresh gathers from its batches (Detail D4)."""
+    return {"transcripts": set(transcripts), "summaries": set(summaries),
+            "unclassified": unclassified}
+
+
+def new_ledger(prior, gathered, *, remotes=()):
+    """One refresh's ledger from its sub-agent sets, with no events, claims or cursors."""
+    return meter._new_ledger(prior, cfg(), [], [], [], [], list(remotes), [], set(),
+                             [], [], now=NOW, agent_runs=gathered)
+
+
+def reasons_of(ledger):
+    return ledger["coverage"]["reasons"]
+
+
+@pytest.fixture
+def start_ledger():
+    return meter._load_ledger(None)
+
+
+def test_summary_then_its_transcript_clears_the_reason(start_ledger):
+    first = new_ledger(start_ledger, runs(summaries=[PAIR]))
+    assert "agent_runs_incomplete" in reasons_of(first)
+    second = new_ledger(first, runs(transcripts=[PAIR]))
+    assert "agent_runs_incomplete" not in reasons_of(second)
+    assert second["agent_runs"]["summaries"] == []
+    assert second["agent_runs"]["transcripts"] == [SUMMARY_ROW]
+
+
+@pytest.mark.parametrize("gathered, incomplete", [
+    (runs(summaries=[PAIR]), True),
+    (runs(summaries=[PAIR], transcripts=[PAIR]), False),
+    (runs(unclassified=1), True),
+    (runs(summaries=[PAIR], transcripts=[SIBLING_PAIR]), True),
+    (runs(summaries=[PAIR], transcripts=[OTHER_PAIR]), True),
+], ids=["own-run-not-read", "own-run-read", "no-frame-or-two-ids",
+        "sibling-read-but-own-run-not", "run-read-in-another-session"])
+def test_summary_frames_decide_covered_or_incomplete(start_ledger, gathered, incomplete):
+    ledger = new_ledger(start_ledger, gathered)
+    assert ("agent_runs_incomplete" in reasons_of(ledger)) is incomplete
+
+
+def test_a_run_summarised_twice_is_covered_by_its_one_transcript(start_ledger):
+    first = new_ledger(start_ledger, runs(summaries=[PAIR]))
+    second = new_ledger(first, runs(summaries=[PAIR]))
+    third = new_ledger(second, runs(transcripts=[PAIR]))
+    assert "agent_runs_incomplete" not in reasons_of(third)
+    assert third["agent_runs"]["summaries"] == []
+
+
+def test_an_unclassified_record_keeps_the_reason_until_the_ledger_is_replaced(start_ledger):
+    first = new_ledger(start_ledger, runs(unclassified=1))
+    second = new_ledger(first, runs())
+    assert "agent_runs_incomplete" in reasons_of(second)
+    assert second["agent_runs"]["unclassified"] == 1
+
+
+def test_caps_cut_the_excess_and_count_it_without_failing(monkeypatch, start_ledger):
+    monkeypatch.setattr(meter, "MAX_AGENT_SUMMARIES", 3)
+    summaries = [(SESSION_KEY, meter._digest("agent-id", "run-%d" % index))
+                 for index in range(4)]
+    ledger = new_ledger(start_ledger, runs(summaries=summaries))
+    assert len(ledger["agent_runs"]["summaries"]) == 3
+    assert ledger["agent_runs"]["unclassified"] == 1
+    assert "agent_runs_incomplete" in reasons_of(ledger)
+
+
+def run_ledger():
+    return new_ledger(meter._load_ledger(None), runs(
+        transcripts=[PAIR, SIBLING_PAIR], summaries=[OTHER_PAIR], unclassified=2))
+
+
+def ledger_bytes(ledger):
+    return json.dumps(ledger, sort_keys=True).encode("utf-8")
+
+
+def test_the_ledger_round_trips_its_run_record():
+    ledger = run_ledger()
+    assert meter._load_ledger(ledger_bytes(ledger), NOW) == ledger
+
+
+EDITS = {
+    "unsorted-rows": lambda record: record["transcripts"].reverse(),
+    "duplicate-row": lambda record: record["transcripts"].__setitem__(
+        1, dict(record["transcripts"][0])),
+    "key-not-hex": lambda record: record["transcripts"][0].__setitem__(
+        "session_key", "X" * 64),
+    "missing-agent-key": lambda record: record["transcripts"][0].pop("agent_key"),
+    "negative-count": lambda record: record.__setitem__("unclassified", -1),
+    "extra-key": lambda record: record.__setitem__("extra", 1),
+}
+
+
+@pytest.mark.parametrize("name", sorted(EDITS))
+def test_a_hand_edit_of_the_run_record_is_refused(name):
+    raw = json.loads(ledger_bytes(run_ledger()))
+    EDITS[name](raw["agent_runs"])
+    with pytest.raises(meter.Unavailable) as refused:
+        meter._load_ledger(json.dumps(raw).encode("utf-8"), NOW)
+    assert refused.value.reason == "ledger_invalid"
+
+
+def test_the_empty_ledger_starts_with_no_runs():
+    assert meter._load_ledger(None)["agent_runs"] == meter._empty_agent_runs()
+
+
+def test_the_export_reaches_the_pulse_as_an_incomplete_reason():
+    ledger = new_ledger(meter._load_ledger(None), runs(summaries=[PAIR]),
+                        remotes=[{"alias": "alpha", "remote": REMOTE}])
+    data = meter._project_export_bytes(ledger, cfg(), "alpha")
+    assert "agent_runs_incomplete" in pulse._parse_meter_aggregate(data)["incomplete_reasons"]
