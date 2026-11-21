@@ -1,7 +1,7 @@
 # Take the pressure to test out of Cairn's texts
 
 **Author**: Claude Fable 5.2 (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -202,5 +202,24 @@ Security Review:
 - Disposition 5 as first written, a written account in place of a run. Withdrawn: one planted bad input is run once.
 - "A handful" of tests. Replaced by "at most five test files".
 - Editing the testing module in this pass. Held for the Maintainer.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Decision -- Maintainer (scribed by Claude Fable 5.2) -- 2026-11-21
+
+**Tier**: light
+
+**ACCEPTED.** The Maintainer's instruction came before this proposal was written, and it is what the proposal carries out. He wrote (chat, 2026-11-21):
+
+> "And, right now, strip the test pressure out of basically everything."
+
+Just before, he had set the rule it serves: "Just do all of the changes we need. Then run the fewest tests possible to make sure it was right. Then we re-anchor, certify on all three platforms, and cut."
+
+What this records, plainly:
+
+- **He has not read this text.** Strategy told him in chat the same day what it holds: 675 sentences in 57 files, one short rule in their place, and what stays. He gave no further word on it, and none is claimed here.
+- **Scope.** The proposal as revised after its two reviews. The testing module is outside it, held for his answer.
+- **Tier: light,** as proposed; it was not put to him as a separate question. No plan. A fresh reviewer and a Security reader read the diff before it merges.
+- **If he redirects,** every edit is a commit on the development branch and can be taken back.
 
 **Elapsed**: unknown. **Tokens**: unknown.
