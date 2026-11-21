@@ -19,9 +19,7 @@ The Maintainer accepted the defect arc at the heavy tier ("Go ahead on the defec
 
 **Result.** An upgrade from 0.7.0 or 0.8.0 runs to the end on a test tree, and `run_security_verification.py local` is not left unable to run by it.
 
-Proposed paths:
-- `.gitattributes`
-- `tests/test_retire_wrapper.py`
+New files, both of which now exist: the root `.gitattributes` and `tests/test_retire_wrapper.py`.
 
 | Item | Chunk | Entry point |
 |---|---|---|
