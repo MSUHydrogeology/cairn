@@ -467,15 +467,11 @@ minutes for integration, and 10 minutes for certification. They are diagnostic,
 not agent scores; a miss does not block work. Record misses and add each test
 file over 10 seconds to the test-consolidation list, slowest first.
 
-If a required selection crosses the test runner's file limit, split it into
-invocations within the limit. Record each invocation's arguments and outcomes,
-the executed-test union, and its reconciliation with the original collected
-selection. Preserve markers and shuffle seeds; never use the full-suite
-override to get around the limit. Collection alone is not evidence that a split
-ran.
+The test runner refuses a run over its file limit. Do not split a selection to
+get under it, and never use the full-suite override outside certification.
 
-**Plan-local verification records changed promises; Boundary B records joined
-evidence for an arc.** A plan's existing implementation-verification section
+**Plan-local verification records changed promises; Boundary B is the whole
+suite at certification.** A plan's existing implementation-verification section
 records its changed caller-visible promises, the evidence for them,
 results and omissions. Cite reused evidence and state whether its bytes,
 platform, inputs and obligation still apply. This plan-local section is not

@@ -365,7 +365,7 @@ Run the fewest tests that show the change is right, once: the tests written for 
 
 Plans finish as in “Plans and records”; they do not wait for later integration. Before arc completion or release, one line says what was not checked. The arc owner records and repairs post-archive defects without reopening the plan. Missing evidence, failed promises and required checks remain plan work. Routine human trust and release operations remain separate.
 
-Boundary A is scoped iteration. Boundary B is the whole suite at certification, before a release is cut. Boundary C is independent falsification; its `Bounding` verdict is `WIDER RUN REQUIRED` when mapped checks are insufficient. A review fix is closed by the review's exact words or code, or its failing test where words cannot show the fault ("Review rules"), not by a second read before Boundary B. Change verification, tree certification and release verification are separate.
+Boundary A is scoped iteration. Boundary B is the whole suite at certification, before a release is cut. Boundary C is independent falsification: a review names a changed behaviour that has no check at all, if there is one. A review fix is closed by the review's exact words or code, or its failing test where words cannot show the fault ("Review rules"), not by a second read before Boundary B. Change verification, tree certification and release verification are separate.
 
 
 Implementation verification closes with `**Benefit versus cost**: <verdict>
