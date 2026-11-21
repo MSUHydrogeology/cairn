@@ -119,8 +119,9 @@ runs cost machine time, not tokens, and are listed separately.
 | | build, five chunks, by the plan's agent with Haiku execution agents | Medium | 193,873 | 150 | awaiting code review |
 | | usual code review | Medium | 136,968 | 3 | accept, 0 blocking; 3 tests can go |
 | | Security Review of the code | High | 126,800 | 4 | accept, 0 blocking |
+| Strip test pressure | inventory of every sentence that asks for a test, by a reader | Medium | 376,025 | 17 | 675 entries in 57 files |
 
-Total for the day so far: 14,139,908 tokens across 95 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 14,515,933 tokens across 96 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
