@@ -419,7 +419,7 @@ Status: `ready-to-archive`. The archive waits on the Maintainer's answer, and th
 
 One accepted check of this plan was not met (the meter's check on a real log, criterion C3), so the plan could not be archived without him. Asked: "Plan C fixed what issue #96 names, but one of its own checks is not met: on a real log the meter still flags a session that used sub-agents. Both code reviewers found the code right and that check's expectation out of date. The usage-counting proposal you just accepted handles the sub-agent part. Do you accept plan C as built?", the Maintainer chose, from the answers offered (2026-11-21): "Accept as built (Recommended)".
 
-This settles two things. The plan is archived as built. Reading sub-agent usage belongs to the usage-counting proposal, accepted the same day (`dev/proposals/2026-11-21-claude-usage-counting.md`).
+This settles two things. The plan is archived as built. Reading sub-agent usage belongs to the usage-counting proposal, accepted the same day (`dev/proposals/archive/2026-11-21-claude-usage-counting.md`).
 
 ## Implementation closeout -- Claude Sonnet 5.5 (for Strategy) -- 2026-11-21
 
@@ -438,7 +438,7 @@ The branch merged into `0.9-dev` at `88165470`; the installer refreshed Cairn's 
 Not run: the 42-file selection for C1, real Bandit, the threshold loader's POSIX branches, and Python 3.13. Home: `dev/PLANNING.md`, section 1, "What the joined run owes".
 Not covered: three frozen files the Maintainer will see at the signing (the intent tool's `conflict.py`, `run_security_audit.py`, `measurements.py`). Home: `dev/PLANNING.md`, section 1, "What the one signing will show".
 Remaining: one frozen session test that cannot pass on Windows. Home: `dev/PLANNING.md`, section 1, "Windows", finding (l), for plan D2.
-Remaining: usage kept under another field name is skipped without a flag. Home: `dev/proposals/2026-11-21-claude-usage-counting.md`.
+Remaining: usage kept under another field name is skipped without a flag. Home: `dev/proposals/archive/2026-11-21-claude-usage-counting.md`.
 
 Dispositions: no follow-up of this plan is deferred without a home above.
 
