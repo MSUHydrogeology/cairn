@@ -70,12 +70,6 @@ def read(records, *, config=None, root=SOURCE_ROOT):
                               source_root=root)
 
 
-@pytest.fixture(autouse=True)
-def passing_remote(monkeypatch):
-    monkeypatch.setattr(meter, "_verified_project_remote",
-                        lambda project, excluded_roots, **kwargs: (REMOTE, None))
-
-
 def test_record_in_project_folder_counts_as_proven():
     event, = read([rec()])["events"]
     assert event["project_alias"] == "alpha"
@@ -142,16 +136,6 @@ def test_folder_inside_two_projects_is_not_proof():
     assert event["project_alias"] is None
     assert event["ownership"] == "unknown"
     assert "project_path_unapproved" in event["reasons"]
-
-
-def test_failed_remote_check_gives_its_reason(monkeypatch):
-    monkeypatch.setattr(meter, "_verified_project_remote",
-                        lambda project, excluded_roots, **kwargs: (None, "project_remote_mismatch"))
-    event, = read([rec()])["events"]
-    assert event["project_alias"] is None
-    assert event["ownership"] == "unknown"
-    assert "project_remote_mismatch" in event["reasons"]
-    assert "project_path_unapproved" not in event["reasons"]
 
 
 def test_unapproved_source_root_is_not_proof():
