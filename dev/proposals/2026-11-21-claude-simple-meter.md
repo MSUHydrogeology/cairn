@@ -1,7 +1,7 @@
 # A simple usage meter: read the logs, write the summary
 
 **Author**: Claude Fable 5.2 (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -134,3 +134,43 @@ The two promises mostly live in code that stays. Two do not: the consent file's 
 - N6. Size: one plan of five chunks is believable; the risk is rewriting the kept tests' set-up, not deleting.
 
 **Not covered**: real logs and machines (barred), running any test, `release/security_check.py`, the Antigravity reader, and the Security Review questions.
+
+## Review -- Claude Opus 5.5 (Security Review) -- 2026-11-21
+
+```
+Reviewed commit: 228fca76
+```
+
+**Tier**: Security Review
+**Findings**: raised (1 blocking, 2 non-blocking)
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Conclusion first.** No owner check on the consent file is right, and only counts can leave a log. But the proposal understates where a summary can land and who can read it. Two cheap habits close that.
+
+**Agreement.** I agree with the usual review's B1 to B4; my B1 governs B1's wording on the consent file. "Never text from a log" is held by code that stays: `read_records` keeps only hashed ids (`_digest`), integer counts (`_claude_usage`), times (`_timestamp`) and model names passed through `_safe_alias`; the record's `cwd` is used to match a project and not stored; `_project_export` re-checks the record's shape before it writes. B2 and B4 of the usual review are the only gaps.
+
+**The consent file.** Its writer can turn collection on, choose which folders are read with the rights of whoever runs the meter, and choose where summaries go. Refresh writes a summary for every listed project, not only the current one. With the Git check gone, a project path need not be a project: a path such as a drive's root matches every session below it, so one summary can hold the counts of all the user's sessions. In every setting I found, an account that can write `~/.cairn` is the user, an administrator or root, and can already run code as the user. That is more than the meter offers, so an owner check buys little. Nothing runs the meter as a service; `session.py` runs it as the user at session end. Run from an administrator or root shell, it can count another account's logs if they are listed.
+
+**Blocking**
+
+- **B1. S2 to S4 and C do not say where a summary can go or who reads it.** Replace as in the block below.
+
+**Non-blocking**
+
+- N1. Optional: refuse a consent file, or `~/.cairn`, that is a link, as B does for log folders.
+- N2. Nothing else in Cairn relies on the removed checks: `session.py` checks `meter.py` itself and reads only the receipt; `pulse.py` checks the summary's shape itself.
+
+**Not covered**: Windows access entries on a real profile, `release/security_check.py`, running anything.
+
+### Exact words for B1
+
+Add to C: "The meter never creates `dev` or `dev/measurement`; a project with no such real folder gets no summary. Where the system has file modes, the summary is made readable by the user alone; on Windows it takes the access of the project folder. It holds per-day counts, times, model names and plan names for sessions run in that project."
+
+Replace S2: "The meter's numbers, and the place its summaries land, are no longer guarded. A consent file can list any folder as a project, including one above many projects."
+
+Replace S3: "Only an account that can write the user's profile, log folders or project; that account can already act as the user. Run with administrator or root rights, the meter can count other accounts' logs that the consent file lists."
+
+Replace S4: "Wrong counts, a missing summary, or a summary of counts in a folder that others may read. Never text from a log."
