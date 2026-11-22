@@ -3071,8 +3071,9 @@ def test_a_failed_resume_check_restarts_and_records_why(tmp_path, monkeypatch, n
     assert meter._refresh_ledger(home)["events"] == 0
     expected = ["new-1", "new-2"]
     if name == "file_replaced":
-        log.unlink()
-        log.write_bytes(old + new)                   # a new file, so a new inode
+        successor = claude_root / "successor.tmp"    # made while the old file still exists,
+        successor.write_bytes(old + new)             # so it cannot get the old inode number
+        os.replace(successor, log)                   # (ext4 hands a freed number straight back)
     elif name == "cursor_past_end":
         with open(log, "r+b") as handle:             # same file, now shorter
             handle.truncate(0)

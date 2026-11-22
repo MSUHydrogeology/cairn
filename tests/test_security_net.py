@@ -969,9 +969,28 @@ def make_cert(
         "-subj", f"/CN={common_name}", "-addext", f"subjectAltName={sans}",
     ]
     if not_before and not_after:
-        argv += ["-not_before", not_before, "-not_after", not_after]
-    else:
-        argv += ["-days", "2"]
+        # `req -not_before/-not_after` needs OpenSSL 3.4 or newer (Ubuntu 24.04 has 3.0);
+        # `ca -selfsign -startdate/-enddate` takes the same dates on 3.0, 3.6 and LibreSSL.
+        # Names are relative and `cwd` is the folder, so no Windows path reaches the config.
+        (directory / f"{name}-index.txt").write_text("", encoding="utf-8")
+        (directory / f"{name}-serial").write_text("01\n", encoding="utf-8")
+        (directory / f"{name}-ca.cnf").write_text(
+            f"[ca]\ndefault_ca = sign\n[sign]\ndatabase = {name}-index.txt\n"
+            f"new_certs_dir = .\nserial = {name}-serial\ndefault_md = sha256\n"
+            "policy = anything\nx509_extensions = leaf\n[anything]\n"
+            "commonName = supplied\n[leaf]\n"
+            f"subjectAltName = {sans}\nbasicConstraints = critical,CA:TRUE\n"
+            "subjectKeyIdentifier = hash\n", encoding="utf-8")
+        for step in (
+            [_openssl(), "req", "-new", "-newkey", "rsa:2048", "-keyout", key.name,
+             "-out", f"{name}-req.csr", "-nodes", "-subj", f"/CN={common_name}"],
+            [_openssl(), "ca", "-config", f"{name}-ca.cnf", "-selfsign",
+             "-keyfile", key.name, "-in", f"{name}-req.csr", "-out", cert.name,
+             "-startdate", not_before, "-enddate", not_after, "-batch", "-notext"],
+        ):
+            subprocess.run(step, check=True, capture_output=True, cwd=directory)
+        return cert, key
+    argv += ["-days", "2"]
     subprocess.run(argv, check=True, capture_output=True)
     return cert, key
 

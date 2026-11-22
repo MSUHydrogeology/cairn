@@ -847,11 +847,15 @@ def test_without_a_no_follow_flag_the_read_still_refuses_a_file_swapped_in_after
     def swap_then_open(path, flags, *args, **kwargs):
         if Path(path).name == ".gitignore" and not (flags & (os.O_WRONLY | os.O_RDWR)) and not swapped:
             swapped.append(True)
-            Path(path).unlink()
             if swap == "a link":
+                Path(path).unlink()
                 os.symlink(stand_in, path)
             else:
-                Path(path).write_text("*.tmp\n", encoding="utf-8")
+                # Made while the old file still exists, so it cannot get the old inode
+                # number (ext4 hands a freed number straight back to the next new file).
+                other = Path(path).with_name("other.tmp")
+                other.write_text("*.tmp\n", encoding="utf-8")
+                os.replace(other, path)
         return real_open(path, flags, *args, **kwargs)
 
     monkeypatch.setattr(lifecycle.os, "open", swap_then_open)

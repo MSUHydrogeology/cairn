@@ -992,6 +992,7 @@ def test_a_planted_record_for_a_plain_project_file_is_never_retired(
     (project / other_case).write_bytes(_shipped_versions(SCRIPT)[-1])
     _add_record(project, {**_script_record(SCRIPT, b"x"), "dst": other_case})
     other_source = {**_script_record(SCRIPT_2, b"y"), "src": ROWS[SCRIPT_2][0] + "x"}
+    (project / SCRIPT_2).parent.mkdir(exist_ok=True)   # `Scripts/` above is this folder only on a case-insensitive disk
     (project / SCRIPT_2).write_bytes(_shipped_versions(SCRIPT_2)[-1])
     _add_record(project, other_source)
     _commit_all(project)
