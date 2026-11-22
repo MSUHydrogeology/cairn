@@ -2576,20 +2576,14 @@ def check_stop_records(ctx, cdir, first_run):
     repo, anchor, head = ctx["repo"], ctx["anchor"], ctx["head"]
     recs = [json.loads(read_safe(f, own=True)) for f in sorted(Path(cdir).glob(STOP_PREFIX + "*.json"))]
     span = f"{anchor}..{head}"
-    legacy_moves = LEGACY_MOVES if ctx.get("layout_evidence") else {}
-    watched = tuple(OUTPUTS) + tuple(legacy_moves)
+    watched = tuple(OUTPUTS)
     # Path-limited listings print rewritten parents, so ask for each commit's real ones.
     listed = set(git_text(repo, "rev-list", "--full-history", span, "--", *watched).split())
     listed |= set(git_text(repo, "rev-list", "--merges", span).split())
     for name in sorted(listed):
         commit, *parents = git_text(repo, "rev-list", "--parents", "-n", "1", name).split()
-        if legacy_moves:
-            output_rows = git(repo, "ls-tree", "-z", commit, "--", *watched)
-            changed_output = any(output_rows != git(repo, "ls-tree", "-z", parent, "--", *watched)
-                                 for parent in parents)
-        else:
-            changed_output = any(blob_at(repo, commit, output) != blob_at(repo, parent, output)
-                                 for parent in parents for output in watched)
+        changed_output = any(blob_at(repo, commit, output) != blob_at(repo, parent, output)
+                             for parent in parents for output in watched)
         if not changed_output:
             continue
         changed = {}
@@ -2597,17 +2591,6 @@ def check_stop_records(ctx, cdir, first_run):
             parts = git(repo, "diff-tree", "-r", "-z", "--no-renames", "--no-commit-id", "--raw", commit).split(b"\0")
             changed = {parts[i + 1].decode("utf-8", "surrogateescape"): parts[i].split()[3].decode()
                        for i in range(0, len(parts) - 1, 2)}
-            outputs = set(changed) & set(watched)
-            if legacy_moves and outputs and outputs <= (set(legacy_moves) | set(legacy_moves.values())):
-                before, after = (_revision_tree(repo, rev) for rev in (parents[0], commit))
-                moved = {path for old, new in legacy_moves.items()
-                         if old in before and new not in before and old not in after
-                         and before[old][0] in {"100644", "100755"}
-                         and before[old] == after.get(new)
-                         for path in (old, new)}
-                if outputs == moved:
-                    say(f"  commit {commit[:12]} moves pinned fixtures with the same modes and blobs")
-                    continue
         if len(parents) == 1 and any(r["head"] == parents[0] and r["paths"] == changed for r in recs):
             say(f"  commit {commit[:12]} matches a stop record: it changes exactly the paths and bytes written")
             continue
