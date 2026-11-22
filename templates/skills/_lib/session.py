@@ -1715,15 +1715,60 @@ def _designation_marker_present(root: Path) -> bool:
     return (_state_dir(root) / "handoff-owner").exists()
 
 
+def _windows_pid_alive(pid: int) -> bool:
+    """Whether ``pid`` is a running process, asked of Windows directly.
+
+    ``os.kill(pid, 0)`` cannot answer this on Windows: signal 0 is read as
+    ``CTRL_C_EVENT``, and the call returns normally for a live and a dead pid
+    alike, so a dead holder would never be proved dead.  Windows reports a pid
+    that does not exist as error 87 (``ERROR_INVALID_PARAMETER``) from
+    ``OpenProcess``; that is the only proof of death here, plus a process that
+    has exited (an exit code other than 259, ``STILL_ACTIVE``) while some
+    handle to it stays open.  Access denied (5, so the process exists), any
+    other error and a pid Windows cannot represent read as *alive*, so
+    uncertainty never licenses a steal.
+    """
+    if not 0 < pid <= 0xFFFFFFFF:
+        return True
+    import ctypes as C
+    from ctypes import wintypes as W
+
+    try:
+        kernel = C.WinDLL("kernel32.dll", winmode=0x800, use_last_error=True)
+        kernel.OpenProcess.argtypes = [W.DWORD, W.BOOL, W.DWORD]
+        kernel.OpenProcess.restype = W.HANDLE
+        kernel.GetExitCodeProcess.argtypes = [W.HANDLE, C.POINTER(W.DWORD)]
+        kernel.GetExitCodeProcess.restype = W.BOOL
+        kernel.CloseHandle.argtypes = [W.HANDLE]
+        kernel.CloseHandle.restype = W.BOOL
+    except (AttributeError, OSError):
+        return True
+    # 0x1000 is PROCESS_QUERY_LIMITED_INFORMATION, the least access that reads
+    # the exit code.
+    handle = kernel.OpenProcess(0x1000, False, pid)
+    if not handle:
+        return C.get_last_error() != 87
+    try:
+        code = W.DWORD()
+        if not kernel.GetExitCodeProcess(handle, C.pointer(code)):
+            return True
+        return code.value == 259
+    finally:
+        kernel.CloseHandle(handle)
+
+
 def _pid_alive(pid: int) -> bool:
     """Best-effort host-local liveness check.
 
-    ``os.kill(pid, 0)`` raising ``ProcessLookupError`` is the only affirmative
-    proof of death.  ``PermissionError`` (exists, not ours) and any other error
-    are treated as *alive* -- the conservative choice, so uncertainty never
-    licenses a steal.  This is host-local only: a pid from another host says
-    nothing, which is why cross-host locks are never reclaimed automatically.
+    On POSIX, ``os.kill(pid, 0)`` raising ``ProcessLookupError`` is the only
+    affirmative proof of death.  ``PermissionError`` (exists, not ours) and any
+    other error are treated as *alive* -- the conservative choice, so
+    uncertainty never licenses a steal.  Windows asks ``_windows_pid_alive``
+    instead.  This is host-local only: a pid from another host says nothing,
+    which is why cross-host locks are never reclaimed automatically.
     """
+    if os.name == "nt":
+        return _windows_pid_alive(pid)
     try:
         os.kill(pid, 0)
     except ProcessLookupError:

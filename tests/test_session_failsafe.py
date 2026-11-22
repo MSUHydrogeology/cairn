@@ -337,6 +337,95 @@ def test_dead_holder_but_fresh_lease_not_stolen(repo):
         lifecycle.HandoffLock(repo, "owner").acquire()
 
 
+# Windows liveness is asked of kernel32, not of ``os.kill``.  These tests give
+# the helper a scripted kernel32, so they run on every host and need no real
+# Windows process; the two lock tests above cover the real call on Windows.
+
+class _Fn:
+    """A callable that, like a ctypes function, also accepts ``argtypes``."""
+
+    def __init__(self, impl):
+        self.impl = impl
+
+    def __call__(self, *args):
+        return self.impl(*args)
+
+
+def _fake_kernel32(monkeypatch, *, handle, last_error=0, exit_code=0, exit_ok=True):
+    import ctypes
+    import types
+
+    calls = types.SimpleNamespace(opened=[], closed=[])
+
+    def open_process(access, inherit, pid):
+        calls.opened.append((access, inherit, pid))
+        return handle
+
+    def get_exit_code(opened, out):
+        out.contents.value = exit_code
+        return 1 if exit_ok else 0
+
+    def close_handle(opened):
+        calls.closed.append(opened)
+        return 1
+
+    kernel = types.SimpleNamespace(
+        OpenProcess=_Fn(open_process),
+        GetExitCodeProcess=_Fn(get_exit_code),
+        CloseHandle=_Fn(close_handle),
+    )
+    monkeypatch.setattr(ctypes, "WinDLL", lambda *a, **k: kernel, raising=False)
+    monkeypatch.setattr(ctypes, "get_last_error", lambda: last_error, raising=False)
+    return calls
+
+
+@pytest.mark.parametrize("handle, last_error, exit_code, exit_ok, alive, closed", [
+    pytest.param(None, 87, 0, True, False, [], id="no-such-process"),
+    pytest.param(None, 5, 0, True, True, [], id="access-denied-means-it-exists"),
+    pytest.param(None, 1, 0, True, True, [], id="any-other-error-reads-alive"),
+    pytest.param(4242, 0, 259, True, True, [4242], id="still-active"),
+    pytest.param(4242, 0, 0, True, False, [4242], id="exited"),
+    pytest.param(4242, 0, 1, True, False, [4242], id="exited-with-an-error-code"),
+    pytest.param(4242, 0, 0, False, True, [4242], id="exit-code-unreadable"),
+])
+def test_windows_liveness_follows_openprocess_and_the_exit_code(
+        monkeypatch, handle, last_error, exit_code, exit_ok, alive, closed):
+    calls = _fake_kernel32(monkeypatch, handle=handle, last_error=last_error,
+                           exit_code=exit_code, exit_ok=exit_ok)
+    assert lifecycle._windows_pid_alive(777) is alive
+    # asks for PROCESS_QUERY_LIMITED_INFORMATION, no inheritance, for this pid
+    assert calls.opened == [(0x1000, False, 777)]
+    assert calls.closed == closed  # a handle it opened is always closed
+
+
+@pytest.mark.parametrize("pid, kernel32_loads", [
+    pytest.param(0, True, id="zero"),
+    pytest.param(-1, True, id="negative"),
+    pytest.param(2 ** 32, True, id="too-large"),
+    pytest.param(777, False, id="kernel32-unavailable"),
+])
+def test_windows_liveness_reads_alive_when_it_cannot_ask(monkeypatch, pid, kernel32_loads):
+    import ctypes
+
+    calls = _fake_kernel32(monkeypatch, handle=None, last_error=87)
+    if not kernel32_loads:
+        def unavailable(*args, **kwargs):
+            raise OSError("no kernel32")
+        monkeypatch.setattr(ctypes, "WinDLL", unavailable, raising=False)
+    assert lifecycle._windows_pid_alive(pid) is True
+    assert calls.opened == []
+
+
+def test_pid_alive_asks_windows_only_on_windows(monkeypatch):
+    import types
+
+    # No ``kill`` on the stand-in: the POSIX probe would raise AttributeError.
+    monkeypatch.setattr(lifecycle, "os", types.SimpleNamespace(name="nt"))
+    monkeypatch.setattr(lifecycle, "_windows_pid_alive", lambda pid: pid == 1)
+    assert lifecycle._pid_alive(1) is True
+    assert lifecycle._pid_alive(2) is False
+
+
 # --- resolve-don't-bake: absent degrades, present-but-wrong refuses ---------
 
 
