@@ -682,16 +682,16 @@ def _enumerate_jsonl(root):
     return files, entries
 
 
-def _enumerate_antigravity(root):  # vendor-ok: walk the one folder shape the tool writes
-    """List one antigravity root's logs by fixed names: `brain/<uuid>/.system_generated/logs/*.jsonl`.
+def _enumerate_antigravity(root, *, log_filename="transcript.jsonl"):  # vendor-ok: walk the one folder shape the tool writes
+    """List one antigravity root's logs by fixed names: `brain/<uuid>/.system_generated/logs/<log_filename>`.
 
-    Every path is built from those fixed names and listed entries, never from
-    record text; links are skipped at every level and a linked root is refused.
-    Returns `(files, entries, waiting)`: the files as `_enumerate_jsonl` lists
-    them, the entries listed, and whether a cap or an error inside one
-    conversation left something for the next refresh. A missing `brain/` or
-    `logs/` gives no files. Only a root that is missing, linked or not a folder
-    raises Unavailable.
+    Every path is built from those fixed names and listed conversation ids,
+    never from record text; links are skipped at every level and a linked root
+    is refused. Returns `(files, entries, waiting)`: the files as
+    `_enumerate_jsonl` lists them, the entries listed, and whether a cap or an
+    error inside one conversation left something for the next refresh. A
+    missing `brain/`, `logs/`, or target log gives no files. Only a root that
+    is missing, linked or not a folder raises Unavailable.
     """
     try:
         info = os.lstat(root)
@@ -741,24 +741,19 @@ def _enumerate_antigravity(root):  # vendor-ok: walk the one folder shape the to
             if any(_is_link(info) or not stat.S_ISDIR(info.st_mode)
                    for info in (os.lstat(system), os.lstat(logs))):
                 continue
-            with os.scandir(logs) as scan:
-                for entry in scan:
-                    entries += 1
-                    if entries > MAX_ATTRIBUTION_RUN_ENTRIES:
-                        found = None          # this conversation, and the rest, wait
-                        break
-                    info = entry.stat(follow_symlinks=False)
-                    if (_is_link(info) or not stat.S_ISREG(info.st_mode)
-                            or not entry.name.endswith(".jsonl")):
-                        continue
-                    info = os.lstat(entry.path)   # a directory entry has no file id on Windows
-                    found.append((f"brain/{conversation}/.system_generated/logs/{entry.name}", {
+            entries += 1
+            if entries > MAX_ATTRIBUTION_RUN_ENTRIES:
+                found = None          # this conversation, and the rest, wait
+            else:
+                info = os.lstat(os.path.join(logs, log_filename))
+                if not _is_link(info) and stat.S_ISREG(info.st_mode):
+                    found.append((f"brain/{conversation}/.system_generated/logs/{log_filename}", {
                         "dev": info.st_dev, "ino": info.st_ino,
                         "size": info.st_size, "mtime_ns": info.st_mtime_ns,
                         "ctime_ns": info.st_ctime_ns,
                     }))
         except FileNotFoundError:
-            continue                          # no logs folder: nothing to read here
+            continue                          # no logs folder or target log: nothing here
         except (OSError, ValueError):
             waiting = True                    # this conversation waits for the next refresh
             continue
@@ -887,15 +882,18 @@ def _open_search_folder(target, parent=None, identity=None):
     return None
 
 
-def _conversation_project(source_root, conversation, projects):  # vendor-ok: the saved files of one conversation
+def _conversation_project(source_root, conversation, projects, *,
+                          lead_factor=ATTRIBUTION_LEAD_FACTOR,
+                          max_bytes=MAX_ATTRIBUTION_BYTES,
+                          max_entries=MAX_ATTRIBUTION_ENTRIES):  # vendor-ok: the saved files of one conversation
     """Which one listed project do a conversation's saved files name most? (plan rule 5)
 
     Searches the regular files under `brain/<conversation>/` (links skipped, any folder
     named `chunks` skipped unopened, at most MAX_ATTRIBUTION_DEPTH levels down,
-    MAX_ATTRIBUTION_ENTRIES entries and MAX_ATTRIBUTION_BYTES bytes) for each listed
+    `max_entries` entries and `max_bytes` bytes) for each listed
     project's path text, and counts the files that name each project. When the search
     completes, the project with the most files wins if its count is at least
-    ATTRIBUTION_LEAD_FACTOR times the next project's. Returns
+    `lead_factor` times the next project's. Returns
     `(alias, None, bytes read, entries)` for that project, else
     `(None, reason, bytes read, entries)` with the reason `antigravity_projects_ambiguous`
     (two or more named and none leads enough), `antigravity_search_incomplete` (a cap, an
@@ -924,7 +922,7 @@ def _conversation_project(source_root, conversation, projects):  # vendor-ok: th
             with os.scandir(folder) as scan:
                 for entry in scan:
                     entries += 1
-                    if entries > MAX_ATTRIBUTION_ENTRIES:
+                    if entries > max_entries:
                         capped = True
                         break
                     info = entry.stat(follow_symlinks=False)
@@ -956,7 +954,7 @@ def _conversation_project(source_root, conversation, projects):  # vendor-ok: th
                     seen = (walked.st_dev, walked.st_ino)
                 hit, read, complete = _search_attribution_file(
                     name if _DIR_FD_WALK else path, seen,
-                    MAX_ATTRIBUTION_BYTES - used, names, overlap,
+                    max_bytes - used, names, overlap,
                     dir_fd=folder if _DIR_FD_WALK else None)
                 used += read
                 for alias in hit:
@@ -1000,7 +998,7 @@ def _conversation_project(source_root, conversation, projects):  # vendor-ok: th
         return None, "antigravity_project_not_named", used, entries
     ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
     next_count = ranked[1][1] if len(ranked) > 1 else 0
-    if ranked[0][1] < ATTRIBUTION_LEAD_FACTOR * next_count:
+    if ranked[0][1] < lead_factor * next_count:
         return None, "antigravity_projects_ambiguous", used, entries
     return ranked[0][0], None, used, entries
 
@@ -3421,7 +3419,14 @@ def _read_fork_parents(source, config, files, previous, source_batches, spent):
 
 
 def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=None,
-                           agent_runs=None):
+                           agent_runs=None, models_config=None):
+    ag_cfg = ((models_config or {}).get("tools", {}).get("antigravity", {})  # vendor-ok: source adapter settings
+              if isinstance(models_config, dict) else {})
+    ag_log_filename = ag_cfg.get("log_filename", "transcript.jsonl")
+    ag_cache_read_field = ag_cfg.get("cache_read_field")
+    ag_lead_factor = ag_cfg.get("lead_factor", ATTRIBUTION_LEAD_FACTOR)
+    ag_max_bytes = ag_cfg.get("max_bytes", MAX_ATTRIBUTION_BYTES)
+    ag_max_entries = ag_cfg.get("max_entries", MAX_ATTRIBUTION_ENTRIES)
     previous = {cursor["file_key"]: cursor for cursor in prior_cursors}
     start_rows = {row["source_alias"]: row["started_at"] for row in starts}
     had_start = set(start_rows)
@@ -3447,7 +3452,8 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
         if source["tool"] == "antigravity":  # vendor-ok: its own bounded walker
             # Its entries and files charge only the attribution caps, so a large
             # folder here can never fail the refresh for another source.
-            files, entries, waiting = _enumerate_antigravity(source["root"])
+            files, entries, waiting = _enumerate_antigravity(
+                source["root"], log_filename=ag_log_filename)
             attribution_entries += entries
             if waiting:
                 reasons.add("catching_up")
@@ -3558,14 +3564,17 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                     conversation = relative.split("/")[1]
                     decided = conversations.get(conversation)
                     if decided is None:
-                        if (attribution_bytes + MAX_ATTRIBUTION_BYTES > MAX_ATTRIBUTION_RUN_BYTES
-                                or total_bytes + MAX_ATTRIBUTION_BYTES > MAX_RUN_READ_BYTES
-                                or attribution_entries + MAX_ATTRIBUTION_ENTRIES
+                        if (attribution_bytes + ag_max_bytes > MAX_ATTRIBUTION_RUN_BYTES
+                                or total_bytes + ag_max_bytes > MAX_RUN_READ_BYTES
+                                or attribution_entries + ag_max_entries
                                 > MAX_ATTRIBUTION_RUN_ENTRIES):
                             decided = "wait"
                         else:
                             named, unnamed, searched, listed = _conversation_project(
-                                source["root"], conversation, config["projects"])
+                                source["root"], conversation, config["projects"],
+                                lead_factor=ag_lead_factor,
+                                max_bytes=ag_max_bytes,
+                                max_entries=ag_max_entries)
                             attribution_bytes += searched
                             total_bytes += searched
                             attribution_entries += listed
@@ -3586,10 +3595,13 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                         source["root"], relative,
                         min(MAX_BATCH_BYTES, MAX_RUN_READ_BYTES - total_bytes),
                         piece=True, resume=resume)
-                    batch = read_records(source["tool"], stream, config=config,
-                                         source_aliases=[source["alias"]],
-                                         source_root=source["root"],
-                                         attribution=attribution)
+                    batch = read_records(
+                        source["tool"], stream, config=config,
+                        source_aliases=[source["alias"]],
+                        source_root=source["root"],
+                        attribution=attribution,
+                        cache_read_field=(ag_cache_read_field
+                                          if source["tool"] == "antigravity" else None))  # vendor-ok: source adapter settings
                     total_bytes += stream.bytes_read
                     if stream.terminal_reason == "source_read_unavailable":
                         break
@@ -3977,7 +3989,8 @@ def _refresh_ledger(home, *, report_current_directory=None):
         (incoming_events, cursors, scan_reasons, verified_forks, fork_conflicts,
          incoming_waits, starts) = _scan_approved_sources(
             config, prior["cursors"], starts=prior["starts"], now=now,
-            fold_horizon=prior["fold_horizon"], agent_runs=runs)
+            fold_horizon=prior["fold_horizon"], agent_runs=runs,
+            models_config=models_config)
         incoming_claims, project_remotes, capture_status = _capture_all_claims(config)
         candidate = _new_ledger(prior, config, incoming_events, incoming_waits, cursors,
                                 incoming_claims, project_remotes,
@@ -4302,12 +4315,12 @@ def _claude_usage(data):  # vendor-ok: normalize the supported input protocol
     return kinds
 
 
-def _antigravity_usage(record):  # vendor-ok: normalize the supported input protocol
+def _antigravity_usage(record, *, cache_read_field=None):  # vendor-ok: normalize the supported input protocol
     """The kinds of one antigravity token record, or None when it holds neither token field.
 
     One field, or a number that is not a non-negative whole number (a boolean
-    included), raises ValueError. Only input and output are stated: both cache
-    kinds stay unknown (None, never 0).
+    included), raises ValueError. Both cache kinds stay unknown (None) unless a
+    configured `cache_read_field` is present on the record.
     """
     names = ("input_tokens", "output_tokens")
     present = [name in record for name in names]
@@ -4318,6 +4331,8 @@ def _antigravity_usage(record):  # vendor-ok: normalize the supported input prot
     kinds = _unknown_kinds()
     kinds["fresh_input"] = _counter(record["input_tokens"])
     kinds["output"] = _counter(record["output_tokens"])
+    if cache_read_field is not None and cache_read_field in record:
+        kinds["cache_read"] = _counter(record[cache_read_field])
     return kinds
 
 
@@ -4683,7 +4698,7 @@ def _summary_run(record):
 
 
 def read_records(tool, lines, *, config=None, source_aliases=(), source_root=None,
-                 conversation=None, attribution=None):
+                 conversation=None, attribution=None, cache_read_field=None):
     """Normalize a bounded source batch without exposing raw IDs or paths.
 
     `lines` may be synthetic bytes or an exhausted `_ApprovedLineStream`. Any
@@ -4797,9 +4812,18 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                 # line with neither token field is skipped (a `usage` key shows
                 # a changed format); anything half-formed is closed and uncounted.
                 try:
-                    kinds = _antigravity_usage(record)
+                    kinds = _antigravity_usage(
+                        record, cache_read_field=cache_read_field)
                     if kinds is not None:
                         timestamp = _timestamp(record.get("created_at"))
+                        if "model" in record:
+                            record_model = _safe_alias(record["model"])
+                            model_provenance = "usage_record"
+                            effective_model = record_model
+                        else:
+                            record_model = None
+                            model_provenance = "unknown"
+                            effective_model = None
                 except (ValueError, TypeError, OverflowError):
                     issues.add("invalid_record")
                     continue
@@ -4855,6 +4879,9 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     session_digest=_short_session_digest(antigravity_id),
                     timestamp=timestamp, time_known=True, kinds=kinds,
                     reasons=reasons,
+                    model=record_model,
+                    model_provenance=model_provenance,
+                    effective_model=effective_model,
                     project_alias=bound["alias"] if bound else None,
                     project_state="current_local_verified" if bound else "unknown",
                     ownership="proven" if bound else "unknown")
