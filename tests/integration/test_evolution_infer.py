@@ -52,6 +52,11 @@ pytestmark = pytest.mark.skipif(
 _TODAY = datetime.date(2026, 6, 8)
 
 
+def _native(path: str) -> str:
+    """*path* spelled as the tool names a file: with the host's own separator."""
+    return str(Path(path))
+
+
 def _recent(days_ago: int) -> str:
     """An incident date anchored to the *real* clock, for the ``main()`` path.
 
@@ -327,9 +332,9 @@ class TestUnreadableTrackersFailClosed:
             rc = ei.main(["--root", str(tmp_path), "--json"])
         assert rc == 3
         payload = json.loads(out.getvalue())
-        assert payload["fail_closed_trackers"] == ["dev/measurement/hazard_log.md"]
+        assert payload["fail_closed_trackers"] == [_native("dev/measurement/hazard_log.md")]
         assert "Impact" in payload["fail_closed_reasons"][
-            "dev/measurement/hazard_log.md"]
+            _native("dev/measurement/hazard_log.md")]
 
     def test_a_named_tracker_with_no_incidents_table(self, ei, tmp_path) -> None:
         self._write(tmp_path, "hazard_log.md",
@@ -356,7 +361,7 @@ class TestUnreadableTrackersFailClosed:
         assert [f["count"] for f in payload["findings"]] == [2]
         # The 40-day-old row is a row, but not one inside the window.
         assert payload["trackers_read"] == [{
-            "tracker": "dev/measurement/collision_log.md", "rows": 3,
+            "tracker": _native("dev/measurement/collision_log.md"), "rows": 3,
             "occurred_in_window": 2, "window_days": 14}]
 
 
@@ -382,7 +387,7 @@ class TestDiscoveryNamesWhatItSkipped:
             rc = ei.main(["--root", str(tmp_path), "--json"])
         assert rc == 0
         payload = json.loads(out.getvalue())
-        assert payload["trackers_skipped"] == ["dev/measurement/hazard_log.md"]
+        assert payload["trackers_skipped"] == [_native("dev/measurement/hazard_log.md")]
         assert payload["trackers_read"] == []
 
     def test_reading_nothing_is_not_reported_as_a_clean_none(
@@ -394,7 +399,7 @@ class TestDiscoveryNamesWhatItSkipped:
         text = out.getvalue()
         assert rc == 0
         assert "SKIPPED (1)" in text
-        assert "dev/measurement/hazard_log.md" in text
+        assert _native("dev/measurement/hazard_log.md") in text
         assert "RATE-LIMIT SUGGESTIONS: none.\n" not in text
         assert "no incident tracker was read" in text
 

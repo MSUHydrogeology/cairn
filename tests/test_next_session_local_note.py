@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import os
 import re
 import subprocess
 import sys
@@ -35,6 +36,7 @@ from install import scaffold as s  # noqa: E402
 from install.verify_integrity import verify  # noqa: E402
 
 from tests._repo_root import repository_root
+from tests._windows_programs import make_symlink
 
 ROOT = repository_root(Path(__file__))
 HANDOFF = "dev/NEXT_SESSION.md"
@@ -69,10 +71,15 @@ def _load(name: str, path: Path) -> ModuleType:
 def _run_verify_stems(
     script: Path, repo: Path, *args: str,
 ) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
+    done = subprocess.run(
         [sys.executable, "-I", str(script), "--root", str(repo), *args],
         capture_output=True, text=True, check=False,
     )
+    # The script names a file in the host's own spelling (`dev\PLANNING.md` on
+    # Windows); the checks below spell it with `/`.
+    done.stdout = done.stdout.replace(os.sep, "/")
+    done.stderr = done.stderr.replace(os.sep, "/")
+    return done
 
 
 def _planning_only_repo(root: Path) -> Path:
@@ -159,7 +166,7 @@ def test_verify_stems_refuses_a_folder_or_dangling_link_at_the_default_path(
     if kind == "folder":
         (repo / HANDOFF).mkdir()
     else:
-        (repo / HANDOFF).symlink_to(tmp_path / "nowhere.md")
+        make_symlink(repo / HANDOFF, tmp_path / "nowhere.md")
     result = _run_verify_stems(script, repo)
     assert result.returncode == 1
     assert f"{HANDOFF}: file not found" in result.stderr

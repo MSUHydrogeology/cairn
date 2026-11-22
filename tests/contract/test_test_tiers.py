@@ -320,6 +320,12 @@ def _release_config(tmp_path: Path, groups: object, *,
                    independent or [], release_only=groups, release_paths=paths)
 
 
+def _posix_lines(out: io.StringIO) -> list[str]:
+    """The lines written to *out* with `/` in every path; the tool names a file in
+    the host's own spelling (`tests\\test_x.py` on Windows)."""
+    return out.getvalue().replace(os.sep, "/").splitlines()
+
+
 def _run(verb: list[str], config: Path, folder: Path,
          root: Path) -> tuple[int, list[str], str]:
     out, err = io.StringIO(), io.StringIO()
@@ -629,7 +635,7 @@ def test_for_selects_imports_and_cited_paths_but_not_folder_sweepers(tmp_path):
         config=_config(tmp_path, [{"name": "unit", "about": "", "patterns": ["test_*"]}]),
         test_dir=tests, root=tmp_path, out=out, err=err)
     assert code == 0
-    assert out.getvalue().splitlines() == [
+    assert _posix_lines(out) == [
         "tests/test_cites_agents.py",
         "tests/test_imports_example.py",
         "tests/test_imports_from_example.py",
@@ -672,7 +678,7 @@ def test_for_matches_python_references_as_tokens_and_keeps_indirect_consumers(tm
         config=_config(tmp_path, [{"name": "unit", "about": "", "patterns": ["test_*"]}]),
         test_dir=tests, root=tmp_path, out=out, err=err)
     assert code == 0
-    assert out.getvalue().splitlines() == [
+    assert _posix_lines(out) == [
         "tests/test_cites_upgrade.py",
         "tests/test_cites_upgrade_helper.py",
         "tests/test_imports_upgrade.py",
@@ -691,7 +697,7 @@ def test_for_includes_a_changed_test_module_itself(tmp_path):
         config=_config(tmp_path, [{"name": "unit", "about": "", "patterns": ["test_*"]}]),
         test_dir=tests, root=tmp_path, out=out, err=err)
     assert code == 0
-    assert out.getvalue().splitlines() == ["tests/test_changed.py"]
+    assert _posix_lines(out) == ["tests/test_changed.py"]
 
 
 @pytest.mark.parametrize("living", ["dev/PLANNING.md", "CHANGELOG.md"])
@@ -725,7 +731,7 @@ def test_for_selects_no_tests_for_a_living_file(tmp_path, living):
                            config=config, test_dir=tests, root=tmp_path,
                            out=out, err=err)
     assert code == 0
-    assert out.getvalue().splitlines() == ["tests/test_imports_example.py"]
+    assert _posix_lines(out) == ["tests/test_imports_example.py"]
 
 
 def test_for_keeps_named_readers_and_unions_other_changed_paths(tmp_path):
@@ -779,7 +785,7 @@ def test_for_keeps_named_readers_and_unions_other_changed_paths(tmp_path):
         config=config, test_dir=tests, root=root, out=out, err=err)
 
     assert code == 0, err.getvalue()
-    assert out.getvalue().splitlines() == [
+    assert _posix_lines(out) == [
         "tests/contract/test_writing_rules_ship.py",
         "tests/test_imports_example.py",
         "tests/test_portable_security_sweeps.py",
