@@ -113,3 +113,37 @@ Consent (7), what leaves (4: fixed reason strings, digests of random ids, cursor
 **Coverage**: read the plan, the look and Addendum, the proposal's rule A and Security review, the privacy rules, `meter.py` 30-470, 790-860, 2300-2410, 2791-3000, 3089-3275, 3551, 4400-4420, `pulse.py` 37-60, 455-470. Not read: `_conversation_project` (unbuilt), `read_records` body, tests, the usual review. Ran no test; read no Antigravity file or `meter.json`. Over target: two blocking findings need exact words.
 **Elapsed**: about 25 minutes
 **Tokens**: unknown
+
+## Plan review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-22
+
+```
+Reviewed commit: 149606373bc17f885fe7fe8e1a72e2f5a8f3adeb
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised (three blocking)
+**Verdict**: REVISE
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+Every `meter.py` line number the plan cites is right (the edit lines 1977, 2394 and 3246 sit inside their functions), the twins are byte-identical (`cmp`), and the counts match the look and its Addendum. Wrong facts: INCOMPLETE "beside every row" (finding 4); "368 node ids" (366 in `test_meter.py`, 2 more in `test_git_read_routes.py`); "1,500 target" (the template says 1,000); "no other file runs" (finding 7). The roster and manifest claims hold by grep.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. B is the smallest reading that gives a project figure, and the accepted cost-per-plan proposal ties a run's replies only "in the same project" (`dev/proposals/2026-11-22-claude-cost-per-plan.md`, Proposal item 3), which a project-less total cannot do.
+2. **Best alternative.** Option A plus stage declarations avoids the trust change but needs that tie relaxed and gives no project figure "like Claude and Codex", which his words ask for; B stays (`dev/measurement/antigravity-look-2026-11-22.md`, "The choice").
+3. **What would show it wrong.** W1 attributing far fewer than the look's 40 of 48 conversations (the caps are unmeasured starting values), or folder names that differ from `ANTIGRAVITY_TRAJECTORY_ID`, so no agent could declare the run.
+
+**Findings**
+
+1. **Blocking: C2 cannot pass its own test.** Its entry is "a synthetic refresh", but the walker and scan edits are in C3. Replace rows C2 and C3 with: "C2 | Wiring and attribution | C1 | `_enumerate_antigravity`, the `_scan_approved_sources` edits at 2813, 2910 to 2946 and 2951, `_conversation_project`, the constants, the two refresh tests" and "C3 | Labels and records | C2 | the two reasons and their test, both READMEs, changelog, names list, board rows, lock". This also splits an overloaded C3.
+2. **Blocking: C1 leaves design open.** Synthetic lines carry no conversation. Add to C1: "For a stream the id is the second part of `lines.relative` and must satisfy `str(uuid.UUID(x)) == x`; `read_records` takes a keyword `conversation` for synthetic lines, and C1's tests pass it. A record whose `conversationId` or `conversation_id` differs gives no event and `conflicting_binding`; both names join `created_at` in the names list." Name the model key (`model`) or delete the branch (0 of 12,268 records name one; deleting is lighter).
+3. **Blocking: C2 and C3 leave failure and budget design open.** Add: "A missing `brain/` or `logs/` gives no files, and an error inside one conversation skips it with `catching_up`; only a missing or linked root raises `Unavailable`, which ends the refresh for Claude and Codex too (2813). The walker returns `(files, entries)` as `_enumerate_jsonl` does and counts against `MAX_REFRESH_ENTRIES` and `MAX_SOURCE_FILES`. Search blocks overlap by the longest project path plus one byte, and one C2 case straddles a block edge. A conversation is searched only if `attribution_bytes + MAX_ATTRIBUTION_BYTES <= MAX_ATTRIBUTION_RUN_BYTES` and `total_bytes + MAX_ATTRIBUTION_BYTES <= MAX_RUN_READ_BYTES`; otherwise its files are skipped as at 2829 to 2834. The three attribution reasons are event reasons, not batch issues."
+4. **Non-blocking: the INCOMPLETE cost is acceptable but misdescribed.** The pulse prints it once, on the report's header line (`pulse.py` 880 to 886), and `antigravity_unattributed` reaches every project's report because it rides the ledger's reasons (`meter.py` 2394). A benign reason is not printed (`pulse.py` 466 to 469), so the offered one-line change would hide the label, not fix it. End rule 6 with: "The pulse prints INCOMPLETE once per report while any Antigravity conversation is unattributed, so it no longer tells a cut-short refresh from this; accepted, since unattributed tokens may be any project's."
+5. **Non-blocking: overpromise.** Add to Build summary: "Antigravity rows carry input and output only: no model, no cache counts, so the pulse shows weighted=unknown. They say how many tokens, not what they cost." His words do not name B; ask him once in chat before C3 closes the board's wait.
+6. **Non-blocking: run identity.** Whether the folder name equals `ANTIGRAVITY_TRAJECTORY_ID` decides if the identity ever joins a declaration. A names-only check settles it: compare the 10 distinct `antigravity-<8 hex>` tags in `dev/intents.jsonl` with `sha256(folder name)[:8]` of the `brain/` folders (`_intent/identity.py` 51). Do it before C1 fixes the key; changing it later changes every event key.
+7. **Non-blocking: controls and runs.** Decoys in `chunks/` and a non-UUID folder must carry different counts (an identical copy dedupes and hides a read, and an `os.open` spy "under the root" cannot see them); assert the exact set of opened paths. C2 lacks the byte-before cases (a letter before; `file://` before) and the entry and depth caps. Merge the two C3 tests into one refresh. Run `tests/test_meter_claude_usage.py` and `tests/test_meter_usage_free_records.py` (543 lines, sharing the merge code) with `test_meter.py`, once, at C3 only; the file took 2.7 s for 366 cases (`dev/measurement/certification-run-2026-11-12-per-file.csv`), so "about 1 minute" is loose. Add the neutrality and snippet gates for prose. Reuse `_usage_values` (3784) and `_codex_uuid` (3476).
+8. **Non-blocking: length.** The 2,440-word body is half justified: a low-tier executor and a trust change want each limit stated, but the probe results appear twice (Scope and rule 3) and rule 6's rejected column is not needed to build; about 300 words could go, and findings 1 to 3 add about 200.
+
+**Coverage**: read the plan, look and Addendum, Mac check, the cost-per-plan Proposal section, `meter.py` at every cited line plus `_enumerate_jsonl`, `_ApprovedLineStream`, `_scan_approved_sources`, `_new_ledger`, `_project_export`, `_merge_retained_event`, `_validate_event`, `pulse.py` 40 to 45, 311 to 380, 466 to 469 and 880 to 886, the stub test and mirror test, the manifest and roster (JSON load and grep), and the lock by grep. Plan text is the same at the later Security review commit `758e3d55` (35 lines added, none removed). Not read: the Security section, any Antigravity file, `~/.cairn/meter.json`; no test or collection run; Windows spellings, the lock's hashes and the folder-name question unchecked. Over the 300-word target because the Maintainer asked for line-by-line checks and three blocking findings carry exact words.
