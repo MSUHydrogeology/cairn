@@ -5019,3 +5019,79 @@ def test_an_antigravity_walk_lists_only_logs_and_refuses_a_missing_or_linked_roo
     moved.mkdir()
     _make_folder_link(moved / "brain", root / "brain")                     # a linked brain folder
     assert meter._enumerate_antigravity(str(moved)) == ([], 0, False)
+
+
+def test_antigravity_attribution_shows_in_the_export_reasons(tmp_path):
+    # Only attributed: the figure is marked inferred, and nothing is called unattributed.
+    (tmp_path / "attributed-only").mkdir()
+    only_home, only_root, _claude, only_project, _config = antigravity_home(
+        tmp_path / "attributed-only")
+    only_logs = antigravity_logs(only_root, AG_CONVERSATION)
+    (only_logs.parent.parent / "notes.md").write_text(
+        f"saved in {only_project}\n", encoding="utf-8")
+    only_log = only_logs / "x.jsonl"
+    only_log.write_bytes(reply_lines(antigravity_reply(created_at=OLD)))
+    assert meter._refresh_ledger(only_home)["events"] == 0
+    grow(only_log, reply_lines(antigravity_reply(120, 30, NEW)))
+    assert meter._refresh_ledger(only_home)["status"] == "written"
+    assert "antigravity_unattributed" not in ledger_of(only_home)["coverage"]["reasons"]
+    only_export = json.loads((only_project / "dev" / "measurement" / "meter.json").read_text(
+        encoding="utf-8"))
+    assert "antigravity_project_inferred" in only_export["coverage"]["reasons"]
+    assert "antigravity_unattributed" not in only_export["coverage"]["reasons"]
+
+    second = tmp_path / "approved-project2"
+    home, ag_root, _claude, project, _config_path = antigravity_home(
+        tmp_path, extra_projects=[second])
+    named = antigravity_logs(ag_root, AG_CONVERSATION)
+    (named.parent.parent / "notes.md").write_text(f"saved in {project}\n", encoding="utf-8")
+    unnamed = antigravity_logs(ag_root, AG_OTHER)               # its files name no project
+    logs = [named / "x.jsonl", unnamed / "x.jsonl"]
+    for log in logs:
+        log.write_bytes(reply_lines(antigravity_reply(created_at=OLD)))
+    assert meter._refresh_ledger(home)["events"] == 0           # the start
+
+    grow(logs[0], reply_lines(antigravity_reply(120, 30, NEW)))
+    grow(logs[1], reply_lines(antigravity_reply(7, 3, NEW)))
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    assert "antigravity_unattributed" in ledger_of(home)["coverage"]["reasons"]
+    exports = {}
+    for name, folder in (("sample", project), ("extra-0", second)):
+        path = folder / "dev" / "measurement" / "meter.json"
+        exports[name] = (path, json.loads(path.read_text(encoding="utf-8")))
+    sample, other = exports["sample"][1], exports["extra-0"][1]
+    # The matched project says its figure is inferred; every project says some Antigravity
+    # conversation is unattributed, and only the matched one holds any Antigravity row.
+    assert {"antigravity_project_inferred", "antigravity_unattributed"} <= set(
+        sample["coverage"]["reasons"])
+    assert "antigravity_unattributed" in other["coverage"]["reasons"]
+    assert "antigravity_project_inferred" not in other["coverage"]["reasons"]
+    row, = [item for item in sample["aggregates"] if item["tool"] == "antigravity"]
+    assert row["events"] == 1 and row["model"] is None
+    assert row["kinds"] == {"fresh_input": 120, "cache_read": None,
+                            "cache_write": None, "output": 30}
+    assert row["reference_tokens"]["total"] is None
+    assert other["aggregates"] == []                             # the unattributed 7 and 3 stay private
+    assert "SECRET" not in json.dumps([sample, other])
+
+    # The pulse prints INCOMPLETE once, on the report's header line; the Antigravity row
+    # says how many tokens, not what they cost.
+    junit = tmp_path / "report.xml"
+    junit.write_text('<testsuite tests="1" time="2"><testcase name="one" time="0.5" />'
+                     "</testsuite>", encoding="utf-8")
+    printed = {}
+    for name, (path, _export) in exports.items():
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "tests" / "gauge.py"), "--pulse",
+             "--junit-report", str(junit), "--meter-aggregate", str(path)],
+            cwd=ROOT, capture_output=True, text=True, check=False)
+        assert result.returncode == 0, result.stderr
+        printed[name] = result.stdout.splitlines()
+        marked = [line for line in printed[name] if "INCOMPLETE" in line]
+        assert len(marked) == 1
+        assert marked[0].startswith(f"gauge: supplied project usage alias={name} ")
+        assert "antigravity_unattributed" in marked[0]
+        assert ("antigravity_project_inferred" in marked[0]) == (name == "sample")
+    usage_line, = [line for line in printed["sample"] if "tool=antigravity" in line]
+    assert "weighted=unknown" in usage_line

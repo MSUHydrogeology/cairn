@@ -2650,6 +2650,8 @@ def _project_export(ledger, config, project_alias):
         item["model_provenance"], item["effective_model"])))
     reasons = set(verified_ledger["coverage"]["reasons"])
     reasons.add("global_completeness_unknown")
+    if any(row["tool"] == "antigravity" for row in aggregates):  # vendor-ok: text match is an inference
+        reasons.add("antigravity_project_inferred")
     result = {
         "schema": "cairn-meter-project/2",
         "project_alias": project_alias,
@@ -3535,9 +3537,14 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
         raise Unavailable("source_budget_exceeded")
     lineages = _drop_folded_lineages(lineages, events, waits)
     mappings = _build_mappings(events, claims, config)
+    aggregates = sorted([*_recompute_aggregates(events, config), *daily],
+                        key=_aggregate_sort_key)
     reasons = set(scan_reasons)
     if runs["summaries"] or runs["unclassified"] > 0:
         reasons.add("agent_runs_incomplete")
+    if any(row["project_alias"] is None and row["tool"] == "antigravity"  # vendor-ok: tokens that may be any project's
+           for row in aggregates):
+        reasons.add("antigravity_unattributed")
     if reasons & {"catching_up", "source_too_large"}:
         reasons.add("incomplete")
     reasons.update(status for status in capture_status if status != "captured")
@@ -3549,8 +3556,7 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
         "events": events, "waits": waits, "claims": claims,
         "cursors": cursors, "mappings": mappings,
         "project_remotes": sorted(project_remotes, key=lambda item: item["alias"]),
-        "aggregates": sorted([*_recompute_aggregates(events, config), *daily],
-                             key=_aggregate_sort_key),
+        "aggregates": aggregates,
         "lineages": lineages,
         "starts": sorted(starts, key=lambda item: item["source_alias"]),
         "fold_horizon": fold_horizon, "daily": daily, "agent_runs": runs,

@@ -134,10 +134,20 @@ them.
   working: replies still held one by one are weighted by the new table at the
   next refresh, and a day already folded keeps the weighting of its day. The
   table date on a summary names the current table; a day folded earlier may
-  carry an earlier one. The Gemini rows wait for a reader of Antigravity logs,
-  which the meter does not have; the OpenAI and Google model names are the
+  carry an earlier one. A reply from an `antigravity` source states input and
+  output counts only (no model, no cache counts), so its rows show
+  `weighted=unknown`: they say how many tokens, not what they cost. The OpenAI
+  and Google model names are the
   makers' own and are not matched against a real log; a Codex reply whose log
   omits its cache-write count gets no total. The pulse prints each row's weighted total as `weighted=`, or `weighted=unknown` where the row has none.
+
+  An `antigravity` conversation counts toward the one listed project whose path
+  its own saved files name, and toward no project if they name none or several.
+  A project's export then carries `antigravity_project_inferred`, because
+  matching text is an inference, not proof. While any such conversation is
+  unattributed, every project's export carries `antigravity_unattributed`, and
+  its report shows INCOMPLETE once, on its header line, because those tokens
+  may belong to any project.
 
   To refresh and render the complete pulse, run
   `python tools/meter.py refresh --report --json`. The report joins only the
