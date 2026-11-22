@@ -7,7 +7,7 @@
 **Plan review**: not required(no plan: light tier)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
-**In brief**: Session start prints one fixed line naming the project, so the usage meter can tell which project an Antigravity conversation belongs to without guessing from file text, and it checks that each agent's log folder is still where the meter looks.
+**In brief**: Session start prints one fixed line naming the project, so the usage meter can tell which project an Antigravity conversation belongs to without guessing from file text. A second part, a check that each agent's log folder is still where the meter looks, is held.
 
 ## Decision summary
 
@@ -21,11 +21,11 @@
 
 **A. The marker.** Session start prints, as its first line, `cairn-meter-project: ` and the project root exactly as `git rev-parse --show-toplevel` gives it. In `_conversation_project` (`dev/tools/meter.py`, and its twin `templates/skills/_lib/meter.py`) each searched file is also matched for that prefix followed by a listed project's path, under the same byte-before and byte-after rules as a path today. The projects named by a marker decide: exactly one is the project; two or more are ambiguous (`antigravity_projects_ambiguous`, unattributed); none falls back to today's path rule unchanged. The limits, the link rules and the labels are unchanged, and a marker-attributed conversation still carries `antigravity_project_inferred`. Claude and Codex are untouched.
 
-**B. The roots check.** `python tools/meter.py roots` prints, for each source in the consent file, its alias, its tool and `present` or `missing`; and, for each of Claude (`~/.claude/projects`), Codex (`~/.codex/sessions`) and Antigravity (`~/.gemini/antigravity`) whose default folder exists but is not listed, `not listed`. It lists names and states only: no path, no file text, no log read, one `stat` per folder. The session-start skill (both copies) runs it only at an attended start when an enabled consent file exists, says what it found, and offers to change the file only with a clear yes, as its meter-setup offer already does.
+**B. The roots check (held: not built; see the last Decision).** `python tools/meter.py roots` prints, for each source in the consent file, its alias, its tool and `present` or `missing`; and, for each of Claude (`~/.claude/projects`), Codex (`~/.codex/sessions`) and Antigravity (`~/.gemini/antigravity`) whose default folder exists but is not listed, `not listed`. It lists names and states only: no path, no file text, no log read, one `stat` per folder. The session-start skill (both copies) runs it only at an attended start when an enabled consent file exists, says what it found, and offers to change the file only with a clear yes, as its meter-setup offer already does.
 
 ## Rationale
 
-The marker is the same kind of input the meter already trusts: text under `brain/<id>/` matched as bytes, never opened as a path, never an instruction. It is narrower than a bare path, since it needs the prefix and the path together, and it is declared by the agent where today's path is incidental. It grants nothing and no gate reads it; its weakness is the existing one, a forged line moves a conversation's tokens and the harm is a wrong figure in a report, marked inferred. The roots check reads no log and writes no file, so it adds no new input.
+Part A only; B adds no input. The marker is the same kind of input the meter already trusts: text under `brain/<id>/` matched as bytes, never opened as a path, never an instruction. It is narrower than a bare path, since it needs the prefix and the path together, and it is declared by the agent where today's path is incidental. It grants nothing and no gate reads it; its weakness is the existing one, a forged line moves a conversation's tokens and the harm is a wrong figure in a report, marked inferred. The roots check reads no log and writes no file, so it adds no new input.
 
 ## Documentation surface
 
@@ -46,3 +46,7 @@ A real session in this project that still counts toward no project after a sessi
 ## Decision -- Maintainer (recorded from chat by Claude Sonnet 5.5, not scribed) -- 2026-11-22
 
 Accepted at the light tier, with no review, in the words quoted under the Decision summary.
+
+## Decision -- Maintainer (recorded from chat by Claude Sonnet 5.5, not scribed) -- 2026-11-22, later
+
+Told that part B was being built with part A, he wrote (chat, 2026-11-22): *"Let's hold off on 2"*. Part B (the `meter.py roots` check and the session-start offer) is therefore **not built**. It stays in this proposal as written, and is taken up only on his word. Part A proceeds as accepted.
