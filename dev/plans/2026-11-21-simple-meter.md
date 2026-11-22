@@ -1,7 +1,7 @@
 # Plan: A simple usage meter
 
 **Source proposal**: dev/proposals/archive/2026-11-21-claude-simple-meter.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/custom_session_routines.md, dev/rules/development-environment.md
@@ -277,3 +277,23 @@ Reviewed range: 7202294d3ab5733ea7b6b58ee72fd1b063e10b5d (merge-base with 0.9-de
 - N2. `_capture_project_claims` checks `dev/intents.jsonl` with `lstat` and then opens it by name without `O_NOFOLLOW` (lines 377 to 386). The plan allows that. Passing `_O_NOFOLLOW` on this one open would close the gap on Mac and Linux.
 
 **Not covered**: running any test or the meter; real machines; how Windows reparse tags behave on a real profile; `pulse.py` output in `--report` mode; the gate manifest.
+
+## Code-review response -- Claude Sonnet 5.5 (Implementation, for the plan's owner) -- 2026-11-21
+
+Both code reviews accept with no blocking finding. Status is `ready-to-archive`. Code commit `e5c8ecd5`; lock commit `7d43a77c`.
+
+Usual review:
+1. N1 (no test of the claims link rule): fixed. Added `test_the_work_claims_are_not_read_through_a_link`, the proposal's third test, with the Security Review's two cases (`dev` as a folder link, a junction on Windows; `dev/intents.jsonl` as a file link). Each points at an outside file holding a valid claim and asserts no claims and `attribution_unavailable`. Ran: Windows, 1 passed (the `dev-link` case only: this host holds no symbolic-link privilege, so the file-link case is not collected here); Linux subsystem at `e5c8ecd5`, both cases passed.
+2. N2 (the guard-line test skips off a Mac): not shown. Home: the certification run on the Mac.
+3. N3 (the five Windows failures not shown failing on `0.9-dev`): not shown, no run added. Home: the certification run on the Windows Server machine.
+4. N4 (an empty lock stays if its token write fails): fixed. `make` in `_take_lock` removes the file when the write fails. Ran: the lock test on Windows and Linux, passed.
+
+Security Review:
+1. N1 (claims test, two cases): taken with the usual review's N1, as above.
+2. N2 (open the claims file without following a link): fixed. `_read_limited` takes `nofollow` and the claims read passes it, using `O_NOFOLLOW` where the system has it. Ran: the claims test, both hosts, passed.
+
+Also run: the persisted-history, export and linked-parents tests (Windows: 7 passed in all; Linux: 4 passed with the three above). Both meter copies are identical; the lock was refreshed alone; `verify_integrity.py --target .` reports OK for 70 files.
+
+The whole-tree document check still reports 3 issues: the old line citations of the pinned-list file in `dev/proposals/2026-11-19-codex-native-release-membership.md` (two) and `dev/strategy/2026-11-21-claude-read-of-six-unsigned-files.md` (one). The central exemption list cannot hold them: an exemption covers only a path that does not exist, and the file does, so an out-of-range line citation still flags (tried for the proposal; the entries were reported unused and removed again). It would take either a change to `dev/tools/claim_check.py` to let a dated record exempt a line citation, or an edit of the three citations; one of them sits inside a review, which is never edited. Home: Strategy.
+
+Not shown, not run: the Mac; a real refresh on either machine; a Windows run of the file-link cases. **Elapsed**: unknown. **Tokens**: unknown.
