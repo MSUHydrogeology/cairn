@@ -1,8 +1,8 @@
 # Name the project at session start, and keep each agent's log folder current
 
 **Author**: Claude Sonnet 5.5 (Implementation), from the Maintainer's idea
-**Status**: accepted
-**Review**: none (waived by the Maintainer, 2026-11-22, in his words below)
+**Status**: awaiting-decision
+**Review**: not yet decided (the Maintainer's waiver of 2026-11-22 was for the Antigravity options (a) and (b), not for this proposal; see the last Decision)
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
 **Opened**: 2026-11-22
@@ -15,7 +15,7 @@
 
 **The change.** (A) `session.py session-start` prints one line, `cairn-meter-project: <the project's root path>`, which lands in the agent's saved conversation. The meter looks for that line first. (B) A read-only command, `meter.py roots`, reports whether each listed log folder exists and whether a known agent's default folder exists but is not listed; session start tells the person and offers a fix, and never edits the consent file without a clear yes.
 
-**His Decision (chat, 2026-11-22), on being told both need a Security Review pass and that the session-start skill is touched:** *"(A) and (B). No additional review is needed. This doesn't do anything different from a security standpoint. Touching something isn't the rule for that."* This is recorded from chat by Claude Sonnet 5.5, not scribed. The review is waived on his word; my reading of why it holds is under Rationale.
+**What he said about it (chat, 2026-11-22).** Asked which of the two he meant, he wrote *"Let's hold off on 2"* (part B). He had earlier written *"(A) and (B). No additional review is needed. This doesn't do anything different from a security standpoint. Touching something isn't the rule for that"* and then clarified *"Sorry those a and b were for Antigravity"*: that waiver is for the two ways of attributing an Antigravity conversation on the board's W1 row, not for this marker. So this proposal has his word to hold B and none about its review. It was first recorded as accepted on a misreading, and is corrected to awaiting-decision: it waits for him to say whether he wants the marker built and whether it needs a review. Recorded from chat by Claude Sonnet 5.5, not scribed.
 
 ## Proposal
 
@@ -25,7 +25,7 @@
 
 ## Rationale
 
-Part A only; B adds no input. The marker is the same kind of input the meter already trusts: text under `brain/<id>/` matched as bytes, never opened as a path, never an instruction. It is narrower than a bare path, since it needs the prefix and the path together, and it is declared by the agent where today's path is incidental. It grants nothing and no gate reads it; its weakness is the existing one, a forged line moves a conversation's tokens and the harm is a wrong figure in a report, marked inferred. The roots check reads no log and writes no file, so it adds no new input.
+The marker is the same kind of input the meter already trusts: text under `brain/<id>/` matched as bytes, never opened as a path, never an instruction. It is narrower than a bare path, since it needs the prefix and the path together, and it is declared by the agent where today's path is incidental. It grants nothing and no gate reads it; its weakness is the existing one, a forged line moves a conversation's tokens and the harm is a wrong figure in a report, marked inferred. The roots check reads no log and writes no file, so it adds no new input.
 
 ## Documentation surface
 
@@ -43,9 +43,9 @@ A real session in this project that still counts toward no project after a sessi
 
 **Scope delta**: preserved. It adds to the accepted usage-counting work and removes nothing accepted.
 
-## Decision -- Maintainer (recorded from chat by Claude Sonnet 5.5, not scribed) -- 2026-11-22
+## Correction -- Claude Sonnet 5.5 -- 2026-11-22
 
-Accepted at the light tier, with no review, in the words quoted under the Decision summary.
+The first record here said the Maintainer accepted this proposal at the light tier with no review, quoting *"(A) and (B). No additional review is needed..."*. He has since said those letters were for Antigravity's attribution options, so that quote does not cover this proposal. The proposal is awaiting his Decision on both. Part B is held on his word.
 
 ## Decision -- Maintainer (recorded from chat by Claude Sonnet 5.5, not scribed) -- 2026-11-22, later
 
