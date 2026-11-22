@@ -159,3 +159,29 @@ The change works: the direct check refused 61 of 300 rounds before and 0 of 300 
 - **Difference from the plan**: none.
 
 Elapsed: unknown. Tokens: unknown.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-22
+
+Reviewed commit: b76327b3cc6d1ce1c5d352a6d8eb153ff0bb3485; range b79c55b1180523d9b0167cffe5d5240e415a6637 to that commit.
+
+**Obligation**: usual code review. A Security Review pass follows; Status is left as it is.
+**Findings**: raised (none blocking)
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The diff of `_read_pulse_report` is the Security Review's code, character for character: one field out of the tuple, one comparison added -- `git diff b79c55b1 HEAD -- dev/tools/pulse.py`.
+2. **Best alternative.** None better: the change time is still checked where both readings come from the open file, with no Windows-only branch -- `dev/tools/pulse.py` 104-108.
+3. **What would show it wrong.** A refusal in the direct check after the change, or a failing test that turns out to depend on the change time; the record shows neither.
+
+**Findings**
+
+1. Non-blocking. The record's count (61 of 300 before, 0 of 300 after) shows the fault gone on this host, and the one failing test has a stated cause (an unescaped Windows path in a `-c` string) unrelated to the pulse. I did not rerun either, so both rest on the record. The record says "read from its output, not rerun"; the cause is plausible, not shown.
+2. Non-blocking. The changelog line says the pulse "still refuses a file that changed during the read". True of size, write time, names and change time by handle; it does not say which, which is acceptable for a one-line note.
+
+Checked directly: only five files changed (pulse, its copy, lock, changelog, plan); `cmp` of the two copies prints nothing; the lock commit `d1dbd1a6` holds only the lock line for `dev/tools/pulse.py`; `verify_integrity.py` reports OK (70 files); the changelog line cites this plan. No frozen or protected file changed beyond the plan's list.
+
+Not covered: Mac and Linux behaviour, any test or direct-check run, whether the failing test was already failing before the change.
+
+Elapsed: about 6 minutes. Tokens: unknown.
+
+**Verdict**: ACCEPT
