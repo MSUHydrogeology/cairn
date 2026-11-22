@@ -110,7 +110,7 @@ def _stand_in(tmp_path: Path) -> Path:
     outside = tmp_path.resolve() / "outside"
     outside.mkdir(exist_ok=True)
     path = outside / "startup-file"
-    path.write_text(_STAND_IN_TEXT, encoding="utf-8")
+    path.write_text(_STAND_IN_TEXT, encoding="utf-8", newline="\n")
     return path
 
 
@@ -285,7 +285,7 @@ def _tree_state(base: Path, skip: tuple = ()) -> dict:
         dirs[:] = [d for d in dirs if d not in skip]
         for name in dirs + files:
             path = Path(folder) / name
-            rel = str(path.relative_to(base))
+            rel = path.relative_to(base).as_posix()
             if path.is_symlink():
                 state[rel] = ("link", os.readlink(path))
             elif path.is_dir():
@@ -388,7 +388,9 @@ def test_a_refusal_names_the_path_without_putting_control_bytes_on_the_terminal(
 ):
     root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
     _init_repo(root)
-    awkward = "\x1b]0;retitled\x07.md"
+    # A Windows name cannot hold a control character; a bidirectional override is
+    # the other kind of character the terminal must not be handed raw.
+    awkward = "\x1b]0;retitled\x07.md" if os.name != "nt" else "\u202eretitled\u202c.md"
     (root / ".agents" / "skills" / "session-start" / awkward).write_text("x", encoding="utf-8")
     skill = root / ".claude" / "skills" / "session-start"
     skill.mkdir(parents=True)
@@ -397,8 +399,9 @@ def test_a_refusal_names_the_path_without_putting_control_bytes_on_the_terminal(
     assert lifecycle.main(["session-start"]) == 0  # still fail-soft
     out, err = capsys.readouterr()
     assert "refused" in err
-    assert "\x1b" not in out + err and "\x07" not in out + err
-    assert "\\x1b" in err  # shown as an escape, so the reader can still see it
+    assert "\x1b" not in out + err and "\x07" not in out + err and "\u202e" not in out + err
+    # shown as an escape, so the reader can still see it
+    assert "\\x1b" in err or (os.name == "nt" and "\\u202e" in err)
 
 
 # --- the symlink probe --------------------------------------------------------
@@ -438,6 +441,8 @@ def test_session_start_in_a_hostile_clone_writes_through_no_link(
     """Committed data only: a linked ``.gitignore``, a non-empty folder at the
     symlink probe's name, a harness folder, and a vendor row whose folder name
     carries config lines.  The kernel is run unmodified, as an agent would."""
+    if os.name == "nt":
+        pytest.skip("a Windows folder name cannot hold the new lines the vendor row carries")
     stand_in = _stand_in(tmp_path)
     src = _adopter_tree(tmp_path.resolve() / "src")
     stanza = "zz\n[core]\n\tfsmonitor = touch PWNED-MARKER\n#"
@@ -506,6 +511,9 @@ def test_the_handoff_lock_is_not_created_through_a_linked_folder(tmp_path):
 def test_the_handoff_heartbeat_writes_the_file_it_holds_open(tmp_path):
     """The heartbeat refreshes the lease through the descriptor the lock opened
     exclusively, so replacing the file by a link afterwards cannot redirect it."""
+    if os.name == "nt":
+        pytest.skip("Windows will not remove a file while the lock holds it open, "
+                    "so nothing can be put in its place")
     root = tmp_path.resolve() / "proj"
     (root / "dev" / ".cairn").mkdir(parents=True)
     stand_in = _stand_in(tmp_path)
@@ -662,7 +670,13 @@ def test_a_cloned_vendor_table_row_that_is_not_a_safe_skills_path_writes_nothing
     (clone / "dev").mkdir(exist_ok=True)
     os.symlink(users_own, clone / "dev" / "reflections")
     for path in paths:
-        (clone / path).parent.mkdir(parents=True, exist_ok=True)  # the row's harness is "in use"
+        try:
+            (clone / path).parent.mkdir(parents=True, exist_ok=True)  # the row's harness is "in use"
+        except OSError:
+            if os.name != "nt":
+                raise
+            # Windows cannot hold a folder named with a new line, a `*` or a
+            # `\`: a clone there never has the harness folder this row names.
     before = _tree_state(tmp_path.resolve())
     done = subprocess.run(
         [sys.executable, "tools/session.py", "session-start"], cwd=str(clone),
@@ -871,6 +885,11 @@ def test_without_a_no_follow_flag_the_read_still_refuses_a_file_swapped_in_after
 
 _ESC = "\x1b]0;PWNED\x07"
 
+#: What the project's own data can put in a file or folder name.  A Windows name
+#: cannot hold a control character, so there it carries a bidirectional override
+#: instead: the other kind of character a terminal must not be handed raw.
+_NAME_ESC = _ESC if os.name != "nt" else "\u202ePWNED\u202c"
+
 
 def _text_of(call, *args):
     with pytest.raises(lifecycle.LifecycleError) as caught:
@@ -886,14 +905,14 @@ def _bare_project(tmp_path):
 
 def _site_guard_folder_link(tmp_path, monkeypatch, capsys):
     root = _bare_project(tmp_path)
-    os.symlink("real", root / ("n" + _ESC))
-    return _text_of(lifecycle._assert_not_linked, root / ("n" + _ESC) / "x.md", root)
+    os.symlink("real", root / ("n" + _NAME_ESC))
+    return _text_of(lifecycle._assert_not_linked, root / ("n" + _NAME_ESC) / "x.md", root)
 
 
 def _site_guard_file_link(tmp_path, monkeypatch, capsys):
     root = _bare_project(tmp_path)
-    os.symlink("real", root / ("n" + _ESC + ".md"))
-    return _text_of(lifecycle._assert_not_linked, root / ("n" + _ESC + ".md"), root)
+    os.symlink("real", root / ("n" + _NAME_ESC + ".md"))
+    return _text_of(lifecycle._assert_not_linked, root / ("n" + _NAME_ESC + ".md"), root)
 
 
 def _site_guard_outside(tmp_path, monkeypatch, capsys):
@@ -908,8 +927,8 @@ def _site_guard_not_under_root(tmp_path, monkeypatch, capsys):
 
 def _site_fanout_parent_link(tmp_path, monkeypatch, capsys):
     root = _bare_project(tmp_path)
-    os.symlink("real", root / ("n" + _ESC))
-    return _text_of(lifecycle._assert_fanout_contained, root / ("n" + _ESC) / "skills", root)
+    os.symlink("real", root / ("n" + _NAME_ESC))
+    return _text_of(lifecycle._assert_fanout_contained, root / ("n" + _NAME_ESC) / "skills", root)
 
 
 def _site_fanout_outside(tmp_path, monkeypatch, capsys):
@@ -923,14 +942,14 @@ def _site_unsafe_entry(tmp_path, monkeypatch, capsys):
 
 def _site_not_a_plain_file(tmp_path, monkeypatch, capsys):
     root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    (root / ".agents" / "skills" / "session-start" / ("f" + _ESC)).write_text("x", encoding="utf-8")
-    (root / ".claude" / "skills" / "session-start" / ("f" + _ESC)).mkdir(parents=True)
+    (root / ".agents" / "skills" / "session-start" / ("f" + _NAME_ESC)).write_text("x", encoding="utf-8")
+    (root / ".claude" / "skills" / "session-start" / ("f" + _NAME_ESC)).mkdir(parents=True)
     return _text_of(lifecycle._heal_skills_fanout, root)
 
 
 def _site_quarantine_not_a_plain_file(tmp_path, monkeypatch, capsys):
     root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    name = "f" + _ESC
+    name = "f" + _NAME_ESC
     (root / ".agents" / "skills" / "session-start" / name).write_text("canonical", encoding="utf-8")
     folder = root / ".claude" / "skills" / "session-start"
     folder.mkdir(parents=True)
@@ -941,7 +960,7 @@ def _site_quarantine_not_a_plain_file(tmp_path, monkeypatch, capsys):
 
 def _site_not_a_folder(tmp_path, monkeypatch, capsys):
     root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    name = "d" + _ESC
+    name = "d" + _NAME_ESC
     (root / ".agents" / "skills" / name).mkdir()
     (root / ".agents" / "skills" / name / "SKILL.md").write_text("x", encoding="utf-8")
     (root / ".claude" / "skills").mkdir()
@@ -951,7 +970,7 @@ def _site_not_a_folder(tmp_path, monkeypatch, capsys):
 
 def _site_divergence_warning(tmp_path, monkeypatch, capsys):
     root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    name = "f" + _ESC
+    name = "f" + _NAME_ESC
     (root / ".agents" / "skills" / "session-start" / name).write_text("canonical", encoding="utf-8")
     folder = root / ".claude" / "skills" / "session-start"
     folder.mkdir(parents=True)
@@ -963,7 +982,7 @@ def _site_divergence_warning(tmp_path, monkeypatch, capsys):
 def _site_divergence_warning_in_a_folder_named_with_escapes(tmp_path, monkeypatch, capsys):
     """The folder the copy sits in is printed too; the project's own folder name
     is data when someone else chose it (a clone's default folder name)."""
-    holder = tmp_path.resolve() / ("p" + _ESC)
+    holder = tmp_path.resolve() / ("p" + _NAME_ESC)
     holder.mkdir()
     root = _adopter_tree(holder / "proj")
     (root / ".claude" / "skills" / "session-start").mkdir(parents=True)
@@ -982,7 +1001,7 @@ def _site_unsafe_vendor_path_warning(tmp_path, monkeypatch, capsys):
 def _site_handoff_manifest(tmp_path, monkeypatch, capsys):
     root = tmp_path.resolve() / "proj"
     (root / "dev" / "reflections").mkdir(parents=True)
-    (root / "dev" / "reflections" / ("2020-01-01-" + _ESC + ".md")).write_text("x", encoding="utf-8")
+    (root / "dev" / "reflections" / ("2020-01-01-" + _NAME_ESC + ".md")).write_text("x", encoding="utf-8")
     _init_repo(root)
     monkeypatch.chdir(root)
     monkeypatch.setenv("CAIRN_AGENT", "tester")
@@ -995,7 +1014,7 @@ def _site_handoff_preparation_manifest(tmp_path, monkeypatch, capsys):
     root = tmp_path.resolve() / "proj"
     folder = root / "dev" / "reflections"
     folder.mkdir(parents=True)
-    old = folder / ("2020-01-01-" + _ESC + ".md")
+    old = folder / ("2020-01-01-" + _NAME_ESC + ".md")
     old.write_text("x", encoding="utf-8")
     _init_repo(root)
     monkeypatch.chdir(root)
@@ -1040,7 +1059,7 @@ def _site_prune_warning(tmp_path, monkeypatch, capsys):
     root = tmp_path.resolve() / "proj"
     folder = root / "dev" / "reflections"
     folder.mkdir(parents=True)
-    (folder / ("2020-01-01-" + _ESC + ".md")).write_text("x", encoding="utf-8")
+    (folder / ("2020-01-01-" + _NAME_ESC + ".md")).write_text("x", encoding="utf-8")
     real_unlink = Path.unlink
 
     def failing(self, *args, **kwargs):
@@ -1081,8 +1100,9 @@ def test_no_message_site_puts_raw_control_bytes_from_project_data_on_the_termina
 ):
     text = _MESSAGE_SITES[site](tmp_path, monkeypatch, capsys)
     assert text.strip(), "the site printed nothing"
-    assert "\x1b" not in text and "\x07" not in text
-    assert "\\x1b" in text  # shown escaped, so the reader can still see something was there
+    assert "\x1b" not in text and "\x07" not in text and "\u202e" not in text
+    # shown escaped, so the reader can still see something was there
+    assert "\\x1b" in text or (os.name == "nt" and "\\u202e" in text)
 
 
 # --- the second reflection pruner ---------------------------------------------------
@@ -1220,7 +1240,13 @@ def test_the_pruner_command_deletes_nothing_through_a_link(tmp_path, shape):
         cwd=str(project), capture_output=True, text=True, timeout=60,
         env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
     )
-    assert done.returncode == 2 and "Traceback" not in done.stderr
+    if os.name == "nt" and shape == "parent-reference-after-a-link":
+        # Windows folds the `..` into the spelling before the folder is opened,
+        # so the path names `dev` itself and never reaches the files above the
+        # link's target: the command has nothing to refuse and prunes nothing.
+        assert done.returncode == 0 and "Traceback" not in done.stderr
+    else:
+        assert done.returncode == 2 and "Traceback" not in done.stderr
     assert all(path.read_text(encoding="utf-8") == "mine\n" for path in kept)
 
 
