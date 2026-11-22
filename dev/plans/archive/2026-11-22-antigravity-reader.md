@@ -358,3 +358,5 @@ Remaining: add the Antigravity source to the consent file and run the real-log c
 Remaining: tie an Antigravity run to a declared plan stage; the run identity here (a digest of the conversation folder name) matched none of the declared ids. Home: [the cost-per-plan proposal](../../proposals/2026-11-22-claude-cost-per-plan.md), accepted for v0.9 on 2026-11-22, whose plan opens after the v0.8.1 cut.
 
 Dispositions: W1 and W2 are named waits on the board; the cost-per-plan item is accepted work in that proposal; nothing is deferred without the Maintainer's word.
+
+Answered 2026-11-22, after the closeout: W2 is closed. The Maintainer confirmed attribution B (chat: *"Just scan the text in Antigravity to identify the conversation"*), and he added the Antigravity source to his consent file (*"Add the antigravity consent file."*); the first refresh ran at 20:10Z. W1 now waits only for new Antigravity replies to count.
