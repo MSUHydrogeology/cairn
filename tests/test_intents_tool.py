@@ -45,6 +45,7 @@ import hashlib
 import os
 import importlib.util
 import json
+import re
 import shutil
 import stat
 import subprocess
@@ -1188,6 +1189,8 @@ class TestHookDiversity:
     def test_refuse_without_mutation(self, tmp_path, contents, mode) -> None:
         """P-5: every refused path leaves the file's bytes AND mode
         byte-for-byte unchanged (no partial append, no chmod)."""
+        if os.name == "nt" and mode == 0o644:
+            pytest.skip("Windows has no executable bit, so no hook is non-executable")
         tool = _git_repo(tmp_path)
         hook = self._hook(tmp_path)
         hook.parent.mkdir(parents=True, exist_ok=True)
@@ -1281,7 +1284,9 @@ class TestInterpreterAndEndToEnd:
         # The captured interpreter is baked in; no bare `python -m`.
         assert sys.executable in text
         assert "python -m" not in text
-        assert "board.py --next || true" in text
+        # Windows paths carry characters a shell quotes, so the script's own
+        # path may be wrapped in quotes there.
+        assert re.search(r"board\.py'? --next \|\| true", text), text
 
     def test_end_to_end_claim_commit_autorelease(self, tmp_path) -> None:
         """The ACTUAL generated hook (not just the CLI) releases the
@@ -1413,10 +1418,14 @@ def test_strict_claim_reader_refuses_name_change_after_open(tmp_path, monkeypatc
     ledger.write_text("", encoding="utf-8")
     real_fstat = os.fstat
 
+    swapped = []
+
     def swap_after_open(fd):
         result = real_fstat(fd)
-        ledger.rename(tmp_path / "original.jsonl")
-        ledger.write_text("not json\n", encoding="utf-8")
+        if not swapped:  # once: a second rename would meet the first one's file
+            swapped.append(True)
+            ledger.rename(tmp_path / "original.jsonl")
+            ledger.write_text("not json\n", encoding="utf-8")
         return result
 
     monkeypatch.setattr(os, "fstat", swap_after_open)

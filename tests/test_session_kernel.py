@@ -32,6 +32,7 @@ from pathlib import Path
 import pytest
 
 from tests._repo_root import repository_root
+from tests._windows_programs import place_program
 
 CAIRN_ROOT = repository_root(Path(__file__))
 KERNEL = CAIRN_ROOT / "dev" / "tools" / "session.py"
@@ -387,9 +388,17 @@ def _session_route_exercise(tmp_path: Path, owner: str, route: str,
     hostile_bin.mkdir()
     marker = tmp_path / "decoy-git-ran"
     wrapper = hostile_bin / "git"
-    wrapper.write_text("#!/bin/sh\n" + f"echo ran > {shlex.quote(str(marker))}\n"
-                       + f"exec {shlex.quote(git)} \"$@\"\n", encoding="utf-8")
-    wrapper.chmod(0o755)
+    if os.name == "nt":
+        # A Windows program is found by an `.exe` name, so the stand-in is a
+        # small compiled program that records the call and runs the real Git.
+        place_program(wrapper, (
+            f"#!{sys.executable}\nimport subprocess, sys\n"
+            f"open({str(marker)!r}, 'a').write('ran\\n')\n"
+            f"raise SystemExit(subprocess.call([{git!r}] + sys.argv[1:]))\n"))
+    else:
+        wrapper.write_text("#!/bin/sh\n" + f"echo ran > {shlex.quote(str(marker))}\n"
+                           + f"exec {shlex.quote(git)} \"$@\"\n", encoding="utf-8")
+        wrapper.chmod(0o755)
     trigger = tmp_path / "selected-route-reached"
     env = {
         "CAIRN_TEST_SESSION_ROUTE": route,
