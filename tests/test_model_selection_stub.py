@@ -1046,3 +1046,53 @@ class TestCaptureWritesByReplacing:
         assert str(tmp_path) not in refusal
         assert victim.read_bytes() == before
         assert not (tmp_path / "dev/.cairn/cairn-lock.yml").exists()
+
+
+class TestCairnMeterModelsAlignment:
+    """Self-check that Cairn's external meter model config agrees with model-selection-mapping."""
+
+    def test_meter_models_config_matches_model_selection_mapping(self) -> None:
+        import json
+        import yaml
+
+        meter_path = CAIRN_ROOT / "dev" / "tools" / "meter.py"
+        spec = importlib.util.spec_from_file_location("meter_selfcheck", meter_path)
+        assert spec is not None and spec.loader is not None
+        meter = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(meter)
+
+        models_raw = (CAIRN_ROOT / "dev" / ".cairn" / "meter-models.json").read_bytes()
+        cfg = meter.validate_models_config_bytes(models_raw)
+        assert cfg["tiers"] == ["frontier", "high", "medium", "low"]
+
+        mapping = yaml.safe_load(
+            (CAIRN_ROOT / "dev" / ".cairn" / "model-selection-mapping.yml").read_text(
+                encoding="utf-8"
+            )
+        )["mapping"]
+        by_family = {str(row["model"]).lower(): row["tier"] for row in mapping}
+        assert set(by_family) == {
+            "fable", "astra", "carbon",
+            "opus", "sol", "argon",
+            "sonnet", "terra", "neon",
+            "haiku", "luna", "hydrogen",
+        }
+        assert {k for k, v in by_family.items() if v == "frontier"} == {
+            "fable", "astra", "carbon",
+        }
+        samples = {
+            "fable": "claude-fable-5-2",
+            "astra": "gemini-4-astra-high",
+            "carbon": "gemini-4-carbon-xhigh",
+            "opus": "claude-opus-5-5",
+            "sol": "gpt-6.2-sol",
+            "argon": "gemini-4-argon-high",
+            "sonnet": "claude-sonnet-4-6",
+            "terra": "gpt-6.1-terra",
+            "neon": "gemini-4-neon-high",
+            "haiku": "claude-haiku-4-5-20251001",
+            "luna": "gpt-6-luna",
+            "hydrogen": "gemini-4-hydrogen-xhigh",
+        }
+        for family, model_id in samples.items():
+            assert meter._resolve_model_tier(model_id, cfg) == by_family[family]

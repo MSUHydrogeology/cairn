@@ -123,26 +123,41 @@ them.
   unavailable. Aggregate coverage remains globally unknown; the output does not
   claim complete project history.
 
-  Each summary row also carries weighted totals: its tokens priced at the
-  model maker's public list prices, in US dollars per million tokens, from the
-  table in `tools/meter.py` dated 2026-11-22. A weighted total is a reference figure for
-  comparing work, never a bill; the table leaves out taxes, subscriptions and
-  introductory prices (Gemini 4 Argon's, which ends 2026-11-30, is not used). A
-  request whose prompt is over a model's long-prompt limit (100,000 tokens for
-  Claude Haiku 5.5, 272,000 for the OpenAI models listed) takes that model's
-  higher weights. A model missing from the table gets counts and no weighted
-  total. A reply with an unknown count gets no total, and no figure at all
-  where the model has a long-prompt level. A Codex reply is weighted by the
-  model its turn had selected. When the table changes, the ledger keeps
-  working: replies still held one by one are weighted by the new table at the
-  next refresh, and a day already folded keeps the weighting of its day. The
-  table date on a summary names the current table; a day folded earlier may
-  carry an earlier one. A reply from an `antigravity` source states input and
-  output counts only (no model, no cache counts), so its rows show
-  `weighted=unknown`: they say how many tokens, not what they cost. The OpenAI
-  and Google model names are the
-  makers' own and are not matched against a real log; a Codex reply whose log
-  omits its cache-write count gets no total. The pulse prints each row's weighted total as `weighted=`, or `weighted=unknown` where the row has none.
+  Each summary row (`cairn-meter-project/3`) also carries a capability
+  `tier`, a top-level `by_tier` rollup, and weighted totals: its tokens priced at
+  the model maker's public list prices, in US dollars per million tokens, from
+  Cairn's external model table (`dev/.cairn/meter-models.json`, schema
+  `cairn-meter-models/1`, dated 2026-11-22). Pricing weights, tier rules, and
+  adapter field settings load only from `~/.cairn/meter-models.json` or an
+  explicit `models_config`; without one, raw token counts stay intact while
+  `tier` and `weighted` stay unknown (emitting `models_config_missing` without
+  marking the pulse incomplete). A configured `models_config` cannot lie inside
+  any approved `projects` or `sources` folder and never uses links or hardlinks.
+  A weighted total is a reference figure for comparing work, never a bill; the
+  table leaves out taxes, subscriptions and introductory prices (Gemini 4 Argon's,
+  which ends 2026-11-30, is not used). A request whose prompt is over a model's
+  long-prompt limit (100,000 tokens for Claude Haiku 5.5, 272,000 for the OpenAI
+  models listed) takes that model's higher weights. A model with `cache_write_mode`
+  set to `"unbilled"` prices omitted `cache_write` counts as `0` once
+  `fresh_input`, `cache_read`, and `output` are known (leaving non-zero writes
+  `unknown`). A model missing from the table gets counts and no weighted total.
+  A reply with an unknown count gets no total, and no figure at all where the
+  model has a long-prompt level. A Codex reply is weighted by the model its turn
+  had selected. Configurable `tiers` default to `["high", "medium", "low"]`,
+  while Cairn configures `["frontier", "high", "medium", "low"]` (putting Fable,
+  Astra, and Carbon in `frontier`), plus `prefix` and hyphen-split `segment`
+  rules. When the table changes, the ledger keeps working: replies still held
+  one by one are weighted by the new table at the next refresh, and a day already
+  folded keeps the weighting of its day. The table date on a summary names the
+  current table; a day folded earlier may carry an earlier one. For an
+  `antigravity` source, the Meter reads only the configured single
+  `log_filename` per conversation (`transcript.jsonl`, skipping duplicates),
+  extracts top-level `model` and the configured `cache_read_field`
+  (`cache_read_tokens`), and weights matching models accordingly. The pulse
+  prints `tier=` and `weighted=` (or `weighted=unknown`) per usage row plus
+  `gauge: usage by tier ...` summaries. An older `v3`–`v5` ledger is refused with
+  `ledger_old_schema`, while `cairn-meter-ledger/6` migrates in place to
+  `cairn-meter-ledger/7`.
 
   An `antigravity` conversation counts toward the listed project that the most
   of its own saved files name, when that project's file count is at least ten

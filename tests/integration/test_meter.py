@@ -30,9 +30,26 @@ ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(ROOT))
 from install.scaffold import main as scaffold_main  # noqa: E402
 METER = ROOT / "dev/tools/meter.py"
+MODELS_CONFIG_SRC = ROOT / "dev/.cairn/meter-models.json"
 spec = importlib.util.spec_from_file_location("meter_reader", METER)
 meter = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(meter)
+
+
+def reference_models():
+    return meter.validate_models_config_bytes(MODELS_CONFIG_SRC.read_bytes())
+
+
+def install_models_config(home, data=None, mode=0o600):
+    cairn = home / ".cairn"
+    cairn.mkdir(parents=True, exist_ok=True)
+    path = cairn / "meter-models.json"
+    raw = (MODELS_CONFIG_SRC.read_bytes() if data is None
+           else (data if isinstance(data, bytes)
+                 else json.dumps(data).encode("utf-8")))
+    path.write_bytes(raw)
+    os.chmod(path, mode)
+    return path
 STAMP = "2026-11-05T12:00:00Z"
 POSIX_ONLY = pytest.mark.skipif(os.name != "posix", reason="private-file checks require POSIX evidence")
 EVENT_FIELDS = {"event_key", "source_aliases", "thread_key", "session_key", "turn_key",
@@ -194,7 +211,7 @@ def scan_started(config, cursors=(), **kwargs):
         config, list(cursors), starts=starts, now=CLOCK, **kwargs)[:6]
 
 
-def c2_home(tmp_path, *, enabled=True, records=None, claims=None):
+def c2_home(tmp_path, *, enabled=True, records=None, claims=None, models_config=True):
     home = tmp_path / "account-home"
     home.mkdir()
     cairn = home / ".cairn"
@@ -222,6 +239,8 @@ def c2_home(tmp_path, *, enabled=True, records=None, claims=None):
     config_path = cairn / "meter.json"
     config_path.write_text(json.dumps(config), encoding="utf-8")
     config_path.chmod(0o600)
+    if models_config:
+        install_models_config(home)
     return home, source_root, project, config_path
 
 
@@ -1367,11 +1386,11 @@ def test_antigravity_token_records_become_events_with_unknown_cache_kinds(tmp_pa
     assert set(event["kinds"].values()) == {None}
 
     # A stream's conversation is the second part of its path under the root.
-    log = root / "brain" / AG_CONVERSATION / ".system_generated" / "logs" / "a.jsonl"
+    log = root / "brain" / AG_CONVERSATION / ".system_generated" / "logs" / "transcript.jsonl"
     log.parent.mkdir(parents=True)
     log.write_bytes(b"".join(encoded([reply, reply])))
     stream = meter._iter_approved_lines(
-        str(root), f"brain/{AG_CONVERSATION}/.system_generated/logs/a.jsonl")
+        str(root), f"brain/{AG_CONVERSATION}/.system_generated/logs/transcript.jsonl")
     event, = meter.read_records("antigravity", stream, attribution=AG_UNNAMED)["events"]
     assert event["session_key"] == meter._digest("antigravity", AG_CONVERSATION)
 
@@ -1771,18 +1790,23 @@ def test_project_export_contains_only_sanitized_project_aggregates(
     other["event_key"] = meter._digest("synthetic-other-project")
     other["project_alias"] = "other"
     ledger["events"].append(other)
-    ledger["aggregates"] = meter._recompute_aggregates(ledger["events"], config)
-    export = meter._project_export(ledger, config, "sample")
+    models_cfg = reference_models()
+    ledger["aggregates"] = meter._recompute_aggregates(
+        ledger["events"], config, models_cfg)
+    export = meter._project_export(ledger, config, "sample", models_cfg)
     assert set(export) == {
-        "schema", "project_alias", "ratio_version", "aggregates", "wait", "coverage"}
+        "schema", "project_alias", "ratio_version", "aggregates", "by_tier",
+        "wait", "coverage"}
     row, = export["aggregates"]
     assert len(export["aggregates"]) == 1
     assert row["artifact"] == "src/app.py"
     assert row["tool"] == "codex"
+    assert row["tier"] == "unknown"
     assert row["kinds"] == {
         "fresh_input": 12, "cache_read": 8, "cache_write": 0, "output": 4}
-    assert export["ratio_version"] == meter.RATIO_VERSION
-    assert export["schema"] == "cairn-meter-project/2"
+    assert export["ratio_version"] == models_cfg["ratio_version"]
+    assert export["schema"] == "cairn-meter-project/3"
+    assert [entry["tier"] for entry in export["by_tier"]] == ["unknown"]
     assert export["wait"] == {"coverage": "unknown", "observed": None,
                                "by_day": [], "by_artifact": []}
     serialized = json.dumps(export)
@@ -2155,14 +2179,15 @@ def test_copied_legacy_fork_reconciles_direct_usage_and_retains_lineage_proof(
     assert parent["kinds"] == {
         "fresh_input": 100, "cache_read": 0, "cache_write": None, "output": 0}
     assert parent["kinds"]["fresh_input"] + child["kinds"]["fresh_input"] == 130
+    models_cfg = reference_models()
     prior = meter._load_ledger(None)
     ledger = meter._new_ledger(prior, config, events, _waits, cursors, [],
         [{"alias": "sample", "remote": "https://example.test/team/project.git"}],
-        {"captured"}, reasons, proofs, conflicts)
+        {"captured"}, reasons, proofs, conflicts, models_config=models_cfg)
     restored = meter._load_ledger(
         (json.dumps(ledger, sort_keys=True, separators=(",", ":")) + "\n").encode())
-    assert restored["ratio_version"] == meter.RATIO_VERSION
-    assert restored["ratio_index"] == meter._RATIO_INDEX
+    assert restored["ratio_version"] == models_cfg["ratio_version"]
+    assert restored["ratio_index"] == models_cfg
     lineage, = restored["lineages"]
     assert lineage["state"] == "verified"
     assert lineage["proofs"][0]["parent_terminal"]["thread_snapshot"]["fresh_input"] == 100
@@ -2171,7 +2196,7 @@ def test_copied_legacy_fork_reconciles_direct_usage_and_retains_lineage_proof(
     assert restored["coverage"]["global"] == "unknown"
     repeated = meter._new_ledger(restored, config, events, _waits, cursors, [],
         [{"alias": "sample", "remote": "https://example.test/team/project.git"}],
-        {"captured"}, reasons, proofs, conflicts)
+        {"captured"}, reasons, proofs, conflicts, models_config=models_cfg)
     repeated_bytes = json.dumps(repeated, sort_keys=True, separators=(",", ":")) + "\n"
     assert repeated_bytes == json.dumps(restored, sort_keys=True,
                                         separators=(",", ":")) + "\n"
@@ -2208,22 +2233,27 @@ def test_unproven_copied_fork_keeps_child_usage_unattributed(
 
 
 def test_dated_reference_index_is_exact_and_not_actual_spend():
-    index = meter._RATIO_INDEX
-    assert index["version"] == "cairn-api-token-index/2026-11-22"
-    assert index["reference_model"] == "claude-haiku-4-5-20251001"
-    assert index["currency"] == "USD"
-    assert index["denominator_tokens"] == 1_000_000
+    assert not hasattr(meter, "_RATIO_INDEX") and not hasattr(meter, "RATIO_VERSION")
+    index = reference_models()
+    assert index["schema"] == "cairn-meter-models/1"
+    assert index["ratio_version"] == "cairn-api-token-index/2026-11-22"
+    assert index["tiers"] == ["frontier", "high", "medium", "low"]
     assert index["models"]["claude-sonnet-4-6"] == {
         "fresh_input": [3, 1], "cache_read": [3, 10], "output": [15, 1],
+        "cache_write_mode": "ttl_split",
         "cache_write_5m": [15, 4], "cache_write_1h": [6, 1],
+        "tier": "medium", "prefixes": ["claude-sonnet-4-6-"],
     }
+    assert index["models"]["claude-fable-5-2"]["tier"] == "frontier"
     assert index["models"]["claude-opus-5-5"]["cache_read"] == [1, 5]
+    assert index["models"]["gpt-5.3-codex"]["cache_write_mode"] == "unbilled"
     assert index["models"]["gpt-5.3-codex"]["cache_write_5m"] is None
-    assert len(index["sources"]) == 3
     assert index["models"]["claude-haiku-5-5"]["long_prompt"]["over_tokens"] == 100_000
+    assert index["tools"]["antigravity"]["log_filename"] == "transcript.jsonl"
 
 
 def test_reference_index_uses_source_reported_cache_ttl_and_keeps_unknown_partial():
+    models_cfg = reference_models()
     records = claude()
     records[-1]["message"]["model"] = "claude-sonnet-4-6"
     records[-1]["message"]["usage"]["cache_creation"] = {
@@ -2232,13 +2262,14 @@ def test_reference_index_uses_source_reported_cache_ttl_and_keeps_unknown_partia
     assert event["model"] == event["effective_model"] == "claude-sonnet-4-6"
     assert event["model_provenance"] == "usage_record"
     assert event["cache_write_ttl"] == {"five_minute": 2, "one_hour": 0}
-    assert meter._weighted_reference_tokens(event) == {
+    assert meter._weighted_reference_tokens(event, models_cfg) == {
         "fresh_input": "30", "cache_read": "2.4", "cache_write": "7.5",
         "output": "60", "total": "99.9"}
+    assert set(meter._weighted_reference_tokens(event, None).values()) == {None}
 
     del records[-1]["message"]["usage"]["cache_creation"]
     event, = read("claude", records)["events"]
-    weighted = meter._weighted_reference_tokens(event)
+    weighted = meter._weighted_reference_tokens(event, models_cfg)
     assert weighted == {
         "fresh_input": "30", "cache_read": "2.4", "cache_write": None,
         "output": "60", "total": None}
@@ -2252,7 +2283,7 @@ def test_reference_index_uses_source_reported_cache_ttl_and_keeps_unknown_partia
         usage["cache_creation"] = {"ephemeral_5m_input_tokens": ttl[0],
                                    "ephemeral_1h_input_tokens": ttl[1]}
         event, = read("claude", records)["events"]
-        return meter._weighted_reference_tokens(event)
+        return meter._weighted_reference_tokens(event, models_cfg)
 
     assert weighted_reply("claude-fable-5-2", 10, 8, 2, 4, (0, 2)) == {
         "fresh_input": "80", "cache_read": "1.6", "cache_write": "32",
@@ -2270,28 +2301,56 @@ def test_reference_index_uses_source_reported_cache_ttl_and_keeps_unknown_partia
 
 
 def test_selected_codex_model_is_weighted_and_a_missing_write_is_not():
+    models_cfg = reference_models()
     records = codex_host_cwd()
     records[1]["payload"]["model"] = "gpt-6.2-sol"
     event, = read("codex", records)["events"]
     assert event["model_provenance"] == "selected_context"
     assert event["effective_model"] is None
-    assert meter._weighted_reference_tokens(event) == {
+    assert meter._weighted_reference_tokens(event, models_cfg) == {
         "fresh_input": "24", "cache_read": "0.8", "cache_write": "0",
         "output": "40", "total": "64.8"}
 
+    # Under unbilled cache_write_mode, omitted cache_write still prices at 0 when the other
+    # three kinds are known, while non-zero cache_write, missing cache_read, or _unknown_kinds fail closed.
     del records[-1]["payload"]["usage"]["cache_write_input_tokens"]
     event, = read("codex", records)["events"]
     assert event["kinds"]["cache_write"] is None
-    assert meter._weighted_reference_tokens(event) == {
-        "fresh_input": "24", "cache_read": "0.8", "cache_write": None,
-        "output": "40", "total": None}
+    assert meter._weighted_reference_tokens(event, models_cfg) == {
+        "fresh_input": "24", "cache_read": "0.8", "cache_write": "0",
+        "output": "40", "total": "64.8"}
+
+    nonzero_write = {
+        "effective_model": "gpt-5.3-codex",
+        "kinds": {"fresh_input": 12, "cache_read": 8, "cache_write": 5, "output": 4},
+        "cache_write_ttl": {"five_minute": None, "one_hour": None},
+    }
+    assert meter._weighted_reference_tokens(nonzero_write, models_cfg) == {
+        "fresh_input": "21", "cache_read": "1.4", "cache_write": None,
+        "output": "56", "total": None}
+
+    missing_read = {
+        "effective_model": "gpt-5.3-codex",
+        "kinds": {"fresh_input": 12, "cache_read": None, "cache_write": None, "output": 4},
+        "cache_write_ttl": {"five_minute": None, "one_hour": None},
+    }
+    assert meter._weighted_reference_tokens(missing_read, models_cfg) == {
+        "fresh_input": "21", "cache_read": None, "cache_write": None,
+        "output": "56", "total": None}
+
+    unknown = {
+        "effective_model": "gpt-5.3-codex",
+        "kinds": meter._unknown_kinds(),
+        "cache_write_ttl": {"five_minute": None, "one_hour": None},
+    }
+    assert set(meter._weighted_reference_tokens(unknown, models_cfg).values()) == {None}
 
     abstract = {
         "effective_model": "gpt-5.3-codex",
         "kinds": {"fresh_input": 12, "cache_read": 8, "cache_write": 0, "output": 4},
         "cache_write_ttl": {"five_minute": 0, "one_hour": 0},
     }
-    assert meter._weighted_reference_tokens(abstract) == {
+    assert meter._weighted_reference_tokens(abstract, models_cfg) == {
         "fresh_input": "21", "cache_read": "1.4", "cache_write": "0",
         "output": "56", "total": "78.4"}
 
@@ -2482,8 +2541,8 @@ def test_first_refresh_records_where_each_log_ends_and_counts_nothing(tmp_path, 
 
     ledger = ledger_of(home)
     assert result["status"] == "written" and result["events"] == 0
-    assert ledger["schema"] == "cairn-meter-ledger/6"
-    assert ledger["reader_version"] == "cairn-source-readers/6"
+    assert ledger["schema"] == "cairn-meter-ledger/7"
+    assert ledger["reader_version"] == "cairn-source-readers/7"
     assert ledger["events"] == [] and ledger["waits"] == []
     assert ledger["fold_horizon"] == "2026-10-22" and ledger["daily"] == []
     assert ledger["starts"] == [
@@ -2689,7 +2748,7 @@ def daily_row(day="2026-11-01", **changes):
            "model": "synthetic-model", "model_provenance": "usage_record",
            "effective_model": "synthetic-model", "events": 3, "unknown_events": 0,
            "kinds": {"fresh_input": 30, "cache_read": 24, "cache_write": 6, "output": 12},
-           "reference_index": meter.RATIO_VERSION,
+           "reference_index": reference_models()["ratio_version"],
            "reference_tokens": {name: None for name in (*meter._EVENT_KIND_NAMES, "total")}}
     row.update(changes)
     return row
@@ -2768,7 +2827,7 @@ INVALID_LEDGER_EDITS = {
 @pytest.mark.parametrize("name", sorted(INVALID_LEDGER_EDITS))
 def test_hand_edited_ledger_is_refused_as_invalid(tmp_path, monkeypatch, name):
     ledger = ledger_with_cursors(tmp_path, monkeypatch)
-    assert meter._load_ledger(as_bytes(ledger), CLOCK)["schema"].endswith("/6")
+    assert meter._load_ledger(as_bytes(ledger), CLOCK)["schema"].endswith("/7")
     INVALID_LEDGER_EDITS[name](ledger)
     with pytest.raises(meter.Unavailable) as refused:
         meter._load_ledger(as_bytes(ledger))
@@ -2806,7 +2865,7 @@ def test_a_retained_event_before_the_horizon_is_refused(tmp_path, monkeypatch):
 def test_the_empty_ledger_has_the_new_fields():
     empty = meter._load_ledger(None)
     assert empty["starts"] == [] and empty["fold_horizon"] is None and empty["daily"] == []
-    assert empty["schema"] == "cairn-meter-ledger/6"
+    assert empty["schema"] == "cairn-meter-ledger/7"
     assert meter._load_ledger(as_bytes(empty), CLOCK) == empty
 
 
@@ -4251,8 +4310,10 @@ def test_folding_changes_no_aggregate_sum(tmp_path, monkeypatch):
     assert any(item["reference_tokens"]["total"] is not None for item in folded["aggregates"])
     assert sum(item["events"] for item in never["aggregates"]) == 21
     assert never["daily"] == []
+    models_cfg = reference_models()
     config = meter.validate_config_bytes(config_path.read_bytes())
-    assert never["aggregates"] == meter._recompute_aggregates(never["events"], config)
+    assert never["aggregates"] == meter._recompute_aggregates(
+        never["events"], config, models_cfg)
     assert folded["fold_horizon"] == "2026-11-16" and daily_events(folded) == 20
     assert [event["observed_at"] for event in folded["events"]] == [None]   # no time: never folded
     assert folded["mappings"] == []
@@ -4282,14 +4343,15 @@ def test_a_ledger_written_under_an_older_table_loads_and_is_weighted_by_the_curr
             row["reference_tokens"] = {name: None for name in row["reference_tokens"]}
     ledger_path.write_bytes(as_bytes(ledger))
 
+    models_cfg = reference_models()
     assert meter._refresh_ledger(home)["status"] == "written"
     after = ledger_of(home)
-    assert after["ratio_version"] == meter.RATIO_VERSION
-    assert after["ratio_index"] == meter._RATIO_INDEX
+    assert after["ratio_version"] == models_cfg["ratio_version"]
+    assert after["ratio_index"] == models_cfg
     assert after["daily"] == [{**folded, "reference_index": previous}]
     held, = [row for row in after["aggregates"] if row["model"] == "claude-sonnet-5-5"]
     assert held["reference_tokens"]["total"] == "60.8"
-    assert held["reference_index"] == meter.RATIO_VERSION
+    assert held["reference_index"] == models_cfg["ratio_version"]
     summary = json.loads((Path(project) / "dev" / "measurement" / "meter.json").read_bytes())
     totals = {row["model"]: row["reference_tokens"]["total"] for row in summary["aggregates"]}
     assert totals == {"claude-sonnet-4-6": "92.4", "claude-sonnet-5-5": "60.8"}
@@ -4864,7 +4926,7 @@ def test_an_antigravity_conversation_is_attributed_only_to_the_one_listed_projec
     root = str(project)
     folder = ag_root / "brain" / AG_CONVERSATION
     logs = antigravity_logs(ag_root, AG_CONVERSATION)
-    log = logs / "x.jsonl"
+    log = logs / "transcript.jsonl"
     log.write_bytes(reply_lines(antigravity_reply(created_at=OLD)))
     for name, make in files.items():
         (folder / name).parent.mkdir(parents=True, exist_ok=True)
@@ -4879,6 +4941,15 @@ def test_an_antigravity_conversation_is_attributed_only_to_the_one_listed_projec
             (folder / "linked.md").symlink_to(outside / "notes.md")
     for name, value in patches.items():
         monkeypatch.setattr(meter, name, value(root) if callable(value) else value)
+    if set(patches) & {"MAX_ATTRIBUTION_BYTES", "MAX_ATTRIBUTION_ENTRIES"}:
+        # Remove explicit adapter overrides so monkeypatched global caps govern the run.
+        models_file = home / ".cairn" / "meter-models.json"
+        models_data = json.loads(models_file.read_text(encoding="utf-8"))
+        for key in ("MAX_ATTRIBUTION_BYTES", "MAX_ATTRIBUTION_ENTRIES"):
+            if key in patches:
+                models_data["tools"]["antigravity"].pop(
+                    "max_bytes" if key == "MAX_ATTRIBUTION_BYTES" else "max_entries", None)
+        models_file.write_text(json.dumps(models_data), encoding="utf-8")
     assert meter._refresh_ledger(home)["events"] == 0             # the start
 
     grow(log, reply_lines(antigravity_reply(created_at=NEW)))
@@ -4907,7 +4978,7 @@ def test_an_antigravity_refresh_reads_only_conversation_logs_and_counts_each_rep
     home, ag_root, claude_root, project, _config_path = antigravity_home(tmp_path, claude=True)
     root = str(project)
     logs = antigravity_logs(ag_root, AG_CONVERSATION)
-    real = logs / "x.jsonl"
+    real = logs / "transcript.jsonl"
     real.write_bytes(reply_lines(antigravity_reply(created_at=OLD)))
     (logs.parent.parent / "notes.md").write_text(f"saved in {root}\n", encoding="utf-8")
     # Decoys, each holding counts that differ from the real logs: a read would show.
@@ -4921,7 +4992,7 @@ def test_an_antigravity_refresh_reads_only_conversation_logs_and_counts_each_rep
         (logs / "linked.jsonl").symlink_to(outside / "outside.jsonl")
     stranger = ag_root / "brain" / "not-a-uuid" / ".system_generated" / "logs"
     stranger.mkdir(parents=True)
-    (stranger / "x.jsonl").write_bytes(decoy)
+    (stranger / "transcript.jsonl").write_bytes(decoy)
     (ag_root / "brain" / "stray.jsonl").write_bytes(decoy)        # a file, not a folder
     (ag_root / "stray.jsonl").write_bytes(decoy)                  # a file in the root
     beside = tmp_path / "approved-antigravity-source.jsonl"       # a file beside the root
@@ -4936,7 +5007,7 @@ def test_an_antigravity_refresh_reads_only_conversation_logs_and_counts_each_rep
     reply_b = antigravity_reply(7, 3, "2026-11-05T12:00:01Z")
     old_copy = antigravity_reply(created_at=OLD)
     grow(real, reply_lines(old_copy, reply_a))                    # a copy before the start, a reply
-    (logs / "y.jsonl").write_bytes(reply_lines(old_copy, reply_a, reply_a, reply_b))
+    (logs / "transcript_full.jsonl").write_bytes(reply_lines(old_copy, reply_a, reply_a, reply_b))
     grow(claude_log, claude_lines("new-1", timestamp=NEW))
     opened, real_open, named_by = [], os.open, {}
 
@@ -4958,25 +5029,25 @@ def test_an_antigravity_refresh_reads_only_conversation_logs_and_counts_each_rep
 
     assert result["status"] == "written", result
     ledger = ledger_of(home)
-    assert keys_of(ledger) == sorted([event_key_for("new-1"), antigravity_key(NEW, 120, 30),
-                                      antigravity_key("2026-11-05T12:00:01Z", 7, 3)])
+    assert keys_of(ledger) == sorted([event_key_for("new-1"), antigravity_key(NEW, 120, 30)])
+    key = antigravity_key(NEW, 120, 30)
     by_key = {event["event_key"]: event for event in ledger["events"]}
-    for key in (antigravity_key(NEW, 120, 30), antigravity_key("2026-11-05T12:00:01Z", 7, 3)):
-        assert by_key[key]["project_alias"] == "sample" and by_key[key]["reasons"] == []
-    # The search reads the conversation's saved text and the log reader reads the two real
-    # logs; nothing else under the root is opened. The `chunks/` copy is never opened, as
-    # a file or as a folder (nor read as a log: its counts are not in the ledger above).
+    assert by_key[key]["project_alias"] == "sample" and by_key[key]["reasons"] == []
+    # The search reads the conversation's saved text and the log reader reads only
+    # `transcript.jsonl`; `transcript_full.jsonl` is never counted as a log (`chunks/` never opened).
+    assert [rel for rel, _ in meter._enumerate_antigravity(str(ag_root))[0]] == [
+        f"brain/{AG_CONVERSATION}/.system_generated/logs/transcript.jsonl"]
     paths = [path for path, _flags in opened]
     inside = {path for path, flags in opened
               if path.startswith(str(ag_root)) and not flags & meter._O_DIRECTORY}
     base = ag_root / "brain" / AG_CONVERSATION
-    assert inside == {str(base / "notes.md"), str(real), str(logs / "y.jsonl")}
+    assert inside == {str(base / "notes.md"), str(real), str(logs / "transcript_full.jsonl")}
     assert not any("chunks" in Path(path).parts for path in paths)
     assert not any(path.startswith((str(outside), str(beside))) for path in paths)
     # The search opens each saved file, and on Mac and Linux each folder too, without
     # following a link or waiting on a pipe (where the platform has those flags).
     for path, flags in opened:
-        if path.startswith(str(ag_root)) and path != str(real) and path != str(logs / "y.jsonl"):
+        if path.startswith(str(ag_root)) and path != str(real):
             assert flags & meter._O_NOFOLLOW == meter._O_NOFOLLOW, path
             assert flags & meter._O_NONBLOCK == meter._O_NONBLOCK, path
     if meter._DIR_FD_WALK:
@@ -4986,7 +5057,7 @@ def test_an_antigravity_refresh_reads_only_conversation_logs_and_counts_each_rep
 
     # A folder with more conversations than its cap waits, and the other sources still count.
     other = antigravity_logs(ag_root, AG_OTHER)
-    (other / "z.jsonl").write_bytes(reply_lines(antigravity_reply(created_at=NEW)))
+    (other / "transcript.jsonl").write_bytes(reply_lines(antigravity_reply(created_at=NEW)))
     monkeypatch.setattr(meter, "MAX_ANTIGRAVITY_CONVERSATIONS", 1)
     third = meter._refresh_ledger(home)
     assert (third["status"], third["reason"]) == ("partial", "catching_up")
@@ -5095,15 +5166,16 @@ def test_an_antigravity_walk_lists_only_logs_and_refuses_a_missing_or_linked_roo
     root.mkdir()
     assert meter._enumerate_antigravity(str(root)) == ([], 0, False)      # no brain folder
     logs = antigravity_logs(root, AG_CONVERSATION)
-    (logs / "a.jsonl").write_bytes(reply_lines(antigravity_reply()))
+    (logs / "transcript.jsonl").write_bytes(reply_lines(antigravity_reply()))
+    (logs / "transcript_full.jsonl").write_bytes(reply_lines(antigravity_reply(999, 999)))
     (logs / "not-a-log.txt").write_bytes(b"x")
     (logs / "chunks").mkdir()
     (logs / "chunks" / "b.jsonl").write_bytes(reply_lines(antigravity_reply()))
     (root / "brain" / AG_OTHER / ".system_generated").mkdir(parents=True)  # no logs folder
     files, entries, waiting = meter._enumerate_antigravity(str(root))
     assert [name for name, _info in files] == [
-        f"brain/{AG_CONVERSATION}/.system_generated/logs/a.jsonl"]
-    assert (entries, waiting) == (2 + 3, False)
+        f"brain/{AG_CONVERSATION}/.system_generated/logs/transcript.jsonl"]
+    assert (entries, waiting) == (2 + 1, False)
     with pytest.raises(meter.Unavailable):
         meter._enumerate_antigravity(str(tmp_path / "missing-root"))
     link = tmp_path / "linked-root"
@@ -5124,7 +5196,7 @@ def test_antigravity_attribution_shows_in_the_export_reasons(tmp_path):
     only_logs = antigravity_logs(only_root, AG_CONVERSATION)
     (only_logs.parent.parent / "notes.md").write_text(
         f"saved in {only_project}\n", encoding="utf-8")
-    only_log = only_logs / "x.jsonl"
+    only_log = only_logs / "transcript.jsonl"
     only_log.write_bytes(reply_lines(antigravity_reply(created_at=OLD)))
     assert meter._refresh_ledger(only_home)["events"] == 0
     grow(only_log, reply_lines(antigravity_reply(120, 30, NEW)))
@@ -5141,7 +5213,7 @@ def test_antigravity_attribution_shows_in_the_export_reasons(tmp_path):
     named = antigravity_logs(ag_root, AG_CONVERSATION)
     (named.parent.parent / "notes.md").write_text(f"saved in {project}\n", encoding="utf-8")
     unnamed = antigravity_logs(ag_root, AG_OTHER)               # its files name no project
-    logs = [named / "x.jsonl", unnamed / "x.jsonl"]
+    logs = [named / "transcript.jsonl", unnamed / "transcript.jsonl"]
     for log in logs:
         log.write_bytes(reply_lines(antigravity_reply(created_at=OLD)))
     assert meter._refresh_ledger(home)["events"] == 0           # the start
@@ -5208,8 +5280,8 @@ def test_one_over_long_antigravity_line_skips_that_log_and_never_stops_another_t
         tmp_path, monkeypatch, when):
     home, ag_root, claude_root, _project, _config_path = antigravity_home(tmp_path, claude=True)
     logs = antigravity_logs(ag_root, AG_CONVERSATION)
-    log = logs / "x.jsonl"
-    relative = f"brain/{AG_CONVERSATION}/.system_generated/logs/x.jsonl"
+    log = logs / "transcript.jsonl"
+    relative = f"brain/{AG_CONVERSATION}/.system_generated/logs/transcript.jsonl"
     long_reply = reply_lines(antigravity_reply(created_at=NEW, content="x" * 1000))
     log.write_bytes(reply_lines(antigravity_reply(created_at=OLD))
                     + (long_reply if when == "at-the-start" else b""))
@@ -5247,7 +5319,7 @@ def test_a_folder_swapped_for_a_link_during_the_antigravity_search_is_not_follow
         tmp_path, monkeypatch):
     home, ag_root, _claude, project, _config_path = antigravity_home(tmp_path)
     folder = ag_root / "brain" / AG_CONVERSATION
-    log = antigravity_logs(ag_root, AG_CONVERSATION) / "x.jsonl"
+    log = antigravity_logs(ag_root, AG_CONVERSATION) / "transcript.jsonl"
     log.write_bytes(reply_lines(antigravity_reply(created_at=OLD)))
     (folder / "a-notes.md").write_text("nothing named here\n", encoding="utf-8")
     (folder / "zz").mkdir()
@@ -5282,7 +5354,7 @@ def test_an_inferred_figure_keeps_its_label_after_the_antigravity_source_is_remo
     home, ag_root, _claude, project, config_path = antigravity_home(tmp_path)
     logs = antigravity_logs(ag_root, AG_CONVERSATION)
     (logs.parent.parent / "notes.md").write_text(f"saved in {project}\n", encoding="utf-8")
-    log = logs / "x.jsonl"
+    log = logs / "transcript.jsonl"
     log.write_bytes(reply_lines(antigravity_reply(created_at=OLD)))
     assert meter._refresh_ledger(home)["events"] == 0
     grow(log, reply_lines(antigravity_reply(120, 30, NEW)))
@@ -5311,11 +5383,11 @@ def test_an_antigravity_walk_never_follows_a_link_at_any_level_and_stops_at_its_
         tmp_path, monkeypatch):
     root = tmp_path / "walk-root"
     real_logs = antigravity_logs(root, AG_CONVERSATION)
-    (real_logs / "a.jsonl").write_bytes(reply_lines(antigravity_reply()))
+    (real_logs / "transcript.jsonl").write_bytes(reply_lines(antigravity_reply()))
     tree = tmp_path / "outside-conversation"           # a whole conversation, outside the root
     (tree / ".system_generated" / "logs").mkdir(parents=True)
     decoy = reply_lines(antigravity_reply(9990, 9991, NEW))
-    (tree / ".system_generated" / "logs" / "d.jsonl").write_bytes(decoy)
+    (tree / ".system_generated" / "logs" / "transcript.jsonl").write_bytes(decoy)
     _make_folder_link(root / "brain" / AG_OTHER, tree)                         # the conversation
     (root / "brain" / AG_THIRD).mkdir()
     _make_folder_link(root / "brain" / AG_THIRD / ".system_generated",
@@ -5327,7 +5399,7 @@ def test_an_antigravity_walk_never_follows_a_link_at_any_level_and_stops_at_its_
     files, entries, waiting = meter._enumerate_antigravity(str(root))
 
     assert [name for name, _info in files] == [
-        f"brain/{AG_CONVERSATION}/.system_generated/logs/a.jsonl"]
+        f"brain/{AG_CONVERSATION}/.system_generated/logs/transcript.jsonl"]
     assert not waiting
     # The entry caps: the listing of `brain/` (4 folders), then of a conversation's logs.
     monkeypatch.setattr(meter, "MAX_ATTRIBUTION_RUN_ENTRIES", 1)
@@ -5343,7 +5415,7 @@ def make_two_attributed_conversations(tmp_path):
     for conversation in (AG_CONVERSATION, AG_OTHER):
         folder = antigravity_logs(ag_root, conversation)
         (folder.parent.parent / "notes.md").write_text(f"saved in {project}\n", encoding="utf-8")
-        logs[conversation] = folder / "x.jsonl"
+        logs[conversation] = folder / "transcript.jsonl"
         logs[conversation].write_bytes(reply_lines(antigravity_reply(created_at=OLD)))
     assert meter._refresh_ledger(home)["events"] == 0                  # the start
     grow(logs[AG_CONVERSATION], reply_lines(antigravity_reply(120, 30, NEW)))
@@ -5412,3 +5484,360 @@ def test_an_antigravity_conversation_with_an_unreadable_folder_is_left_unattribu
     finally:
         (folder / "sub").chmod(0o700)
     assert found[:2] == (None, "antigravity_search_incomplete")
+
+
+# ---- Config-driven model weights, configurable tiers, v6->v7, Antigravity fixes ----
+
+
+def test_models_config_absence_degrades_gracefully_and_bare_status_skips_opening(
+        tmp_path, monkeypatch):
+    home, claude_root, _codex_root, project, config_path = c1_home(tmp_path, monkeypatch)
+    models_path = home / ".cairn" / "meter-models.json"
+    models_path.unlink()
+    log = claude_root / "session.jsonl"
+    log.write_bytes(claude_lines("old-1", timestamp=OLD))
+    assert meter._refresh_ledger(home)["events"] == 0
+    grow(log, priced_lines("new-1", NEW, model="claude-fable-5-2", cwd=str(project)))
+
+    # Bare status validates meter.json without opening an explicit models_config file.
+    bad_models = home / ".cairn" / "broken-models.json"
+    bad_models.write_text("{not-json", encoding="utf-8")
+    cfg = json.loads(config_path.read_text(encoding="utf-8"))
+    config_path.write_text(json.dumps({**cfg, "models_config": str(bad_models)}),
+                           encoding="utf-8")
+    opened_models = []
+    real_load_models = meter.load_models_config
+    with monkeypatch.context() as patched:
+        patched.setattr(meter, "_fixed_user_home", lambda: home)
+        patched.setattr(meter, "load_models_config",
+                        lambda *a, **kw: opened_models.append(True))
+        patched.setattr(sys, "argv", ["meter.py", "--json"])
+        rc = meter._main()
+    assert rc == 5 and opened_models == []
+    assert real_load_models
+    config_path.write_text(json.dumps(cfg), encoding="utf-8")
+
+    # Without ~/.cairn/meter-models.json, raw counts persist while tier & weighted stay unknown.
+    res = meter._refresh_ledger(home)
+    assert res["status"] == "written"
+    ledger = ledger_of(home)
+    assert ledger["ratio_version"] is None and ledger["ratio_index"] is None
+    assert "models_config_missing" in ledger["coverage"]["reasons"]
+    row, = ledger["aggregates"]
+    assert row["reference_index"] is None
+    assert set(row["reference_tokens"].values()) == {None}
+    export = json.loads((project / "dev" / "measurement" / "meter.json").read_text(
+        encoding="utf-8"))
+    assert export["schema"] == "cairn-meter-project/3"
+    assert export["ratio_version"] is None
+    assert export["aggregates"][0]["tier"] == "unknown"
+    assert len(export["by_tier"]) == 1
+    assert export["by_tier"][0]["tier"] == "unknown"
+    assert export["by_tier"][0]["events"] == 1
+    assert "models_config_missing" in export["coverage"]["reasons"]
+
+
+def test_models_config_path_containment_unc_link_hardlink_and_schema_rejections(tmp_path):
+    base = reference_models()
+    home, _codex_root, project, config_path = c2_home(tmp_path, models_config=False)
+    config_data = json.loads(config_path.read_text(encoding="utf-8"))
+
+    # Missing explicit models_config fails closed with config_invalid.
+    missing_path = tmp_path / "missing-models.json"
+    config_path.write_text(json.dumps({**config_data, "models_config": str(missing_path)}),
+                           encoding="utf-8")
+    assert meter._refresh_ledger(home) == {
+        "status": "unavailable", "reason": "config_invalid", "coverage": "unknown"}
+
+    # Windows UNC / mixed-slash / device prefixes and containment inside project/source fail closed.
+    for bad_path in (
+        "\\\\server\\share\\models.json",
+        "//server/share/models.json",
+        "\\/server/share/models.json",
+        "/\\server/share/models.json",
+        str(project / "models.json"),
+        str(project),
+        str(tmp_path / "approved-source" / "models.json"),
+    ):
+        with pytest.raises(meter.Unavailable) as exc:
+            meter.validate_config_bytes(
+                json.dumps({**config_data, "models_config": bad_path}).encode("utf-8"))
+        assert exc.value.reason == "config_invalid"
+
+    # Symlinked ancestor directory redirecting explicit models_config into project fails closed.
+    if _can_make_file_link():
+        inside = project / "nested.json"
+        inside.write_bytes(MODELS_CONFIG_SRC.read_bytes())
+        ancestor_link = tmp_path / "sneaky-dir-link"
+        _make_folder_link(ancestor_link, project)
+        cfg_sym_ancestor = meter.validate_config_bytes(
+            json.dumps({**config_data, "models_config": str(ancestor_link / "nested.json")}
+                       ).encode("utf-8"))
+        with pytest.raises(meter.Unavailable) as exc:
+            meter.load_models_config(home, cfg_sym_ancestor)
+        assert exc.value.reason == "config_invalid"
+
+        # Symlinked default meter-models.json fails closed even when unconfigured explicit.
+        default_models = home / ".cairn" / "meter-models.json"
+        outside = tmp_path / "outside-models.json"
+        outside.write_bytes(MODELS_CONFIG_SRC.read_bytes())
+        default_models.symlink_to(outside)
+        with pytest.raises(meter.Unavailable) as exc:
+            meter.load_models_config(home, meter.validate_config_bytes(
+                json.dumps(config_data).encode("utf-8")))
+        assert exc.value.reason == "config_invalid"
+        default_models.unlink()
+
+        # Hardlinked meter-models.json (st_nlink == 2) fails closed.
+        os.link(outside, default_models)
+        try:
+            with pytest.raises(meter.Unavailable) as exc:
+                meter.load_models_config(home, meter.validate_config_bytes(
+                    json.dumps(config_data).encode("utf-8")))
+            assert exc.value.reason == "config_invalid"
+        finally:
+            default_models.unlink()
+
+    # Schema / weights / prefix / tier_rules / adapter rejections.
+    def reject_raw(raw_bytes):
+        with pytest.raises(meter.Unavailable) as exc:
+            meter.validate_models_config_bytes(raw_bytes)
+        assert exc.value.reason == "config_invalid"
+
+    def reject_mut(mutator):
+        cand = copy.deepcopy(base)
+        mutator(cand)
+        reject_raw(json.dumps(cand).encode("utf-8"))
+
+    reject_raw(b'{"schema":"cairn-meter-models/1","schema":"cairn-meter-models/1"}')
+    reject_raw(b'{"schema":NaN}')
+    reject_raw(b" " * (meter.MAX_CONFIG_BYTES + 1))
+    reject_mut(lambda d: d.update(schema="cairn-meter-models/99"))
+    reject_mut(lambda d: d.update(extra=1))
+    reject_mut(lambda d: d.update(ratio_version="cairn-api-token-index/bad"))
+    reject_mut(lambda d: d.update(tiers=[]))
+    reject_mut(lambda d: d.update(tiers=["t" + str(i) for i in range(33)]))
+    reject_mut(lambda d: d.update(tiers=["high", "unknown"]))
+    reject_mut(lambda d: d.update(tiers=["high", "unspecified"]))
+    reject_mut(lambda d: d.update(tiers=["high", "high"]))
+    reject_mut(lambda d: d.update(tiers=["High"]))
+    reject_mut(lambda d: d["models"]["claude-opus-5-5"].update(tier="nonexistent"))
+    reject_mut(lambda d: d["models"]["claude-opus-5-5"].update(fresh_input=[True, 1]))
+    reject_mut(lambda d: d["models"]["claude-opus-5-5"].update(fresh_input=[1, 0]))
+    reject_mut(lambda d: d["models"]["claude-opus-5-5"].update(fresh_input=[-1, 1]))
+    reject_mut(lambda d: d["models"]["claude-opus-5-5"].pop("cache_write_5m"))
+    reject_mut(lambda d: d["models"]["gpt-5.3-codex"].update(cache_write_5m=[1, 1]))
+    reject_mut(lambda d: d["models"]["gpt-5.3-codex"].update(long_prompt=None))
+    reject_mut(lambda d: d["models"]["claude-haiku-5-5"]["long_prompt"].update(over_tokens=0))
+    reject_mut(lambda d: d["models"]["gemini-4-argon"].update(
+        prefixes=["gemini-4-neon-"]))                                  # overlaps sibling model
+    reject_mut(lambda d: d["models"]["claude-opus-5-5"].update(
+        prefixes=["claude-sonnet-4-6-x"]))                             # overlaps prefix on other model
+    reject_mut(lambda d: d["models"]["claude-opus-5-5"].update(
+        prefixes=["gpt-5.3-codex"]))                                   # prefix equals exact model key
+    reject_mut(lambda d: d["tier_rules"].append({"prefix": "claude-op", "tier": "high"}))
+    reject_mut(lambda d: d["tier_rules"].append({"segment": "high", "tier": "high"}))
+    reject_mut(lambda d: d["tier_rules"].append({"segment": "frontier", "tier": "frontier"}))
+    reject_mut(lambda d: d["tier_rules"].append({"segment": "unknown", "tier": "high"}))
+    reject_mut(lambda d: d["tier_rules"].append({"segment": "neon", "tier": "high"}))
+    reject_mut(lambda d: d["tier_rules"].append({"prefix": "x", "segment": "x", "tier": "high"}))
+    reject_mut(lambda d: d["tools"]["antigravity"].update(lead_factor=1))
+    reject_mut(lambda d: d["tools"]["antigravity"].update(lead_factor=1001))
+    reject_mut(lambda d: d["tools"]["antigravity"].update(lead_factor=True))
+    reject_mut(lambda d: d["tools"]["antigravity"].update(max_bytes=0))
+    reject_mut(lambda d: d["tools"]["antigravity"].update(max_entries=0))
+    reject_mut(lambda d: d["tools"]["antigravity"].update(log_filename="CON.jsonl"))
+    reject_mut(lambda d: d["tools"]["antigravity"].update(log_filename="../evil.jsonl"))
+    reject_mut(lambda d: d["tools"]["antigravity"].update(log_filename="bad.txt"))
+    reject_mut(lambda d: d["tools"]["antigravity"].update(cache_read_field="input_tokens"))
+    reject_mut(lambda d: d["tools"]["antigravity"].update(cache_read_field="usage"))
+
+
+def test_ledger_v6_migrates_to_v7_in_place_and_rejects_mismatched_pairs(
+        tmp_path, monkeypatch):
+    at_clock(monkeypatch, CLOCK)
+    home, log, config_path = claude_home_started(tmp_path, monkeypatch)
+    project = json.loads(config_path.read_text(encoding="utf-8"))["projects"][0]["path"]
+    grow(log, priced_lines("old-1", day_stamp(5), cwd=project))
+    at_clock(monkeypatch, LATER)
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    ledger_path = home / ".cairn" / "meter" / "ledger.json"
+    v6 = json.loads(ledger_path.read_bytes())
+    v6["schema"] = "cairn-meter-ledger/6"
+    v6["reader_version"] = "cairn-source-readers/6"
+    saved_daily = copy.deepcopy(v6["daily"])
+    assert saved_daily and saved_daily[0]["reference_tokens"]["total"] == "92.4"
+    ledger_path.write_bytes(as_bytes(v6))
+
+    migrated_direct = meter._load_ledger(as_bytes(v6), LATER)
+    assert migrated_direct["schema"] == "cairn-meter-ledger/7"
+    assert migrated_direct["reader_version"] == "cairn-source-readers/7"
+    assert migrated_direct["daily"] == saved_daily
+
+    # Incremental refresh migrates v6->v7 in place while preserving daily sums & counting forward.
+    grow(log, priced_lines("new-2", day_stamp(29), model="claude-fable-5-2", cwd=project))
+    assert meter._refresh_ledger(home)["status"] == "written"
+    after = ledger_of(home)
+    assert after["schema"] == "cairn-meter-ledger/7"
+    assert after["reader_version"] == "cairn-source-readers/7"
+    assert after["daily"] == saved_daily
+
+    # Mismatched (schema, reader_version) or asymmetric null ratio fields fail closed.
+    for schema, reader in (
+        ("cairn-meter-ledger/6", "cairn-source-readers/7"),
+        ("cairn-meter-ledger/7", "cairn-source-readers/6"),
+    ):
+        bad = {**after, "schema": schema, "reader_version": reader}
+        with pytest.raises(meter.Unavailable) as exc:
+            meter._load_ledger(as_bytes(bad), LATER)
+        assert exc.value.reason == "ledger_invalid"
+
+    for mut in (
+        {"ratio_version": None},
+        {"ratio_index": None},
+    ):
+        bad = {**after, **mut}
+        with pytest.raises(meter.Unavailable) as exc:
+            meter._load_ledger(as_bytes(bad), LATER)
+        assert exc.value.reason == "ledger_invalid"
+
+    # reference_index: None rejects any non-None reference_tokens entry.
+    bad_row = daily_row("2026-11-01", reference_index=None)
+    bad_row["reference_tokens"]["total"] = "1.0"
+    with pytest.raises(ValueError):
+        meter._validate_aggregate_row(bad_row)
+
+    # _add_rows with differing reference_index and current_ratio_version=None zeros reference_tokens.
+    left = daily_row("2026-11-01", reference_index="cairn-api-token-index/2026-11-06")
+    left["reference_tokens"] = {k: "1" for k in left["reference_tokens"]}
+    right = daily_row("2026-11-01", reference_index=None)
+    merged = meter._add_rows(left, right, current_ratio_version=None)
+    assert merged["reference_index"] is None
+    assert set(merged["reference_tokens"].values()) == {None}
+    meter._validate_aggregate_row(merged)
+
+
+def test_tier_resolution_prefix_segment_weights_and_by_tier_export(tmp_path):
+    cfg = reference_models()
+    # Exact, prefix, segment without effort collision (-high != high), and ties.
+    assert meter._resolve_model_tier("claude-fable-5-2", cfg) == "frontier"
+    assert meter._resolve_model_tier("claude-fable-5-2-20261201", cfg) == "frontier"
+    assert meter._resolve_model_tier("gemini-4-neon-high", cfg) == "medium"
+    assert meter._resolve_model_tier("gemini-4-astra-high", cfg) == "frontier"
+    assert meter._resolve_model_tier("gemini-4-carbon-xhigh", cfg) == "frontier"
+    assert meter._resolve_model_tier("my-opus-sonnet-clash", cfg) == "unknown"
+    assert meter._resolve_model_tier("completely-unknown", cfg) == "unknown"
+    assert meter._resolve_model_tier("claude-fable-5-2", None) == "unknown"
+
+    # Custom configured tiers drive by_tier ordering & exclude empty tiers.
+    custom = meter.validate_models_config_bytes(json.dumps({
+        "schema": "cairn-meter-models/1",
+        "ratio_version": "cairn-api-token-index/2026-11-22",
+        "tiers": ["top", "base"],
+        "models": {
+            "alpha-1": {
+                "tier": "top",
+                "prefixes": ["alpha-1-"],
+                "fresh_input": [1, 3], "cache_read": [0, 1], "output": [1, 1],
+                "cache_write_mode": "unbilled",
+            },
+        },
+        "tier_rules": [{"segment": "beta", "tier": "base"}],
+    }).encode("utf-8"))
+    assert meter._resolve_model_tier("alpha-1-fast", custom) == "top"
+    assert meter._resolve_model_tier("gamma-beta-x", custom) == "base"
+
+    home, claude_root, _codex_root, project, _cfg_path = c1_home(tmp_path, pytest.MonkeyPatch)
+    install_models_config(home, custom)
+    config = meter.validate_config_bytes((home / ".cairn" / "meter.json").read_bytes())
+    log = claude_root / "session.jsonl"
+    e1 = meter._event_record(
+        tool="claude", event_key=meter._digest("e1"), aliases=["claude-source"],
+        thread="t1", timestamp=NEW, time_known=True,
+        kinds={"fresh_input": 1, "cache_read": 0, "cache_write": 0, "output": 0},
+        model="alpha-1-fast", model_provenance="usage_record",
+        effective_model="alpha-1-fast",
+        project_alias="sample", project_state="current_local_verified", ownership="proven")
+    e2 = meter._event_record(
+        tool="claude", event_key=meter._digest("e2"), aliases=["claude-source"],
+        thread="t2", timestamp="2026-11-06T12:00:00Z", time_known=True,
+        kinds={"fresh_input": 1, "cache_read": 0, "cache_write": 0, "output": 0},
+        model="alpha-1-fast", model_provenance="usage_record",
+        effective_model="alpha-1-fast",
+        project_alias="sample", project_state="current_local_verified", ownership="proven")
+    e3 = meter._event_record(
+        tool="claude", event_key=meter._digest("e3"), aliases=["claude-source"],
+        thread="t3", timestamp=NEW, time_known=True,
+        kinds={"fresh_input": 5, "cache_read": None, "cache_write": None, "output": 1},
+        model=None, model_provenance="unknown", effective_model=None,
+        project_alias="sample", project_state="current_local_verified", ownership="proven")
+    ledger = meter._new_ledger(
+        meter._load_ledger(None), config, [e1, e2, e3], [], [], [],
+        [{"alias": "sample", "remote": "https://example.test/team/project.git"}],
+        {"captured"}, set(), [], set(), models_config=custom)
+    export_bytes = meter._project_export_bytes(ledger, config, "sample", custom)
+    export = json.loads(export_bytes)
+    # "base" has 0 events so only "top" and "unknown" appear, in order.
+    assert [row["tier"] for row in export["by_tier"]] == ["top", "unknown"]
+    assert export["by_tier"][1]["reference_tokens"]["total"] is None
+    # Parity check with pulse._parse_meter_aggregate on [1, 3] rounding.
+    pulse_mod_spec = importlib.util.spec_from_file_location(
+        "pulse_check", ROOT / "dev" / "tools" / "pulse.py")
+    pulse_mod = importlib.util.module_from_spec(pulse_mod_spec)
+    pulse_mod_spec.loader.exec_module(pulse_mod)
+    parsed = pulse_mod._parse_meter_aggregate(export_bytes)
+    assert len(parsed["by_tier"]) == 2
+
+
+def test_antigravity_model_cache_read_tokens_and_adapter_bounds(tmp_path):
+    cfg = reference_models()
+    home, ag_root, _claude, project, _cfg_path = antigravity_home(tmp_path)
+    install_models_config(home, cfg)
+    logs = antigravity_logs(ag_root, AG_CONVERSATION)
+    (logs.parent.parent / "notes.md").write_text(f"saved in {project}\n", encoding="utf-8")
+    log = logs / "transcript.jsonl"
+    log.write_bytes(reply_lines(antigravity_reply(created_at=OLD)))
+    assert meter._refresh_ledger(home)["events"] == 0
+
+    good = antigravity_reply(120, 30, NEW, model="gemini-4-neon-xhigh", cache_read_tokens=200)
+    null_model = antigravity_reply(10, 10, "2026-11-05T12:00:01Z", model=None)
+    null_cache = antigravity_reply(10, 10, "2026-11-05T12:00:02Z", cache_read_tokens=None)
+    bool_cache = antigravity_reply(10, 10, "2026-11-05T12:00:03Z", cache_read_tokens=True)
+    grow(log, reply_lines(good, null_model, null_cache, bool_cache))
+
+    res = meter._refresh_ledger(home)
+    assert res["status"] == "written"
+    ledger = ledger_of(home)
+    assert "invalid_record" in ledger["coverage"]["reasons"]
+    event, = ledger["events"]
+    assert event["model"] == event["effective_model"] == "gemini-4-neon-xhigh"
+    assert event["model_provenance"] == "usage_record"
+    assert event["kinds"] == {
+        "fresh_input": 120, "cache_read": 200, "cache_write": None, "output": 30}
+    export = json.loads((project / "dev" / "measurement" / "meter.json").read_text(
+        encoding="utf-8"))
+    row, = export["aggregates"]
+    assert row["tier"] == "medium"
+    # 120*3 + 200*(3/20) + 0 + 30*15 = 360 + 30 + 450 = 840
+    assert row["reference_tokens"] == {
+        "fresh_input": "360", "cache_read": "30", "cache_write": "0",
+        "output": "450", "total": "840"}
+    assert [b["tier"] for b in export["by_tier"]] == ["medium"]
+
+    # Configured adapter log_filename, max_entries, and lead_factor take effect via _refresh_ledger.
+    custom = copy.deepcopy(cfg)
+    custom["tools"]["antigravity"]["log_filename"] = "custom.jsonl"
+    custom["tools"]["antigravity"]["max_entries"] = 1
+    custom["tools"]["antigravity"]["lead_factor"] = 20
+    install_models_config(home, custom)
+    custom_log = logs / "custom.jsonl"
+    custom_log.write_bytes(reply_lines(antigravity_reply(created_at=OLD)))
+    os.utime(custom_log, ns=(1, 1))
+    (logs.parent.parent / "other.md").write_text("empty\n", encoding="utf-8")
+    assert meter._refresh_ledger(home)["events"] == 1
+    grow(custom_log, reply_lines(antigravity_reply(11, 13, "2026-11-05T12:05:00Z")))
+    assert meter._refresh_ledger(home)["events"] == 2
+    custom_event = max(ledger_of(home)["events"], key=lambda e: e["observed_at"])
+    # max_entries=1 caps the 2-entry conversation directory as search incomplete.
+    assert custom_event["reasons"] == ["antigravity_search_incomplete"]
