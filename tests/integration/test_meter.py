@@ -1655,7 +1655,7 @@ def test_project_export_contains_only_sanitized_project_aggregates(
     assert row["tool"] == "codex"
     assert row["kinds"] == {
         "fresh_input": 12, "cache_read": 8, "cache_write": 0, "output": 4}
-    assert export["ratio_version"] == "cairn-api-token-index/2026-11-06"
+    assert export["ratio_version"] == meter.RATIO_VERSION
     assert export["schema"] == "cairn-meter-project/2"
     assert export["wait"] == {"coverage": "unknown", "observed": None,
                                "by_day": [], "by_artifact": []}
@@ -2035,7 +2035,7 @@ def test_copied_legacy_fork_reconciles_direct_usage_and_retains_lineage_proof(
         {"captured"}, reasons, proofs, conflicts)
     restored = meter._load_ledger(
         (json.dumps(ledger, sort_keys=True, separators=(",", ":")) + "\n").encode())
-    assert restored["ratio_version"] == "cairn-api-token-index/2026-11-06"
+    assert restored["ratio_version"] == meter.RATIO_VERSION
     assert restored["ratio_index"] == meter._RATIO_INDEX
     lineage, = restored["lineages"]
     assert lineage["state"] == "verified"
@@ -2083,7 +2083,7 @@ def test_unproven_copied_fork_keeps_child_usage_unattributed(
 
 def test_dated_reference_index_is_exact_and_not_actual_spend():
     index = meter._RATIO_INDEX
-    assert index["version"] == "cairn-api-token-index/2026-11-06"
+    assert index["version"] == "cairn-api-token-index/2026-11-22"
     assert index["reference_model"] == "claude-haiku-4-5-20251001"
     assert index["currency"] == "USD"
     assert index["denominator_tokens"] == 1_000_000
@@ -2093,7 +2093,8 @@ def test_dated_reference_index_is_exact_and_not_actual_spend():
     }
     assert index["models"]["claude-opus-5-5"]["cache_read"] == [1, 5]
     assert index["models"]["gpt-5.3-codex"]["cache_write_5m"] is None
-    assert len(index["sources"]) == 5
+    assert len(index["sources"]) == 3
+    assert index["models"]["claude-haiku-5-5"]["long_prompt"]["over_tokens"] == 100_000
 
 
 def test_reference_index_uses_source_reported_cache_ttl_and_keeps_unknown_partial():
@@ -2116,18 +2117,48 @@ def test_reference_index_uses_source_reported_cache_ttl_and_keeps_unknown_partia
         "fresh_input": "30", "cache_read": "2.4", "cache_write": None,
         "output": "60", "total": None}
 
+    def weighted_reply(model, fresh, cache_read, write, output, ttl):
+        records = claude()
+        usage = records[-1]["message"]["usage"]
+        records[-1]["message"]["model"] = model
+        usage.update(input_tokens=fresh, cache_read_input_tokens=cache_read,
+                     cache_creation_input_tokens=write, output_tokens=output)
+        usage["cache_creation"] = {"ephemeral_5m_input_tokens": ttl[0],
+                                   "ephemeral_1h_input_tokens": ttl[1]}
+        event, = read("claude", records)["events"]
+        return meter._weighted_reference_tokens(event)
 
-def test_selected_codex_context_and_missing_write_do_not_make_a_weighted_total():
+    assert weighted_reply("claude-fable-5-2", 10, 8, 2, 4, (0, 2)) == {
+        "fresh_input": "80", "cache_read": "1.6", "cache_write": "32",
+        "output": "160", "total": "273.6"}
+    haiku = "claude-haiku-5-5"
+    assert weighted_reply(haiku, 10, 8, 2, 4, (2, 0)) == {
+        "fresh_input": "1", "cache_read": "0.08", "cache_write": "0.25",
+        "output": "2", "total": "3.33"}
+    assert weighted_reply(haiku, 99990, 8, 2, 4, (2, 0)) == {
+        "fresh_input": "9999", "cache_read": "0.08", "cache_write": "0.25",
+        "output": "2", "total": "10001.33"}
+    assert weighted_reply(haiku, 100000, 8, 2, 4, (2, 0)) == {
+        "fresh_input": "50000", "cache_read": "0.4", "cache_write": "1.25",
+        "output": "10", "total": "50011.65"}
+
+
+def test_selected_codex_model_is_weighted_and_a_missing_write_is_not():
     records = codex_host_cwd()
-    records[1]["payload"]["model"] = "gpt-5.3-codex"
-    del records[-1]["payload"]["usage"]["cache_write_input_tokens"]
+    records[1]["payload"]["model"] = "gpt-6.2-sol"
     event, = read("codex", records)["events"]
     assert event["model_provenance"] == "selected_context"
     assert event["effective_model"] is None
+    assert meter._weighted_reference_tokens(event) == {
+        "fresh_input": "24", "cache_read": "0.8", "cache_write": "0",
+        "output": "40", "total": "64.8"}
+
+    del records[-1]["payload"]["usage"]["cache_write_input_tokens"]
+    event, = read("codex", records)["events"]
     assert event["kinds"]["cache_write"] is None
     assert meter._weighted_reference_tokens(event) == {
-        "fresh_input": None, "cache_read": None, "cache_write": None,
-        "output": None, "total": None}
+        "fresh_input": "24", "cache_read": "0.8", "cache_write": None,
+        "output": "40", "total": None}
 
     abstract = {
         "effective_model": "gpt-5.3-codex",
