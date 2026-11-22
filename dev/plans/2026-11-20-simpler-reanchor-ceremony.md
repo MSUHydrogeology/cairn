@@ -223,3 +223,33 @@ Reviewed commit: a92b170e858464e98f44e22b6d3403c44a94c3eb
 
 **Coverage**: read the full diff of the four files, `run_ceremony`, `check_record`, `check_stop_records`, `main` dispatch; two mutation runs (3.2 s, 8.7 s) in a scratch clone. Not covered: other test nodes, the full launcher, `reanchor.sh validate` internals, any key or ceremony. Over target for five findings.
 **Elapsed**: about 25 minutes. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-22
+
+```
+Reviewed commit: a92b170e858464e98f44e22b6d3403c44a94c3eb
+```
+
+The change does what C1 to C3 say, with one gap in the display (finding 1). No blocking finding.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes; each criterion is met (map below) -- `release/repin.py:3079-3097` (digest compared before `reading("validate")`), `3146-3153`, `3539`.
+2. **Best alternative.** None simpler; the display is one keyword on the existing renderer, as the plan review suggested -- `repin.py:1089-1102`.
+3. **What would show it wrong.** A net change that hides a change, or the digest compared after validate. The second, tried in a scratch clone, fails the named test; the first breaks on a duplicate lock record (finding 1) -- see Coverage.
+
+**Criteria, code and test.** C1: record lines `2810-2816`, check `2857-2945`, walk skipped `3146-3148`, display `3196-3197`; tests (a) `test_repin_ceremony.py:2590`, (b) `:2642` (nine damages, including the net-change digit, with a first-child spy), (e) `:2668`, (d) `:2692`; the default refusal `test_repin.py:1651` is unedited. C2: `2994`, `3005`, `3149-3153`, `3539`; `test_repin_ceremony.py:2729`, `:2735`, `:2742`, `:2753`. C3: runbook lines 3-33 and 172; prompts match `ask_yes` (1509), `YES` (2315) and the passphrase line (3221). Only the lowercase `yes` is accepted. Apply and commit-reviewed-pin are unedited; the ordinary path gains only the `.pub` refusal C2 asks for.
+
+**Your five points.** (1) `verify_integrity.py --target .` prints OK for 70 files; the CHANGELOG record is `living_state` (lock 448-454) and excluded, so no lock change is owed. (2) Accept: the plan named that file; the tests are fast. (3) No conflict: the plan's sentence is the anchor (`2757`, `old_raw` None); the refusal is the candidate (`2736`), and it fails closed. It is missing from the plan's list of what the Maintainer sees at signing. (4) Fine; the `-I` form is the driver's own re-exec (`34-41`).
+
+**Findings (non-blocking)**
+
+1. **The display hides a repeated lock record.** `parse_output` keys the lock by `dst` (`1055`), so a candidate that adds a second record for an existing file, last one equal to the old, prints `no change` (scratch probe). The anchor `e5b7fd0a` and HEAD locks have no repeats (measured). As the only sight of lock edits now, close it before archive (cheap): in `net_change_lines`, inside the `try` before `render_changes`, add `for raw in (old_raw, new_raw): if rel == LOCKFILE_REL and raw is not None: dsts = [r["dst"] for r in split_lockfile(raw)[1]["files"]]; if len(dsts) != len(set(dsts)): raise Refuse(...)`, plus one case in `test_reanchor_driver_disclosures.py`. In a scratch clone this refuses the probe and the real range still shows 203 lines.
+2. **Item 5: remove the dead branch.** Callers are `commit_reviewed_pin` (`1656`; `boot` never sets `layout_evidence`) and the non-transition ceremony (`3148`; layout needs `--transition`, `3515`); only `boot_layout` (`2484`) sets it; no test reaches it. Delete the `legacy_moves` branches (`2577-2578` becomes `watched = tuple(OUTPUTS)`; the `if legacy_moves:` arm at `2584-2587`, keeping its `else` body; the block at `2599-2608`), keep `LEGACY_MOVES`, in the same edit as finding 1.
+3. Cheap: no test asserts "Your yes below also approves the net change" (`3207`); add it to test (e).
+4. Card: "everything below its end marker is reference" conflicts with the next paragraph's "except Phase 5, the push"; add "except Phase 5, the push, whose command the driver prints".
+
+**Verdict**: ACCEPT
+
+**Coverage**: read the full diff of the six files, `run_ceremony`, `check_record`, `check_stop_records`, `boot_layout`, `main`. Ran no listed test; one mutation (compare moved after validate) fails `test_a_transition_record_with_a_wrong_missing_duplicate_or_malformed_line_refuses_before_validate` (9.3 s, scratch clone outside the repository), and the duplicate-record probe. Not covered: whole test files, `reanchor.sh` validate, any key or ceremony, the Security questions. I saw part of the Security section while finding the file end; my findings were reached before. Over target: criteria map and five requested points.
+**Elapsed**: about 15 minutes (estimate). **Tokens**: unknown.
