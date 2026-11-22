@@ -147,3 +147,34 @@ Every finding from both required plan reviews (`B1`, `B2`, `N1`, `SB1`, `SB2`) i
 
 **Elapsed**: ~3m
 **Tokens**: unknown
+
+## Code review -- Gemini 4 Neon (Reviewer) -- 2026-11-22
+
+```
+Reviewed commit: b3e675c5699509b187dff3d9c6b54c2e25f7e8a7
+```
+
+**Tier**: medium
+**Model**: Gemini 4 Neon (High)
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: ~8m
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes — the implementation delivers every accepted C1–C4 requirement (`cairn-meter-models/1`, configurable `tiers` with Cairn's `frontier` tier, v6->v7 migration, `cairn-meter-project/3` `tier`/`by_tier` in `meter.py` and `pulse.py`, Antigravity single-transcript `model`/`cache_read_tokens`, `ANTIGRAVITY_CONVERSATION_ID`, S3 README prose, and neutrality gate at `fail=0`), except one packaging defect in `b3e675c5` (`B1`) where `fed51674` omitted `dev/tools/meter.py` from commit while shipping its updated twin and lock hash -- audited full diff `30ff811e..b3e675c5` across all 18 files (`dev/tools/meter.py`, `dev/tools/pulse.py`, `dev/tools/_intent/identity.py`, `dev/.cairn/meter-models.json`, `dev/.cairn/model-selection-mapping.yml`, `dev/.cairn/cairn-lock.yml`, `dev/rules/custom_session_routines.md`, both measurement READMEs, `CHANGELOG.md`, twins, and 4 test files).
+2. **Best alternative.** Keep the implementation as built and commit the omitted two-hunk `dev/tools/meter.py` update already synced in `templates/skills/_lib/meter.py` (`419df915`); no redesign is needed -- verified `dev/tools/pulse.py:302-578, 998-1027`, `dev/tools/_intent/identity.py:44-49`, and all 15 model tables in `dev/.cairn/meter-models.json:5-169` match the accepted contract and removed `_RATIO_INDEX` bit-for-bit.
+3. **What would show it wrong.** On a clean `git archive` export of `b3e675c5` (never trusting the dirty working tree), `cmp dev/tools/meter.py templates/skills/_lib/meter.py` differs at line 886, `install/verify_integrity.py --target .` exits `1` (`modified (hash mismatch): dev/tools/meter.py`), and targeted `pytest` fails 3 of 879 cases (`3 failed, 875 passed, 1 skipped`, `/Users/kendal30/conda_envs/lhm/bin/python3.13`).
+
+**Does any rule weaken or disappear?** No: `dev/rules/custom_session_routines.md:49` adds only authorized `cache_read_tokens`, `docs/methodology/roles.md` and `install/` stay untouched, `tests/quality_gate.py --sub neutrality` exits `0` (`fail=0`), and `dev/tools/check_model_selection.py`, `tests/check_cairn.py`, and `dev/tools/sync_doc_snippets.py --check` all exit `0`.
+
+**Findings**
+
+1. **B1 (Blocking — C3/C4 omitted `dev/tools/meter.py` commit breaks twin parity, lock integrity, and 3 Antigravity tests):** In `b3e675c5`, `fed51674` committed updated `templates/skills/_lib/meter.py` (`419df915`) and `dev/.cairn/cairn-lock.yml` (`sha256:97e9c431...`) but omitted `dev/tools/meter.py` (`cad0a485`). Committed `dev/tools/meter.py:885-888` binds `_conversation_project` defaults (`lead_factor`, `max_bytes`, `max_entries`) at import time instead of resolving `None` at call time, failing 3 tests (`test_an_antigravity_conversation_is_attributed_only_to_the_one_listed_project_its_files_name[a-byte-cap-passed-across-files]`, `[an-entry-cap-passed]`, and `test_an_antigravity_search_cap_is_128_mib_a_conversation_over_it_is_not_guessed`), and `dev/tools/meter.py:4425-4434` omits `else:` before `prefix_tiers` in `_resolve_model_tier`, allowing an exact model key without `tier` to borrow a sibling model's prefix tier.
+   - *Exact closure*: Sync `dev/tools/meter.py` to match committed `templates/skills/_lib/meter.py` (`419df915`) by applying both hunks (`_conversation_project` `lead_factor=None, max_bytes=None, max_entries=None` with runtime fallback to module constants; `_resolve_model_tier` wrapping `prefix_tiers` in `else:` under `if exact is not None:`) and committing `dev/tools/meter.py`. Re-run once: `cmp dev/tools/meter.py templates/skills/_lib/meter.py`, `install/verify_integrity.py --target .`, and the two failed test nodes in `tests/integration/test_meter.py` (I verified on a disposable copy of `b3e675c5` that syncing those two hunks makes `cmp` exit `0`, `verify_integrity.py` pass `70/70`, and all 32 cases in those two test nodes pass in `0.73s`).
+
+2. **N1 (Non-blocking — minor cleanup):** `_fraction_text` is duplicated between `dev/tools/meter.py:4392` and `dev/tools/pulse.py:57` (while `meter.py` already loads `_PULSE`), `_parse_level` (`dev/tools/meter.py:525`) takes unused `req_keys, opt_keys`, `tests/integration/test_meter.py:5793` passes `pytest.MonkeyPatch` (class) instead of the `monkeypatch` fixture to `c1_home`, and `tests/test_model_selection_stub.py:1054` has an unused `import json`. Author's call.
+
+**Not covered**: Code Security Review pass (separate required review), full test suite (Boundary B), Windows runtime (`1 skipped` in `tests/test_intents_tool.py:3569`), and private `~/.cairn/`/`~/.gemini/` files. Exceeds the 300-word target to record committed-byte falsification evidence and exact one-round closure for B1.
