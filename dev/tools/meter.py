@@ -175,14 +175,24 @@ _RATIO_INDEX = {
 MAX_SOURCE_ROOT_DEPTH = 32
 MAX_REFRESH_ENTRIES = 100_000
 MAX_SOURCE_FILES = 10_000
-# The antigravity attribution search (plan 2026-11-22-antigravity-reader, rule 5).
-# Starting values, not measured: per conversation, then per refresh. A conversation
-# over a cap is left unattributed, never guessed; one the refresh cannot pay for waits.
-MAX_ATTRIBUTION_BYTES = 16 * 1024 * 1024
+# The antigravity attribution search (plan 2026-11-22-antigravity-reader, rule 5, as
+# changed by proposal 2026-11-22-claude-antigravity-dominant-project): per conversation,
+# then per refresh. A conversation over a cap is left unattributed, never guessed; one
+# the refresh cannot pay for waits. The per-conversation byte cap is 128 MiB because a
+# whole count needs the whole search: measured on one Mac, 47 conversations had a median
+# 1.0 MiB of searchable text, 3 were over 16 MiB, and the largest held 60 MiB without
+# its `chunks/` copies. The per-refresh byte cap stays at 256 MiB.
+MAX_ATTRIBUTION_BYTES = 128 * 1024 * 1024
 MAX_ATTRIBUTION_ENTRIES = 5_000
 MAX_ATTRIBUTION_DEPTH = 8
 MAX_ATTRIBUTION_RUN_BYTES = 256 * 1024 * 1024
 MAX_ATTRIBUTION_RUN_ENTRIES = 50_000
+# The project named by the most files wins when its count is at least this many times
+# the next project's count (a next count of zero qualifies).
+ATTRIBUTION_LEAD_FACTOR = 10
+# A folder with this name, at any level, holds copies of text kept elsewhere: it is never
+# opened or counted.
+ATTRIBUTION_SKIPPED_FOLDER = "chunks"
 MAX_ANTIGRAVITY_CONVERSATIONS = 2_000
 # C7, synthetic-only on macOS from clean source commit 835dc50c, Python 3.13.13:
 # The 16 x 64 MiB workload took a median 8.98 s (114.01 MiB/s). Rereading a
@@ -662,16 +672,19 @@ def _open_search_folder(target, parent=None, identity=None):
 
 
 def _conversation_project(source_root, conversation, projects):  # vendor-ok: the saved files of one conversation
-    """Which one listed project do a conversation's saved files name? (plan rule 5)
+    """Which one listed project do a conversation's saved files name most? (plan rule 5)
 
-    Searches the regular files under `brain/<conversation>/` (links skipped, at most
-    MAX_ATTRIBUTION_DEPTH levels down, MAX_ATTRIBUTION_ENTRIES entries and
-    MAX_ATTRIBUTION_BYTES bytes) for each listed project's path text. Returns
-    `(alias, None, bytes read, entries)` for exactly one project named, else
+    Searches the regular files under `brain/<conversation>/` (links skipped, any folder
+    named `chunks` skipped unopened, at most MAX_ATTRIBUTION_DEPTH levels down,
+    MAX_ATTRIBUTION_ENTRIES entries and MAX_ATTRIBUTION_BYTES bytes) for each listed
+    project's path text, and counts the files that name each project. When the search
+    completes, the project with the most files wins if its count is at least
+    ATTRIBUTION_LEAD_FACTOR times the next project's. Returns
+    `(alias, None, bytes read, entries)` for that project, else
     `(None, reason, bytes read, entries)` with the reason `antigravity_projects_ambiguous`
-    (two or more named, found first), `antigravity_search_incomplete` (a cap, an
-    unreadable file or folder, a folder replaced by a link) or
-    `antigravity_project_not_named`. Only which projects matched leaves the search.
+    (two or more named and none leads enough), `antigravity_search_incomplete` (a cap, an
+    unreadable file or folder, a folder replaced by a link: the count is not trusted) or
+    `antigravity_project_not_named`. Only the counts leave the search.
 
     On Mac and Linux the walk holds every folder open and opens each name inside
     its parent's handle with O_NOFOLLOW, so a folder swapped for a link after it
@@ -684,7 +697,7 @@ def _conversation_project(source_root, conversation, projects):  # vendor-ok: th
         return None, "antigravity_project_not_named", 0, 0
     overlap = max(len(spelling) for spellings in names.values()
                   for spelling in spellings) + 8
-    named, incomplete, capped = set(), False, False
+    counts, incomplete, capped = {}, False, False
     used = entries = 0
 
     def walk(folder, depth):
@@ -709,6 +722,8 @@ def _conversation_project(source_root, conversation, projects):  # vendor-ok: th
         folders = []
         for name, path, info in sorted(listing, key=lambda item: item[0]):
             if stat.S_ISDIR(info.st_mode):
+                if name == ATTRIBUTION_SKIPPED_FOLDER:
+                    continue                      # copies: never opened, never counted
                 if depth >= MAX_ATTRIBUTION_DEPTH:
                     incomplete = True
                 else:
@@ -728,12 +743,11 @@ def _conversation_project(source_root, conversation, projects):  # vendor-ok: th
                     MAX_ATTRIBUTION_BYTES - used, names, overlap,
                     dir_fd=folder if _DIR_FD_WALK else None)
                 used += read
-                named.update(hit)
+                for alias in hit:
+                    counts[alias] = counts.get(alias, 0) + 1
                 incomplete = incomplete or not complete
-                if len(named) >= 2:
-                    return
         for name, path, info in folders:
-            if len(named) >= 2 or capped:
+            if capped:
                 return
             if not _DIR_FD_WALK:
                 walk(path, depth + 1)
@@ -764,13 +778,15 @@ def _conversation_project(source_root, conversation, projects):  # vendor-ok: th
                 os.close(handle)
     else:
         walk(os.path.join(source_root, "brain", conversation), 0)
-    if len(named) >= 2:
-        return None, "antigravity_projects_ambiguous", used, entries
     if incomplete:
         return None, "antigravity_search_incomplete", used, entries
-    if not named:
+    if not counts:
         return None, "antigravity_project_not_named", used, entries
-    return next(iter(named)), None, used, entries
+    ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    next_count = ranked[1][1] if len(ranked) > 1 else 0
+    if ranked[0][1] < ATTRIBUTION_LEAD_FACTOR * next_count:
+        return None, "antigravity_projects_ambiguous", used, entries
+    return ranked[0][0], None, used, entries
 
 
 def _capture_project_claims(project):

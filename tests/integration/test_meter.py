@@ -4825,6 +4825,29 @@ ATTRIBUTION_CASES = [
                  "antigravity_search_incomplete", id="an-entry-cap-passed"),
     pytest.param({"a/b/notes.md": lambda r: f"{r}\n"}, {"MAX_ATTRIBUTION_DEPTH": 1}, None,
                  "antigravity_search_incomplete", id="a-depth-cap-passed"),
+    # The project named by the most files wins at ten to one. "other.md" names the second
+    # listed project, whose path is the first one's with a "2" added.
+    pytest.param({**{f"n{number}.md": (lambda r: f"{r}\n") for number in range(10)},
+                  "other.md": lambda r: f"{r}2\n"}, {}, None, "sample",
+                 id="ten-files-to-one-leads-enough"),
+    pytest.param({**{f"n{number}.md": (lambda r: f"{r}\n") for number in range(9)},
+                  "other.md": lambda r: f"{r}2\n"}, {}, None,
+                 "antigravity_projects_ambiguous", id="nine-files-to-one-does-not"),
+    pytest.param({f"n{number}.md": (lambda r: f"{r}\n") for number in range(3)}, {}, None,
+                 "sample", id="three-files-to-none-leads-enough"),
+    pytest.param({"n0.md": lambda r: f"{r}\n", "n1.md": lambda r: f"{r}2\n"}, {}, None,
+                 "antigravity_projects_ambiguous", id="one-file-each-does-not-lead"),
+    # A folder named `chunks` holds copies: not counted, at any level.
+    pytest.param({"notes.md": lambda r: f"{r}\n", "chunks/a.md": lambda r: f"{r}2\n",
+                  "chunks/b.md": lambda r: f"{r}2\n"}, {}, None, "sample",
+                 id="a-chunks-folder-is-not-counted"),
+    pytest.param({"notes.md": lambda r: f"{r}\n", "a/b/chunks/c.md": lambda r: f"{r}2\n"},
+                 {}, None, "sample", id="a-nested-chunks-folder-is-not-counted"),
+    pytest.param({"chunks/a.md": lambda r: f"{r}\n"}, {}, None,
+                 "antigravity_project_not_named", id="a-chunks-folder-alone-names-none"),
+    pytest.param({"notes.md": lambda r: f"{r}\n", "chunks-old/a.md": lambda r: f"{r}2\n"},
+                 {}, None, "antigravity_projects_ambiguous",
+                 id="a-folder-that-only-starts-with-chunks-is-counted"),
     pytest.param({}, {}, "folder", "antigravity_project_not_named",
                  id="a-link-to-an-outside-folder-that-names-the-project"),
 ] + ([pytest.param({}, {}, "file", "antigravity_project_not_named",
@@ -4940,15 +4963,15 @@ def test_an_antigravity_refresh_reads_only_conversation_logs_and_counts_each_rep
     by_key = {event["event_key"]: event for event in ledger["events"]}
     for key in (antigravity_key(NEW, 120, 30), antigravity_key("2026-11-05T12:00:01Z", 7, 3)):
         assert by_key[key]["project_alias"] == "sample" and by_key[key]["reasons"] == []
-    # The search reads the conversation's saved text, the chunks copy included, and the
-    # log reader reads the two real logs; nothing else under the root is opened.
-    # (A `chunks/` copy is never read as a log: its counts are not in the ledger above.)
+    # The search reads the conversation's saved text and the log reader reads the two real
+    # logs; nothing else under the root is opened. The `chunks/` copy is never opened, as
+    # a file or as a folder (nor read as a log: its counts are not in the ledger above).
     paths = [path for path, _flags in opened]
     inside = {path for path, flags in opened
               if path.startswith(str(ag_root)) and not flags & meter._O_DIRECTORY}
     base = ag_root / "brain" / AG_CONVERSATION
-    assert inside == {str(base / "notes.md"), str(real), str(logs / "y.jsonl"),
-                      str(logs / "chunks" / "copy.jsonl")}
+    assert inside == {str(base / "notes.md"), str(real), str(logs / "y.jsonl")}
+    assert not any("chunks" in Path(path).parts for path in paths)
     assert not any(path.startswith((str(outside), str(beside))) for path in paths)
     # The search opens each saved file, and on Mac and Linux each folder too, without
     # following a link or waiting on a pipe (where the platform has those flags).
@@ -4994,6 +5017,27 @@ def test_an_antigravity_name_is_found_wherever_a_block_edge_falls(tmp_path, befo
         (folder / "notes.md").write_bytes(text.encode("utf-8"))
         found = meter._conversation_project(str(tmp_path), AG_CONVERSATION, projects)
         assert found[:2] == ("only", None), shift
+
+
+def test_an_antigravity_search_cap_is_128_mib_a_conversation_over_it_is_not_guessed(tmp_path,
+                                                                                    monkeypatch):
+    # A file of 20 MiB (a sparse file of zeros) is past the old 16 MiB cap, within the new one.
+    folder = tmp_path / "brain" / AG_CONVERSATION
+    folder.mkdir(parents=True)
+    (folder / "notes.md").write_text("/synthetic/project\n", encoding="utf-8")
+    with open(folder / "big.md", "wb") as handle:
+        handle.truncate(20 * 1024 * 1024)
+    projects = [{"alias": "only", "path": "/synthetic/project",
+                 "remote": "https://example.test/team/p.git"}]
+    assert meter.MAX_ATTRIBUTION_BYTES == 128 * 1024 * 1024
+    assert meter.MAX_ATTRIBUTION_RUN_BYTES == 256 * 1024 * 1024
+    found = meter._conversation_project(str(tmp_path), AG_CONVERSATION, projects)
+    assert found[:2] == ("only", None)
+    assert found[2] == 20 * 1024 * 1024 + len("/synthetic/project\n")
+    # Over the cap the search ends incomplete, never with a guess.
+    monkeypatch.setattr(meter, "MAX_ATTRIBUTION_BYTES", 20 * 1024 * 1024)
+    found = meter._conversation_project(str(tmp_path), AG_CONVERSATION, projects)
+    assert found[:2] == (None, "antigravity_search_incomplete")
 
 
 def test_an_antigravity_search_refuses_a_file_that_is_not_the_one_the_walk_saw(tmp_path):
