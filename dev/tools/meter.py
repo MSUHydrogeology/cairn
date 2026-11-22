@@ -3610,6 +3610,57 @@ def _claude_usage(data):  # vendor-ok: normalize the supported input protocol
     return kinds
 
 
+def _antigravity_usage(record):  # vendor-ok: normalize the supported input protocol
+    """The kinds of one antigravity token record, or None when it holds neither token field.
+
+    One field, or a number that is not a non-negative whole number (a boolean
+    included), raises ValueError. Only input and output are stated: both cache
+    kinds stay unknown (None, never 0).
+    """
+    names = ("input_tokens", "output_tokens")
+    present = [name in record for name in names]
+    if not any(present):
+        return None
+    if not all(present):
+        raise ValueError
+    kinds = _unknown_kinds()
+    kinds["fresh_input"] = _counter(record["input_tokens"])
+    kinds["output"] = _counter(record["output_tokens"])
+    return kinds
+
+
+def _antigravity_conversation_id(conversation, lines):  # vendor-ok: the conversation a log belongs to
+    """The canonical conversation id of a batch, or None when there is no usable one.
+
+    The `conversation` keyword (synthetic lines) wins; otherwise the id is the
+    second part of the stream's relative path (`brain/<id>/...`).
+    """
+    value = conversation
+    if value is None:
+        relative = getattr(lines, "relative", None)
+        if isinstance(relative, str):
+            parts = PurePosixPath(relative).parts
+            value = parts[1] if len(parts) >= 2 else None
+    try:
+        return _codex_uuid(value)
+    except (ValueError, TypeError):
+        return None
+
+
+def _antigravity_attribution(entry):  # vendor-ok: one conversation's attribution
+    """A conversation's attribution, `(project alias, None)` or `(None, reason)`; else ValueError."""
+    if not isinstance(entry, tuple) or len(entry) != 2:
+        raise ValueError
+    alias, reason = entry
+    if (alias is None) == (reason is None):
+        raise ValueError
+    if alias is not None:
+        _safe_alias(alias)
+    elif not isinstance(reason, str) or not re.fullmatch(r"[a-z][a-z0-9_]*", reason):
+        raise ValueError
+    return alias, reason
+
+
 def _claude_cache_ttl(data, cache_write=None):  # vendor-ok: retain supported input protocol detail
     if "cache_creation" not in data:
         return {"five_minute": None, "one_hour": None}
@@ -3875,12 +3926,19 @@ def _summary_run(record):
     return _digest("agent-id", next(iter(found)))
 
 
-def read_records(tool, lines, *, config=None, source_aliases=(), source_root=None):
+def read_records(tool, lines, *, config=None, source_aliases=(), source_root=None,
+                 conversation=None, attribution=None):
     """Normalize a bounded source batch without exposing raw IDs or paths.
 
     `lines` may be synthetic bytes or an exhausted `_ApprovedLineStream`. Any
     terminal reader failure invalidates the entire batch. This normalizer is not
     a collector or a ledger input while global coverage remains unknown.
+
+    The last two keywords serve the antigravity reader only. `conversation` is
+    the id of the conversation synthetic lines belong to (a stream's id is the
+    second part of its relative path). `attribution` maps a conversation id to
+    a pair, the project alias its saved files name (or None) and the reason it
+    names none; without it, or without the conversation in it, no reply is read.
     """
     if tool not in TOOLS:
         raise ValueError("unsupported source")
@@ -3964,6 +4022,8 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
     elif config is not None:
         issues.add("invalid_record")
 
+    antigravity_id = (_antigravity_conversation_id(conversation, lines)
+                      if tool == "antigravity" else None)  # vendor-ok: one id per log
     kind = None
     for line in lines:
         kind = None
@@ -3976,8 +4036,71 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
             if not isinstance(record, dict):
                 raise ValueError
             kind = record.get("type")
-            if tool == "antigravity":  # vendor-ok: metadata-only unsupported adapter
-                issues.add("unsupported_usage_contract")
+            if tool == "antigravity":  # vendor-ok: producer token-record shape
+                # A reply is a complete token record with a zone-aware time; a
+                # line with neither token field is skipped (a `usage` key shows
+                # a changed format); anything half-formed is closed and uncounted.
+                try:
+                    kinds = _antigravity_usage(record)
+                    if kinds is not None:
+                        timestamp = _timestamp(record.get("created_at"))
+                except (ValueError, TypeError, OverflowError):
+                    issues.add("invalid_record")
+                    continue
+                if kinds is None:
+                    if _usage_values(record):
+                        issues.add("unsupported_usage_contract")
+                    continue
+                if antigravity_id is None:
+                    issues.add("invalid_record")
+                    continue
+                if any(name in record and record[name] != antigravity_id
+                       for name in ("conversationId", "conversation_id")):
+                    issues.add("conflicting_binding")
+                    continue
+                try:
+                    folder_alias, folder_reason = _antigravity_attribution(
+                        attribution.get(antigravity_id)
+                        if isinstance(attribution, dict) else None)
+                except ValueError:
+                    issues.add("invalid_record")
+                    continue
+                reasons = set()
+                bound = None
+                event_key = _digest(tool, antigravity_id, timestamp,
+                                    kinds["fresh_input"], kinds["output"])
+                if account_filter_requested:
+                    kinds = _unknown_kinds()
+                    reasons.add("account_filter_unproven")
+                elif folder_alias is None:
+                    reasons.add(folder_reason)
+                else:
+                    folder_project = next(
+                        (item for item in projects if item.get("alias") == folder_alias),
+                        None) if source_root_approved else None
+                    if folder_project is None:
+                        reasons.add("project_path_unapproved")
+                    else:
+                        cache_key = (folder_project.get("alias"), folder_project.get("path"))
+                        if cache_key not in verified_projects:
+                            verified_projects[cache_key] = verify_project(folder_project,
+                                                                          excluded_roots)
+                        current_remote, remote_reason = verified_projects[cache_key]
+                        if remote_reason is None:
+                            bound = folder_project
+                        else:
+                            reasons.add(remote_reason)
+                candidate = _event_record(
+                    tool=tool, event_key=event_key, aliases=aliases,
+                    thread=antigravity_id, session=antigravity_id,
+                    session_digest=_short_session_digest(antigravity_id),
+                    timestamp=timestamp, time_known=True, kinds=kinds,
+                    reasons=reasons,
+                    project_alias=bound["alias"] if bound else None,
+                    project_state="current_local_verified" if bound else "unknown",
+                    ownership="proven" if bound else "unknown")
+                candidates.append((candidate, tuple(candidate["kinds"].items()),
+                                   (antigravity_id, None, None, None), None, line_ordinal))
                 continue
             if tool == "claude":  # vendor-ok: producer assistant usage shape
                 if kind != "assistant":

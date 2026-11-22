@@ -1296,6 +1296,121 @@ def test_antigravity_transcript_and_live_payload_do_not_become_billed_usage():
     assert "SECRET" not in json.dumps(result)
 
 
+AG_CONVERSATION = "7a6b5c4d-3e2f-4a1b-8c9d-0e1f2a3b4c5d"
+AG_UNNAMED = {AG_CONVERSATION: (None, "antigravity_project_not_named")}
+
+
+def antigravity_reply(input_tokens=120, output_tokens=30, created_at=STAMP, **more):
+    """One synthetic token record: counts and a time, plus a body that must not leave."""
+    return {"created_at": created_at, "input_tokens": input_tokens,
+            "output_tokens": output_tokens, "content": "SECRET-BODY", **more}
+
+
+def read_antigravity(records, **keywords):
+    keywords.setdefault("conversation", AG_CONVERSATION)
+    keywords.setdefault("attribution", AG_UNNAMED)
+    return meter.read_records("antigravity", encoded(records), **keywords)
+
+
+def test_antigravity_token_records_become_events_with_unknown_cache_kinds(tmp_path):
+    reply = antigravity_reply()
+    # The tool writes a reply about four times; a fifth copy differs only in its body.
+    result = read_antigravity([reply] * 4 + [antigravity_reply(content="another copy")])
+    event, = result["events"]
+    assert set(event) == EVENT_FIELDS
+    assert event["kinds"] == {"fresh_input": 120, "cache_read": None,
+                              "cache_write": None, "output": 30}
+    assert event["observed_at"] == "2026-11-05T12:00:00+00:00"
+    assert event["time_coverage"] == "known"
+    assert event["session_key"] == event["thread_key"] == meter._digest(
+        "antigravity", AG_CONVERSATION)
+    assert event["session_digest"] == meter._short_session_digest(AG_CONVERSATION)
+    assert (event["model"], event["model_provenance"], event["effective_model"]) == (
+        None, "unknown", None)
+    assert meter._weighted_reference_tokens(event)["total"] is None
+    assert (event["project_alias"], event["ownership"]) == (None, "unknown")
+    assert event["reasons"] == ["antigravity_project_not_named"]
+    assert result["issues"] == []
+    assert AG_CONVERSATION not in json.dumps(result) and "SECRET" not in json.dumps(result)
+    # A different count or a different time is a different reply.
+    other = read_antigravity([reply, antigravity_reply(output_tokens=31),
+                              antigravity_reply(created_at="2026-11-05T12:00:01Z")])
+    assert len(other["events"]) == 3
+
+    root = Path(host_absolute(tmp_path / "ag-source"))
+    config = {"version": 1, "enabled": True,
+              "sources": [{"alias": "ag-source", "tool": "antigravity", "root": str(root)}],
+              "projects": [{"alias": "sample", "path": host_absolute(tmp_path / "project"),
+                            "remote": "https://example.test/team/project.git"}]}
+    named = {AG_CONVERSATION: ("sample", None)}
+    approved = dict(config=config, source_aliases=["ag-source"], source_root=str(root))
+    event, = read_antigravity([reply], attribution=named, **approved)["events"]
+    assert (event["project_alias"], event["project_association"], event["ownership"]) == (
+        "sample", "current_local_verified", "proven")
+    assert event["reasons"] == [] and event["source_aliases"] == ["ag-source"]
+    elsewhere = dict(approved, source_root=host_absolute(tmp_path / "elsewhere"))
+    event, = read_antigravity([reply], attribution=named, **elsewhere)["events"]
+    assert event["project_alias"] is None and event["reasons"] == ["project_path_unapproved"]
+    account = dict(config, requested_accounts={"ag-source": "someone"})
+    event, = read_antigravity([reply], attribution=named,
+                              **dict(approved, config=account))["events"]
+    assert event["project_alias"] is None and event["reasons"] == ["account_filter_unproven"]
+    assert set(event["kinds"].values()) == {None}
+
+    # A stream's conversation is the second part of its path under the root.
+    log = root / "brain" / AG_CONVERSATION / ".system_generated" / "logs" / "a.jsonl"
+    log.parent.mkdir(parents=True)
+    log.write_bytes(b"".join(encoded([reply, reply])))
+    stream = meter._iter_approved_lines(
+        str(root), f"brain/{AG_CONVERSATION}/.system_generated/logs/a.jsonl")
+    event, = meter.read_records("antigravity", stream, attribution=AG_UNNAMED)["events"]
+    assert event["session_key"] == meter._digest("antigravity", AG_CONVERSATION)
+
+
+@pytest.mark.parametrize("record,keywords,issue", [
+    ({"created_at": STAMP, "input_tokens": 5}, {}, "invalid_record"),
+    ({"created_at": STAMP, "output_tokens": 5}, {}, "invalid_record"),
+    (antigravity_reply(input_tokens=True), {}, "invalid_record"),
+    (antigravity_reply(output_tokens=False), {}, "invalid_record"),
+    (antigravity_reply(input_tokens=-1), {}, "invalid_record"),
+    (antigravity_reply(output_tokens=1.5), {}, "invalid_record"),
+    (antigravity_reply(input_tokens="12"), {}, "invalid_record"),
+    (antigravity_reply(output_tokens=meter.MAX_COUNTER + 1), {}, "invalid_record"),
+    (antigravity_reply(created_at="2026-11-05T12:00:00"), {}, "invalid_record"),
+    (antigravity_reply(created_at="2026-11-05"), {}, "invalid_record"),
+    (antigravity_reply(created_at="not-a-time"), {}, "invalid_record"),
+    (antigravity_reply(created_at=1_700_000_000), {}, "invalid_record"),
+    ({"input_tokens": 5, "output_tokens": 5}, {}, "invalid_record"),
+    (antigravity_reply(conversationId="3f2e1d0c-9b8a-4c7d-8e6f-5a4b3c2d1e0f"), {},
+     "conflicting_binding"),
+    (antigravity_reply(conversation_id="3f2e1d0c-9b8a-4c7d-8e6f-5a4b3c2d1e0f"), {},
+     "conflicting_binding"),
+    (antigravity_reply(conversationId=12), {}, "conflicting_binding"),
+    (antigravity_reply(), {"conversation": None}, "invalid_record"),
+    (antigravity_reply(), {"conversation": AG_CONVERSATION.upper()}, "invalid_record"),
+    (antigravity_reply(), {"conversation": "not-a-conversation"}, "invalid_record"),
+    (antigravity_reply(), {"attribution": None}, "invalid_record"),
+    (antigravity_reply(), {"attribution": {}}, "invalid_record"),
+    (antigravity_reply(), {"attribution": {AG_CONVERSATION: (None, None)}}, "invalid_record"),
+    ({"created_at": STAMP, "content": {"usage": {"anything": 1}}}, {},
+     "unsupported_usage_contract"),
+    ({"created_at": STAMP, "content": "text"}, {}, "no_supported_usage"),
+])
+def test_antigravity_lines_that_are_not_complete_token_records_make_no_event(
+        record, keywords, issue):
+    result = read_antigravity([record], **keywords)
+    assert result["events"] == []
+    assert result["issues"] == [issue]
+    assert "SECRET" not in json.dumps(result)
+    # Beside a complete reply the bad line is closed and the reply still counts once.
+    mixed = read_antigravity([antigravity_reply(input_tokens=7), record], **keywords)
+    if keywords:                    # the reply itself has no usable conversation
+        assert mixed["events"] == []
+    else:
+        assert len(mixed["events"]) == 1
+        assert (issue in mixed["issues"]) == (issue != "no_supported_usage")
+
+
 @pytest.mark.parametrize("tool,fixture", [("codex", codex), ("claude", claude)])
 def test_outputs_do_not_retain_ids_paths_body_remote_or_configuration(tool, fixture):
     records = fixture()
