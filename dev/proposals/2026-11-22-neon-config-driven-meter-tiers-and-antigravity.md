@@ -1,7 +1,7 @@
 # Config-driven model weights, agent-tier reporting, and Antigravity reader fixes
 
 **Author**: Gemini 4 Neon (Author; Maintainer-selected session)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — alters three shipped tools (`meter.py`, `pulse.py`, `_intent/identity.py`) and adds an external model and adapter configuration file
 **Plan review**: required(Internal + Internal Security Review)
@@ -206,3 +206,26 @@ Every blocking and non-blocking finding from both reviews is taken in place usin
 
 **Elapsed**: ~4m
 **Tokens**: unknown
+
+## Decision -- Maintainer (scribed by Gemini 4 Neon) -- 2026-11-22
+
+**Elapsed**: ~2m
+**Tokens**: unknown
+
+**Tier**: heavy
+
+**ACCEPTED.** Scribed from Maintainer chat on unambiguous authorization:
+
+> "1) All in v0.8.1. 2) You are authorized to read what you need to read, 3) Fable goes to above `high` tier. Do we have another slot above `high`? 4) Heavy is fine, 5) I don't know here, just make the best choice"
+
+> "I like `frontier`. Put in that: `fable`, `astra`, and `carbon`"
+
+> "You may scribe my acceptance and decision. Then go ahead"
+
+Settled dispositions across the four proposal choices and board wait W1:
+
+1. **Release placement:** **All in v0.8.1** (both Outcome 1 and Outcome 2 land together in one 4-chunk v0.8.1 plan before the cut; `5aee2fba` already resolved the neutrality gate to 0, and this supersedes the split note in `fa9fae28`).
+2. **Antigravity cache-read key:** Authorized count-only lookup ran on 2026-11-22 across `6,235 / 6,235` Antigravity token records and identified `cache_read_tokens`. Add `cache_read_tokens` to [`dev/rules/custom_session_routines.md`](../rules/custom_session_routines.md) and extract it via `tools.antigravity.cache_read_field` in `dev/.cairn/meter-models.json`.
+3. **Configurable ordered `tiers` and `frontier` assignment:** Make `tiers` configurable in `cairn-meter-models/1` (default `["high", "medium", "low"]`) rather than hardcoding tier names in `meter.py` or `pulse.py`, keeping Cairn's 3-tier task-floor doctrine in [`docs/methodology/roles.md`](../../docs/methodology/roles.md) untouched for v0.8.1. Configure `["frontier", "high", "medium", "low"]` in `dev/.cairn/meter-models.json`, placing `Fable`, `Astra`, and `Carbon` in `frontier` (above `high`) in both `dev/.cairn/meter-models.json` and [`dev/.cairn/model-selection-mapping.yml`](../.cairn/model-selection-mapping.yml).
+4. **Tier:** Heavy (`Plan review: required(Internal + Internal Security Review)`).
+5. **Board wait W1 (`#5`):** Move `~/.cairn/meter/ledger.json` aside to a backup once the v0.8.1 changes land and `~/.cairn/meter-models.json` is installed, restarting counting clean with zero `antigravity_unattributed`.
