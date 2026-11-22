@@ -277,7 +277,7 @@ def test_project_meter_zero_duration_and_text_usage_are_visible(tmp_path):
     assert "gauge: supplied project usage alias=sample aggregates=1; coverage=unknown" in text.stdout
     assert ("week=2026-W45 day=2026-11-05 artifact=src/app.py tool=codex "
             "model=gpt-5.3-codex events=1 unknown-events=0 fresh_input=12 "
-            "cache_read=8 cache_write=unknown output=4") in text.stdout
+            "cache_read=8 cache_write=unknown output=4 weighted=unknown") in text.stdout
     assert ("gauge: test waits executions=1 execution-ms=0 wall-wait-ms=0; "
             "coverage=unknown") in text.stdout
     assert "gauge: usage Claude=unknown, Codex=partial, Antigravity=unknown; " \

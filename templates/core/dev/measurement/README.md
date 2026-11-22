@@ -55,7 +55,7 @@ them.
   carry an earlier one. The Gemini rows wait for a reader of Antigravity logs,
   which the meter does not have; the OpenAI and Google model names are the
   makers' own and are not matched against a real log; a Codex reply whose log
-  omits its cache-write count gets no total.
+  omits its cache-write count gets no total. The pulse prints each row's weighted total as `weighted=`, or `weighted=unknown` where the row has none.
 
   After explicit consent, create the version-1 config at the fixed account
   path with only the approved provider and project paths. The aliases below
