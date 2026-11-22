@@ -323,13 +323,19 @@ stay with the Maintainer.
    changelog below included.
 2. Merge that commit into `master` with `git merge --ff-only`, so the tagged
    commit is on the protected branch. Do not push yet.
-3. From `master` at that commit, run the whole test suite once on each of
-   the Mac, Linux and Windows, under Python 3.13 on a clean tree. On the Mac,
-   run the first block of "Checks to run" as written (the suite and the
+3. From `master` at that commit, run the tests on each of the Mac, Linux
+   and Windows, under Python 3.13 on a clean tree. On the Mac, run the whole
+   suite once: the first block of "Checks to run" as written (the suite and the
    membership check), then the remaining gates there. On Linux and Windows,
-   run the suite alone. Write the three results in the release notes
-   (`dev/rules/certifying-runs.md`), with every test skipped on each platform
-   and its reason. Any nonzero exit on any platform, a membership refusal on
+   run only the shipped files that can depend on the system:
+   `python tests/tier_inventory.py cert-files --write <new absolute path>`
+   saves their names, and, from the repository root,
+   `CAIRN_FULL_SUITE=1 python -m pytest @<that path> --quality-gate-shuffle-seed=0 -rs`
+   runs them (on Windows, set the variable first). The Cairn-only tests and
+   the system-independent files run on the Mac only. Write the three results
+   in the release notes (`dev/rules/certifying-runs.md`), with every test
+   skipped on each platform and its reason, and, for Linux and Windows, the
+   `cert-files` command and its file count. Any nonzero exit on any platform, a membership refusal on
    the Mac included, stops the cut. Then, on the Mac, in a fresh `git clone`
    of the Mac's repository checked out at that commit, fetch nothing more and
    run

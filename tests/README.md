@@ -1,5 +1,11 @@
 # Cairn test maintenance
 
+## Which test files Linux and Windows run at certification
+
+*This section is for Cairn's own maintainers. It is not installed in your project.*
+
+At certification the Mac runs the whole suite once. Linux and Windows run the files `python tests/tier_inventory.py cert-files` prints: every test file except Cairn's own signing, gate and release tests (`RELEASE_EXCLUDED_TESTS` in `tests/security_manifest.py`) and the files `tests/test_tiers.json` lists under `system_independent`. A listed file has no sign that its outcome depends on the operating system, so it runs on the Mac only. An unlisted file counts as system-dependent and runs everywhere. Add a file to the list only with evidence that it has no such sign (links, permissions, line endings, path lookup, platform branches, terminals, sockets) and that it passed, with no skip, on the Mac, Linux and Windows in one full run. `python tests/tier_inventory.py check` refuses a listed pattern that places no file or that matches a security-tier or an excluded file.
+
 ## Re-measure registered counts
 
 *This script is for Cairn's own maintainers. It is not installed in your project, so skip this section unless you work on Cairn itself.*

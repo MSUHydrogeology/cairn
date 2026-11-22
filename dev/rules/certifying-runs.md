@@ -12,12 +12,17 @@ certifies every change at or before that commit for bisect. The reviewer never
 runs the full suite. Never set
 `CAIRN_FULL_SUITE=1` for another reason.
 
-**A release is certified on three platforms.** It takes one full run of the
-suite, as above, on each of a Mac, Linux and Windows. Each run is at the
+**A release is certified on three platforms.** The Mac runs the whole suite
+once, as above. Linux and Windows run only the shipped files that can depend
+on the system: the files `python tests/tier_inventory.py cert-files` prints,
+with `@PATH` (the file `cert-files --write PATH` saved) in place of `tests` in
+the command above. Cairn-only tests and the files `tests/test_tiers.json` lists
+as system-independent run on the Mac only. Each run is at the
 release commit, on a clean tree, under Python 3.13. The release note gives the
 three results: for each, the platform, the full commit id from
 `git rev-parse HEAD`, the Python version, the counts of passed,
-failed and skipped, and every test skipped on that platform with its reason. A
+failed and skipped, and every test skipped on that platform with its reason; for
+Linux and Windows also the `cert-files` command and its file count. A
 platform whose run did not pass is not certified. Only the Maintainer can cut
 a release without it, in words quoted in the release note that name the
 platform and the run that failed or is missing, with a home and revival
