@@ -83,7 +83,7 @@ already preserves the pytest exit status (`release/RELEASE_PROCESS.md:168-173`).
 this report. The proposed literal read lets the report supply outcomes and
 the existing manifest supply platform ownership. Keep validation of the
 full policy and its digest, and preserve explicit adopter-list behavior
-(`tests/security_manifest.py:656-691`, `release/check_release_test_members.py:48-58`).
+(`tests/security_manifest.py:573-608`, `release/check_release_test_members.py:48-58`).
 
 **What would show it wrong?** The planned contract check should refuse an
 xfail encoded as a skip, ambiguous or mislabelled identities, an exact
@@ -137,7 +137,7 @@ Reviewed commit: 1ea3ba830fc4e361ccb811f100793bf7ed7a852c
 
 1. Non-blocking. The host tag is the checker's host, not the host that produced the report. If a Windows-produced report were ever checked on a Mac, a Windows-only test skipped on Windows would be waived here. Today the checker runs right after pytest on the same host (`release/RELEASE_PROCESS.md:171`) and the native join still requires each listed test to pass on its own host, so no action is needed now.
 2. Non-blocking. A case named `TestA::test_w[x]` under the module classname maps to the same node as class `TestA`, case `test_w[x]`, and is waived. It cannot reach another file or another listed node, and pairing both forms refuses as `identity-ambiguous`; no action.
-3. Non-blocking. The binding check sees only static bindings; a runtime rebind such as `globals()[...] = ...` would not change what this checker reads (the literal), only what code that imports the manifest sees, which `tests/security_manifest.py:667-691` validates itself.
+3. Non-blocking. The binding check sees only static bindings; a runtime rebind such as `globals()[...] = ...` would not change what this checker reads (the literal), only what code that imports the manifest sees, which `tests/security_manifest.py:584-608` validates itself.
 
 **Coverage.** Read the full checker diff, the compare loop, the proposal, its two reviews and the Decision, and the test names for (a) to (e); ran one synthetic-XML reproduction with five cases. Not checked: the Windows behavior of the xunit1 `file=` backslash form reported for an old test; the Windows-host branch of `_host_tag()` on a real Windows run (the checker is Mac-run in the release block); the release shell around line 171; the test bodies beyond their names; no test suite was run.
 
