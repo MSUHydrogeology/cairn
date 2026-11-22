@@ -1,7 +1,7 @@
 # Plan: Defect arc K, the pulse reads a report on Windows
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -222,3 +222,20 @@ Elapsed: about 8 minutes. Tokens: unknown.
 - Security 2 (the failing test's cause holds): no change; it does not touch the pulse.
 
 Not run for this response: any test. Elapsed: unknown. Tokens: unknown.
+
+## Implementation closeout -- Claude Fable 5.2 (Strategy) -- 2026-11-22
+
+The pulse no longer refuses a report on Windows because of the file's change time, and both plan reviews and both code reviews are done with no finding left open.
+
+- **C1 held.** The change is the code the plan's Security Review gave. By the build's record the direct check refused 61 of 300 freshly written files before the change and none after, and `tests/integration/test_gauge.py` ran once after it: 68 passed, 8 skipped, 1 failed. The shipped copy is identical, `install/verify_integrity.py --target .` reports OK for 70 files, and the changelog has its line.
+
+The branch merged into `0.9-dev` at `906ada3f`. On the merged tree `cmp` of each shipped pair prints nothing and `tests/check_cairn.py` over the whole tree reports no issue.
+
+**Strategy's checks on the Windows Server machine, on the merged tree: met.** The direct check again, with 300 new files and then 300 rewrites of one file: none refused. Before the change the rewrite case was refused 299 or 300 times in 300. Then the pulse in real use, three runs: each read an artifact snapshot written a moment before and the meter's summary, and printed the usage rows for four models.
+
+Not run: the whole suite; the Mac or Linux, where the two readings come from one field. Home: the certification.
+Seen: the one test that still fails in that file, `test_real_cli_refuses_each_binding_mutation[cached-module]`, fails for a fault in a shared test helper in `tests/test_verify_counts.py`. The helper writes a Windows path into code that sits inside a second string, so the path's backslashes are read as escapes. Home: `dev/PLANNING.md`, section 1, item (r).
+Seen: in real use on Windows the snapshot step (`tests/audit_report.py --pulse-input`) writes its output in the console's encoding, so the pulse refuses a snapshot that holds any character outside ASCII. With the output forced to UTF-8 the same run works; the three runs above were made that way. Home: `dev/PLANNING.md`, section 1, item (s).
+Seen: the pulse prints each usage row's counts and not its weighted total. Home: `dev/PLANNING.md`, section 1, item (t).
+
+**Elapsed**: unknown. **Tokens**: unknown.

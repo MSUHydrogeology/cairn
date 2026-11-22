@@ -45,7 +45,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
-- **Fixed: The pulse reads a report it has just written on Windows.** On Windows the pulse no longer refuses a fresh report because the file's creation time and change time differ; it still refuses a file that changed during the read. ([plan](dev/plans/2026-11-22-defect-arc-k-pulse-reads-on-windows.md))
+- **Fixed: The pulse reads a report it has just written on Windows.** On Windows the pulse no longer refuses a fresh report because the file's creation time and change time differ; it still refuses a file that changed during the read. ([plan](dev/plans/archive/2026-11-22-defect-arc-k-pulse-reads-on-windows.md))
 - **Fixed: The usage meter's table of token weights covers the models now in use.** It has rows for Claude Fable 5.2, Sonnet 5.5 and Haiku 5.5 and for the newest OpenAI and Gemini models, prices a long prompt at its higher weights, and weights a Codex reply by its turn's selected model. ([plan](dev/plans/archive/2026-11-22-defect-arc-j-meter-weights-table.md))
 - **Fixed: A new table of token weights no longer makes the usage ledger unreadable.** Days already folded keep their earlier weighting. ([plan](dev/plans/archive/2026-11-22-defect-arc-j-meter-weights-table.md))
 - **Fixed: Usage meter reads a Windows log folder with sub-folders.** A Claude log folder that holds sub-folders no longer makes the meter answer `unavailable`. ([plan](dev/plans/archive/2026-11-21-defect-arc-h-meter-real-log-folder.md))
