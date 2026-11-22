@@ -1,7 +1,7 @@
 # Plan: A simple usage meter
 
 **Source proposal**: dev/proposals/archive/2026-11-21-claude-simple-meter.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/custom_session_routines.md, dev/rules/development-environment.md
@@ -187,3 +187,113 @@ Security Review:
 Not run for this response: any test.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record -- Claude Sonnet 5.5 (Implementation) -- 2026-11-21
+
+The meter is built as the plan says, on branch `simple-meter-impl` (work folder `.claude/worktrees/simple-meter`), not merged. Read from the code and the runs below; nothing else was run.
+
+**Commits by chunk.** C1 to C3 `f7f4ddda` (the plain layer, the Windows layer, owner tests and Git read deleted, both copies, the `B102` allowance removed). C4 `386ae2d2` (tests) and `45aaef44` (pinned list: `nt` 63 to 28, `posix` 362 to 314, fingerprint recomputed by the validator's formula, which accepts it; guard line changed in both files). `548018c5` fixes found by the first Windows run. C5 `4489b295` (documents and changelog) and `e3790d46` (Cairn's lock, alone; `verify_integrity.py --target .` reports OK for 70 files). Status commit `9307dcbc`.
+
+**Lines of `dev/tools/meter.py`.** 7,573 before, 4,624 after (`wc -l`). The shipped copy is identical (`cmp` prints nothing).
+
+**Tests, counts by function.** 88 deleted, 104 changed, 106 kept as they were, 2 added (the changed count is one over the plan's 103 after the review fold; `test_meter.py` holds 176 functions, `test_meter_claude_usage.py` 32). Node ids collected: 371, 73 and 14 for the three meter files.
+
+**Windows (this host, Python 3.13).** `test_meter.py` 367 passed, 4 skipped (the four tests that keep `POSIX_ONLY`); `test_meter_claude_usage.py` 73 passed; `test_meter_usage_free_records.py` 14 passed. Also `tests/test_security_check.py` (4 failed) and `tests/test_skills_install.py` (1 failed): 650 passed, 5 failed, 6 skipped in all. The five failures are this host's: four signing-history tests stop at "detached checkout path ... does not match commit" or "git-read-binding-failed", and the skills test cannot make a symbolic link (`WinError 1314`, the privilege is not held). None names the meter or the pinned list.
+
+**Linux subsystem (Ubuntu, Python 3.14, commit `548018c5`).** The same five files: 575 passed, 10 skipped, 77 failed. All 77 are in `tests/test_security_check.py` and end at "join refuses this platform (native evidence platform is unsupported or inconsistent)", which is that file's Mac-only signing path. The three meter files and `test_skills_install.py` passed whole.
+
+**Found by the Windows run, fixed.** A directory entry carries no file id on Windows, so the walk reads each file by name. A handle and a name report different change times for one file on Windows, so the stream takes its identity by name; before this the unchanged-log skip failed on a fraction of runs. Not fixed, outside this plan: `dev/tools/pulse.py` refuses a just-written report on Windows for the same reason (30% of 40 files in a direct check), so the explicit-report part of `test_report_freshness_public` runs off Windows only, with a comment saying why. This is a parity gap in the pulse for Strategy.
+
+**Differences from the plan.** (1) The claims reader keeps the name `_capture_project_claims`, and the ledger writer `_atomic_replace_ledger`, because kept tests patch those names. (2) `_is_link` tests the reparse attribute and tag by attribute, with no `os.name` branch, so `os.name == "nt"` stays in two functions, not three. (3) `main` wraps a new `_main` to print only a closed answer. (4) `test_codex_normalized_events_bind_only_exact_approved_local_projects` keeps its `project_remote_mismatch` assertion, which is the Codex log's own repository name compared with the consent file's remote; only its patch went. (5) The added link test lists a file-link case only where the host can make one; on this host it has the folder-link (junction) case only. (6) `tests/check_cairn.py` with no argument reports 3 issues this plan caused: line-bounds citations of ranges that end near line 690 of `tests/security_manifest.py` in `dev/proposals/2026-11-19-codex-native-release-membership.md` (line 86, and line 140 inside a review) and `dev/strategy/2026-11-21-claude-read-of-six-unsigned-files.md` (line 32). They are not edited: one is inside a review and one is Strategy's note. The file is now 608 lines.
+
+**Not run.** Every other test file; the real machines (Strategy's checks); a real refresh; `CAIRN_FULL_SUITE`; the gate manifest's signing lines, which this build did not touch.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-21
+
+```
+Reviewed range: 7202294d3ab5733ea7b6b58ee72fd1b063e10b5d (merge-base with 0.9-dev) .. e1c14ee94a72d10b95b487ba6d95bf73f4351ac9
+```
+
+**Obligation**: clears the usual code review; the Security Review pass follows.
+**Findings**: raised (0 blocking, 4 non-blocking)
+**Verdict**: ACCEPT
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this have been built as framed?** Yes. The two promises sit in code the diff leaves alone: `read_records` differs only in its signature and the one remote call (`git diff 0.9-dev HEAD`, lines 3779 to 3800 of `dev/tools/meter.py`), and `validate_config_bytes` and `_claim_snapshot` are untouched.
+2. **Does the change do what the plan says?** Yes. The walk (`_enumerate_jsonl`), the claims read, `_write_summary`, `_take_lock` and `main` match detail D5, D7, D13 and D14. No `exec`, `git_read`, owner test or `dir_fd` remains (searched). Nothing named for Windows is left but the two parsers and two `nt` branches.
+3. **What would show it wrong?** A real refresh on the Windows Server machine and the Mac (Strategy's checks, not run here).
+
+**Checked, not run**: `cmp` of the two meter copies prints nothing. The lock commit holds one file, two lines. `verify_integrity.py --target .` reports OK for 70 files. The pinned list, loaded by its own validator, gives 28 and 314 with the fingerprint accepted; the guard line in `tests/test_security_check.py` matches line 606 of the manifest. The `B102` entry was the only change in `release/security_check.py`. The deleted tests are the plan's 86 in `test_meter.py` (65 Windows, 21 listed), plus one each in the other two files; none tests consent or counts-only. The two added tests are as the plan names them.
+
+**Non-blocking**
+
+- N1. No test covers the claims link rule (plan C1: a link at `dev/intents.jsonl` yields no claims). The kept export test patches `_capture_project_claims` out. The code reads right (`_capture_project_claims`, lines 372 to 395); a hand check or one test would close it.
+- N2. The test that quotes the guard line (`test_committed_fixture_connects_real_record_and_join_entrypoints`) skips off a Mac, so no recorded run exercised that edit. The manifest's own validator runs at every collection and accepts it.
+- N3. The five Windows failures are called this host's, but the record does not show the same five failing on `0.9-dev`. The Linux run was at `548018c5`, before the prose and lock commits.
+- N4. If the lock file is created but its token write fails, an empty lock stays for 15 minutes (`_take_lock`, `make`). Rare, and the same wait as a killed run.
+
+**Left unshown**: the Mac; a real refresh; links on Windows other than junctions; a Windows run of the file-link case. A pulse import failure still prints a traceback before `main` runs (not changed here).
+
+**Not covered**: running any test; the full diff of the kept tests (read the five named in the plan and both added tests); the gate manifest.
+
+## Code review -- Claude Opus 5.5 (Security Review) -- 2026-11-21
+
+```
+Reviewed range: 7202294d3ab5733ea7b6b58ee72fd1b063e10b5d (merge-base with 0.9-dev) .. d581e8e62b8b4e2ed3231f7d1d6d31df368d82f2
+```
+
+**Obligation**: clears the Internal Security Review of the code, and is the protected-surfaces review of the tests and pinned rows it removes.
+**Findings**: raised (0 blocking, 2 non-blocking)
+**Verdict**: ACCEPT
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this have been built as framed?** Yes. Both promises sit in code the diff leaves alone or narrows: `validate_config_bytes` is unchanged and `read_records` differs only in its signature and remote line (`git diff 7202294d HEAD -- dev/tools/meter.py`, hunks at new lines 3776 and 3792).
+2. **Does it do what the plan says?** Yes. The walk skips links and redirect tags, the claims and summary refuse a linked `dev`, the lock follows D5, and `main` prints only closed answers (`dev/tools/meter.py` lines 289 to 547 and 4540 to 4557).
+3. **What would show it wrong?** A real refresh on Windows or the Mac whose summary or record holds anything but counts (Strategy's checks, not run here).
+
+**Agreement.** I agree with the usual review's four findings. On its N1 my wording below governs.
+
+**What can leave.** Every refusal is an `Unavailable` whose reason must match `[a-z][a-z0-9_]*` (line 136), and each receipt passes `_closed_refresh_receipt`. Any other exception reaches `main`'s `except Exception`, which prints a fixed answer; the lock is still released in `_refresh_ledger`'s `finally`. Nothing writes to standard error. I found no route by which log text, a file name, a path or system text reaches a receipt, the record or the summary.
+
+**What is read.** The consent file; the listed roots and the files under them; the old ledger and the lock; per project `dev`, `dev/intents.jsonl`, and the names in `dev/measurement` (only to remove `.meter-*.tmp`). Nothing else.
+
+**Lock and renames.** As D5 says; a busy run removes nothing. Two runs at once can still lose one run's counts until the next run, as accepted. One more case: one run's clean-up can delete the other's temporary summary, so that run answers `project_export_unavailable`. That is harmless.
+
+**Pinned list.** Loaded by its own validator: 28 and 314, fingerprint accepted. Four meter rows stay, matching the four `POSIX_ONLY` tests. The quoted guard line matches line 606.
+
+**Non-blocking**
+
+- N1. The claims test the owner accepted should have two cases: `dev` as a folder link (a junction on Windows) and `dev/intents.jsonl` as a file link where one can be made. Each link points at an outside file holding a valid claim. Assert that `_capture_project_claims` returns no claims and `attribution_unavailable`.
+- N2. `_capture_project_claims` checks `dev/intents.jsonl` with `lstat` and then opens it by name without `O_NOFOLLOW` (lines 377 to 386). The plan allows that. Passing `_O_NOFOLLOW` on this one open would close the gap on Mac and Linux.
+
+**Not covered**: running any test or the meter; real machines; how Windows reparse tags behave on a real profile; `pulse.py` output in `--report` mode; the gate manifest.
+
+## Code-review response -- Claude Sonnet 5.5 (Implementation, for the plan's owner) -- 2026-11-21
+
+Both code reviews accept with no blocking finding. Status is `ready-to-archive`. Code commit `e5c8ecd5`; lock commit `7d43a77c`.
+
+Usual review:
+1. N1 (no test of the claims link rule): fixed. Added `test_the_work_claims_are_not_read_through_a_link`, the proposal's third test, with the Security Review's two cases (`dev` as a folder link, a junction on Windows; `dev/intents.jsonl` as a file link). Each points at an outside file holding a valid claim and asserts no claims and `attribution_unavailable`. Ran: Windows, 1 passed (the `dev-link` case only: this host holds no symbolic-link privilege, so the file-link case is not collected here); Linux subsystem at `e5c8ecd5`, both cases passed.
+2. N2 (the guard-line test skips off a Mac): not shown. Home: the certification run on the Mac.
+3. N3 (the five Windows failures not shown failing on `0.9-dev`): not shown, no run added. Home: the certification run on the Windows Server machine.
+4. N4 (an empty lock stays if its token write fails): fixed. `make` in `_take_lock` removes the file when the write fails. Ran: the lock test on Windows and Linux, passed.
+
+Security Review:
+1. N1 (claims test, two cases): taken with the usual review's N1, as above.
+2. N2 (open the claims file without following a link): fixed. `_read_limited` takes `nofollow` and the claims read passes it, using `O_NOFOLLOW` where the system has it. Ran: the claims test, both hosts, passed.
+
+Also run: the persisted-history, export and linked-parents tests (Windows: 7 passed in all; Linux: 4 passed with the three above). Both meter copies are identical; the lock was refreshed alone; `verify_integrity.py --target .` reports OK for 70 files.
+
+The whole-tree document check still reports 3 issues: the old line citations of the pinned-list file in `dev/proposals/2026-11-19-codex-native-release-membership.md` (two) and `dev/strategy/2026-11-21-claude-read-of-six-unsigned-files.md` (one). The central exemption list cannot hold them: an exemption covers only a path that does not exist, and the file does, so an out-of-range line citation still flags (tried for the proposal; the entries were reported unused and removed again). It would take either a change to `dev/tools/claim_check.py` to let a dated record exempt a line citation, or an edit of the three citations; one of them sits inside a review, which is never edited. Home: Strategy.
+
+Not shown, not run: the Mac; a real refresh on either machine; a Windows run of the file-link cases. **Elapsed**: unknown. **Tokens**: unknown.

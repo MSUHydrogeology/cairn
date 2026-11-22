@@ -1,7 +1,6 @@
 """Public-entry controls for the routes that read Git through the safe reader.
 
-Every route here is run through its real command (or, for the meter, the one
-function its command calls) against a disposable repository that carries its own
+Every route here is run through its real command against a disposable repository that carries its own
 programs: a `git` wrapper inside the repository that records each call (on
 Windows a compiled `git.exe` that records the call and runs the real Git), and a
 repository config that names a file-system monitor, a clean/smudge filter, a
@@ -10,7 +9,7 @@ sentinel file. A control first shows plain Git does run the config programs, so
 a quiet result means something.
 
 Promises:
-- A repository's own `git` program is never run by the content-scan runner, the prose report, the exact replacer's change report, the link and snippet checks, the portable sweep, the intent commands, the meter's project-remote read, install or upgrade.
+- A repository's own `git` program is never run by the content-scan runner, the prose report, the exact replacer's change report, the link and snippet checks, the portable sweep, the intent commands, install or upgrade.
 - When the only `git` found sits inside the repository being read, each of those routes refuses or reports an incomplete read and never reports clean, unchanged, current or an empty result.
 - Given a repository whose config names monitor, filter, converter, pager and ssh programs, those routes return their normal answer (the sweep refuses the config before it runs anything) and run none of those programs.
 - Install and upgrade read the Cairn source and the target as separate repositories, so a program inside one is not run to read the other.
@@ -19,14 +18,11 @@ Promises:
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
 import os
 import shutil
 import subprocess
 import sys
-import tempfile
-import uuid
 from pathlib import Path
 
 import pytest
@@ -958,61 +954,4 @@ def test_upgrade_to_a_ref_never_fetches_a_missing_object_through_a_source_progra
                            str(source), "--to", "HEAD"])
     assert done.returncode == 2, done.stdout + done.stderr
     assert "could not read" in done.stdout + done.stderr
-    lab.assert_no_program_ran()
-
-
-# --------------------------------------------------------------------------
-# Meter: the approved project's remote
-# --------------------------------------------------------------------------
-
-@pytest.fixture
-def plain_acl_base(tmp_path: Path, request: pytest.FixtureRequest) -> Path:
-    """A scratch folder whose whole parent chain has ordinary inherited permissions.
-
-    On Windows the meter reads a project's own `.git/config` and refuses any
-    parent folder holding an explicit non-owner entry. pytest makes its own
-    folders owner-only that way, so the meter's project check would refuse every
-    path under `tmp_path` and the control below could not tell a clean answer from
-    a refusal. This folder is made with the default mode so it inherits the temp
-    folder's permissions. Elsewhere `tmp_path` is used unchanged."""
-    if os.name != "nt":
-        return tmp_path
-    base = Path(tempfile.gettempdir()).resolve() / f"cairn-route-{uuid.uuid4().hex}"
-    base.mkdir()
-
-    def remove() -> None:
-        for folder, _dirs, names in os.walk(base):
-            for name in names:
-                os.chmod(os.path.join(folder, name), 0o700)  # Git objects are read-only
-        shutil.rmtree(base, ignore_errors=True)
-
-    request.addfinalizer(remove)
-    return base
-
-
-@pytest.mark.parametrize("meter_rel", ["dev/tools/meter.py", "templates/skills/_lib/meter.py"])
-def test_meter_project_remote_read_refuses_a_git_inside_the_project(
-        plain_acl_base: Path, monkeypatch: pytest.MonkeyPatch, meter_rel: str) -> None:
-    # Positive control for: the meter reading a project's remote through a project-supplied `git`, or returning a remote after an unreadable read.
-    lab = Lab(plain_acl_base)
-    remote = "https://example.test/org/repo.git"
-    project = lab.repo("project", {"keep.txt": "x\n"})
-    lab.git(project, "remote", "add", "origin", remote)
-    (project / ".git").chmod(0o700)
-    hostile_bin = lab.arm(project)
-    spec = importlib.util.spec_from_file_location("_routes_meter", ROOT / meter_rel)
-    assert spec is not None and spec.loader is not None
-    meter = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(meter)
-    approved = {"alias": "project", "path": str(project), "remote": remote}
-    for key in [name for name in os.environ if name.startswith("GIT_")]:
-        monkeypatch.delenv(key)
-
-    monkeypatch.setenv("PATH", lab.env()["PATH"])
-    assert meter._verified_project_remote(approved, []) == (remote, None)
-    lab.assert_no_program_ran()
-
-    monkeypatch.setenv("PATH", lab.env(hostile_bin)["PATH"])
-    answer, reason = meter._verified_project_remote(approved, [])
-    assert answer is None and reason in {"git_untrusted", "git_parser_failed"}, (answer, reason)
     lab.assert_no_program_ran()

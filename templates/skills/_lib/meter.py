@@ -19,22 +19,14 @@ import stat
 import sys
 import argparse
 import uuid
-import selectors
-import signal
-import subprocess
 import time
 import secrets
-import struct
 from fractions import Fraction
 from decimal import Decimal
 try:
     import pwd
-except ImportError:  # vendor-ok: POSIX account lookup is deliberately unsupported elsewhere
+except ImportError:  # vendor-ok: there is no account database module on Windows
     pwd = None
-try:
-    import fcntl
-except ImportError:  # vendor-ok: private ledger locking is deliberately unsupported elsewhere
-    fcntl = None
 from datetime import datetime, timezone, timedelta
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit, urlunsplit
@@ -52,12 +44,6 @@ MAX_BATCH_LINES = 100_000
 MAX_REREAD_BYTES = 512 * 1024 * 1024
 MAX_REREAD_LINES = 1_000_000
 MAX_NORMALIZED_EVENTS = 100_000
-MAX_GIT_BYTES = 64 * 1024 * 1024
-MAX_GIT_CONFIG_BYTES = 256 * 1024
-MAX_GIT_HELPER_BYTES = 1024 * 1024
-SAFE_GIT_SOURCE_SHA256 = "b67deb4e50eaee1e420d49af5ddac318aa110407bcd7c03d305091146cf15252"  # vendor-ok: pins approved helper bytes
-_VERIFIED_GIT_HELPER = None
-_WINDOWS_WORKER_JOBS = []
 
 
 def _load_shared_pulse():
@@ -141,7 +127,6 @@ _SUMMARY_FIELDS = frozenset({"totalTokens", "toolUses", "durationMs"})
 _SUMMARY_FRAME = re.compile(r"<task-id>([A-Za-z0-9]{8,64})</task-id>")
 LEDGER_NAME = "ledger.json"
 LEDGER_LOCK_NAME = "ledger.lock"
-_PRIVATE_FS_SUPPORTED = os.name == "posix"
 
 
 class Unavailable(Exception):
@@ -150,796 +135,6 @@ class Unavailable(Exception):
     def __init__(self, reason="unavailable"):
         self.reason = reason if re.fullmatch(r"[a-z][a-z0-9_]*", reason or "") else "unavailable"
         super().__init__(self.reason)
-
-
-class _MissingConfig(Exception):
-    """The opt-in file or its private directory has not been created."""
-
-
-def _windows_config_decision(config_bytes):
-    """Return only disabled or unavailable; Windows collection is unsupported."""
-    if config_bytes is None:
-        return "disabled"
-    try:
-        config = validate_config_bytes(config_bytes)
-    except Unavailable:
-        return "unavailable"
-    return "disabled" if not config["enabled"] else "unavailable"
-
-
-class _WindowsConsentAPI:
-    """Fixed-path local NTFS consent reader using parent-relative held handles."""
-
-    def __init__(self):
-        import ctypes as C
-        from ctypes import wintypes as W
-
-        if os.name != "nt" or C.sizeof(C.c_void_p) != 8:
-            raise Unavailable
-        try:
-            self.C, self.W = C, W
-            self.nt = C.WinDLL("ntdll.dll", winmode=0x800, use_last_error=True)
-            self.kernel = C.WinDLL("kernel32.dll", winmode=0x800, use_last_error=True)
-            self.advapi = C.WinDLL("advapi32.dll", winmode=0x800, use_last_error=True)
-            self.userenv = C.WinDLL("userenv.dll", winmode=0x800, use_last_error=True)
-        except (AttributeError, OSError):
-            raise Unavailable from None
-
-        class US(C.Structure):
-            _fields_ = [("Length", W.USHORT), ("MaximumLength", W.USHORT),
-                        ("Buffer", C.c_void_p)]
-
-        class OA(C.Structure):
-            _fields_ = [("Length", W.ULONG), ("RootDirectory", C.c_void_p),
-                        ("ObjectName", C.POINTER(US)), ("Attributes", W.ULONG),
-                        ("SecurityDescriptor", C.c_void_p),
-                        ("SecurityQualityOfService", C.c_void_p)]
-
-        class IOS(C.Structure):
-            class U(C.Union):
-                _fields_ = [("Status", C.c_int32), ("Pointer", C.c_void_p)]
-            _fields_ = [("u", U), ("Information", C.c_size_t)]
-
-        class BHI(C.Structure):
-            _fields_ = [("attributes", W.DWORD), ("created", W.FILETIME),
-                        ("accessed", W.FILETIME), ("written", W.FILETIME),
-                        ("volume", W.DWORD), ("size_high", W.DWORD),
-                        ("size_low", W.DWORD), ("links", W.DWORD),
-                        ("id_high", W.DWORD), ("id_low", W.DWORD)]
-
-        class BASIC_INFO(C.Structure):
-            _fields_ = [("created", C.c_int64), ("accessed", C.c_int64),
-                        ("written", C.c_int64), ("changed", C.c_int64),
-                        ("attributes", W.DWORD)]
-
-        if (C.sizeof(US), C.sizeof(OA), C.sizeof(IOS), C.sizeof(BHI),
-                C.sizeof(BASIC_INFO), struct.calcsize("<II6qIIIbx24s2xq")) != (
-                    16, 48, 16, 52, 40, 104):
-            raise Unavailable
-        self.US, self.OA, self.IOS, self.BHI, self.BASIC_INFO = US, OA, IOS, BHI, BASIC_INFO
-        H = C.c_void_p
-        self.nt.NtCreateFile.argtypes = [C.POINTER(H), W.ULONG, C.POINTER(OA),
-            C.POINTER(IOS), C.c_void_p, W.ULONG, W.ULONG, W.ULONG, W.ULONG,
-            C.c_void_p, W.ULONG]
-        self.nt.NtCreateFile.restype = C.c_int32
-        self.kernel.GetCurrentThread.argtypes = []
-        self.kernel.GetCurrentThread.restype = H
-        self.kernel.GetCurrentProcess.argtypes = []
-        self.kernel.GetCurrentProcess.restype = H
-        self.kernel.CloseHandle.argtypes = [H]
-        self.kernel.CloseHandle.restype = W.BOOL
-        self.kernel.QueryDosDeviceW.argtypes = [W.LPCWSTR, W.LPWSTR, W.DWORD]
-        self.kernel.QueryDosDeviceW.restype = W.DWORD
-        self.kernel.GetFileType.argtypes = [H]
-        self.kernel.GetFileType.restype = W.DWORD
-        self.kernel.GetFileInformationByHandle.argtypes = [H, C.POINTER(BHI)]
-        self.kernel.GetFileInformationByHandle.restype = W.BOOL
-        self.kernel.GetFileInformationByHandleEx.argtypes = [H, C.c_int, C.c_void_p, W.DWORD]
-        self.kernel.GetFileInformationByHandleEx.restype = W.BOOL
-        self.kernel.ReadFile.argtypes = [H, C.c_void_p, W.DWORD, C.POINTER(W.DWORD), C.c_void_p]
-        self.kernel.ReadFile.restype = W.BOOL
-        self.kernel.GetVolumeInformationByHandleW.argtypes = [
-            H, W.LPWSTR, W.DWORD, C.POINTER(W.DWORD), C.POINTER(W.DWORD),
-            C.POINTER(W.DWORD), W.LPWSTR, W.DWORD]
-        self.kernel.GetVolumeInformationByHandleW.restype = W.BOOL
-        self.kernel.LocalFree.argtypes = [H]
-        self.kernel.LocalFree.restype = H
-        self.advapi.OpenThreadToken.argtypes = [H, W.DWORD, W.BOOL, C.POINTER(H)]
-        self.advapi.OpenThreadToken.restype = W.BOOL
-        self.advapi.OpenProcessToken.argtypes = [H, W.DWORD, C.POINTER(H)]
-        self.advapi.OpenProcessToken.restype = W.BOOL
-        self.advapi.GetTokenInformation.argtypes = [
-            H, C.c_int, C.c_void_p, W.DWORD, C.POINTER(W.DWORD)]
-        self.advapi.GetTokenInformation.restype = W.BOOL
-        self.userenv.GetUserProfileDirectoryW.argtypes = [H, W.LPWSTR, C.POINTER(W.DWORD)]
-        self.userenv.GetUserProfileDirectoryW.restype = W.BOOL
-        self.advapi.GetSecurityInfo.argtypes = [
-            H, C.c_int, W.DWORD, C.POINTER(C.c_void_p), C.POINTER(C.c_void_p),
-            C.POINTER(C.c_void_p), C.POINTER(C.c_void_p), C.POINTER(C.c_void_p)]
-        self.advapi.GetSecurityInfo.restype = W.DWORD
-        self.advapi.GetSecurityDescriptorControl.argtypes = [
-            C.c_void_p, C.POINTER(W.WORD), C.POINTER(W.DWORD)]
-        self.advapi.GetSecurityDescriptorControl.restype = W.BOOL
-        self.advapi.IsValidSid.argtypes = [C.c_void_p]
-        self.advapi.IsValidSid.restype = W.BOOL
-        self.advapi.GetLengthSid.argtypes = [C.c_void_p]
-        self.advapi.GetLengthSid.restype = W.DWORD
-        self.advapi.ConvertStringSidToSidW.argtypes = [W.LPCWSTR, C.POINTER(C.c_void_p)]
-        self.advapi.ConvertStringSidToSidW.restype = W.BOOL
-        self.advapi.ConvertSidToStringSidW.argtypes = [C.c_void_p, C.POINTER(W.LPWSTR)]
-        self.advapi.ConvertSidToStringSidW.restype = W.BOOL
-        self.advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.argtypes = [
-            W.LPCWSTR, W.DWORD, C.POINTER(C.c_void_p), C.POINTER(W.DWORD)]
-        self.advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.restype = W.BOOL
-        self.nt.NtFlushBuffersFileEx.argtypes = [H, W.ULONG, C.c_void_p, W.ULONG,
-                                                  C.POINTER(IOS)]
-        self.nt.NtFlushBuffersFileEx.restype = C.c_int32
-        self.nt.NtSetInformationFile.argtypes = [H, C.POINTER(IOS), C.c_void_p,
-                                                  W.ULONG, C.c_int]
-        self.nt.NtSetInformationFile.restype = C.c_int32
-        self.kernel.WriteFile.argtypes = [H, C.c_void_p, W.DWORD,
-                                          C.POINTER(W.DWORD), C.c_void_p]
-        self.kernel.WriteFile.restype = W.BOOL
-
-    def close(self, handle):
-        if handle:
-            self.kernel.CloseHandle(self.C.c_void_p(handle))
-
-    def install_worker_job(self):
-        """Contain this collector and its children until the receipt is ready."""
-        C, W = self.C, self.W
-
-        class BASIC_LIMIT(C.Structure):
-            _fields_ = [("process_time", C.c_int64), ("job_time", C.c_int64),
-                        ("flags", W.DWORD), ("minimum", C.c_size_t),
-                        ("maximum", C.c_size_t), ("processes", W.DWORD),
-                        ("affinity", C.c_size_t), ("priority", W.DWORD),
-                        ("scheduling", W.DWORD)]
-
-        class IO_COUNTERS(C.Structure):
-            _fields_ = [(name, C.c_uint64) for name in
-                        ("read_ops", "write_ops", "other_ops", "read_bytes",
-                         "write_bytes", "other_bytes")]
-
-        class EXTENDED_LIMIT(C.Structure):
-            _fields_ = [("basic", BASIC_LIMIT), ("io", IO_COUNTERS),
-                        ("process_memory", C.c_size_t), ("job_memory", C.c_size_t),
-                        ("peak_process_memory", C.c_size_t),
-                        ("peak_job_memory", C.c_size_t)]
-
-        job = None
-        try:
-            if (C.sizeof(BASIC_LIMIT), C.sizeof(EXTENDED_LIMIT)) != (64, 144):
-                raise Unavailable("job_unavailable")
-            self.kernel.CreateJobObjectW.argtypes = [C.c_void_p, W.LPCWSTR]
-            self.kernel.CreateJobObjectW.restype = C.c_void_p
-            self.kernel.SetInformationJobObject.argtypes = [
-                C.c_void_p, C.c_int, C.c_void_p, W.DWORD]
-            self.kernel.SetInformationJobObject.restype = W.BOOL
-            self.kernel.AssignProcessToJobObject.argtypes = [C.c_void_p, C.c_void_p]
-            self.kernel.AssignProcessToJobObject.restype = W.BOOL
-            job = self.kernel.CreateJobObjectW(None, None)
-            if not job:
-                raise Unavailable("job_unavailable")
-            limits = EXTENDED_LIMIT()
-            limits.basic.flags = 0x2000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
-            if (not self.kernel.SetInformationJobObject(
-                    job, 9, C.byref(limits), C.sizeof(limits))
-                    or not self.kernel.AssignProcessToJobObject(
-                        job, self.kernel.GetCurrentProcess())):
-                raise Unavailable("job_unavailable")
-            return int(job)
-        except Unavailable:
-            if job:
-                self.close(int(job))
-            raise
-        except (AttributeError, OSError, TypeError, ValueError):
-            if job:
-                self.close(int(job))
-            raise Unavailable("job_unavailable") from None
-
-    def _sid_bytes(self, sid):
-        if not sid or not self.advapi.IsValidSid(sid):
-            raise Unavailable
-        size = int(self.advapi.GetLengthSid(sid))
-        if not 8 <= size <= 68:
-            raise Unavailable
-        return self.C.string_at(sid, size)
-
-    def current_user_profile(self):
-        C, W = self.C, self.W
-        thread, process = C.c_void_p(), C.c_void_p()
-        try:
-            if self.advapi.OpenThreadToken(self.kernel.GetCurrentThread(), 0x0008, True,
-                                           C.byref(thread)):
-                raise Unavailable  # Refuse impersonation.
-            if C.get_last_error() != 1008:  # Only ERROR_NO_TOKEN means no impersonation.
-                raise Unavailable
-            if not self.advapi.OpenProcessToken(self.kernel.GetCurrentProcess(), 0x0008,
-                                                C.byref(process)):
-                raise Unavailable
-            needed = W.DWORD()
-            if self.advapi.GetTokenInformation(process, 1, None, 0, C.byref(needed)):
-                raise Unavailable
-            if C.get_last_error() != 122:  # ERROR_INSUFFICIENT_BUFFER is expected here.
-                raise Unavailable
-            if not 16 <= needed.value <= 4096:
-                raise Unavailable
-            token_user = C.create_string_buffer(needed.value)
-            if not self.advapi.GetTokenInformation(process, 1, token_user,
-                                                   needed.value, C.byref(needed)):
-                raise Unavailable
-            user_sid = self._sid_bytes(C.c_void_p.from_buffer(token_user).value)
-            chars = W.DWORD()
-            if self.userenv.GetUserProfileDirectoryW(process, None, C.byref(chars)):
-                raise Unavailable
-            if C.get_last_error() != 122:
-                raise Unavailable
-            if not 2 <= chars.value <= 32768:
-                raise Unavailable
-            path = C.create_unicode_buffer(chars.value)
-            if not self.userenv.GetUserProfileDirectoryW(process, path, C.byref(chars)):
-                raise Unavailable
-            if (len(path.value) > 32760 or "\x00" in path.value
-                    or chars.value != len(path.value) + 1):
-                raise Unavailable
-            return path.value, user_sid
-        except (OSError, ValueError, TypeError, AttributeError):
-            raise Unavailable from None
-        finally:
-            self.close(thread.value)
-            self.close(process.value)
-
-    def _privileged_sid(self, sid_bytes, *, ancestor=False):
-        C = self.C
-        values = ["S-1-5-18", "S-1-5-32-544"]
-        if ancestor:
-            values.append("S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464")
-        for value in values:
-            sid = C.c_void_p()
-            if not self.advapi.ConvertStringSidToSidW(value, C.byref(sid)):
-                raise Unavailable
-            try:
-                if self._sid_bytes(sid) == sid_bytes:
-                    return True
-            finally:
-                self.kernel.LocalFree(sid)
-        return False
-
-    def info(self, handle):
-        value = self.BHI()
-        if (self.kernel.GetFileType(handle) != 1 or
-                not self.kernel.GetFileInformationByHandle(handle, self.C.byref(value))):
-            raise Unavailable
-        attrs = int(value.attributes)
-        if attrs & (0x400 | 0x40 | 0x1000 | 0x40000 | 0x400000):
-            raise Unavailable
-        stamp = lambda item: (int(item.dwHighDateTime) << 32) | int(item.dwLowDateTime)
-        basic = self.BASIC_INFO()
-        if not self.kernel.GetFileInformationByHandleEx(
-                handle, 0, self.C.byref(basic), self.C.sizeof(basic)):
-            raise Unavailable
-        def unix_ns(filetime):
-            result = (int(filetime) - 116444736000000000) * 100
-            if not -(1 << 63) <= result <= (1 << 63) - 1:
-                raise Unavailable
-            return result
-        volume, file_id = int(value.volume), (int(value.id_high) << 32) | int(value.id_low)
-        if not 0 <= volume <= (1 << 64) - 1 or not 0 <= file_id <= (1 << 64) - 1:
-            raise Unavailable
-        return {"identity": (int(value.volume), (int(value.id_high) << 32) | int(value.id_low)),
-                "size": (int(value.size_high) << 32) | int(value.size_low),
-                "directory": bool(attrs & 0x10), "links": int(value.links),
-                "created": stamp(value.created), "accessed": stamp(value.accessed),
-                "written": unix_ns(basic.written), "changed": unix_ns(basic.changed),
-                "mtime_ns": unix_ns(basic.written), "ctime_ns": unix_ns(basic.changed)}
-
-    def open(self, name, parent=None, *, directory=False, read_data=False,
-             write_data=False, delete=False, share=1, disposition=1,
-             write_through=False, security_descriptor=None):
-        C = self.C
-        if parent is not None and (not name or name in {".", ".."} or
-                any(ch in name for ch in "\\/:") or "\0" in name or
-                len(name.encode("utf-16-le")) > 510):
-            raise Unavailable
-        text = C.create_unicode_buffer(name)
-        length = len(name.encode("utf-16-le"))
-        us = self.US(length, length + 2, C.cast(text, C.c_void_p))
-        oa = self.OA(C.sizeof(self.OA), parent, C.pointer(us), 0,
-                     security_descriptor, None)
-        ios, out = self.IOS(), C.c_void_p()
-        access = 0x80 | 0x20000 | 0x100000
-        access |= (0x1 if directory or read_data else 0)
-        access |= (0x2 if write_data else 0) | (0x10000 if delete else 0)
-        type_option = (0x1 if disposition != 1 else 0) if directory else 0x40
-        no_recall_option = 0 if directory and disposition == 2 else 0x00400000
-        options = (0x00200000 | no_recall_option | 0x20
-                   | type_option | (0x2 if write_through else 0))
-        if (type(share) is not int or not 0 <= share <= 7
-                or type(disposition) is not int or disposition not in range(1, 7)):
-            raise Unavailable
-        status = self.nt.NtCreateFile(C.byref(out), access, C.byref(oa), C.byref(ios),
-                                      None, 0, share, disposition, options,
-                                      None, 0)
-        code = status & 0xffffffff
-        if status != 0:
-            if code in (0xC0000034, 0xC000003A):
-                raise _MissingConfig
-            raise Unavailable
-        handle = int(out.value)
-        if directory and disposition == 1:
-            try:
-                info = self.info(handle)
-                if not info["directory"]:
-                    raise Unavailable
-            except BaseException:
-                self.close(handle)
-                raise Unavailable from None
-        return handle
-
-    def _private_security_descriptor(self, user_sid, *, directory):
-        C = self.C
-        sid_buffer = C.create_string_buffer(user_sid)
-        sid_text = self.W.LPWSTR()
-        descriptor = C.c_void_p()
-        if not self.advapi.ConvertSidToStringSidW(
-                C.cast(sid_buffer, C.c_void_p), C.byref(sid_text)):
-            raise Unavailable("ledger_write_failed")
-        try:
-            user = C.wstring_at(sid_text)
-        finally:
-            self.kernel.LocalFree(C.cast(sid_text, C.c_void_p))
-        inherit = "OICI" if directory else ""
-        sddl = (f"O:{user}G:{user}D:P(A;{inherit};FA;;;{user})"
-                f"(A;{inherit};FA;;;SY)(A;{inherit};FA;;;BA)")
-        size = self.W.DWORD()
-        if not self.advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW(
-                sddl, 1, C.byref(descriptor), C.byref(size)):
-            raise Unavailable("ledger_write_failed")
-        return descriptor
-
-    def create_private(self, name, parent, user_sid, *, directory, delete=False,
-                       candidate=False, transaction_parent=False):
-        if (type(transaction_parent) is not bool
-                or (transaction_parent and
-                    (not directory or candidate or delete))
-                or (candidate and directory)):
-            raise Unavailable("ledger_write_failed")
-        descriptor = self._private_security_descriptor(user_sid, directory=directory)
-        try:
-            handle = self.open(name, parent, directory=directory,
-                               read_data=directory or candidate, write_data=True,
-                               delete=delete or candidate,
-                               share=(3 if transaction_parent else
-                                      1 if directory or candidate else 0),
-                               disposition=2, write_through=True,
-                               security_descriptor=descriptor)
-        finally:
-            self.kernel.LocalFree(descriptor)
-        try:
-            info = self.info(handle)
-            self.check_acl(handle, user_sid, "meter" if directory else "ledger")
-            if (info["directory"] != directory
-                    or (not directory and info["links"] != 1)):
-                raise Unavailable("ledger_write_failed")
-            return handle
-        except BaseException:
-            self.close(handle)
-            raise
-
-    def write_all(self, handle, data):
-        if not isinstance(data, bytes):
-            raise Unavailable("ledger_write_failed")
-        offset = 0
-        while offset < len(data):
-            block = data[offset:offset + 64 * 1024]
-            buffer = self.C.create_string_buffer(block, len(block))
-            written = self.W.DWORD()
-            if not self.kernel.WriteFile(handle, buffer, len(block),
-                                         self.C.byref(written), None):
-                raise Unavailable("ledger_write_failed")
-            count = int(written.value)
-            if count <= 0 or count > len(block):
-                raise Unavailable("ledger_write_failed")
-            offset += count
-
-    def flush_full(self, handle):
-        ios = self.IOS()
-        status = self.nt.NtFlushBuffersFileEx(handle, 0, None, 0, self.C.byref(ios))
-        if status != 0:
-            raise Unavailable("ledger_write_failed")
-
-    def rename_replace(self, handle, directory, name):
-        payload = _windows_rename_payload(directory, name)
-        buffer = self.C.create_string_buffer(payload, len(payload))
-        ios = self.IOS()
-        status = self.nt.NtSetInformationFile(
-            handle, self.C.byref(ios), buffer, len(payload), 65)
-        if status != 0:
-            raise Unavailable("ledger_write_failed")
-
-    def _set_position(self, handle, offset, reason):
-        position = self.C.create_string_buffer(struct.pack("<q", offset), 8)
-        ios = self.IOS()
-        status = self.nt.NtSetInformationFile(
-            handle, self.C.byref(ios), position, 8, 14)
-        if status != 0:
-            raise Unavailable(reason)
-
-    def seek_zero(self, handle):
-        self._set_position(handle, 0, "ledger_write_failed")
-
-    def seek_to(self, handle, offset):
-        if type(offset) is not int or offset < 0:
-            raise Unavailable("source_read_unavailable")
-        self._set_position(handle, offset, "source_read_unavailable")
-
-    def delete_by_handle(self, handle):
-        disposition = self.C.create_string_buffer(b"\x01", 1)
-        ios = self.IOS()
-        status = self.nt.NtSetInformationFile(
-            handle, self.C.byref(ios), disposition, 1, 13)
-        if status != 0:
-            raise Unavailable("ledger_write_failed")
-
-    def enumerate(self, parent, remaining):
-        """List one held NTFS directory with checked FILE_ID_BOTH_DIR_INFO rows."""
-        if type(remaining) is not int or remaining < 0:
-            raise Unavailable("source_budget_exceeded")
-        before = self.info(parent)
-        if not before["directory"]:
-            raise Unavailable("source_read_unavailable")
-        C = self.C
-        size = 64 * 1024
-        buffer = (C.c_uint64 * (size // 8))()
-        first, calls, seen, rows = True, 0, set(), []
-        while True:
-            calls += 1
-            if calls > remaining + 2:
-                raise Unavailable("source_budget_exceeded")
-            C.memset(C.addressof(buffer), 0, size)
-            if not self.kernel.GetFileInformationByHandleEx(
-                    parent, 11 if first else 10, buffer, size):
-                error = C.get_last_error()
-                if error == 18:  # ERROR_NO_MORE_FILES
-                    break
-                raise Unavailable("source_read_unavailable")
-            first = False
-            for row in _decode_windows_directory_entries(C.string_at(buffer, size)):
-                name = row["name"]
-                if name in {".", ".."}:
-                    continue
-                if name in seen:
-                    raise Unavailable("source_changed")
-                seen.add(name)
-                if row["reparse"] or row["device"] or row["offline"] or row["recall"]:
-                    raise Unavailable("source_read_unavailable")
-                rows.append(row)
-                if len(rows) > remaining:
-                    raise Unavailable("source_budget_exceeded")
-        after = self.info(parent)
-        if ({key: value for key, value in before.items() if key != "accessed"}
-                != {key: value for key, value in after.items() if key != "accessed"}):
-            raise Unavailable("source_changed")
-        return sorted(rows, key=lambda item: item["name"])
-
-    def check_acl(self, handle, user_sid, role):
-        C = self.C
-        owner, dacl, sd = C.c_void_p(), C.c_void_p(), C.c_void_p()
-        status = self.advapi.GetSecurityInfo(handle, 1, 0x1 | 0x4, C.byref(owner),
-            None, C.byref(dacl), None, C.byref(sd))
-        try:
-            if status or not owner.value or not dacl.value:
-                raise Unavailable
-            owner_bytes = self._sid_bytes(owner)
-            private_roles = {"meter", "ledger", "lock", "candidate", "export"}
-            if role == "profile":
-                if owner_bytes != user_sid and not self._privileged_sid(owner_bytes, ancestor=False):
-                    raise Unavailable
-            elif role in {"cairn", "config", *private_roles} and owner_bytes != user_sid:
-                raise Unavailable
-            if role in private_roles:
-                control, revision = self.W.WORD(), self.W.DWORD()
-                if (not self.advapi.GetSecurityDescriptorControl(
-                        sd, self.C.byref(control), self.C.byref(revision))
-                        or not control.value & 0x1000):
-                    raise Unavailable
-            if role == "ancestor" and owner_bytes != user_sid and not self._privileged_sid(
-                    owner_bytes, ancestor=True):
-                raise Unavailable
-            header = C.string_at(dacl, 8)
-            revision, _sbz, acl_size, count = struct.unpack("<BBHH", header[:6])
-            if revision not in (2, 4) or not 8 <= acl_size <= 65535 or count > 1024:
-                raise Unavailable
-            raw = C.string_at(dacl, acl_size)
-            offset = 8
-            ancestor_denied = 0x40 | 0x10000 | 0x40000 | 0x80000 | 0x10000000 | 0x40000000
-            profile_denied = ancestor_denied | 0x2 | 0x4 | 0x10 | 0x100
-            for _ in range(count):
-                if offset + 8 > len(raw):
-                    raise Unavailable
-                kind, flags, size = struct.unpack_from("<BBH", raw, offset)
-                if (kind != 0 or flags & ~0x1F or size < 16 or size % 4
-                        or offset + size > len(raw)):
-                    raise Unavailable
-                mask = struct.unpack_from("<I", raw, offset + 4)[0]
-                ace_sid = self._sid_bytes(C.c_void_p(dacl.value + offset + 8))
-                if len(ace_sid) > size - 8:
-                    raise Unavailable
-                if not flags & 0x08:  # INHERIT_ONLY does not apply to this object.
-                    if ace_sid != user_sid and not self._privileged_sid(
-                            ace_sid, ancestor=(role == "ancestor")):
-                        forbidden = (ancestor_denied if role == "ancestor" else
-                                     profile_denied if role == "profile" else 0xffffffff)
-                        if mask & forbidden:
-                            raise Unavailable
-                offset += size
-            if offset > acl_size:
-                raise Unavailable
-        finally:
-            if sd:
-                self.kernel.LocalFree(sd)
-
-    def read_bounded(self, handle, limit):
-        before = self.info(handle)
-        if before["directory"] or before["links"] != 1 or before["size"] > limit:
-            raise Unavailable("config_invalid")
-        chunks, total = [], 0
-        while True:
-            size = min(65536, limit + 1 - total)
-            if size <= 0:
-                raise Unavailable("source_budget_exceeded")
-            buffer = self.C.create_string_buffer(size)
-            received = self.W.DWORD()
-            if not self.kernel.ReadFile(handle, buffer, size, self.C.byref(received), None):
-                raise Unavailable("source_read_unavailable")
-            count = int(received.value)
-            if count > size:
-                raise Unavailable("source_read_unavailable")
-            if not count:
-                break
-            total += count
-            if total > limit:
-                raise Unavailable("source_budget_exceeded")
-            chunks.append(buffer.raw[:count])
-        after = self.info(handle)
-        if (_windows_stable_info(after) != _windows_stable_info(before)
-                or total != before["size"]):
-            raise Unavailable("source_changed")
-        return b"".join(chunks), before
-
-    def read_config(self, profile, user_sid, *, retain_handles=False,
-                    writable_cairn=False):
-        import ntpath
-        if type(writable_cairn) is not bool:
-            raise Unavailable
-        drive, tail = ntpath.splitdrive(profile)
-        parts = tail[1:].split("\\") if tail.startswith("\\") else []
-        if (not re.fullmatch(r"[A-Za-z]:", drive) or profile.startswith("\\\\")
-                or not parts or any(not p or p in {".", ".."} for p in parts)):
-            raise Unavailable
-        targets = self.C.create_unicode_buffer(32768)
-        if not self.kernel.QueryDosDeviceW(drive, targets, len(targets)):
-            raise Unavailable
-        device = targets.value
-        if not re.fullmatch(r"\\Device\\HarddiskVolume[0-9]+", device):
-            raise Unavailable
-        held, links, roles = [], [], {}
-        transferred = False
-        try:
-            try:
-                current = self.open(device + "\\", directory=True)
-            except _MissingConfig:
-                raise Unavailable from None
-            held.append(current)
-            roles[current] = "ancestor"
-            if not self.info(current)["directory"]:
-                raise Unavailable
-            fs_name = self.C.create_unicode_buffer(64)
-            serial, max_component, flags = self.W.DWORD(), self.W.DWORD(), self.W.DWORD()
-            if not self.kernel.GetVolumeInformationByHandleW(
-                    current, None, 0, self.C.byref(serial), self.C.byref(max_component),
-                    self.C.byref(flags), fs_name, len(fs_name)) or fs_name.value != "NTFS":
-                raise Unavailable
-            self.check_acl(current, user_sid, "ancestor")
-            for index, part in enumerate(parts):
-                try:
-                    child = self.open(part, current, directory=True)
-                except _MissingConfig:
-                    raise Unavailable from None
-                held.append(child)
-                roles[child] = "profile" if index == len(parts) - 1 else "ancestor"
-                links.append((current, part, child, roles[child], True))
-                current = child
-                self.check_acl(child, user_sid, roles[child])
-            try:
-                cairn_options = {"directory": True}
-                if writable_cairn:
-                    cairn_options.update(write_data=True, write_through=True, share=3)
-                cairn = self.open(".cairn", current, **cairn_options)
-            except _MissingConfig:
-                return None
-            held.append(cairn)
-            roles[cairn] = "cairn"
-            links.append((current, ".cairn", cairn, "cairn", True))
-            self.check_acl(cairn, user_sid, "cairn")
-            try:
-                config = self.open("meter.json", cairn, read_data=True)
-            except _MissingConfig:
-                return None
-            held.append(config)
-            roles[config] = "config"
-            links.append((cairn, "meter.json", config, "config", False))
-            self.check_acl(config, user_sid, "config")
-            raw, _identity = self.read_bounded(config, MAX_CONFIG_BYTES)
-            self.check_acl(config, user_sid, "config")
-            if retain_handles:
-                snapshots = {handle: self.info(handle) for handle in held}
-                snapshot = _WindowsHeldConfig(self, user_sid, held, links,
-                                              snapshots, raw)
-                transferred = True
-                return raw, snapshot
-            return raw
-        finally:
-            if not transferred:
-                for handle in reversed(held):
-                    self.close(handle)
-
-
-class _WindowsHeldConfig:
-    """Validated consent bytes and no-delete-share ancestry retained to commit."""
-
-    def __init__(self, api, user_sid, handles, links, snapshots, raw):
-        self.api, self.user_sid = api, user_sid
-        self.handles, self.links = handles, links
-        self.snapshots, self.raw = snapshots, raw
-
-    def revalidate(self, *, allow_owned_cairn_metadata=False):
-        for handle, before in self.snapshots.items():
-            after = self.api.info(handle)
-            role = next((link[3] for link in self.links if link[2] == handle), "ancestor")
-            self.api.check_acl(handle, self.user_sid, role)
-            if role == "cairn" and allow_owned_cairn_metadata:
-                stable_keys = ("identity", "directory", "links", "created")
-                changed = any(after.get(key) != before.get(key) for key in stable_keys)
-            else:
-                changed = (_windows_stable_info(after) != _windows_stable_info(before))
-            if changed:
-                raise Unavailable("source_changed")
-        for parent, name, original, role, directory in self.links:
-            open_options = {"directory": directory,
-                            "read_data": role == "config"}
-            if role == "cairn":
-                open_options["share"] = 3
-            reopened = self.api.open(name, parent, **open_options)
-            try:
-                if role == "cairn" and allow_owned_cairn_metadata:
-                    before = self.snapshots[original]
-                else:
-                    before = self.api.info(original)
-                after = self.api.info(reopened)
-                self.api.check_acl(reopened, self.user_sid, role)
-                if role == "cairn" and allow_owned_cairn_metadata:
-                    stable_keys = ("identity", "directory", "links", "created")
-                    changed = any(after.get(key) != before.get(key) for key in stable_keys)
-                else:
-                    changed = (_windows_stable_info(after) != _windows_stable_info(before))
-                if changed:
-                    raise Unavailable("source_changed")
-                if role == "config":
-                    raw, _identity = self.api.read_bounded(reopened, MAX_CONFIG_BYTES)
-                    if raw != self.raw:
-                        raise Unavailable("source_changed")
-            finally:
-                self.api.close(reopened)
-
-    def close(self):
-        handles, self.handles = self.handles, []
-        for handle in reversed(handles):
-            self.api.close(handle)
-
-
-def _decode_windows_directory_entries(raw):
-    """Decode the bounded NTFS directory layout without trusting host paths."""
-    header = struct.Struct("<II6qIIIbx24s2xq")
-    if not isinstance(raw, bytes) or len(raw) != 64 * 1024:
-        raise Unavailable("source_read_unavailable")
-    rows, offset = [], 0
-    while True:
-        if len(raw) - offset < header.size:
-            raise Unavailable("source_read_unavailable")
-        row = header.unpack_from(raw, offset)
-        step, name_bytes = row[0], row[9]
-        end = offset + header.size + name_bytes
-        if not name_bytes or name_bytes % 2 or name_bytes > 510 or end > len(raw) or row[6] < 0:
-            raise Unavailable("source_read_unavailable")
-        if step and (step % 8 or step < header.size + name_bytes
-                     or offset + step >= len(raw)):
-            raise Unavailable("source_read_unavailable")
-        try:
-            name = raw[offset + header.size:end].decode("utf-16-le", errors="strict")
-        except UnicodeError:
-            raise Unavailable("source_read_unavailable") from None
-        if (not name or any(char in "\\/:\x00" or ord(char) < 32 or ord(char) == 127
-                            for char in name)
-                or (name not in {".", ".."} and name.endswith((".", " ")))
-                or len(name.encode("utf-16-le")) > 510):
-            raise Unavailable("source_read_unavailable")
-        attrs = int(row[8])
-        file_id = row[13] if row[13] >= 0 else row[13] + (1 << 64)
-        rows.append({"name": name, "file_id": file_id, "size": row[6],
-                     "directory": bool(attrs & 0x10), "attributes": attrs,
-                     "reparse": bool(attrs & 0x400), "device": bool(attrs & 0x40),
-                     "offline": bool(attrs & 0x1000),
-                     "recall": bool(attrs & (0x40000 | 0x400000))})
-        if not step:
-            return rows
-        offset += step
-
-
-def _windows_config_status(api=None):
-    """Resolve fixed OS consent only; collection remains unsupported on Windows."""
-    try:
-        api = _WindowsConsentAPI() if api is None else api
-        profile, sid = api.current_user_profile()
-        return _windows_config_decision(api.read_config(profile, sid))
-    except (_MissingConfig, Unavailable, OSError, ValueError, TypeError, AttributeError):
-        return "unavailable"
-
-
-def _fixed_user_home():
-    """Resolve consent only from the equal-UID POSIX account database."""
-    try:
-        uid = os.getuid()
-        if uid != os.geteuid() or pwd is None:
-            raise Unavailable
-        home_text = pwd.getpwuid(uid).pw_dir
-        home = Path(home_text)
-        if not home.is_absolute() or any(part in {".", ".."} for part in home.parts):
-            raise Unavailable
-        _verify_private_home(home)
-        return home
-    except Unavailable:
-        raise
-    except (OSError, KeyError, TypeError, ValueError, AttributeError):
-        raise Unavailable from None
-
-
-def _verify_private_home(home):
-    """Verify the account home and every ancestor without following links."""
-    if (not _PRIVATE_FS_SUPPORTED or not hasattr(os, "O_DIRECTORY")
-            or not hasattr(os, "O_NOFOLLOW")):
-        raise Unavailable
-    path = Path(os.path.abspath(home))
-    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
-    fd = -1
-    try:
-        fd = os.open(path.anchor, flags)
-        current = Path(path.anchor)
-        for part in path.parts[1:]:
-            next_fd = os.open(part, flags, dir_fd=fd)
-            info = os.fstat(next_fd)
-            current = current / part
-            if not stat.S_ISDIR(info.st_mode):
-                os.close(next_fd)
-                raise Unavailable
-            if info.st_uid not in {0, os.getuid()}:
-                os.close(next_fd)
-                raise Unavailable
-            if (stat.S_IMODE(info.st_mode) & 0o022
-                    and not (info.st_uid == 0 and info.st_mode & stat.S_ISVTX)):
-                os.close(next_fd)
-                raise Unavailable
-            if current == path and info.st_uid != os.getuid():
-                os.close(next_fd)
-                raise Unavailable
-            os.close(fd)
-            fd = next_fd
-    except (OSError, ValueError, TypeError):
-        raise Unavailable from None
-    finally:
-        if fd >= 0:
-            os.close(fd)
 
 
 def _unique_object(pairs):
@@ -953,87 +148,6 @@ def _unique_object(pairs):
 
 def _reject_constant(_value):
     raise ValueError
-
-
-def _private_regular_file(path, *, limit):
-    """Read a private regular file with no-follow and opened-identity checks."""
-    path = Path(path)
-    if (not _PRIVATE_FS_SUPPORTED or not hasattr(os, "O_DIRECTORY")
-            or not hasattr(os, "O_NOFOLLOW")):
-        raise Unavailable
-    path = Path(os.path.abspath(path))
-    home = path.parent.parent
-    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
-    directory_fd = -1
-    try:
-        directory_fd = os.open(path.anchor, directory_flags)
-        current = Path(path.anchor)
-        for part in path.parent.parts[1:]:
-            try:
-                next_fd = os.open(part, directory_flags, dir_fd=directory_fd)
-            except FileNotFoundError:
-                raise _MissingConfig from None
-            opened_dir = os.fstat(next_fd)
-            current = current / part
-            if not stat.S_ISDIR(opened_dir.st_mode):
-                os.close(next_fd)
-                raise Unavailable
-            if opened_dir.st_uid not in {0, os.getuid()}:
-                os.close(next_fd)
-                raise Unavailable
-            if (stat.S_IMODE(opened_dir.st_mode) & 0o022
-                    and not (opened_dir.st_uid == 0 and opened_dir.st_mode & stat.S_ISVTX)):
-                os.close(next_fd)
-                raise Unavailable
-            if current == home and opened_dir.st_uid != os.getuid():
-                os.close(next_fd)
-                raise Unavailable
-            if current.name == ".cairn" and (
-                opened_dir.st_uid != os.getuid()
-                or stat.S_IMODE(opened_dir.st_mode) & 0o077
-            ):
-                os.close(next_fd)
-                raise Unavailable
-            os.close(directory_fd)
-            directory_fd = next_fd
-        try:
-            before = os.stat(path.name, dir_fd=directory_fd, follow_symlinks=False)
-        except FileNotFoundError:
-            raise _MissingConfig from None
-        if not stat.S_ISREG(before.st_mode) or before.st_uid != os.getuid():
-            raise Unavailable
-        if stat.S_IMODE(before.st_mode) & 0o077:
-            raise Unavailable
-        fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
-        try:
-            opened = os.fstat(fd)
-            if (not stat.S_ISREG(opened.st_mode) or opened.st_uid != os.getuid()
-                    or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)
-                    or stat.S_IMODE(opened.st_mode) & 0o077):
-                raise Unavailable
-            chunks = []
-            size = 0
-            while True:
-                block = os.read(fd, min(65536, limit + 1 - size))
-                if not block:
-                    break
-                size += len(block)
-                if size > limit:
-                    raise Unavailable
-                chunks.append(block)
-            after = os.fstat(fd)
-            if (after.st_dev, after.st_ino) != (opened.st_dev, opened.st_ino):
-                raise Unavailable
-            return b"".join(chunks)
-        finally:
-            os.close(fd)
-    except (_MissingConfig, Unavailable):
-        raise
-    except (OSError, ValueError, TypeError):
-        raise Unavailable from None
-    finally:
-        if directory_fd >= 0:
-            os.close(directory_fd)
 
 
 def _safe_text(value, *, limit=4096):
@@ -1145,107 +259,299 @@ def validate_config_bytes(raw):
         raise Unavailable from None
 
 
-def load_config(config_path):
-    """Read only ~/.cairn/meter.json after private ancestry checks."""
-    path = Path(config_path).absolute()
-    if not _PRIVATE_FS_SUPPORTED:
-        if not path.exists() and not path.is_symlink():
-            return None
-        raise Unavailable
+_O_BINARY = getattr(os, "O_BINARY", 0)
+_O_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
+# Windows reparse tags that redirect a folder or file: a symbolic link, a mount point.
+_REPARSE_REDIRECTS = frozenset({0xA000000C, 0xA0000003})
+_REPARSE_ATTRIBUTE = 0x400
+LOCK_TAKEOVER_SECONDS = 900
+
+
+def _fixed_user_home():
+    """The account's home: the account database on Mac and Linux, Python's own home on Windows."""
     try:
-        raw = _private_regular_file(path, limit=MAX_CONFIG_BYTES)
-    except _MissingConfig:
-        return None
+        if pwd is not None:
+            uid = os.getuid()
+            if uid != os.geteuid():
+                raise Unavailable
+            home = Path(pwd.getpwuid(uid).pw_dir)
+        else:
+            home = Path.home()
+        if not home.is_absolute() or any(part in {".", ".."} for part in home.parts):
+            raise Unavailable
+        return home
     except Unavailable:
         raise
-    return validate_config_bytes(raw)
+    except (OSError, KeyError, TypeError, ValueError, AttributeError, RuntimeError):
+        raise Unavailable from None
 
 
-def _contained_file(root, relative):
-    """Legacy synthetic whole-file helper; source reading uses `_iter_approved_lines`."""
-    if not _PRIVATE_FS_SUPPORTED or not isinstance(relative, str) or not relative or Path(relative).is_absolute():
-        raise Unavailable
-    parts = Path(relative).parts
-    if any(part in {".", ".."} for part in parts):
-        raise Unavailable
-    base = Path(root).absolute()
-    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
-    directory_fd = -1
+def _is_link(info):
+    """True for a link or, on Windows, an entry the system redirects (link or mount point)."""
+    if stat.S_ISLNK(info.st_mode):
+        return True
+    attributes = getattr(info, "st_file_attributes", 0)
+    return bool(attributes & _REPARSE_ATTRIBUTE
+                and getattr(info, "st_reparse_tag", 0) in _REPARSE_REDIRECTS)
+
+
+def _read_limited(path, limit, reason="unavailable", *, nofollow=False):
+    """Read at most `limit` bytes from one open; a longer file is refused."""
     try:
-        directory_fd = os.open(base.anchor, flags)
-        for part in base.parts[1:]:
-            next_fd = os.open(part, flags, dir_fd=directory_fd)
-            os.close(directory_fd)
-            directory_fd = next_fd
-        for part in parts[:-1]:
-            next_fd = os.open(part, flags, dir_fd=directory_fd)
-            os.close(directory_fd)
-            directory_fd = next_fd
-        leaf = parts[-1]
-        before = os.stat(leaf, dir_fd=directory_fd, follow_symlinks=False)
-        if not stat.S_ISREG(before.st_mode):
-            raise Unavailable
-        fd = os.open(leaf, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0), dir_fd=directory_fd)
+        fd = os.open(path, os.O_RDONLY | _O_BINARY | (_O_NOFOLLOW if nofollow else 0))
         try:
-            opened = os.fstat(fd)
-            if (not stat.S_ISREG(opened.st_mode)
-                    or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
-                raise Unavailable
-            chunks, pending = [], b""
+            chunks, total = [], 0
             while True:
-                block = os.read(fd, 65536)
+                block = os.read(fd, min(64 * 1024, limit + 1 - total))
                 if not block:
                     break
+                total += len(block)
+                if total > limit:
+                    raise Unavailable(reason)
                 chunks.append(block)
-                pending += block
-                while True:
-                    index = pending.find(b"\n")
-                    if index < 0:
-                        if len(pending) > MAX_LINE:
-                            raise Unavailable
-                        break
-                    line, pending = pending[:index + 1], pending[index + 1:]
-                    if len(line) > MAX_LINE:
-                        raise Unavailable
-            after = os.fstat(fd)
-            if (after.st_dev, after.st_ino) != (opened.st_dev, opened.st_ino):
-                raise Unavailable
-            data = b"".join(chunks)
-            if pending:
-                raise Unavailable
-            return data
         finally:
             os.close(fd)
+        return b"".join(chunks)
+    except Unavailable:
+        raise
+    except (OSError, ValueError):
+        raise Unavailable(reason) from None
+
+
+def load_config(config_path):
+    """Read only ~/.cairn/meter.json; a missing file is None, anything else must validate."""
+    path = Path(config_path)
+    try:
+        if not path.exists() and not path.is_symlink():
+            return None
+        if not path.is_file():
+            raise Unavailable
+    except OSError:
+        raise Unavailable from None
+    return validate_config_bytes(_read_limited(path, MAX_CONFIG_BYTES))
+
+
+def _enumerate_jsonl(root):
+    """Walk one configured root: regular `.jsonl` files, skipping links and redirected folders."""
+    files, entries = [], 0
+    stack = [(str(root), "", 0)]
+    try:
+        while stack:
+            directory, prefix, depth = stack.pop()
+            with os.scandir(directory) as scan:
+                for entry in scan:
+                    entries += 1
+                    if entries > MAX_REFRESH_ENTRIES:
+                        raise Unavailable("source_budget_exceeded")
+                    name = entry.name
+                    relative = f"{prefix}/{name}" if prefix else name
+                    info = entry.stat(follow_symlinks=False)
+                    if _is_link(info):
+                        continue
+                    if stat.S_ISDIR(info.st_mode):
+                        if depth >= MAX_SOURCE_ROOT_DEPTH:
+                            raise Unavailable("source_budget_exceeded")
+                        stack.append((entry.path, relative, depth + 1))
+                    elif stat.S_ISREG(info.st_mode) and name.endswith(".jsonl"):
+                        info = os.lstat(entry.path)       # a directory entry has no file id on Windows
+                        files.append((relative, {
+                            "dev": info.st_dev, "ino": info.st_ino,
+                            "size": info.st_size, "mtime_ns": info.st_mtime_ns,
+                            "ctime_ns": info.st_ctime_ns,
+                        }))
+                        if len(files) > MAX_SOURCE_FILES:
+                            raise Unavailable("source_budget_exceeded")
     except Unavailable:
         raise
     except (OSError, ValueError, TypeError):
         raise Unavailable from None
-    finally:
-        if directory_fd >= 0:
-            os.close(directory_fd)
+    files.sort(key=lambda item: item[0])
+    return files, entries
 
 
-def _open_directory_chain(path):
-    """Open an absolute directory path without following any component."""
-    path = Path(os.path.abspath(path))
-    if (not _PRIVATE_FS_SUPPORTED or not hasattr(os, "O_NOFOLLOW")
-            or not hasattr(os, "O_DIRECTORY")):
-        raise Unavailable
-    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
-    fd = os.open(path.anchor, flags)
+def _capture_project_claims(project):
+    """Read the project's work claims (`dev/intents.jsonl`), never through a link."""
+    dev = Path(project["path"]) / "dev"
+    target = dev / "intents.jsonl"
     try:
-        for part in path.parts[1:]:
-            next_fd = os.open(part, flags, dir_fd=fd)
-            info = os.fstat(next_fd)
-            if not stat.S_ISDIR(info.st_mode):
-                os.close(next_fd)
-                raise Unavailable
-            os.close(fd)
-            fd = next_fd
-        return fd
-    except Exception:
-        os.close(fd)
+        for item in (dev, target):
+            try:
+                info = os.lstat(item)
+            except FileNotFoundError:
+                return [], "attribution_unavailable"
+            if _is_link(info):
+                return [], "attribution_unavailable"
+        if not stat.S_ISREG(info.st_mode):
+            return [], "attribution_unavailable"
+        raw = _read_limited(target, MAX_CLAIM_BYTES, "source_budget_exceeded", nofollow=True)
+        lines = raw.splitlines(keepends=True)
+        if any(len(line) > MAX_CLAIM_LINE for line in lines):
+            raise Unavailable("source_budget_exceeded")
+        claims = _claim_snapshot(project["alias"], lines)
+        return claims, "capture_gap" if not claims else "captured"
+    except Unavailable:
         raise
+    except (OSError, KeyError, TypeError, ValueError):
+        raise Unavailable("source_read_unavailable") from None
+
+
+def _capture_all_claims(config):
+    """The project remotes come from the consent file; the claims from each project."""
+    claims, status, remotes = [], set(), []
+    for project in sorted(config["projects"], key=lambda item: item["alias"]):
+        remotes.append({"alias": project["alias"], "remote": project["remote"]})
+        project_claims, claim_status = _capture_project_claims(project)
+        claims.extend(project_claims)
+        status.add(claim_status)
+    if not status:
+        status.add("attribution_unavailable")
+    return claims, remotes, status
+
+
+def _write_beside_and_rename(directory, name, data, reason, prefix):
+    """Write `data` to a new file in `directory`, then rename it over `name`.
+
+    The file is readable by the user alone where the system has file modes. A
+    failure leaves the old file and no temporary file, and gives only `reason`.
+    """
+    directory = Path(directory)
+    temporary = directory / (prefix + secrets.token_hex(16) + ".tmp")
+    fd = -1
+    renamed = False
+    try:
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | _O_BINARY, 0o600)
+        offset = 0
+        while offset < len(data):
+            written = os.write(fd, data[offset:offset + 64 * 1024])
+            if written <= 0:
+                raise OSError
+            offset += written
+        os.fsync(fd)
+        os.close(fd)
+        fd = -1
+        os.replace(temporary, directory / name)
+        renamed = True
+    except (OSError, ValueError, TypeError):
+        raise Unavailable(reason) from None
+    finally:
+        if fd >= 0:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+        if not renamed:
+            try:
+                os.unlink(temporary)
+            except OSError:
+                pass
+
+
+def _meter_area(home):
+    """`~/.cairn/meter`, made if it is missing."""
+    area = Path(home) / ".cairn" / "meter"
+    try:
+        os.makedirs(area, mode=0o700, exist_ok=True)
+        if not area.is_dir():
+            raise Unavailable("ledger_unavailable")
+    except OSError:
+        raise Unavailable("ledger_unavailable") from None
+    return area
+
+
+def _take_lock(area):
+    """A plain lock file holding this run's token; a dead run's lock is taken over after 15 minutes."""
+    path = Path(area) / LEDGER_LOCK_NAME
+    token = secrets.token_hex(16).encode("ascii")
+
+    def make():
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | _O_BINARY, 0o600)
+        try:
+            if os.write(fd, token) != len(token):
+                raise OSError
+        except OSError:
+            os.close(fd)
+            fd = -1
+            os.unlink(path)               # no empty lock is left behind
+            raise
+        finally:
+            if fd >= 0:
+                os.close(fd)
+
+    try:
+        try:
+            make()
+            return token
+        except FileExistsError:
+            pass
+        info = os.lstat(path)
+        if time.time() - info.st_mtime < LOCK_TAKEOVER_SECONDS:
+            raise Unavailable("ledger_busy")
+        first = _read_limited(path, 256, "ledger_busy")
+        if _read_limited(path, 256, "ledger_busy") != first:
+            raise Unavailable("ledger_busy")
+        os.unlink(path)
+        try:
+            make()
+        except FileExistsError:
+            raise Unavailable("ledger_busy") from None
+        return token
+    except Unavailable:
+        raise
+    except OSError:
+        raise Unavailable("ledger_unavailable") from None
+
+
+def _release_lock(area, token):
+    """Remove the lock only if this run made it and it still holds this run's token."""
+    path = Path(area) / LEDGER_LOCK_NAME
+    try:
+        if _read_limited(path, 256) == token:
+            os.unlink(path)
+    except (OSError, Unavailable):
+        pass
+
+
+def _atomic_replace_ledger(area, candidate):
+    data = (json.dumps(candidate, sort_keys=True, separators=(",", ":"),
+                       ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
+    if len(data) > MAX_LEDGER_BYTES:
+        raise Unavailable("source_budget_exceeded")
+    if _load_ledger(data) != candidate:
+        raise Unavailable("ledger_invalid")
+    _write_beside_and_rename(area, LEDGER_NAME, data, "ledger_write_failed", ".ledger-")
+    return "written"
+
+
+def _write_summary(project, ledger, config):
+    """Write one project's summary into its existing `dev/measurement`, never through a link."""
+    candidate_remote = {item["alias"]: item["remote"]
+                        for item in ledger["project_remotes"]}.get(project["alias"])
+    if candidate_remote is None:
+        raise Unavailable("project_remote_unavailable")
+    if candidate_remote != project["remote"]:
+        raise Unavailable("project_remote_mismatch")
+    payload = _project_export_bytes(ledger, config, project["alias"])
+    dev = Path(project["path"]) / "dev"
+    measurement = dev / "measurement"
+    for folder in (dev, measurement):
+        try:
+            info = os.lstat(folder)
+        except OSError:
+            raise Unavailable("project_export_unavailable") from None
+        if _is_link(info) or not stat.S_ISDIR(info.st_mode):
+            raise Unavailable("project_export_unavailable")
+    try:
+        for entry in os.listdir(measurement):
+            if entry.startswith(".meter-") and entry.endswith(".tmp"):
+                try:
+                    os.unlink(measurement / entry)
+                except OSError:
+                    pass
+    except OSError:
+        raise Unavailable("project_export_unavailable") from None
+    _write_beside_and_rename(measurement, "meter.json", payload,
+                             "project_export_unavailable", ".meter-")
+    return "written"
 
 
 class _LineCutter:
@@ -1331,7 +637,6 @@ class _ApprovedLineStream:
         self.tail_offset = None
         self.tail_digest = None
         self.open_identity = None
-        self.final_identity = None
 
     def _request_error(self):
         """Return the refusal reason for an out-of-range request, else None."""
@@ -1434,9 +739,7 @@ class _ApprovedLineStream:
             self.terminal_reason = "source_read_unavailable"
             return
         self._started = True
-        directory_fd = file_fd = -1
-        directory_fds = []
-        parent_links = []
+        file_fd = -1
         reason = "source_read_unavailable"
         try:
             request_error = self._request_error()
@@ -1448,42 +751,18 @@ class _ApprovedLineStream:
             if request_error is not None:
                 reason = request_error
                 return
-            parts = Path(self.relative).parts
-            directory_fd = _open_directory_chain(self.root)
-            root_info = os.fstat(directory_fd)
-            root_identity = (root_info.st_dev, root_info.st_ino)
-            directory_fds.append(directory_fd)
-            for part in parts[:-1]:
-                before_dir = os.stat(part, dir_fd=directory_fd, follow_symlinks=False)
-                if not stat.S_ISDIR(before_dir.st_mode):
-                    reason = "source_changed"
-                    return
-                next_fd = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                                  dir_fd=directory_fd)
-                opened_dir = os.fstat(next_fd)
-                if ((opened_dir.st_dev, opened_dir.st_ino)
-                        != (before_dir.st_dev, before_dir.st_ino)):
-                    os.close(next_fd)
-                    reason = "source_changed"
-                    return
-                parent_links.append((directory_fd, part,
-                                     before_dir.st_dev, before_dir.st_ino))
-                directory_fds.append(next_fd)
-                directory_fd = next_fd
-            leaf = parts[-1]
-            before = os.stat(leaf, dir_fd=directory_fd, follow_symlinks=False)
-            if not stat.S_ISREG(before.st_mode):
-                return
-            file_fd = os.open(leaf, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
+            full = os.path.join(self.root, *Path(self.relative).parts)
+            file_fd = os.open(full, os.O_RDONLY | _O_BINARY | _O_NOFOLLOW)
             opened = os.fstat(file_fd)
-            if (not stat.S_ISREG(opened.st_mode)
-                    or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
-                reason = "source_changed"
+            if not stat.S_ISREG(opened.st_mode):
                 return
+            # The identity is read by name, as the folder walk reads it: on Windows a
+            # handle and a name can report different change times for one file.
+            named = os.lstat(full)
             self.open_identity = {
-                "dev": opened.st_dev, "ino": opened.st_ino,
-                "size": opened.st_size, "mtime_ns": opened.st_mtime_ns,
-                "ctime_ns": opened.st_ctime_ns,
+                "dev": named.st_dev, "ino": named.st_ino,
+                "size": opened.st_size, "mtime_ns": named.st_mtime_ns,
+                "ctime_ns": named.st_ctime_ns,
             }
             cutter = _LineCutter()
             last_line = None
@@ -1577,42 +856,8 @@ class _ApprovedLineStream:
                 self.tail_offset = self.end_offset
                 if last_line is not None:
                     self.tail_digest = hashlib.sha256(last_line).hexdigest()
-            after = os.fstat(file_fd)
-            self.final_identity = {
-                "dev": after.st_dev, "ino": after.st_ino,
-                "size": after.st_size, "mtime_ns": after.st_mtime_ns,
-                "ctime_ns": after.st_ctime_ns,
-            }
-            named_file = os.stat(leaf, dir_fd=directory_fd, follow_symlinks=False)
-            if ((named_file.st_dev, named_file.st_ino)
-                    != (opened.st_dev, opened.st_ino)):
-                reason = "source_changed"
-                return
-            for parent_fd, name, device, inode in parent_links:
-                current_dir = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
-                if (current_dir.st_dev, current_dir.st_ino) != (device, inode):
-                    reason = "source_changed"
-                    return
-            root_after_fd = _open_directory_chain(self.root)
-            try:
-                root_after = os.fstat(root_after_fd)
-            finally:
-                os.close(root_after_fd)
-            if (root_after.st_dev, root_after.st_ino) != root_identity:
-                reason = "source_changed"
-                return
             if self.piece:
-                if ((after.st_dev, after.st_ino) != (opened.st_dev, opened.st_ino)
-                        or after.st_size < opened.st_size):
-                    reason = "source_changed"
-                    return
                 reason = None
-                return
-            if ((after.st_dev, after.st_ino) != (opened.st_dev, opened.st_ino)
-                    or (after.st_size, after.st_mtime_ns, after.st_ctime_ns)
-                    != (opened.st_size, opened.st_mtime_ns, opened.st_ctime_ns)
-                    or total != opened.st_size):
-                reason = "source_changed"
                 return
             if cutter.pending:
                 reason = "partial_tail"
@@ -1623,8 +868,6 @@ class _ApprovedLineStream:
         finally:
             if file_fd >= 0:
                 os.close(file_fd)
-            for descriptor in reversed(directory_fds):
-                os.close(descriptor)
             self.terminal_reason = reason
 
 
@@ -1646,11 +889,6 @@ def _windows_component(value):
     return value
 
 
-def _windows_rename_payload(directory, name):
-    encoded = _windows_component(name).encode("utf-16-le")
-    return struct.pack("<I4xQI", 3, int(directory), len(encoded)) + encoded
-
-
 def _windows_absolute_parts(value):
     import ntpath
     if (not isinstance(value, str) or value.startswith("\\\\") or "/" in value
@@ -1665,408 +903,13 @@ def _windows_absolute_parts(value):
     return drive, [_windows_component(part) for part in raw_parts]
 
 
-def _windows_relative_parts(value):
-    if not isinstance(value, str) or not value or "/" in value or value.startswith("\\"):
-        raise Unavailable("source_read_unavailable")
-    raw_parts = value.split("\\")
-    if any(not part for part in raw_parts):
-        raise Unavailable("source_read_unavailable")
-    return [_windows_component(part) for part in raw_parts]
-
-
-def _windows_stable_info(info):
-    return {key: value for key, value in info.items() if key != "accessed"}
-
-
-def _windows_published_candidate_matches(info, original, expected_size,
-                                         accepted_created):
-    return (info["identity"] == original["identity"]
-            and not info["directory"] and info["links"] == 1
-            and info["size"] == expected_size
-            and info["created"] in accepted_created)
-
-
-def _windows_open_root(api, root, user_sid):
-    drive, parts = _windows_absolute_parts(root)
-    if not parts:
-        raise Unavailable("source_read_unavailable")
-    targets = api.C.create_unicode_buffer(32768)
-    if not api.kernel.QueryDosDeviceW(drive, targets, len(targets)):
-        raise Unavailable("source_read_unavailable")
-    device = targets.value
-    if not re.fullmatch(r"\\Device\\HarddiskVolume[0-9]+", device):
-        raise Unavailable("source_read_unavailable")
-    handles, links = [], []
-    try:
-        current = api.open(device + "\\", directory=True)
-        handles.append(current)
-        root_info = api.info(current)
-        if not root_info["directory"]:
-            raise Unavailable("source_read_unavailable")
-        fs_name = api.C.create_unicode_buffer(64)
-        serial, maximum, flags = api.W.DWORD(), api.W.DWORD(), api.W.DWORD()
-        if (not api.kernel.GetVolumeInformationByHandleW(
-                current, None, 0, api.C.byref(serial), api.C.byref(maximum),
-                api.C.byref(flags), fs_name, len(fs_name)) or fs_name.value != "NTFS"):
-            raise Unavailable("source_read_unavailable")
-        api.check_acl(current, user_sid, "ancestor")
-        for part in parts:
-            child = api.open(part, current, directory=True)
-            handles.append(child)
-            info = api.info(child)
-            if not info["directory"] or info["identity"][0] != root_info["identity"][0]:
-                raise Unavailable("source_changed")
-            api.check_acl(child, user_sid, "ancestor")
-            links.append((current, part, child, info))
-            current = child
-        return handles, links, root_info
-    except BaseException:
-        for handle in reversed(handles):
-            api.close(handle)
-        raise
-
-
-class _WindowsApprovedLineStream(_ApprovedLineStream):
-    """Native bounded stream over a configured root and relative JSONL path."""
-
-    def __init__(self, root, relative, budget, api, user_sid, **options):
-        super().__init__(root, relative, budget, **options)
-        self.api, self.user_sid = api, user_sid
-
-    def _open_root(self):
-        handles, links, root_info = _windows_open_root(
-            self.api, self.root, self.user_sid)
-        return handles, links, root_info["identity"][0], root_info
-
-    def __iter__(self):
-        if self._started:
-            self.terminal_reason = "source_read_unavailable"
-            return
-        self._started = True
-        api, handles = self.api, []
-        file_handle = -1
-        reason = "source_read_unavailable"
-        try:
-            request_error = self._request_error()
-            if request_error is None and (
-                    not isinstance(self.relative, str) or not self.relative):
-                request_error = "source_budget_exceeded"
-            if request_error is not None:
-                reason = request_error
-                return
-            root_handles, root_links, volume, volume_info = self._open_root()
-            handles.extend(root_handles)
-            relative = _windows_relative_parts(self.relative)
-            current = handles[-1]
-            directory_links = []
-            for part in relative[:-1]:
-                child = api.open(part, current, directory=True)
-                handles.append(child)
-                info = api.info(child)
-                if not info["directory"] or info["identity"][0] != volume:
-                    reason = "source_changed"
-                    return
-                api.check_acl(child, self.user_sid, "ancestor")
-                directory_links.append((current, part, child, info))
-                current = child
-            leaf = relative[-1]
-            file_handle = api.open(leaf, current, read_data=True)
-            try:
-                before = api.info(file_handle)
-            except (Unavailable, OSError, ValueError, TypeError, AttributeError):
-                reason = "source_read_unavailable"
-                return
-            if before["directory"] or before["identity"][0] != volume:
-                reason = "source_read_unavailable"
-                return
-            if not self.piece and before["size"] > self.budget:
-                reason = "source_budget_exceeded"
-                return
-            api.check_acl(file_handle, self.user_sid, "ancestor")
-            self.open_identity = {
-                "dev": before["identity"][0], "ino": before["identity"][1],
-                "size": before["size"], "mtime_ns": before["mtime_ns"],
-                "ctime_ns": before["ctime_ns"],
-            }
-            initial_size = before["size"]
-            if self.resume is not None and not self.reread:
-                self.end_offset = self.resume["offset"]
-            if self.tail:
-                offset, digest, tail_reason = self._windows_tail(file_handle, initial_size)
-                if tail_reason is not None:
-                    reason = tail_reason
-                    return
-                self.tail_offset, self.tail_digest = offset, digest
-            else:
-                if self.resume is not None:
-                    resume = self.resume
-                    if (resume["dev"], resume["ino"]) != (
-                            before["identity"][0], before["identity"][1]):
-                        self.resume_failure = "file_replaced"
-                        self._capture_windows_final(file_handle)
-                        reason = None
-                        return
-                    if initial_size < resume["offset"]:
-                        self.resume_failure = "cursor_past_end"
-                        self._capture_windows_final(file_handle)
-                        reason = None
-                        return
-                    if resume["offset"] and not self.reread:
-                        window_size = min(MAX_LINE + 1, resume["offset"])
-                        if window_size > self.budget:
-                            self.limit_stop = True
-                        else:
-                            try:
-                                window = self._windows_read_at(
-                                    file_handle, resume["offset"] - window_size, window_size)
-                            except (Unavailable, OSError, ValueError, TypeError, AttributeError):
-                                reason = "source_read_unavailable"
-                                return
-                            verdict = _resume_window_verdict(
-                                window, resume["offset"], resume["digest"])
-                            if verdict is not None:
-                                self.resume_failure = verdict
-                                self._capture_windows_final(file_handle)
-                                reason = None
-                                return
-                if self.resume is not None and self.reread and resume["offset"] == 0:
-                    self.checkpoint_line = 0
-                if self.limit_stop:
-                    position = resume["offset"]
-                elif self.resume is not None and self.reread:
-                    api.seek_to(file_handle, 0)
-                    position = 0
-                elif self.resume is not None:
-                    api.seek_to(file_handle, resume["offset"])
-                    position = resume["offset"]
-                elif self.piece:
-                    api.seek_to(file_handle, 0)
-                    position = 0
-                else:
-                    api.seek_zero(file_handle)
-                    position = 0
-                cutter = _LineCutter()
-                line_count = 0
-                line_start = position
-                max_lines = self.max_lines if self.max_lines is not None else MAX_BATCH_LINES
-                while not self.limit_stop and position < initial_size:
-                    if self.piece and (self.bytes_read >= self.budget
-                                       or line_count >= max_lines):
-                        self.limit_stop = True
-                        break
-                    allowance = (self.budget - self.bytes_read if self.piece
-                                 else self.budget - self.bytes_read + 1)
-                    if allowance <= 0:
-                        self.limit_stop = self.piece
-                        reason = None if self.limit_stop else "source_budget_exceeded"
-                        break
-                    block_size = min(64 * 1024, allowance, initial_size - position)
-                    buffer = api.C.create_string_buffer(block_size)
-                    received = api.W.DWORD()
-                    if not api.kernel.ReadFile(file_handle, buffer, block_size,
-                                               api.C.byref(received), None):
-                        reason = "source_read_unavailable"
-                        return
-                    count = int(received.value)
-                    if count > block_size or count <= 0:
-                        reason = "source_read_unavailable"
-                        return
-                    position += count
-                    self.bytes_read += count
-                    lines, cutter_error = cutter.feed(buffer.raw[:count])
-                    if cutter_error is not None:
-                        reason = cutter_error
-                        return
-                    for line in lines:
-                        if self.piece and line_count >= max_lines:
-                            self.limit_stop = True
-                            break
-                        line_count += 1
-                        self.complete_lines = line_count
-                        if not self.piece and line_count > MAX_BATCH_LINES:
-                            reason = "source_budget_exceeded"
-                            return
-                        self.end_offset = line_start + len(line)
-                        self.tail_digest = hashlib.sha256(line).hexdigest()
-                        if (self.resume is not None and self.reread
-                                and self.end_offset == resume["offset"]):
-                            self.checkpoint_line = line_count
-                            if self.tail_digest != resume["digest"]:
-                                self.resume_failure = "digest_mismatch"
-                        elif (self.resume is not None and self.reread
-                              and line_start < resume["offset"] < self.end_offset):
-                            self.resume_failure = "not_line_boundary"
-                        line_start = self.end_offset
-                        yield line
-                    if self.limit_stop:
-                        break
-                    if self.piece and self.bytes_read >= self.budget and position < initial_size:
-                        self.limit_stop = True
-                        break
-                if (self.resume is not None and self.reread
-                        and self.checkpoint_line is None and self.resume_failure is None):
-                    self.resume_failure = "not_line_boundary"
-                if self.resume is not None and self.reread and self.resume_failure:
-                    self._capture_windows_final(file_handle)
-                    reason = None
-                    return
-                if cutter.pending and not self.piece:
-                    reason = "partial_tail"
-                self.tail_offset = self.end_offset
-            try:
-                after = self._capture_windows_final(file_handle)
-            except (Unavailable, OSError, ValueError, TypeError, AttributeError):
-                reason = "source_read_unavailable"
-                return
-            if (before["identity"] != after["identity"]
-                    or after["size"] < initial_size
-                    or before["created"] != after["created"]):
-                reason = "source_changed"
-                return
-            if not self.piece and (
-                    _windows_stable_info(before) != _windows_stable_info(after)
-                    or self.bytes_read != initial_size):
-                reason = "source_changed"
-                return
-            current_volume = api.info(root_handles[0])
-            api.check_acl(root_handles[0], self.user_sid, "ancestor")
-            if _windows_stable_info(current_volume) != _windows_stable_info(volume_info):
-                reason = "source_changed"
-                return
-            for parent, name, original, identity in root_links + directory_links:
-                check = api.open(name, parent, directory=True)
-                try:
-                    reopened = api.info(check)
-                    api.check_acl(check, self.user_sid, "ancestor")
-                    if _windows_stable_info(reopened) != _windows_stable_info(identity):
-                        reason = "source_changed"
-                        return
-                finally:
-                    api.close(check)
-                current_info = api.info(original)
-                api.check_acl(original, self.user_sid, "ancestor")
-                if _windows_stable_info(current_info) != _windows_stable_info(identity):
-                    reason = "source_changed"
-                    return
-            named = api.open(leaf, current, read_data=True)
-            try:
-                named_info = api.info(named)
-                api.check_acl(named, self.user_sid, "ancestor")
-                if (named_info["identity"] != before["identity"]
-                        or named_info["size"] < initial_size
-                        or named_info["created"] != before["created"]
-                        or (not self.piece and _windows_stable_info(named_info)
-                            != _windows_stable_info(before))):
-                    reason = "source_changed"
-                    return
-            finally:
-                api.close(named)
-            if reason != "partial_tail":
-                reason = None
-        except Unavailable as exc:
-            reason = exc.reason
-        except (OSError, ValueError, TypeError, AttributeError, OverflowError):
-            reason = "source_read_unavailable"
-        finally:
-            if file_handle >= 0:
-                api.close(file_handle)
-            for handle in reversed(handles):
-                api.close(handle)
-            self.terminal_reason = reason
-
-    def _capture_windows_final(self, handle):
-        """Record the open file's closing identity for the scan's identity check."""
-        after = self.api.info(handle)
-        self.api.check_acl(handle, self.user_sid, "ancestor")
-        if (self.open_identity is not None
-                and ((after["identity"][0], after["identity"][1]) != (
-                    self.open_identity["dev"], self.open_identity["ino"])
-                    or after["size"] < self.open_identity["size"])):
-            raise Unavailable("source_changed")
-        self.final_identity = {
-            "dev": after["identity"][0], "ino": after["identity"][1],
-            "size": after["size"], "mtime_ns": after["mtime_ns"],
-            "ctime_ns": after["ctime_ns"],
-        }
-        return after
-
-    def _windows_read_at(self, handle, offset, size):
-        """Read exactly `size` bytes at `offset`, charging them to this stream."""
-        self.api.seek_to(handle, offset)
-        output = bytearray()
-        while len(output) < size:
-            amount = min(64 * 1024, size - len(output))
-            buffer = self.api.C.create_string_buffer(amount)
-            received = self.api.W.DWORD()
-            if not self.api.kernel.ReadFile(
-                    handle, buffer, amount, self.api.C.byref(received), None):
-                raise Unavailable("source_read_unavailable")
-            count = int(received.value)
-            if count <= 0 or count > amount:
-                raise Unavailable("source_read_unavailable")
-            self.bytes_read += count
-            output.extend(buffer.raw[:count])
-        return bytes(output)
-
-    def _windows_tail(self, handle, size):
-        """Find and hash the final complete line without yielding source bytes."""
-        position, scanned, newline, base, block = size, 0, -1, size, b""
-        while position > 0 and scanned < MAX_LINE + 1:
-            want = min(64 * 1024, position, MAX_LINE + 1 - scanned)
-            position -= want
-            block = self._windows_read_at(handle, position, want)
-            scanned += want
-            found = block.rfind(b"\n")
-            if found >= 0:
-                newline = position + found
-                base = position
-                block = block[:found + 1]
-                break
-        if self.bytes_read > self.budget:
-            return None, None, "source_budget_exceeded"
-        if newline < 0:
-            if scanned > MAX_LINE:
-                return None, None, "source_budget_exceeded"
-            return 0, None, None
-        line = block
-        while True:
-            earlier = line.rfind(b"\n", 0, len(line) - 1)
-            if earlier >= 0:
-                line = line[earlier + 1:]
-                break
-            if base == 0:
-                break
-            want = min(64 * 1024, base, MAX_LINE + 1 - len(line))
-            if want <= 0:
-                return None, None, "source_budget_exceeded"
-            base -= want
-            more = self._windows_read_at(handle, base, want)
-            if self.bytes_read > self.budget:
-                return None, None, "source_budget_exceeded"
-            earlier = more.rfind(b"\n")
-            if earlier >= 0:
-                line = more[earlier + 1:] + line
-                break
-            line = more + line
-        if len(line) > MAX_LINE:
-            return None, None, "source_budget_exceeded"
-        return newline + 1, hashlib.sha256(line).hexdigest(), None
-
-
 def _iter_approved_lines(root, relative, budget=MAX_BATCH_BYTES, *,
-                         windows_api=None, windows_user_sid=None,
                          piece=False, max_lines=None, tail=False, resume=None,
                          reread=False):
     """Stream complete lines from one explicitly approved synthetic/source path."""
-    options = {"piece": piece, "max_lines": max_lines, "tail": tail,
-               "resume": resume, "reread": reread}
-    if os.name == "nt" or windows_api is not None:
-        api = _WindowsConsentAPI() if windows_api is None else windows_api
-        if windows_user_sid is None:
-            _profile, windows_user_sid = api.current_user_profile()
-        return _WindowsApprovedLineStream(root, relative, budget, api,
-                                          windows_user_sid, **options)
-    return _ApprovedLineStream(root, relative, budget, **options)
+    return _ApprovedLineStream(root, relative, budget, piece=piece,
+                               max_lines=max_lines, tail=tail, resume=resume,
+                               reread=reread)
 
 
 def _valid_relative(value):
@@ -2078,255 +921,6 @@ def _valid_relative(value):
             or any(ord(char) < 32 or ord(char) == 127 for char in value)):
         return None
     return parts
-
-
-def _enumerate_jsonl(root):
-    """Enumerate only regular JSONL files below one configured root."""
-    if not _PRIVATE_FS_SUPPORTED:
-        raise Unavailable
-    root_fd = _open_directory_chain(root)
-    root_info = os.fstat(root_fd)
-    root_identity = {"dev": root_info.st_dev, "ino": root_info.st_ino}
-    open_dirs = [root_fd]
-    stack = [(root_fd, "", 0)]
-    entries = 0
-    files = []
-    try:
-        while stack:
-            directory_fd, prefix, depth = stack.pop()
-            names = os.listdir(directory_fd)
-            entries += len(names)
-            if entries > MAX_REFRESH_ENTRIES:
-                raise Unavailable("source_budget_exceeded")
-            for name in names:
-                if (not isinstance(name, str) or not name or name in {".", ".."}
-                        or "/" in name or "\\" in name):
-                    raise Unavailable
-                info = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
-                relative = f"{prefix}/{name}" if prefix else name
-                if stat.S_ISDIR(info.st_mode):
-                    if depth >= MAX_SOURCE_ROOT_DEPTH:
-                        raise Unavailable("source_budget_exceeded")
-                    child_fd = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                                       dir_fd=directory_fd)
-                    child_info = os.fstat(child_fd)
-                    if ((child_info.st_dev, child_info.st_ino)
-                            != (info.st_dev, info.st_ino)):
-                        os.close(child_fd)
-                        raise Unavailable
-                    open_dirs.append(child_fd)
-                    stack.append((child_fd, relative, depth + 1))
-                elif stat.S_ISREG(info.st_mode):
-                    if name.endswith(".jsonl"):
-                        files.append((relative, {
-                            "dev": info.st_dev, "ino": info.st_ino,
-                            "size": info.st_size, "mtime_ns": info.st_mtime_ns,
-                            "ctime_ns": info.st_ctime_ns,
-                        }))
-                        if len(files) > MAX_SOURCE_FILES:
-                            raise Unavailable("source_budget_exceeded")
-                else:
-                    raise Unavailable
-        files.sort(key=lambda item: item[0])
-        return files, entries, root_identity
-    except Unavailable:
-        raise
-    except (OSError, ValueError, TypeError):
-        raise Unavailable from None
-    finally:
-        for descriptor in reversed(open_dirs):
-            try:
-                os.close(descriptor)
-            except OSError:
-                pass
-
-
-class _WindowsDirectorySnapshot:
-    """Held native directory tree whose metadata can gate later source acceptance."""
-
-    def __init__(self, api, user_sid, handles, links, snapshots):
-        self.api, self.user_sid = api, user_sid
-        self.handles, self.links, self.snapshots = handles, links, snapshots
-
-    def verify(self):
-        for handle in self.handles:
-            before = self.snapshots[handle]
-            after = self.api.info(handle)
-            self.api.check_acl(handle, self.user_sid, "ancestor")
-            if _windows_stable_info(after) != _windows_stable_info(before):
-                raise Unavailable("source_changed")
-        for parent, name, handle, before in self.links:
-            reopened = self.api.open(name, parent, directory=True)
-            try:
-                after = self.api.info(reopened)
-                self.api.check_acl(reopened, self.user_sid, "ancestor")
-            finally:
-                self.api.close(reopened)
-            if _windows_stable_info(after) != _windows_stable_info(before):
-                raise Unavailable("source_changed")
-
-    def close(self):
-        handles, self.handles = self.handles, []
-        for handle in reversed(handles):
-            self.api.close(handle)
-
-
-def _enumerate_windows_jsonl(root, api, user_sid, *, retain_snapshot=False):
-    """Enumerate one explicit approved NTFS root through held handles."""
-    handles, root_links, volume_info = _windows_open_root(api, root, user_sid)
-    all_handles = list(handles)
-    links = list(root_links)
-    files, entries = [], 0
-    seen = set()
-    root_handle = handles[-1]
-    root_identity = api.info(root_handle)
-    snapshots = {handle: api.info(handle) for handle in all_handles}
-    retained = False
-    stack = [(root_handle, "", 0)]
-    try:
-        while stack:
-            parent, prefix, depth = stack.pop()
-            remaining = MAX_REFRESH_ENTRIES - entries
-            if remaining < 0:
-                raise Unavailable("source_budget_exceeded")
-            rows = api.enumerate(parent, remaining)
-            entries += len(rows)
-            if entries > MAX_REFRESH_ENTRIES:
-                raise Unavailable("source_budget_exceeded")
-            for row in rows:
-                name = _windows_component(row["name"])
-                relative = f"{prefix}\\{name}" if prefix else name
-                directory = row["directory"]
-                if directory and depth >= MAX_SOURCE_ROOT_DEPTH:
-                    raise Unavailable("source_budget_exceeded")
-                child = api.open(name, parent, directory=directory)
-                try:
-                    info = api.info(child)
-                    if (info["identity"] != (volume_info["identity"][0], row["file_id"])
-                            or info["directory"] != directory
-                            or (not directory and info["size"] != row["size"])):
-                        raise Unavailable("source_changed")
-                    api.check_acl(child, user_sid, "ancestor")
-                    if directory:
-                        all_handles.append(child)
-                        snapshots[child] = info
-                        links.append((parent, name, child, info))
-                        stack.append((child, relative, depth + 1))
-                        child = -1
-                    else:
-                        if info["links"] != 1:
-                            if info["identity"] in seen:
-                                raise Unavailable("source_read_unavailable")
-                            api.check_acl(child, user_sid, "profile")
-                        seen.add(info["identity"])
-                        if name.lower().endswith(".jsonl"):
-                            files.append((relative, {
-                                "dev": info["identity"][0], "ino": info["identity"][1],
-                                "size": info["size"], "mtime_ns": info["mtime_ns"],
-                                "ctime_ns": info["ctime_ns"],
-                            }))
-                            if len(files) > MAX_SOURCE_FILES:
-                                raise Unavailable("source_budget_exceeded")
-                finally:
-                    if child >= 0:
-                        api.close(child)
-        snapshot = _WindowsDirectorySnapshot(api, user_sid, all_handles, links, snapshots)
-        snapshot.verify()
-        identity = {"dev": root_identity["identity"][0],
-                    "ino": root_identity["identity"][1]}
-        result = (sorted(files, key=lambda item: item[0]), entries, identity)
-        if retain_snapshot:
-            retained = True
-            return (*result, snapshot)
-        return result
-    except Unavailable:
-        raise
-    except (OSError, ValueError, TypeError, AttributeError, OverflowError):
-        raise Unavailable("source_read_unavailable") from None
-    finally:
-        if not retained:
-            for handle in reversed(all_handles):
-                api.close(handle)
-
-
-def _read_relative_bytes(root_fd, relative, *, limit, line_limit=None, missing_ok=False):
-    """Read one relative regular file with no-follow descriptor revalidation."""
-    parts = _valid_relative(relative)
-    if parts is None or type(limit) is not int or limit < 0:
-        raise Unavailable
-    directory_fd = os.dup(root_fd)
-    file_fd = -1
-    try:
-        for part in parts[:-1]:
-            before = os.stat(part, dir_fd=directory_fd, follow_symlinks=False)
-            if not stat.S_ISDIR(before.st_mode):
-                raise Unavailable
-            next_fd = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                              dir_fd=directory_fd)
-            opened = os.fstat(next_fd)
-            if (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino):
-                os.close(next_fd)
-                raise Unavailable
-            os.close(directory_fd)
-            directory_fd = next_fd
-        leaf = parts[-1]
-        before = os.stat(leaf, dir_fd=directory_fd, follow_symlinks=False)
-        if not stat.S_ISREG(before.st_mode):
-            raise Unavailable
-        file_fd = os.open(leaf, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
-        opened = os.fstat(file_fd)
-        if (not stat.S_ISREG(opened.st_mode)
-                or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)
-                or opened.st_size > limit):
-            raise Unavailable
-        chunks, total, pending = [], 0, b""
-        while True:
-            block = os.read(file_fd, min(64 * 1024, limit - total + 1))
-            if not block:
-                break
-            total += len(block)
-            if total > limit:
-                raise Unavailable
-            chunks.append(block)
-            if line_limit is not None:
-                pending += block
-                while True:
-                    index = pending.find(b"\n")
-                    if index < 0:
-                        if len(pending) > line_limit:
-                            raise Unavailable
-                        break
-                    line, pending = pending[:index + 1], pending[index + 1:]
-                    if len(line) > line_limit:
-                        raise Unavailable
-        if line_limit is not None and pending:
-            raise Unavailable
-        after = os.fstat(file_fd)
-        named = os.stat(leaf, dir_fd=directory_fd, follow_symlinks=False)
-        identity = (opened.st_dev, opened.st_ino, opened.st_size,
-                    opened.st_mtime_ns, opened.st_ctime_ns)
-        if ((after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns,
-             after.st_ctime_ns) != identity
-                or (named.st_dev, named.st_ino) != (opened.st_dev, opened.st_ino)
-                or total != opened.st_size):
-            raise Unavailable
-        return b"".join(chunks), {
-            "dev": opened.st_dev, "ino": opened.st_ino,
-            "size": opened.st_size, "mtime_ns": opened.st_mtime_ns,
-            "ctime_ns": opened.st_ctime_ns,
-        }
-    except FileNotFoundError:
-        if missing_ok:
-            return None
-        raise Unavailable from None
-    except Unavailable:
-        raise
-    except (OSError, ValueError, TypeError):
-        raise Unavailable from None
-    finally:
-        if file_fd >= 0:
-            os.close(file_fd)
-        os.close(directory_fd)
 
 
 def _utc_stamp(value):
@@ -2431,99 +1025,6 @@ def _claim_snapshot(project_alias, records):
         if claim["released_at"] is None and claim["confidence"] == "reliable":
             claim["confidence"] = "unattributed"
     return sorted(claims.values(), key=lambda item: item["claim_key"])
-
-
-def _capture_project_claims(project, *, windows_api=None, windows_user_sid=None):
-    """Capture only the approved project's bounded existing intent JSONL."""
-    if windows_api is not None:
-        return _capture_windows_project_claims(project, windows_api, windows_user_sid)
-    try:
-        root_fd = _open_directory_chain(project["path"])
-        try:
-            root_identity = os.fstat(root_fd)
-            raw, _identity = _read_relative_bytes(
-                root_fd, "dev/intents.jsonl", limit=MAX_CLAIM_BYTES,
-                line_limit=MAX_CLAIM_LINE, missing_ok=True)
-            if raw is None:
-                return [], "attribution_unavailable"
-            current_fd = _open_directory_chain(project["path"])
-            try:
-                current = os.fstat(current_fd)
-            finally:
-                os.close(current_fd)
-            if (current.st_dev, current.st_ino) != (
-                    root_identity.st_dev, root_identity.st_ino):
-                raise Unavailable("source_changed")
-        finally:
-            os.close(root_fd)
-        lines = raw.splitlines(keepends=True)
-        claims = _claim_snapshot(project["alias"], lines)
-        return claims, "capture_gap" if not claims else "captured"
-    except Unavailable:
-        raise
-    except (OSError, KeyError, TypeError, ValueError):
-        raise Unavailable from None
-
-
-def _capture_windows_project_claims(project, api, user_sid):
-    """Capture bounded existing intent JSONL through held NTFS handles."""
-    root = Path(project["path"])
-    handles, links, root_info = _windows_open_root(api, str(root), user_sid)
-    dev_handle = intent_handle = -1
-    try:
-        project_handle = handles[-1]
-        dev_handle = api.open("dev", project_handle, directory=True, read_data=True)
-        dev_info = api.info(dev_handle)
-        if (not dev_info["directory"]
-                or dev_info["identity"][0] != root_info["identity"][0]):
-            raise Unavailable("source_changed")
-        api.check_acl(dev_handle, user_sid, "ancestor")
-        intent_handle = api.open("intents.jsonl", dev_handle, read_data=True)
-        before = api.info(intent_handle)
-        if (before["directory"] or before["links"] != 1
-                or before["identity"][0] != root_info["identity"][0]
-                or before["size"] > MAX_CLAIM_BYTES):
-            raise Unavailable("source_budget_exceeded")
-        api.check_acl(intent_handle, user_sid, "ancestor")
-        raw, read_before = api.read_bounded(intent_handle, MAX_CLAIM_BYTES)
-        after = api.info(intent_handle)
-        if (_windows_stable_info(read_before) != _windows_stable_info(before)
-                or _windows_stable_info(after) != _windows_stable_info(before)
-                or len(raw) != before["size"]):
-            raise Unavailable("source_changed")
-        if any(len(line) > MAX_CLAIM_LINE
-               for line in raw.splitlines(keepends=True)):
-            raise Unavailable("source_budget_exceeded")
-        for parent, name, original, before_link in links:
-            reopened = api.open(name, parent, directory=True)
-            try:
-                if _windows_stable_info(api.info(reopened)) != _windows_stable_info(before_link):
-                    raise Unavailable("source_changed")
-            finally:
-                api.close(reopened)
-        reopened_dev = api.open("dev", project_handle, directory=True)
-        try:
-            if _windows_stable_info(api.info(reopened_dev)) != _windows_stable_info(dev_info):
-                raise Unavailable("source_changed")
-        finally:
-            api.close(reopened_dev)
-        reopened_intents = api.open("intents.jsonl", dev_handle, read_data=True)
-        try:
-            if _windows_stable_info(api.info(reopened_intents)) != _windows_stable_info(before):
-                raise Unavailable("source_changed")
-        finally:
-            api.close(reopened_intents)
-        claims = _claim_snapshot(project["alias"], raw.splitlines(keepends=True))
-        return claims, "capture_gap" if not claims else "captured"
-    except _MissingConfig:
-        return [], "attribution_unavailable"
-    finally:
-        if intent_handle >= 0:
-            api.close(intent_handle)
-        if dev_handle >= 0:
-            api.close(dev_handle)
-        for handle in reversed(handles):
-            api.close(handle)
 
 
 def _merge_claim_history(retained, incoming):
@@ -4035,44 +2536,26 @@ def _verify_copied_forks(batches):
     return verified, conflicts
 
 
-def _check_stream_identity(stream, enumerated):
-    """Refuse a stream whose file is not the one the scan enumerated."""
-    if stream.open_identity is None or stream.final_identity is None:
-        raise Unavailable
-    if any(stream.open_identity[name] != enumerated[name] for name in ("dev", "ino")):
-        raise Unavailable
-    if ((stream.final_identity["dev"], stream.final_identity["ino"])
-            != (stream.open_identity["dev"], stream.open_identity["ino"])):
-        raise Unavailable
-
-
-def _start_bookmark(source, relative, enumerated, file_key, *,
-                    windows_api=None, windows_user_sid=None):
+def _start_bookmark(source, relative, enumerated, file_key):
     """Where a log ends now: its last complete line, and the source owner.
 
     Nothing before the returned offset is ever counted. Returns the cursor and
     the bytes read.
     """
     tail = _iter_approved_lines(
-        source["root"], relative, 2 * MAX_LINE + 2, piece=True, tail=True,
-        windows_api=windows_api, windows_user_sid=windows_user_sid)
+        source["root"], relative, 2 * MAX_LINE + 2, piece=True, tail=True)
     for _unused in tail:
         pass
     if tail.terminal_reason is not None:
         raise Unavailable(tail.terminal_reason)
-    _check_stream_identity(tail, enumerated)
     owner_key = None
     used = tail.bytes_read
     if source["tool"] == "codex":
         first = _iter_approved_lines(
-            source["root"], relative, MAX_LINE + 1, piece=True, max_lines=1,
-            windows_api=windows_api, windows_user_sid=windows_user_sid)
-        owner_key = read_records(
-            "codex", first, windows_api=windows_api,
-            windows_user_sid=windows_user_sid)["source_owner_key"]
+            source["root"], relative, MAX_LINE + 1, piece=True, max_lines=1)
+        owner_key = read_records("codex", first)["source_owner_key"]
         if first.terminal_reason is not None:
             raise Unavailable(first.terminal_reason)
-        _check_stream_identity(first, enumerated)
         used += first.bytes_read
     return {
         "source_alias": source["alias"], "file_key": file_key,
@@ -4124,8 +2607,7 @@ def _piece_cursor(source, file_key, stream, old, resumed, *, whole_log=False,
     }
 
 
-def _read_codex_log(source, relative, config, budget, *, resume=None,
-                    windows_api=None, windows_user_sid=None):
+def _read_codex_log(source, relative, config, budget, *, resume=None):
     """Read one whole-log source from byte 0, or do not count it (plan D6, D12).
 
     With `resume` the stream checks the saved bookmark on the way through.
@@ -4133,11 +2615,9 @@ def _read_codex_log(source, relative, config, budget, *, resume=None,
     """
     stream = _iter_approved_lines(
         source["root"], relative, budget, piece=True, max_lines=MAX_REREAD_LINES,
-        resume=resume, reread=resume is not None,
-        windows_api=windows_api, windows_user_sid=windows_user_sid)
+        resume=resume, reread=resume is not None)
     batch = read_records("codex", stream, config=config,
-                         source_aliases=[source["alias"]], source_root=source["root"],
-                         windows_api=windows_api, windows_user_sid=windows_user_sid)
+                         source_aliases=[source["alias"]], source_root=source["root"])
     return stream, batch
 
 
@@ -4169,8 +2649,7 @@ def _is_fork_parent(batch, fork):
             and batch.get("source_header_key") == fork["parent_header_key"])
 
 
-def _read_fork_parents(source, config, files, previous, source_batches, spent, *,
-                       windows_api=None, windows_user_sid=None):
+def _read_fork_parents(source, config, files, previous, source_batches, spent):
     """Read, as context only, the parents of this source's fork children when no
     log of the run supplies them (plan D8).
 
@@ -4205,13 +2684,13 @@ def _read_fork_parents(source, config, files, previous, source_batches, spent, *
                 short = True
                 continue
             budget = min(MAX_REREAD_BYTES, left)
-            stream, parent = _read_codex_log(
-                source, relative, config, budget, windows_api=windows_api,
-                windows_user_sid=windows_user_sid)
+            stream, parent = _read_codex_log(source, relative, config, budget)
             used += stream.bytes_read
+            if stream.terminal_reason == "source_read_unavailable":
+                short = True          # a parent that cannot be read leaves the child for later
+                continue
             if stream.terminal_reason is not None:
                 raise Unavailable(stream.terminal_reason)
-            _check_stream_identity(stream, enumerated)
             read_keys.add(cursor["file_key"])
             if stream.limit_stop:
                 short = short or _codex_limit_reason(stream, budget) == "catching_up"
@@ -4230,12 +2709,7 @@ def _read_fork_parents(source, config, files, previous, source_batches, spent, *
 
 
 def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=None,
-                           windows_api=None, windows_user_sid=None, agent_runs=None):
-    windows = os.name == "nt" or windows_api is not None
-    windows_api = (_WindowsConsentAPI() if windows and windows_api is None
-                   else windows_api)
-    if windows and windows_user_sid is None:
-        _profile, windows_user_sid = windows_api.current_user_profile()
+                           agent_runs=None):
     previous = {cursor["file_key"]: cursor for cursor in prior_cursors}
     start_rows = {row["source_alias"]: row["started_at"] for row in starts}
     had_start = set(start_rows)
@@ -4256,188 +2730,166 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
         start_rows.setdefault(source["alias"], now_stamp)
         started_at = _parse_start(start_rows[source["alias"]])
         started_ns = int(started_at.timestamp()) * 1_000_000_000
-        if windows:
-            files, entries, root_identity, root_snapshot = _enumerate_windows_jsonl(
-                source["root"], windows_api, windows_user_sid, retain_snapshot=True)
-            root_fd = None
-        else:
-            files, entries, root_identity = _enumerate_jsonl(source["root"])
-            root_fd = _open_directory_chain(source["root"])
+        files, entries = _enumerate_jsonl(source["root"])
         total_entries += entries
         total_files += len(files)
         if total_entries > MAX_REFRESH_ENTRIES or total_files > MAX_SOURCE_FILES:
-            if windows:
-                root_snapshot.close()
-            else:
-                os.close(root_fd)
             raise Unavailable("source_budget_exceeded")
-        if not windows:
-            root_opened = os.fstat(root_fd)
-            if (root_opened.st_dev, root_opened.st_ino) != (
-                    root_identity["dev"], root_identity["ino"]):
-                os.close(root_fd)
-                raise Unavailable
         first_batch = len(batches)
-        try:
-            for relative, enumerated in files:
-                if enumerated["size"] < 0:
-                    raise Unavailable
-                file_key = _digest("cursor", source["alias"], relative)
-                old = previous.get(file_key)
-                if old is not None and all(
-                        old[name] == enumerated[name]
-                        for name in ("dev", "ino", "size", "mtime_ns", "ctime_ns")):
+        for relative, enumerated in files:
+            if enumerated["size"] < 0:
+                raise Unavailable
+            file_key = _digest("cursor", source["alias"], relative)
+            old = previous.get(file_key)
+            if old is not None and all(
+                    old[name] == enumerated[name]
+                    for name in ("dev", "ino", "size", "mtime_ns", "ctime_ns")):
+                cursors[file_key] = dict(old)
+                continue
+            remaining = MAX_RUN_READ_BYTES - total_bytes
+            if remaining <= 0 or run_events >= MAX_RUN_EVENTS:
+                reasons.add("catching_up")
+                if old is not None:
                     cursors[file_key] = dict(old)
+                continue
+            if (old is None
+                    and (source["alias"] not in had_start
+                         or enumerated["mtime_ns"] < started_ns)):
+                bookmark_reservation = (2 * MAX_LINE + 2
+                                        + (MAX_LINE + 1 if source["tool"] == "codex"
+                                           else 0))
+                if remaining < bookmark_reservation:
+                    reasons.add("catching_up")
                     continue
-                remaining = MAX_RUN_READ_BYTES - total_bytes
-                if remaining <= 0 or run_events >= MAX_RUN_EVENTS:
+                try:
+                    cursors[file_key], used = _start_bookmark(
+                        source, relative, enumerated, file_key)
+                except Unavailable as exc:
+                    if exc.reason != "source_read_unavailable":
+                        raise
+                    reasons.add("catching_up")       # left for the next run
+                    continue
+                total_bytes += used
+                continue
+            if source["tool"] == "codex":
+                # Whole or not at all: a log over a limit is skipped for good
+                # (source_too_large); one the rest of the run cannot pay for waits.
+                if enumerated["size"] > min(MAX_REREAD_BYTES, MAX_RUN_READ_BYTES):
+                    reasons.add("source_too_large")
+                    if old is not None:
+                        cursors[file_key] = dict(old)
+                    continue
+                if enumerated["size"] > remaining:
                     reasons.add("catching_up")
                     if old is not None:
                         cursors[file_key] = dict(old)
                     continue
-                if (old is None
-                        and (source["alias"] not in had_start
-                             or enumerated["mtime_ns"] < started_ns)):
-                    bookmark_reservation = (2 * MAX_LINE + 2
-                                            + (MAX_LINE + 1 if source["tool"] == "codex"
-                                               else 0))
-                    if remaining < bookmark_reservation:
-                        reasons.add("catching_up")
-                        continue
-                    cursors[file_key], used = _start_bookmark(
-                        source, relative, enumerated, file_key,
-                        windows_api=windows_api, windows_user_sid=windows_user_sid)
-                    total_bytes += used
-                    continue
-                if source["tool"] == "codex":
-                    # Whole or not at all: a log over a limit is skipped for good
-                    # (source_too_large); one the rest of the run cannot pay for waits.
-                    if enumerated["size"] > min(MAX_REREAD_BYTES, MAX_RUN_READ_BYTES):
-                        reasons.add("source_too_large")
-                        if old is not None:
-                            cursors[file_key] = dict(old)
-                        continue
-                    if enumerated["size"] > remaining:
-                        reasons.add("catching_up")
-                        if old is not None:
-                            cursors[file_key] = dict(old)
-                        continue
-                    resumed = old is not None
-                    resume = None if old is None else {
-                        "dev": old["dev"], "ino": old["ino"],
-                        "offset": old["offset"], "digest": old["digest"]}
-                    while True:
-                        budget = min(MAX_REREAD_BYTES, MAX_RUN_READ_BYTES - total_bytes)
-                        stream, batch = _read_codex_log(
-                            source, relative, config, budget, resume=resume,
-                            windows_api=windows_api, windows_user_sid=windows_user_sid)
-                        total_bytes += stream.bytes_read
-                        if stream.terminal_reason is not None:
-                            raise Unavailable(stream.terminal_reason)
-                        _check_stream_identity(stream, enumerated)
-                        if stream.resume_failure in {"file_replaced", "cursor_past_end"}:
-                            # Decided before any line was read: read the log afresh.
-                            reasons.add("resume_failed_" + stream.resume_failure)
-                            resumed, resume = False, None
-                            continue
+                resumed = old is not None
+                resume = None if old is None else {
+                    "dev": old["dev"], "ino": old["ino"],
+                    "offset": old["offset"], "digest": old["digest"]}
+                while True:
+                    budget = min(MAX_REREAD_BYTES, MAX_RUN_READ_BYTES - total_bytes)
+                    stream, batch = _read_codex_log(
+                        source, relative, config, budget, resume=resume)
+                    total_bytes += stream.bytes_read
+                    if stream.terminal_reason == "source_read_unavailable":
                         break
-                    skipped = None
-                    if stream.limit_stop:
-                        skipped = _codex_limit_reason(stream, budget)
-                    elif "source_budget_exceeded" in batch["issues"]:
-                        skipped = "source_too_large"
-                    if skipped is not None:
-                        reasons.add(skipped)
-                        if old is not None:
-                            cursors[file_key] = dict(old)
-                        continue
-                    if stream.resume_failure is not None:
-                        # The batch just read is a fresh read of the whole log.
-                        reasons.add("resume_failed_" + stream.resume_failure)
-                        resumed = False
-                    if resumed:
-                        batch["first_counted"] = stream.checkpoint_line + 1
-                    cursors[file_key] = _piece_cursor(
-                        source, file_key, stream, old, resumed, whole_log=True,
-                        owner_key=batch["source_owner_key"])
-                else:
-                    resumed = old is not None
-                    resume = None if old is None else {
-                        "dev": old["dev"], "ino": old["ino"],
-                        "offset": old["offset"], "digest": old["digest"]}
-                    while True:
-                        stream = _iter_approved_lines(
-                            source["root"], relative,
-                            min(MAX_BATCH_BYTES, MAX_RUN_READ_BYTES - total_bytes),
-                            piece=True, resume=resume, windows_api=windows_api,
-                            windows_user_sid=windows_user_sid)
-                        batch = read_records(source["tool"], stream, config=config,
-                                             source_aliases=[source["alias"]],
-                                             source_root=source["root"],
-                                             windows_api=windows_api,
-                                             windows_user_sid=windows_user_sid)
-                        total_bytes += stream.bytes_read
-                        if stream.terminal_reason is not None:
-                            raise Unavailable(stream.terminal_reason)
-                        _check_stream_identity(stream, enumerated)
-                        if stream.resume_failure is None:
-                            break
+                    if stream.terminal_reason is not None:
+                        raise Unavailable(stream.terminal_reason)
+                    if stream.resume_failure in {"file_replaced", "cursor_past_end"}:
+                        # Decided before any line was read: read the log afresh.
                         reasons.add("resume_failed_" + stream.resume_failure)
                         resumed, resume = False, None
-                        if total_bytes >= MAX_RUN_READ_BYTES:
-                            break
-                    if stream.resume_failure is not None:
-                        reasons.add("catching_up")
-                        cursors[file_key] = dict(old)
                         continue
-                    cursors[file_key] = _piece_cursor(
-                        source, file_key, stream, old, resumed)
-                    if stream.limit_stop:
-                        reasons.add("catching_up")
-                run_events += len(_kept_events(batch))
-                batch["source_alias"] = source["alias"]
-                batch["file_key"] = file_key
-                batch["cursor"] = dict(cursors[file_key])
-                if not resumed:
-                    batch["started_at"] = started_at
-                batches.append(batch)
-                if agent_runs is not None:
-                    _gather_agent_runs(agent_runs, batch)
-            if source["tool"] == "codex":
-                parents, dropped, used = _read_fork_parents(
-                    source, config, files, previous, batches[first_batch:],
-                    total_bytes, windows_api=windows_api,
-                    windows_user_sid=windows_user_sid)
-                total_bytes += used
-                context_batches.extend(parents)
-                if dropped:
-                    # A child is never counted unverified for lack of budget.
-                    reasons.add("catching_up")
-                    batches[first_batch:] = [
-                        batch for batch in batches[first_batch:]
-                        if batch["file_key"] not in dropped]
-                    for file_key in dropped:
-                        if file_key in previous:
-                            cursors[file_key] = dict(previous[file_key])
-                        else:
-                            del cursors[file_key]
-        finally:
-            if windows:
-                try:
-                    root_snapshot.verify()
-                finally:
-                    root_snapshot.close()
+                    break
+                if stream.terminal_reason is not None:
+                    reasons.add("catching_up")       # unreadable: left for the next run
+                    if old is not None:
+                        cursors[file_key] = dict(old)
+                    continue
+                skipped = None
+                if stream.limit_stop:
+                    skipped = _codex_limit_reason(stream, budget)
+                elif "source_budget_exceeded" in batch["issues"]:
+                    skipped = "source_too_large"
+                if skipped is not None:
+                    reasons.add(skipped)
+                    if old is not None:
+                        cursors[file_key] = dict(old)
+                    continue
+                if stream.resume_failure is not None:
+                    # The batch just read is a fresh read of the whole log.
+                    reasons.add("resume_failed_" + stream.resume_failure)
+                    resumed = False
+                if resumed:
+                    batch["first_counted"] = stream.checkpoint_line + 1
+                cursors[file_key] = _piece_cursor(
+                    source, file_key, stream, old, resumed, whole_log=True,
+                    owner_key=batch["source_owner_key"])
             else:
-                os.close(root_fd)
-        if not windows:
-            root_after = _open_directory_chain(source["root"])
-            try:
-                after = os.fstat(root_after)
-                if (after.st_dev, after.st_ino) != (
-                        root_identity["dev"], root_identity["ino"]):
-                    raise Unavailable
-            finally:
-                os.close(root_after)
+                resumed = old is not None
+                resume = None if old is None else {
+                    "dev": old["dev"], "ino": old["ino"],
+                    "offset": old["offset"], "digest": old["digest"]}
+                while True:
+                    stream = _iter_approved_lines(
+                        source["root"], relative,
+                        min(MAX_BATCH_BYTES, MAX_RUN_READ_BYTES - total_bytes),
+                        piece=True, resume=resume)
+                    batch = read_records(source["tool"], stream, config=config,
+                                         source_aliases=[source["alias"]],
+                                         source_root=source["root"])
+                    total_bytes += stream.bytes_read
+                    if stream.terminal_reason == "source_read_unavailable":
+                        break
+                    if stream.terminal_reason is not None:
+                        raise Unavailable(stream.terminal_reason)
+                    if stream.resume_failure is None:
+                        break
+                    reasons.add("resume_failed_" + stream.resume_failure)
+                    resumed, resume = False, None
+                    if total_bytes >= MAX_RUN_READ_BYTES:
+                        break
+                if stream.terminal_reason is not None:
+                    reasons.add("catching_up")       # unreadable: left for the next run
+                    if old is not None:
+                        cursors[file_key] = dict(old)
+                    continue
+                if stream.resume_failure is not None:
+                    reasons.add("catching_up")
+                    cursors[file_key] = dict(old)
+                    continue
+                cursors[file_key] = _piece_cursor(
+                    source, file_key, stream, old, resumed)
+                if stream.limit_stop:
+                    reasons.add("catching_up")
+            run_events += len(_kept_events(batch))
+            batch["source_alias"] = source["alias"]
+            batch["file_key"] = file_key
+            batch["cursor"] = dict(cursors[file_key])
+            if not resumed:
+                batch["started_at"] = started_at
+            batches.append(batch)
+            if agent_runs is not None:
+                _gather_agent_runs(agent_runs, batch)
+        if source["tool"] == "codex":
+            parents, dropped, used = _read_fork_parents(
+                source, config, files, previous, batches[first_batch:],
+                total_bytes)
+            total_bytes += used
+            context_batches.extend(parents)
+            if dropped:
+                # A child is never counted unverified for lack of budget.
+                reasons.add("catching_up")
+                batches[first_batch:] = [
+                    batch for batch in batches[first_batch:]
+                    if batch["file_key"] not in dropped]
+                for file_key in dropped:
+                    if file_key in previous:
+                        cursors[file_key] = dict(previous[file_key])
+                    else:
+                        del cursors[file_key]
     for batch in batches:
         reasons.update(batch["issues"])
     verified_forks, fork_conflicts = _verify_copied_forks(batches + context_batches)
@@ -4552,42 +3004,6 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
             reasons, verified_forks, fork_conflicts, wait_rows,
             [{"source_alias": alias, "started_at": start_rows[alias]}
              for alias in sorted(start_rows)])
-
-
-def _capture_all_claims(config, *, windows_api=None, windows_user_sid=None):
-    claims, status, remotes = [], set(), []
-    excluded = [source["root"] for source in config["sources"]]
-    excluded.extend(project["path"] for project in config["projects"])
-    for project in sorted(config["projects"], key=lambda item: item["alias"]):
-        if windows_api is None and windows_user_sid is None:
-            remote, reason = _verified_project_remote(project, excluded)
-        else:
-            remote, reason = _verified_project_remote(
-                project, excluded, windows_api=windows_api,
-                windows_user_sid=windows_user_sid)
-        if reason is not None or remote != project["remote"]:
-            status.add("attribution_unavailable")
-            continue
-        remotes.append({"alias": project["alias"], "remote": remote})
-        if windows_api is None and windows_user_sid is None:
-            project_claims, claim_status = _capture_project_claims(project)
-        else:
-            project_claims, claim_status = _capture_project_claims(
-                project, windows_api=windows_api,
-                windows_user_sid=windows_user_sid)
-        if windows_api is None and windows_user_sid is None:
-            after_remote, after_reason = _verified_project_remote(project, excluded)
-        else:
-            after_remote, after_reason = _verified_project_remote(
-                project, excluded, windows_api=windows_api,
-                windows_user_sid=windows_user_sid)
-        if after_reason is not None or after_remote != remote:
-            raise Unavailable("source_changed")
-        claims.extend(project_claims)
-        status.add(claim_status)
-    if not status:
-        status.add("attribution_unavailable")
-    return claims, remotes, status
 
 
 def _build_mappings(events, claims, config):
@@ -4770,297 +3186,22 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
     }
 
 
-def _require_private_fd(fd, *, directory, mode=None, private_only=False):
-    info = os.fstat(fd)
-    expected = stat.S_ISDIR(info.st_mode) if directory else stat.S_ISREG(info.st_mode)
-    mode_ok = (stat.S_IMODE(info.st_mode) == mode if mode is not None
-               else not (stat.S_IMODE(info.st_mode) & 0o077))
-    if (not expected or info.st_uid != os.getuid() or not mode_ok
-            or (not directory and info.st_nlink != 1)):
-        raise Unavailable("ledger_unavailable")
-    return info
-
-
-def _open_consent_area(home):
-    if not _PRIVATE_FS_SUPPORTED or fcntl is None:
-        raise Unavailable("config_home_unavailable")
-    _verify_private_home(Path(home))
-    home_fd = _open_directory_chain(home)
-    cairn_fd = config_fd = -1
-    try:
-        try:
-            before_cairn = os.stat(".cairn", dir_fd=home_fd, follow_symlinks=False)
-            if not stat.S_ISDIR(before_cairn.st_mode):
-                raise Unavailable("config_home_unavailable")
-            cairn_fd = os.open(".cairn", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                               dir_fd=home_fd)
-        except FileNotFoundError:
-            return home_fd, None, None, None, None
-        cairn_info = _require_private_fd(cairn_fd, directory=True, mode=0o700)
-        if (cairn_info.st_dev, cairn_info.st_ino) != (before_cairn.st_dev, before_cairn.st_ino):
-            raise Unavailable("source_changed")
-        config_fd, config_raw, config_identity = _open_private_leaf(
-            cairn_fd, "meter.json", limit=MAX_CONFIG_BYTES, allow_missing=True,
-            mode=None, private_only=True)
-        if config_fd is None:
-            return home_fd, cairn_fd, None, None, None
-        config = validate_config_bytes(config_raw)
-        return home_fd, cairn_fd, config_fd, config_identity, (config, config_raw)
-    except Exception:
-        for descriptor in (config_fd, cairn_fd, home_fd):
-            if descriptor >= 0:
-                os.close(descriptor)
-        raise
-
-
-def _open_meter_area(cairn_fd):
-    if cairn_fd < 0:
-        raise Unavailable("ledger_unavailable")
-    meter_fd = -1
-    try:
-        try:
-            before_meter = os.stat("meter", dir_fd=cairn_fd, follow_symlinks=False)
-        except FileNotFoundError:
-            os.mkdir("meter", mode=0o700, dir_fd=cairn_fd)
-            os.fsync(cairn_fd)
-            before_meter = os.stat("meter", dir_fd=cairn_fd, follow_symlinks=False)
-        if not stat.S_ISDIR(before_meter.st_mode):
-            raise Unavailable("ledger_unavailable")
-        meter_fd = os.open("meter", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                           dir_fd=cairn_fd)
-        meter_info = _require_private_fd(meter_fd, directory=True, mode=0o700)
-        if (meter_info.st_dev, meter_info.st_ino) != (before_meter.st_dev, before_meter.st_ino):
-            raise Unavailable("source_changed")
-        return meter_fd
-    except Exception:
-        if meter_fd >= 0:
-            os.close(meter_fd)
-        raise
-
-
-def _open_private_leaf(directory_fd, name, *, limit, allow_missing=False,
-                       mode=0o600, private_only=False):
-    try:
-        before = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
-    except FileNotFoundError:
-        if allow_missing:
-            return None, None, None
-        raise Unavailable("ledger_unavailable") from None
-    if not stat.S_ISREG(before.st_mode):
-        raise Unavailable("ledger_unavailable")
-    fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
-    try:
-        opened = _require_private_fd(fd, directory=False, mode=mode,
-                                     private_only=private_only)
-        if ((opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)
-                or opened.st_size > limit):
-            raise Unavailable("ledger_invalid")
-        pieces, total = [], 0
-        while True:
-            block = os.read(fd, min(64 * 1024, limit - total + 1))
-            if not block:
-                break
-            total += len(block)
-            if total > limit:
-                raise Unavailable("ledger_invalid")
-            pieces.append(block)
-        after = os.fstat(fd)
-        named = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
-        identity = (opened.st_dev, opened.st_ino, opened.st_size,
-                    opened.st_mtime_ns, opened.st_ctime_ns)
-        if ((after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns,
-             after.st_ctime_ns) != identity
-                or (named.st_dev, named.st_ino) != (opened.st_dev, opened.st_ino)
-                or total != opened.st_size):
-            raise Unavailable("source_changed")
-        return fd, b"".join(pieces), identity
-    except Exception:
-        os.close(fd)
-        raise
-
-
-def _open_lock(meter_fd):
-    try:
-        try:
-            fd = os.open(LEDGER_LOCK_NAME,
-                         os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
-                         0o600, dir_fd=meter_fd)
-        except FileExistsError:
-            fd = os.open(LEDGER_LOCK_NAME, os.O_RDWR | os.O_NOFOLLOW, dir_fd=meter_fd)
-        _require_private_fd(fd, directory=False, mode=0o600)
-        info = os.fstat(fd)
-        if info.st_size != 0:
-            raise Unavailable("ledger_unavailable")
-        try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except (BlockingIOError, OSError):
-            raise Unavailable("ledger_busy") from None
-        current = os.stat(LEDGER_LOCK_NAME, dir_fd=meter_fd, follow_symlinks=False)
-        locked = os.fstat(fd)
-        if ((current.st_dev, current.st_ino) != (locked.st_dev, locked.st_ino)
-                or locked.st_size != 0):
-            raise Unavailable("source_changed")
-        return fd, (locked.st_dev, locked.st_ino, locked.st_mode, locked.st_nlink)
-    except Exception:
-        if "fd" in locals():
-            os.close(fd)
-        raise
-
-
-def _read_optional_ledger(meter_fd):
-    fd, raw, identity = _open_private_leaf(
-        meter_fd, LEDGER_NAME, limit=MAX_LEDGER_BYTES, allow_missing=True)
-    return fd, raw, identity
-
-
-def _read_ledger_fd_again(fd, limit):
-    os.lseek(fd, 0, os.SEEK_SET)
-    chunks, total = [], 0
-    while True:
-        block = os.read(fd, min(64 * 1024, limit - total + 1))
-        if not block:
-            break
-        total += len(block)
-        if total > limit:
-            raise Unavailable("ledger_invalid")
-        chunks.append(block)
-    return b"".join(chunks)
-
-
-def _revalidate_transaction(home_path, home_fd, cairn_fd, meter_fd, lock_fd, lock_identity,
-                            old_fd, old_raw, old_identity, config_fd,
-                            config_raw, config_identity):
-    held_home = os.fstat(home_fd)
-    _verify_private_home(Path(home_path))
-    current_home_fd = _open_directory_chain(home_path)
-    try:
-        current_home = os.fstat(current_home_fd)
-    finally:
-        os.close(current_home_fd)
-    if (current_home.st_dev, current_home.st_ino) != (held_home.st_dev, held_home.st_ino):
-        raise Unavailable("source_changed")
-    if held_home.st_uid != os.getuid() or not stat.S_ISDIR(held_home.st_mode):
-        raise Unavailable("ledger_unavailable")
-    cairn = os.stat(".cairn", dir_fd=home_fd, follow_symlinks=False)
-    opened_cairn = os.fstat(cairn_fd)
-    meter = os.stat("meter", dir_fd=cairn_fd, follow_symlinks=False)
-    opened_meter = os.fstat(meter_fd)
-    if ((cairn.st_dev, cairn.st_ino) != (opened_cairn.st_dev, opened_cairn.st_ino)
-            or (meter.st_dev, meter.st_ino) != (opened_meter.st_dev, opened_meter.st_ino)):
-        raise Unavailable("source_changed")
-    _require_private_fd(cairn_fd, directory=True, mode=0o700)
-    _require_private_fd(meter_fd, directory=True, mode=0o700)
-    _require_private_fd(lock_fd, directory=False, mode=0o600)
-    lock = os.stat(LEDGER_LOCK_NAME, dir_fd=meter_fd, follow_symlinks=False)
-    locked = os.fstat(lock_fd)
-    if ((lock.st_dev, lock.st_ino, locked.st_mode, locked.st_nlink) != lock_identity
-            or locked.st_size != 0):
-        raise Unavailable("source_changed")
-    if old_fd is None:
-        try:
-            os.stat(LEDGER_NAME, dir_fd=meter_fd, follow_symlinks=False)
-        except FileNotFoundError:
-            pass
-        else:
-            raise Unavailable("source_changed")
-    else:
-        _require_private_fd(old_fd, directory=False, mode=0o600)
-        old = os.fstat(old_fd)
-        named = os.stat(LEDGER_NAME, dir_fd=meter_fd, follow_symlinks=False)
-        if ((named.st_dev, named.st_ino) != (old.st_dev, old.st_ino)
-                or (old.st_dev, old.st_ino, old.st_size, old.st_mtime_ns,
-                    old.st_ctime_ns) != old_identity
-                or _read_ledger_fd_again(old_fd, MAX_LEDGER_BYTES) != old_raw):
-            raise Unavailable("source_changed")
-    _require_private_fd(config_fd, directory=False, mode=None, private_only=True)
-    config = os.fstat(config_fd)
-    named_config = os.stat("meter.json", dir_fd=cairn_fd, follow_symlinks=False)
-    if ((config.st_dev, config.st_ino, config.st_size, config.st_mtime_ns,
-         config.st_ctime_ns) != config_identity
-            or (named_config.st_dev, named_config.st_ino) != (config.st_dev, config.st_ino)
-            or _read_ledger_fd_again(config_fd, MAX_CONFIG_BYTES) != config_raw):
-        raise Unavailable("source_changed")
-
-
-def _atomic_replace_ledger(home_path, home_fd, cairn_fd, meter_fd, lock_fd, lock_identity,
-                           old_fd, old_raw, old_identity, config_fd,
-                           config_raw, config_identity, candidate):
-    data = (json.dumps(candidate, sort_keys=True, separators=(",", ":"),
-                       ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
-    if len(data) > MAX_LEDGER_BYTES:
-        raise Unavailable("source_budget_exceeded")
-    if _load_ledger(data) != candidate:
-        raise Unavailable("ledger_invalid")
-    temporary = ".ledger-" + secrets.token_hex(16) + ".tmp"
-    temp_fd = -1
-    temp_identity = None
-    committed = False
-    try:
-        temp_fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
-                          0o600, dir_fd=meter_fd)
-        temp_info = _require_private_fd(temp_fd, directory=False, mode=0o600)
-        temp_identity = (temp_info.st_dev, temp_info.st_ino)
-        offset = 0
-        while offset < len(data):
-            written = os.write(temp_fd, data[offset:offset + 64 * 1024])
-            if written <= 0:
-                raise Unavailable("ledger_write_failed")
-            offset += written
-        os.fsync(temp_fd)
-        final_info = os.fstat(temp_fd)
-        if (final_info.st_size != len(data)
-                or (final_info.st_dev, final_info.st_ino) != temp_identity):
-            raise Unavailable("ledger_write_failed")
-        _revalidate_transaction(home_path, home_fd, cairn_fd, meter_fd, lock_fd, lock_identity,
-                                old_fd, old_raw, old_identity, config_fd,
-                                config_raw, config_identity)
-        named_temp = os.stat(temporary, dir_fd=meter_fd, follow_symlinks=False)
-        if ((named_temp.st_dev, named_temp.st_ino) != temp_identity
-                or not stat.S_ISREG(named_temp.st_mode)
-                or named_temp.st_nlink != 1
-                or stat.S_IMODE(named_temp.st_mode) != 0o600):
-            raise Unavailable("source_changed")
-        os.replace(temporary, LEDGER_NAME,
-                   src_dir_fd=meter_fd, dst_dir_fd=meter_fd)
-        committed = True
-        try:
-            os.fsync(meter_fd)
-        except OSError:
-            return "committed_uncertain"
-        return "written"
-    except Unavailable:
-        raise
-    except (OSError, ValueError, TypeError, OverflowError):
-        raise Unavailable("ledger_write_failed") from None
-    finally:
-        if temp_fd >= 0:
-            os.close(temp_fd)
-        if not committed:
-            try:
-                named = os.stat(temporary, dir_fd=meter_fd, follow_symlinks=False)
-                if temp_identity == (named.st_dev, named.st_ino):
-                    os.unlink(temporary, dir_fd=meter_fd)
-            except OSError:
-                pass
-
-
 def _refresh_ledger(home, *, report_current_directory=None):
     """Run one explicit refresh, optionally returning fresh usage bytes in memory."""
-    home_fd = cairn_fd = config_fd = meter_fd = lock_fd = old_fd = published_fd = -1
+    area = token = None
     try:
-        home_fd, cairn_fd, config_fd, config_identity, config_pair = _open_consent_area(home)
-        if config_pair is None:
+        config = load_config(Path(home) / ".cairn" / "meter.json")
+        if config is None:
             return {"status": "disabled", "reason": "config_missing"}
-        config, config_raw = config_pair
         if not config["enabled"]:
             return {"status": "disabled", "reason": "disabled"}
         report_project = (_current_report_project(config, report_current_directory)
                           if report_current_directory is not None else None)
-        if cairn_fd is None:
-            raise Unavailable("config_home_unavailable")
-        meter_fd = _open_meter_area(cairn_fd)
-        lock_fd, lock_identity = _open_lock(meter_fd)
-        old_fd, old_raw, old_identity = _read_optional_ledger(meter_fd)
+        area = _meter_area(home)
+        token = _take_lock(area)
+        ledger_path = area / LEDGER_NAME
+        old_raw = (_read_limited(ledger_path, MAX_LEDGER_BYTES, "ledger_invalid")
+                   if ledger_path.exists() else None)
         now = _now_utc()
         prior = _load_ledger(old_raw, now)
         runs = {"transcripts": set(), "summaries": set(), "unclassified": 0}
@@ -5073,55 +3214,26 @@ def _refresh_ledger(home, *, report_current_directory=None):
                                 incoming_claims, project_remotes,
                                 capture_status, scan_reasons, verified_forks,
                                 fork_conflicts, starts=starts, now=now, agent_runs=runs)
-        result = _atomic_replace_ledger(
-            home, home_fd, cairn_fd, meter_fd, lock_fd, lock_identity,
-            old_fd if isinstance(old_fd, int) and old_fd >= 0 else None,
-            old_raw, old_identity,
-            config_fd, config_raw, config_identity, candidate)
-        if result != "written":
-            return {"status": "unavailable", "reason": "ledger_durability_uncertain",
-                    "coverage": "unknown"}
-        try:
-            published_fd, published_raw, published_identity = _open_private_leaf(
-                meter_fd, LEDGER_NAME, limit=MAX_LEDGER_BYTES)
-        except Unavailable:
-            raise
-        if _load_ledger(published_raw) != candidate:
-            raise Unavailable("source_changed")
-
-        def revalidate_committed_ledger():
-            _revalidate_transaction(
-                home, home_fd, cairn_fd, meter_fd, lock_fd, lock_identity,
-                published_fd, published_raw, published_identity,
-                config_fd, config_raw, config_identity)
-
-        excluded = [source["root"] for source in config["sources"]]
-        excluded.extend(project["path"] for project in config["projects"])
+        result = _atomic_replace_ledger(area, candidate)
         current_aggregate = None
         for project in sorted(config["projects"], key=lambda item: item["alias"]):
             try:
-                state = _posix_atomic_write_project_export(
-                    project, candidate, config, excluded,
-                    revalidate_committed_ledger)
+                state = _write_summary(project, candidate, config)
             except Unavailable as exc:
                 return {"status": "unavailable", "reason": exc.reason,
                         "coverage": "unknown"}
             if state != "written":
-                reason = ("project_export_uncertain" if state == "committed_uncertain"
-                          else "project_export_unavailable")
-                return {"status": "unavailable", "reason": reason,
+                return {"status": "unavailable", "reason": "project_export_unavailable",
                         "coverage": "unknown"}
             if report_project is not None and project["alias"] == report_project["alias"]:
                 current_aggregate = _project_export_bytes(candidate, config,
                                                           project["alias"])
-        revalidate_committed_ledger()
         partial_reason = ("catching_up" if "catching_up" in candidate["coverage"]["reasons"]
                           else "source_too_large" if "source_too_large" in
                           candidate["coverage"]["reasons"] else None)
         output = {"status": "partial" if partial_reason else result,
-                "reason": partial_reason or ("none" if result == "written"
-                else "ledger_durability_uncertain"), "events": len(candidate["events"]),
-                "claims": len(candidate["claims"]), "coverage": "unknown"}
+                  "reason": partial_reason or "none", "events": len(candidate["events"]),
+                  "claims": len(candidate["claims"]), "coverage": "unknown"}
         if report_current_directory is not None:
             output["current_project_aggregate"] = current_aggregate
         return output
@@ -5132,1019 +3244,8 @@ def _refresh_ledger(home, *, report_current_directory=None):
         return {"status": "unavailable", "reason": "ledger_unavailable",
                 "coverage": "unknown"}
     finally:
-        for descriptor in (published_fd, old_fd, lock_fd, meter_fd, config_fd,
-                           cairn_fd, home_fd):
-            if isinstance(descriptor, int) and descriptor >= 0:
-                try:
-                    os.close(descriptor)
-                except OSError:
-                    pass
-
-
-def _windows_directory_state(api, directory, allowed):
-    rows = api.enumerate(directory, MAX_REFRESH_ENTRIES)
-    names = {}
-    for row in rows:
-        name = row.get("name")
-        if not isinstance(name, str) or name not in allowed or name.casefold() in names:
-            raise Unavailable("ledger_invalid")
-        names[name.casefold()] = row
-    return names
-
-
-def _windows_open_meter_area(api, cairn_handle, user_sid):
-    created = False
-    try:
-        handle = api.open("meter", cairn_handle, directory=True,
-                          read_data=True, write_data=True, share=3)
-    except _MissingConfig:
-        handle = api.create_private("meter", cairn_handle, user_sid, directory=True,
-                                    transaction_parent=True)
-        created = True
-    try:
-        if created:
-            api.flush_full(cairn_handle)
-        info = api.info(handle)
-        api.check_acl(handle, user_sid, "meter")
-        if not info["directory"]:
-            raise Unavailable("ledger_unavailable")
-        return handle, created
-    except BaseException:
-        api.close(handle)
-        raise
-
-
-def _windows_lock(api, meter_handle, user_sid):
-    try:
-        handle = api.open(LEDGER_LOCK_NAME, meter_handle, read_data=True, share=0)
-    except _MissingConfig:
-        try:
-            handle = api.create_private(LEDGER_LOCK_NAME, meter_handle, user_sid,
-                                        directory=False, delete=True)
-        except Unavailable:
-            raise Unavailable("ledger_busy") from None
-    except Unavailable:
-        raise Unavailable("ledger_busy") from None
-    try:
-        info = api.info(handle)
-        api.check_acl(handle, user_sid, "lock")
-        if info["directory"] or info["links"] != 1 or info["size"] != 0:
-            raise Unavailable("ledger_unavailable")
-        return handle, info
-    except Exception:
-        api.close(handle)
-        raise
-
-
-def _windows_read_old_ledger(api, meter_handle, user_sid):
-    try:
-        handle = api.open(LEDGER_NAME, meter_handle, read_data=True, share=5)
-    except _MissingConfig:
-        return None, None, None
-    try:
-        before = api.info(handle)
-        api.check_acl(handle, user_sid, "ledger")
-        if before["directory"] or before["links"] != 1:
-            raise Unavailable("ledger_invalid")
-        raw, read_before = api.read_bounded(handle, MAX_LEDGER_BYTES)
-        after = api.info(handle)
-        if (_windows_stable_info(read_before) != _windows_stable_info(before)
-                or _windows_stable_info(after) != _windows_stable_info(before)):
-            raise Unavailable("source_changed")
-        return handle, raw, before
-    except Exception:
-        api.close(handle)
-        raise
-
-
-def _windows_revalidate_private_state(api, held_config, config_raw, cairn_handle,
-                                      meter_handle, lock_handle, lock_before,
-                                      old_handle, old_raw, old_before, candidate_name=None,
-                                      candidate_handle=None, candidate_bytes=None,
-                                      candidate_identity=None,
-                                      allow_owned_cairn_metadata=False):
-    held_config.revalidate(
-        allow_owned_cairn_metadata=allow_owned_cairn_metadata)
-    if held_config.raw != config_raw:
-        raise Unavailable("source_changed")
-    api.check_acl(cairn_handle, held_config.user_sid, "cairn")
-    api.check_acl(meter_handle, held_config.user_sid, "meter")
-    if (_windows_stable_info(api.info(lock_handle)) != _windows_stable_info(lock_before)
-            or api.info(lock_handle)["size"] != 0):
-        raise Unavailable("source_changed")
-    allowed = {LEDGER_LOCK_NAME, LEDGER_NAME}
-    if candidate_name is not None:
-        allowed.add(candidate_name)
-    state = _windows_directory_state(api, meter_handle, allowed)
-    lock_row = state.get(LEDGER_LOCK_NAME.casefold())
-    lock_identity = api.info(lock_handle)["identity"]
-    if lock_row is None or lock_row["file_id"] != lock_identity[1]:
-        raise Unavailable("source_changed")
-    ledger_row = state.get(LEDGER_NAME.casefold())
-    if old_handle is None:
-        if ledger_row is not None:
-            raise Unavailable("source_changed")
-    else:
-        if (ledger_row is None or ledger_row["file_id"] != old_before["identity"][1]):
-            raise Unavailable("source_changed")
-        current = api.open(LEDGER_NAME, meter_handle, read_data=True, share=5)
-        try:
-            current_info = api.info(current)
-            api.check_acl(current, held_config.user_sid, "ledger")
-            current_raw, read_info = api.read_bounded(current, MAX_LEDGER_BYTES)
-            if (_windows_stable_info(current_info) != _windows_stable_info(old_before)
-                    or _windows_stable_info(read_info) != _windows_stable_info(old_before)
-                    or current_raw != old_raw):
-                raise Unavailable("source_changed")
-        finally:
-            api.close(current)
-    if candidate_handle is not None:
-        candidate_info = api.info(candidate_handle)
-        api.check_acl(candidate_handle, held_config.user_sid, "candidate")
-        if (candidate_info["directory"] or candidate_info["links"] != 1
-                or candidate_info["size"] != len(candidate_bytes)
-                or candidate_identity is None
-                or candidate_info["identity"] != candidate_identity["identity"]
-                or candidate_info["created"] != candidate_identity["created"]):
-            raise Unavailable("source_changed")
-        api.seek_zero(candidate_handle)
-        candidate_raw, read_info = api.read_bounded(candidate_handle, MAX_LEDGER_BYTES)
-        if (candidate_raw != candidate_bytes
-                or _windows_stable_info(read_info) != _windows_stable_info(candidate_info)):
-            raise Unavailable("source_changed")
-        candidate_row = state.get(candidate_name.casefold())
-        if candidate_row is None or candidate_row["file_id"] != candidate_info["identity"][1]:
-            raise Unavailable("source_changed")
-
-
-def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
-                            user_sid, candidate):
-    """Publish one validated ledger while the stable native lock is held."""
-    meter_handle = lock_handle = old_handle = candidate_handle = -1
-    candidate_name = ".ledger-" + secrets.token_hex(16) + ".tmp"
-    committed = False
-    try:
-        held_config.revalidate()
-        meter_handle, created = _windows_open_meter_area(api, cairn_handle, user_sid)
-        allowed = {LEDGER_LOCK_NAME, LEDGER_NAME}
-        if _windows_directory_state(api, meter_handle, allowed).keys() - {
-                LEDGER_LOCK_NAME.casefold(), LEDGER_NAME.casefold()}:
-            raise Unavailable("ledger_invalid")
-        lock_handle, lock_before = _windows_lock(api, meter_handle, user_sid)
-        old_handle, old_raw, old_before = _windows_read_old_ledger(
-            api, meter_handle, user_sid)
-        prior = _load_ledger(old_raw)
-        if callable(candidate):
-            candidate = candidate(prior)
-        data = (json.dumps(candidate, sort_keys=True, separators=(",", ":"),
-                           ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
-        if len(data) > MAX_LEDGER_BYTES:
-            raise Unavailable("source_budget_exceeded")
-        if _load_ledger(data) != candidate:
-            raise Unavailable("ledger_invalid")
-        candidate_handle = api.create_private(
-            candidate_name, meter_handle, user_sid, directory=False, delete=True,
-            candidate=True)
-        candidate_identity = api.info(candidate_handle)
-        api.write_all(candidate_handle, data)
-        api.flush_full(candidate_handle)
-        _windows_revalidate_private_state(
-            api, held_config, config_raw, cairn_handle, meter_handle,
-            lock_handle, lock_before, old_handle, old_raw, old_before,
-            candidate_name, candidate_handle, data, candidate_identity,
-            allow_owned_cairn_metadata=created)
-        api.rename_replace(candidate_handle, meter_handle, LEDGER_NAME)
-        committed = True
-        try:
-            candidate_info = api.info(candidate_handle)
-            api.check_acl(candidate_handle, user_sid, "ledger")
-            accepted_created = {candidate_identity["created"]}
-            if old_before is not None:
-                accepted_created.add(old_before["created"])
-            if not _windows_published_candidate_matches(
-                    candidate_info, candidate_identity, len(data), accepted_created):
-                raise Unavailable("source_changed")
-            published_created = candidate_info["created"]
-            api.flush_full(candidate_handle)
-            api.flush_full(meter_handle)
-            if created:
-                api.flush_full(cairn_handle)
-            reopened = api.open(LEDGER_NAME, meter_handle, read_data=True, share=7)
-            try:
-                info = api.info(reopened)
-                api.check_acl(reopened, user_sid, "ledger")
-                raw, read_info = api.read_bounded(reopened, MAX_LEDGER_BYTES)
-                if (not _windows_published_candidate_matches(
-                            info, candidate_identity, len(data), {published_created})
-                        or raw != data
-                        or _windows_stable_info(read_info) != _windows_stable_info(info)):
-                    raise Unavailable("source_changed")
-            finally:
-                api.close(reopened)
-            state = _windows_directory_state(api, meter_handle, {LEDGER_LOCK_NAME, LEDGER_NAME})
-            if set(state) != {LEDGER_LOCK_NAME.casefold(), LEDGER_NAME.casefold()}:
-                raise Unavailable("source_changed")
-            held_config.revalidate(
-                allow_owned_cairn_metadata=created)
-            if held_config.raw != config_raw:
-                raise Unavailable("source_changed")
-            candidate_final = api.info(candidate_handle)
-            api.check_acl(candidate_handle, user_sid, "ledger")
-            if not _windows_published_candidate_matches(
-                    candidate_final, candidate_identity, len(data), {published_created}):
-                raise Unavailable("source_changed")
-            return "written"
-        except (OSError, ValueError, TypeError, KeyError, Unavailable):
-            return "committed_uncertain"
-    except Unavailable:
-        raise
-    except (OSError, ValueError, TypeError, OverflowError, KeyError):
-        raise Unavailable("ledger_write_failed") from None
-    finally:
-        cleanup_failed = False
-        if candidate_handle >= 0 and not committed:
-            try:
-                api.delete_by_handle(candidate_handle)
-            except (OSError, ValueError, TypeError, Unavailable):
-                cleanup_failed = True
-        for handle in (candidate_handle, old_handle, lock_handle, meter_handle):
-            if isinstance(handle, int) and handle >= 0:
-                api.close(handle)
-        if cleanup_failed:
-            raise Unavailable("ledger_write_failed")
-
-
-def _refresh_ledger_windows(profile, api, user_sid, *, opened=None,
-                            report_current_directory=None):
-    """Internal native refresh; callers must supply a synthetic or fixed profile."""
-    held = None
-    try:
-        if opened is None:
-            opened = api.read_config(profile, user_sid, retain_handles=True)
-        if opened is None:
-            return {"status": "disabled", "reason": "config_missing",
-                    "coverage": "unknown"}
-        config_raw, held = opened
-        config = validate_config_bytes(config_raw)
-        if not config["enabled"]:
-            return {"status": "disabled", "reason": "disabled",
-                    "coverage": "unknown"}
-        original_raw = config_raw
-        original_held = held
-        held = None
-        original_held.close()
-        reopened = api.read_config(profile, user_sid, retain_handles=True,
-                                   writable_cairn=True)
-        if reopened is None:
-            raise Unavailable("source_changed")
-        config_raw, held = reopened
-        config = validate_config_bytes(config_raw)
-        if not config["enabled"] or config_raw != original_raw:
-            raise Unavailable("source_changed")
-        report_project = (_current_report_project(config, report_current_directory)
-                          if report_current_directory is not None else None)
-        cairn_handle = next((link[2] for link in held.links if link[3] == "cairn"), None)
-        if cairn_handle is None:
-            raise Unavailable("config_home_unavailable")
-
-        built = []
-
-        def build_candidate(prior):
-            now = _now_utc()
-            runs = {"transcripts": set(), "summaries": set(), "unclassified": 0}
-            (events, cursors, scan_reasons, verified_forks,
-             fork_conflicts, waits, starts) = _scan_approved_sources(
-                config, prior["cursors"], starts=prior["starts"], now=now,
-                fold_horizon=prior["fold_horizon"],
-                windows_api=api, windows_user_sid=user_sid, agent_runs=runs)
-            claims, remotes, claim_status = _capture_all_claims(
-                config, windows_api=api, windows_user_sid=user_sid)
-            result = _new_ledger(prior, config, events, waits, cursors, claims,
-                                 remotes, claim_status, scan_reasons,
-                                 verified_forks, fork_conflicts,
-                                 starts=starts, now=now, agent_runs=runs)
-            built[:] = [result]
-            return result
-
-        transaction = _windows_atomic_replace(
-            api, held, cairn_handle, config_raw, user_sid, build_candidate)
-        if transaction == "committed_uncertain":
-            return {"status": "unavailable", "reason": "ledger_durability_uncertain",
-                    "coverage": "unknown"}
-        ledger = built[0]
-        excluded = [source["root"] for source in config["sources"]]
-        excluded.extend(project["path"] for project in config["projects"])
-        current_aggregate = None
-        for project in sorted(config["projects"], key=lambda item: item["alias"]):
-            state = _windows_atomic_write_project_export(
-                project, ledger, config, excluded, api, user_sid)
-            if state != "written":
-                return {"status": "unavailable", "reason": "project_export_uncertain",
-                        "coverage": "unknown"}
-            if report_project is not None and project["alias"] == report_project["alias"]:
-                current_aggregate = _project_export_bytes(ledger, config,
-                                                          project["alias"])
-        partial_reason = ("catching_up" if "catching_up" in ledger["coverage"]["reasons"]
-                          else "source_too_large" if "source_too_large" in
-                          ledger["coverage"]["reasons"] else None)
-        result = {"status": "partial" if partial_reason else "ok",
-                  "reason": partial_reason or "none", "coverage": "unknown"}
-        if report_current_directory is not None:
-            result["current_project_aggregate"] = current_aggregate
-        return result
-    except Unavailable as exc:
-        return {"status": "unavailable", "reason": exc.reason,
-                "coverage": "unknown"}
-    except (OSError, ValueError, TypeError, OverflowError, KeyError):
-        return {"status": "unavailable", "reason": "ledger_unavailable",
-                "coverage": "unknown"}
-    finally:
-        if held is not None:
-            held.close()
-
-
-def _windows_project_entry(api, directory, name):
-    matches = [row for row in api.enumerate(directory, MAX_REFRESH_ENTRIES)
-               if isinstance(row.get("name"), str)
-               and row["name"].casefold() == name.casefold()]
-    if len(matches) > 1:
-        raise Unavailable("source_changed")
-    return matches[0] if matches else None
-
-
-def _posix_project_directory_snapshot(info, *, device=None):
-    mode = stat.S_IMODE(info.st_mode)
-    if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid()
-            or mode & 0o022 or (device is not None and info.st_dev != device)):
-        raise Unavailable("project_export_unavailable")
-    return (info.st_dev, info.st_ino, info.st_uid, mode)
-
-
-def _posix_atomic_write_project_export(project, ledger, config, excluded_roots,
-                                       revalidate_transaction):
-    """Atomically publish one sanitized project export through held directories."""
-    if not _PRIVATE_FS_SUPPORTED:
-        raise Unavailable("project_export_unavailable")
-    candidate_remotes = {item["alias"]: item["remote"]
-                         for item in ledger["project_remotes"]}
-    candidate_remote = candidate_remotes.get(project["alias"])
-    if candidate_remote is None:
-        raise Unavailable("project_remote_unavailable")
-    if candidate_remote != project["remote"]:
-        raise Unavailable("project_remote_mismatch")
-    payload = _project_export_bytes(ledger, config, project["alias"])
-
-    project_path = Path(project["path"])
-    remote, reason = _verified_project_remote(project, excluded_roots)
-    if reason is not None or remote != project["remote"]:
-        raise Unavailable(reason or "project_remote_mismatch")
-
-    project_fd = dev_fd = measurement_fd = old_fd = candidate_fd = -1
-    old_raw = old_identity = candidate_identity = None
-    candidate_name = ".meter-" + secrets.token_hex(16) + ".tmp"
-    committed = False
-    cleanup_failed = False
-    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
-    try:
-        project_fd = _open_directory_chain(project_path)
-        project_snapshot = _posix_project_directory_snapshot(os.fstat(project_fd))
-        device = project_snapshot[0]
-
-        before_dev = os.stat("dev", dir_fd=project_fd, follow_symlinks=False)
-        dev_named_snapshot = _posix_project_directory_snapshot(before_dev, device=device)
-        dev_fd = os.open("dev", directory_flags, dir_fd=project_fd)
-        dev_snapshot = _posix_project_directory_snapshot(os.fstat(dev_fd), device=device)
-        if dev_snapshot != dev_named_snapshot:
-            raise Unavailable("source_changed")
-
-        before_measurement = os.stat("measurement", dir_fd=dev_fd,
-                                     follow_symlinks=False)
-        measurement_named_snapshot = _posix_project_directory_snapshot(
-            before_measurement, device=device)
-        measurement_fd = os.open("measurement", directory_flags, dir_fd=dev_fd)
-        measurement_snapshot = _posix_project_directory_snapshot(
-            os.fstat(measurement_fd), device=device)
-        if measurement_snapshot != measurement_named_snapshot:
-            raise Unavailable("source_changed")
-
-        def verify_directories():
-            for fd, expected in ((project_fd, project_snapshot),
-                                 (dev_fd, dev_snapshot),
-                                 (measurement_fd, measurement_snapshot)):
-                if _posix_project_directory_snapshot(
-                        os.fstat(fd), device=device) != expected:
-                    raise Unavailable("source_changed")
-            reopened_root = _open_directory_chain(project_path)
-            try:
-                if _posix_project_directory_snapshot(
-                        os.fstat(reopened_root), device=device) != project_snapshot:
-                    raise Unavailable("source_changed")
-            finally:
-                os.close(reopened_root)
-            for name, parent_fd, expected in (
-                    ("dev", project_fd, dev_snapshot),
-                    ("measurement", dev_fd, measurement_snapshot)):
-                named = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
-                if _posix_project_directory_snapshot(named, device=device) != expected:
-                    raise Unavailable("source_changed")
-                reopened = os.open(name, directory_flags, dir_fd=parent_fd)
-                try:
-                    if _posix_project_directory_snapshot(
-                            os.fstat(reopened), device=device) != expected:
-                        raise Unavailable("source_changed")
-                finally:
-                    os.close(reopened)
-
-        try:
-            old_fd, old_raw, old_identity = _open_private_leaf(
-                measurement_fd, "meter.json", limit=MAX_LEDGER_BYTES,
-                allow_missing=True, mode=0o600)
-        except Unavailable as exc:
-            if exc.reason == "source_changed":
-                raise
-            raise Unavailable("project_export_unavailable") from None
-
-        old_missing = old_fd is None
-
-        def verify_old_export():
-            if old_missing:
-                try:
-                    os.stat("meter.json", dir_fd=measurement_fd,
-                            follow_symlinks=False)
-                except FileNotFoundError:
-                    return
-                raise Unavailable("source_changed")
-            try:
-                info = _require_private_fd(old_fd, directory=False, mode=0o600)
-            except Unavailable:
-                raise Unavailable("source_changed") from None
-            identity = (info.st_dev, info.st_ino, info.st_size,
-                        info.st_mtime_ns, info.st_ctime_ns)
-            if identity != old_identity or _read_ledger_fd_again(
-                    old_fd, MAX_LEDGER_BYTES) != old_raw:
-                raise Unavailable("source_changed")
-            after = os.fstat(old_fd)
-            named = os.stat("meter.json", dir_fd=measurement_fd,
-                            follow_symlinks=False)
-            if ((after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns,
-                 after.st_ctime_ns) != old_identity
-                    or not stat.S_ISREG(named.st_mode)
-                    or named.st_uid != os.getuid()
-                    or stat.S_IMODE(named.st_mode) != 0o600
-                    or named.st_nlink != 1
-                    or (named.st_dev, named.st_ino) != old_identity[:2]):
-                raise Unavailable("source_changed")
-
-        candidate_fd = os.open(
-            candidate_name,
-            os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
-            0o600, dir_fd=measurement_fd)
-        created = os.fstat(candidate_fd)
-        candidate_identity = (created.st_dev, created.st_ino)
-        _require_private_fd(candidate_fd, directory=False, mode=0o600)
-        offset = 0
-        while offset < len(payload):
-            written = os.write(candidate_fd, payload[offset:offset + 64 * 1024])
-            if written <= 0:
-                raise Unavailable("project_export_unavailable")
-            offset += written
-        os.fsync(candidate_fd)
-
-        def verify_candidate(name):
-            try:
-                before = _require_private_fd(candidate_fd, directory=False, mode=0o600)
-            except Unavailable:
-                raise Unavailable("source_changed") from None
-            before_snapshot = (before.st_dev, before.st_ino, before.st_uid,
-                               stat.S_IMODE(before.st_mode), before.st_nlink,
-                               before.st_size, before.st_mtime_ns, before.st_ctime_ns)
-            if before_snapshot[:2] != candidate_identity or before.st_size != len(payload):
-                raise Unavailable("source_changed")
-            raw = _read_ledger_fd_again(candidate_fd, MAX_LEDGER_BYTES)
-            after = os.fstat(candidate_fd)
-            after_snapshot = (after.st_dev, after.st_ino, after.st_uid,
-                              stat.S_IMODE(after.st_mode), after.st_nlink,
-                              after.st_size, after.st_mtime_ns, after.st_ctime_ns)
-            named = os.stat(name, dir_fd=measurement_fd, follow_symlinks=False)
-            if (raw != payload or after_snapshot != before_snapshot
-                    or not stat.S_ISREG(named.st_mode)
-                    or named.st_uid != os.getuid()
-                    or stat.S_IMODE(named.st_mode) != 0o600
-                    or named.st_nlink != 1 or named.st_size != len(payload)
-                    or (named.st_dev, named.st_ino) != candidate_identity):
-                raise Unavailable("source_changed")
-
-        def verify_remote_and_transaction():
-            verify_directories()
-            current_remote, current_reason = _verified_project_remote(
-                project, excluded_roots)
-            if current_reason is not None or current_remote != project["remote"]:
-                raise Unavailable(current_reason or "project_remote_mismatch")
-            verify_directories()
-            revalidate_transaction()
-            verify_directories()
-
-        verify_remote_and_transaction()
-        verify_old_export()
-        verify_candidate(candidate_name)
-        os.replace(candidate_name, "meter.json", src_dir_fd=measurement_fd,
-                   dst_dir_fd=measurement_fd)
-        committed = True
-        try:
-            os.fsync(candidate_fd)
-            os.fsync(measurement_fd)
-            published_fd, published_raw, published_identity = _open_private_leaf(
-                measurement_fd, "meter.json", limit=MAX_LEDGER_BYTES,
-                mode=0o600)
-            try:
-                if (published_raw != payload
-                        or published_identity[:2] != candidate_identity):
-                    raise Unavailable("source_changed")
-            finally:
-                os.close(published_fd)
-            verify_remote_and_transaction()
-            verify_candidate("meter.json")
-            return "written"
-        except Exception:
-            return "committed_uncertain"
-    except Unavailable:
-        raise
-    except (OSError, ValueError, TypeError, OverflowError, KeyError):
-        raise Unavailable("project_export_unavailable") from None
-    finally:
-        if not committed and candidate_fd >= 0:
-            try:
-                named = os.stat(candidate_name, dir_fd=measurement_fd,
-                                follow_symlinks=False)
-            except FileNotFoundError:
-                pass
-            except OSError:
-                cleanup_failed = True
-            else:
-                if ((named.st_dev, named.st_ino) != candidate_identity):
-                    cleanup_failed = True
-                else:
-                    try:
-                        os.unlink(candidate_name, dir_fd=measurement_fd)
-                    except OSError:
-                        cleanup_failed = True
-        for descriptor in (candidate_fd, old_fd, measurement_fd, dev_fd, project_fd):
-            if isinstance(descriptor, int) and descriptor >= 0:
-                try:
-                    os.close(descriptor)
-                except OSError:
-                    pass
-        if cleanup_failed:
-            raise Unavailable("project_export_unavailable") from None
-
-
-def _windows_atomic_write_project_export(project, ledger, config, excluded_roots,
-                                         api, user_sid):
-    """Replace one sanitized ignored export using a held NTFS project path."""
-    payload = _project_export_bytes(ledger, config, project["alias"])
-    remote, reason = _verified_project_remote(
-        project, excluded_roots, windows_api=api, windows_user_sid=user_sid)
-    if reason is not None or remote != project["remote"]:
-        raise Unavailable(reason or "project_remote_mismatch")
-    try:
-        handles, links, root_info = _windows_open_root(api, project["path"], user_sid)
-    except _MissingConfig:
-        raise Unavailable("project_export_unavailable") from None
-    dev_handle = meter_handle = old_handle = candidate_handle = -1
-    candidate_name = ".meter-" + secrets.token_hex(16) + ".tmp"
-    committed = False
-    try:
-        project_handle = handles[-1]
-        dev_handle = api.open("dev", project_handle, directory=True, read_data=True)
-        meter_handle = api.open("measurement", dev_handle, directory=True,
-                                read_data=True, write_data=True, share=3)
-        dev_before, meter_before = api.info(dev_handle), api.info(meter_handle)
-        api.check_acl(dev_handle, user_sid, "ancestor")
-        api.check_acl(meter_handle, user_sid, "ancestor")
-        if not dev_before["directory"] or not meter_before["directory"]:
-            raise Unavailable("project_export_unavailable")
-        old_row = _windows_project_entry(api, meter_handle, "meter.json")
-        old_before = old_raw = None
-        if old_row is not None:
-            old_handle = api.open("meter.json", meter_handle, read_data=True, share=5)
-            old_before = api.info(old_handle)
-            api.check_acl(old_handle, user_sid, "export")
-            if old_before["directory"] or old_before["links"] != 1:
-                raise Unavailable("project_export_unavailable")
-            old_raw, old_read_before = api.read_bounded(old_handle, MAX_LEDGER_BYTES)
-            if (_windows_stable_info(old_read_before) != _windows_stable_info(old_before)
-                    or len(old_raw) != old_before["size"]
-                    or old_row["file_id"] != old_before["identity"][1]):
-                raise Unavailable("source_changed")
-        candidate_handle = api.create_private(
-            candidate_name, meter_handle, user_sid, directory=False, delete=True,
-            candidate=True)
-        candidate_identity = api.info(candidate_handle)
-        api.write_all(candidate_handle, payload)
-        api.flush_full(candidate_handle)
-
-        def same_directory_snapshot(current, before, *, measurement=False):
-            if measurement:
-                comparable = ("identity", "directory", "links", "created")
-                return all(current.get(key) == before.get(key) for key in comparable)
-            return _windows_stable_info(current) == _windows_stable_info(before)
-
-        def verify_directories():
-            held_snapshots = [(handles[0], root_info, False)]
-            held_snapshots.extend((link[2], link[3], False) for link in links)
-            held_snapshots.extend(((dev_handle, dev_before, False),
-                                  (meter_handle, meter_before, True)))
-            volume = root_info["identity"][0]
-            for handle, before, is_measurement in held_snapshots:
-                current = api.info(handle)
-                api.check_acl(handle, user_sid, "ancestor")
-                if (not current["directory"]
-                        or current["identity"][0] != volume
-                        or not same_directory_snapshot(current, before,
-                                                       measurement=is_measurement)):
-                    raise Unavailable("source_changed")
-            for parent, name, _original, before in links:
-                reopened = api.open(name, parent, directory=True)
-                try:
-                    current = api.info(reopened)
-                    api.check_acl(reopened, user_sid, "ancestor")
-                    if (not current["directory"]
-                            or current["identity"][0] != volume
-                            or not same_directory_snapshot(current, before)):
-                        raise Unavailable("source_changed")
-                finally:
-                    api.close(reopened)
-            for name, parent, before, is_measurement in (
-                    ("dev", project_handle, dev_before, False),
-                    ("measurement", dev_handle, meter_before, True)):
-                reopened = api.open(name, parent, directory=True, read_data=True,
-                                    share=3 if is_measurement else 1)
-                try:
-                    current = api.info(reopened)
-                    api.check_acl(reopened, user_sid, "ancestor")
-                    if (not current["directory"]
-                            or current["identity"][0] != volume
-                            or not same_directory_snapshot(current, before,
-                                                           measurement=is_measurement)):
-                        raise Unavailable("source_changed")
-                finally:
-                    api.close(reopened)
-
-        def revalidate(candidate=True):
-            verify_directories()
-            current_old = _windows_project_entry(api, meter_handle, "meter.json")
-            if old_handle < 0:
-                if current_old is not None:
-                    raise Unavailable("source_changed")
-            else:
-                if current_old is None or current_old["file_id"] != old_before["identity"][1]:
-                    raise Unavailable("source_changed")
-                reopened = api.open("meter.json", meter_handle, read_data=True, share=5)
-                try:
-                    info = api.info(reopened)
-                    raw, read_info = api.read_bounded(reopened, MAX_LEDGER_BYTES)
-                    api.check_acl(reopened, user_sid, "export")
-                    if (_windows_stable_info(info) != _windows_stable_info(old_before)
-                            or _windows_stable_info(read_info) != _windows_stable_info(old_before)
-                            or raw != old_raw):
-                        raise Unavailable("source_changed")
-                finally:
-                    api.close(reopened)
-            if candidate:
-                info = api.info(candidate_handle)
-                api.check_acl(candidate_handle, user_sid, "export")
-                if (info["directory"] or info["links"] != 1
-                        or info["size"] != len(payload)
-                        or info["identity"] != candidate_identity["identity"]
-                        or info["created"] != candidate_identity["created"]):
-                    raise Unavailable("source_changed")
-                api.seek_zero(candidate_handle)
-                raw, read_info = api.read_bounded(candidate_handle, MAX_LEDGER_BYTES)
-                if (raw != payload
-                        or _windows_stable_info(read_info) != _windows_stable_info(info)):
-                    raise Unavailable("source_changed")
-                named = _windows_project_entry(api, meter_handle, candidate_name)
-                if named is None or named["file_id"] != info["identity"][1]:
-                    raise Unavailable("source_changed")
-
-        revalidate()
-        api.rename_replace(candidate_handle, meter_handle, "meter.json")
-        committed = True
-        try:
-            candidate_info = api.info(candidate_handle)
-            api.check_acl(candidate_handle, user_sid, "export")
-            accepted_created = {candidate_identity["created"]}
-            if old_before is not None:
-                accepted_created.add(old_before["created"])
-            if not _windows_published_candidate_matches(
-                    candidate_info, candidate_identity, len(payload), accepted_created):
-                raise Unavailable("source_changed")
-            published_created = candidate_info["created"]
-            api.flush_full(candidate_handle)
-            api.flush_full(meter_handle)
-            reopened = api.open("meter.json", meter_handle, read_data=True, share=7)
-            try:
-                info = api.info(reopened)
-                api.check_acl(reopened, user_sid, "export")
-                raw, read_info = api.read_bounded(reopened, MAX_LEDGER_BYTES)
-                if (not _windows_published_candidate_matches(
-                            info, candidate_identity, len(payload), {published_created})
-                        or raw != payload
-                        or _windows_stable_info(read_info) != _windows_stable_info(info)):
-                    raise Unavailable("source_changed")
-            finally:
-                api.close(reopened)
-            after_remote, after_reason = _verified_project_remote(
-                project, excluded_roots, windows_api=api, windows_user_sid=user_sid)
-            if after_reason is not None or after_remote != remote:
-                raise Unavailable(after_reason or "project_remote_mismatch")
-            verify_directories()
-            candidate_final = api.info(candidate_handle)
-            api.check_acl(candidate_handle, user_sid, "export")
-            if not _windows_published_candidate_matches(
-                    candidate_final, candidate_identity, len(payload), {published_created}):
-                raise Unavailable("source_changed")
-            return "written"
-        except (OSError, ValueError, TypeError, KeyError, Unavailable, _MissingConfig):
-            return "committed_uncertain"
-    except Unavailable:
-        raise
-    except (OSError, ValueError, TypeError, OverflowError, KeyError, _MissingConfig):
-        raise Unavailable("project_export_unavailable") from None
-    finally:
-        cleanup_failed = False
-        if candidate_handle >= 0 and not committed:
-            try:
-                api.delete_by_handle(candidate_handle)
-            except (OSError, ValueError, TypeError, Unavailable, _MissingConfig):
-                cleanup_failed = True
-        for handle in (candidate_handle, old_handle, meter_handle, dev_handle):
-            if isinstance(handle, int) and handle >= 0:
-                api.close(handle)
-        for handle in reversed(handles):
-            api.close(handle)
-        if cleanup_failed:
-            raise Unavailable("project_export_unavailable")
-
-
-def _git_helper_source():
-    source_path = Path(__file__).absolute()
-    if source_path.parent.name == "tools" and source_path.parent.parent.name == "dev":
-        root, relative = source_path.parents[2], "dev/tools/git_read.py"
-    elif source_path.parent.name == "tools":
-        root, relative = source_path.parents[1], "tools/git_read.py"
-    elif source_path.parent.name == "_lib" and len(source_path.parents) > 3:
-        root, relative = source_path.parents[3], "templates/skills/_lib/git_read.py"
-    else:
-        raise Unavailable("git_untrusted")
-    if _PRIVATE_FS_SUPPORTED:
-        root_fd = _open_directory_chain(root)
-        try:
-            raw, _identity = _read_relative_bytes(
-                root_fd, relative, limit=MAX_GIT_HELPER_BYTES)
-            return raw
-        finally:
-            os.close(root_fd)
-    if os.name == "nt":
-        api = _WindowsConsentAPI()
-        _profile, user_sid = api.current_user_profile()
-        stream = _WindowsApprovedLineStream(
-            str(source_path.parent), "git_read.py", MAX_GIT_HELPER_BYTES, api, user_sid)
-        raw = b"".join(stream)
-        if stream.terminal_reason is not None:
-            raise Unavailable("git_untrusted")
-        return raw
-    raise Unavailable("git_untrusted")
-
-
-def _verified_git_helper():
-    global _VERIFIED_GIT_HELPER
-    if _VERIFIED_GIT_HELPER is not None:
-        return _VERIFIED_GIT_HELPER
-    try:
-        raw = _git_helper_source()
-        if (not isinstance(raw, bytes) or len(raw) > MAX_GIT_HELPER_BYTES
-                or hashlib.sha256(raw).hexdigest() != SAFE_GIT_SOURCE_SHA256):
-            return None
-        import types
-        module = types.ModuleType("_cairn_meter_verified_git_read")
-        module.__file__ = str(Path(__file__).absolute().with_name("git_read.py"))
-        exec(compile(raw, module.__file__, "exec", dont_inherit=True), module.__dict__)
-        module.bind_verified_source(raw, SAFE_GIT_SOURCE_SHA256)
-        _VERIFIED_GIT_HELPER = module
-        return module
-    except (OSError, ValueError, TypeError, AttributeError, Unavailable):
-        return None
-
-
-def _safe_git_origin(config_bytes, target, excluded_roots, *, windows_api=None,
-                     windows_user_sid=None):
-    if not isinstance(config_bytes, bytes) or len(config_bytes) > MAX_GIT_CONFIG_BYTES:
-        return None, "source_budget_exceeded"
-    helper = _verified_git_helper()
-    if helper is None:
-        return None, "git_untrusted"
-    try:
-        result = helper.read_origin_from_config(
-            config_bytes, target=target, excluded_roots=tuple(excluded_roots), timeout=5.0)
-    except (OSError, ValueError, TypeError, AttributeError):
-        return None, "git_parser_failed"
-    if result.state == "absent":
-        return None, "git_unavailable"
-    if result.state != "completed" or result.returncode != 0:
-        reason = str(result.reason or "")
-        if "timeout" in reason:
-            return None, "git_timeout"
-        if "limit" in reason or "oversize" in reason:
-            return None, "git_output_limit"
-        if "changed" in reason or "replaced" in reason:
-            return None, "git_changed"
-        if "not-found" in reason:
-            return None, "git_unavailable"
-        if "untrusted" in reason or "excluded" in reason or "pin" in reason:
-            return None, "git_untrusted"
-        return None, "git_parser_failed"
-    raw = result.stdout
-    if not isinstance(raw, bytes) or not raw.endswith(b"\0") or raw.count(b"\0") != 1:
-        return None, "project_remote_ambiguous"
-    try:
-        remote = _strip_remote(raw[:-1].decode("utf-8", errors="strict"))
-    except (UnicodeError, ValueError, TypeError):
-        return None, "project_remote_unavailable"
-    if len(remote) > 2048:
-        return None, "project_remote_unavailable"
-    return remote, None
-
-
-def _verified_project_remote(project, excluded_roots, *, windows_api=None,
-                             windows_user_sid=None):
-    """Verify only an approved project's direct `.git/config` remote."""
-    try:
-        if not isinstance(project, dict) or not {"path", "remote"} <= set(project):
-            return None, "project_path_unapproved"
-        root = Path(project["path"])
-        if (not root.is_absolute() or any(part in {".", ".."} for part in root.parts)):
-            return None, "project_path_unapproved"
-        all_excluded = tuple(excluded_roots) + (str(root),)
-        if os.name == "nt":
-            api = windows_api or _WindowsConsentAPI()
-            if windows_user_sid is None:
-                _profile, windows_user_sid = api.current_user_profile()
-            remote, reason = _windows_project_config(
-                root, api, windows_user_sid,
-                lambda raw: _safe_git_origin(raw, str(root), all_excluded))
-        else:
-            remote, reason = _posix_project_config(
-                root, lambda raw: _safe_git_origin(raw, str(root), all_excluded))
-        if reason:
-            return None, reason
-        configured = _strip_remote(project["remote"])
-        if remote != configured:
-            return None, "project_remote_mismatch"
-        return remote, None
-    except Unavailable as exc:
-        return None, (exc.reason if exc.reason in {
-            "project_layout_unsupported", "project_remote_ambiguous",
-            "project_remote_unavailable", "source_budget_exceeded", "source_changed",
-            "git_timeout", "git_output_limit", "git_untrusted", "git_changed",
-            "git_parser_failed", "git_unavailable"} else "project_remote_unavailable")
-    except (OSError, ValueError, TypeError, KeyError):
-        return None, "project_remote_unavailable"
-
-
-def _posix_project_config(root, read_origin):
-    """Read and verify a direct Git config while its no-follow handles stay held."""
-    project_fd = _open_directory_chain(root)
-    project_identity = os.fstat(project_fd)
-    git_dir_fd = config_fd = -1
-    try:
-        before_git = os.stat(".git", dir_fd=project_fd, follow_symlinks=False)
-        if not stat.S_ISDIR(before_git.st_mode):
-            raise Unavailable("project_layout_unsupported")
-        git_dir_fd = os.open(".git", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                             dir_fd=project_fd)
-        opened_git = os.fstat(git_dir_fd)
-        if (opened_git.st_dev, opened_git.st_ino) != (before_git.st_dev, before_git.st_ino):
-            raise Unavailable("source_changed")
-        for extra in ("commondir", "config.worktree"):
-            try:
-                os.stat(extra, dir_fd=git_dir_fd, follow_symlinks=False)
-            except FileNotFoundError:
-                continue
-            raise Unavailable("project_layout_unsupported")
-        before = os.stat("config", dir_fd=git_dir_fd, follow_symlinks=False)
-        if not stat.S_ISREG(before.st_mode):
-            raise Unavailable("project_remote_unavailable")
-        config_fd = os.open("config", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=git_dir_fd)
-        opened = os.fstat(config_fd)
-        if (not stat.S_ISREG(opened.st_mode)
-                or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
-            raise Unavailable("source_changed")
-        if opened.st_size > MAX_GIT_CONFIG_BYTES:
-            raise Unavailable("source_budget_exceeded")
-        chunks, size = [], 0
-        while True:
-            block = os.read(config_fd, min(64 * 1024, MAX_GIT_CONFIG_BYTES + 1 - size))
-            if not block:
-                break
-            size += len(block)
-            if size > MAX_GIT_CONFIG_BYTES:
-                raise Unavailable("source_budget_exceeded")
-            chunks.append(block)
-        config_bytes = b"".join(chunks)
-
-        def revalidate():
-            after = os.fstat(config_fd)
-            named_git = os.stat(".git", dir_fd=project_fd, follow_symlinks=False)
-            current_project_fd = _open_directory_chain(root)
-            try:
-                current_project = os.fstat(current_project_fd)
-            finally:
-                os.close(current_project_fd)
-            if ((after.st_dev, after.st_ino) != (opened.st_dev, opened.st_ino)
-                    or (after.st_size, after.st_mtime_ns, after.st_ctime_ns)
-                    != (opened.st_size, opened.st_mtime_ns, opened.st_ctime_ns)
-                    or size != opened.st_size
-                    or (named_git.st_dev, named_git.st_ino)
-                    != (opened_git.st_dev, opened_git.st_ino)
-                    or (current_project.st_dev, current_project.st_ino)
-                    != (project_identity.st_dev, project_identity.st_ino)):
-                raise Unavailable("source_changed")
-
-        revalidate()
-        result = read_origin(config_bytes)
-        revalidate()
-        return result
-    except FileNotFoundError as exc:
-        raise Unavailable("project_remote_unavailable") from exc
-    finally:
-        if config_fd >= 0:
-            os.close(config_fd)
-        if git_dir_fd >= 0:
-            os.close(git_dir_fd)
-        os.close(project_fd)
-
-
-def _windows_project_config(root, api, user_sid, read_origin):
-    """Read and verify direct `.git/config` while no-follow handles stay held."""
-    handles, links, root_info = _windows_open_root(api, str(root), user_sid)
-    git_handle = config_handle = -1
-    try:
-        project_handle = handles[-1]
-        git_handle = api.open(".git", project_handle, directory=True)
-        git_before = api.info(git_handle)
-        if not git_before["directory"] or git_before["identity"][0] != root_info["identity"][0]:
-            raise Unavailable("project_layout_unsupported")
-        api.check_acl(git_handle, user_sid, "ancestor")
-        for extra in ("commondir", "config.worktree"):
-            try:
-                unexpected = api.open(extra, git_handle)
-            except _MissingConfig:
-                continue
-            else:
-                api.close(unexpected)
-                raise Unavailable("project_layout_unsupported")
-        config_handle = api.open("config", git_handle, read_data=True)
-        before = api.info(config_handle)
-        if before["directory"] or before["links"] != 1:
-            raise Unavailable("project_remote_unavailable")
-        api.check_acl(config_handle, user_sid, "ancestor")
-        config_bytes, read_before = api.read_bounded(config_handle, MAX_GIT_CONFIG_BYTES)
-        after = api.info(config_handle)
-        named_git = api.open(".git", project_handle, directory=True)
-        try:
-            named_git_info = api.info(named_git)
-        finally:
-            api.close(named_git)
-        if (_windows_stable_info(read_before) != _windows_stable_info(before)
-                or _windows_stable_info(after) != _windows_stable_info(before)
-                or (named_git_info["identity"] != git_before["identity"])
-                or len(config_bytes) != before["size"]):
-            raise Unavailable("source_changed")
-        for parent, name, original, before_link in links:
-            reopened = api.open(name, parent, directory=True)
-            try:
-                if _windows_stable_info(api.info(reopened)) != _windows_stable_info(before_link):
-                    raise Unavailable("source_changed")
-            finally:
-                api.close(reopened)
-        result = read_origin(config_bytes)
-        after_helper = api.info(config_handle)
-        named_git = api.open(".git", project_handle, directory=True)
-        try:
-            if (_windows_stable_info(after_helper) != _windows_stable_info(before)
-                    or api.info(named_git)["identity"] != git_before["identity"]):
-                raise Unavailable("source_changed")
-        finally:
-            api.close(named_git)
-        return result
-    finally:
-        if config_handle != -1:
-            api.close(config_handle)
-        if git_handle != -1:
-            api.close(git_handle)
-        for handle in reversed(handles):
-            api.close(handle)
+        if token is not None:
+            _release_lock(area, token)
 
 
 def _digest(*values):
@@ -6682,8 +3783,7 @@ def _summary_run(record):
     return _digest("agent-id", next(iter(found)))
 
 
-def read_records(tool, lines, *, config=None, source_aliases=(), source_root=None,
-                 windows_api=None, windows_user_sid=None):
+def read_records(tool, lines, *, config=None, source_aliases=(), source_root=None):
     """Normalize a bounded source batch without exposing raw IDs or paths.
 
     `lines` may be synthetic bytes or an exhausted `_ApprovedLineStream`. Any
@@ -6699,11 +3799,8 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
     config_supplied = config is not None
 
     def verify_project(project, excluded_roots):
-        if windows_api is None and windows_user_sid is None:
-            return _verified_project_remote(project, excluded_roots)
-        return _verified_project_remote(project, excluded_roots,
-                                        windows_api=windows_api,
-                                        windows_user_sid=windows_user_sid)
+        # The project's remote is the one the user wrote in the consent file.
+        return project["remote"], None
     owner = None
     active_owner = None
     source_header_key = None
@@ -7427,64 +4524,15 @@ def _closed_refresh_receipt(result):
             "reason": reason, "coverage": "unknown"}
 
 
-def _run_windows_refresh(*, report_current_directory=None):
-    """Read fixed consent, then collect only inside an owned kill-on-close Job."""
-    api = None
-    opened = None
-    job = None
-    try:
-        api = _WindowsConsentAPI()
-        profile, user_sid = api.current_user_profile()
-        opened = api.read_config(profile, user_sid, retain_handles=True)
-        if opened is None:
-            return {"status": "disabled", "reason": "config_missing"}
-        config_raw, held = opened
-        config = validate_config_bytes(config_raw)
-        if not config["enabled"]:
-            held.close()
-            opened = None
-            return {"status": "disabled", "reason": "disabled"}
-        job = api.install_worker_job()
-        # Preserve the owned handle until this CLI process exits. Closing it in
-        # this function would trigger JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE here.
-        _WINDOWS_WORKER_JOBS.append((api, job))
-        collected, opened = opened, None
-        if report_current_directory is None:
-            return _refresh_ledger_windows(profile, api, user_sid, opened=collected)
-        return _refresh_ledger_windows(
-            profile, api, user_sid, opened=collected,
-            report_current_directory=report_current_directory)
-    except Unavailable as exc:
-        return {"status": "unavailable", "reason": exc.reason}
-    except (OSError, ValueError, TypeError, OverflowError, KeyError, AttributeError):
-        return {"status": "unavailable", "reason": "unavailable"}
-    finally:
-        if opened is not None:
-            try:
-                opened[1].close()
-            except (OSError, ValueError, TypeError, AttributeError):
-                pass
-
-
 def _run_explicit_refresh(*, report=False):
-    if report:
-        current_directory = os.getcwd()
-        if os.name == "nt":
-            return _run_windows_refresh(report_current_directory=current_directory)
-        try:
-            home = _fixed_user_home()
-            result = _refresh_ledger(home, report_current_directory=current_directory)
-        except Unavailable:
-            result = {"status": "unavailable", "reason": "config_home_unavailable"}
-        return result
-    if os.name == "nt":
-        return _closed_refresh_receipt(_run_windows_refresh())
     try:
         home = _fixed_user_home()
+        if report:
+            return _refresh_ledger(home, report_current_directory=os.getcwd())
         result = _refresh_ledger(home)
     except Unavailable:
         result = {"status": "unavailable", "reason": "config_home_unavailable"}
-    return _closed_refresh_receipt(result)
+    return result if report else _closed_refresh_receipt(result)
 
 
 def _pulse_has_explicit_inputs(args):
@@ -7497,6 +4545,26 @@ def _pulse_has_explicit_inputs(args):
 
 
 def main():
+    """Run one command; any failure prints only a closed answer, never a traceback or path."""
+    try:
+        return _main()
+    except Exception:
+        as_json = "--json" in sys.argv[1:]
+        if any(argument in {"refresh", "rebuild"} for argument in sys.argv[1:]):
+            receipt = _closed_refresh_receipt({"status": "unavailable", "reason": "unavailable"})
+            if as_json:
+                print(json.dumps(receipt, sort_keys=True, separators=(",", ":")))
+            else:
+                print(f"meter {receipt['status']}: {receipt['reason']}")
+        elif as_json:
+            print(json.dumps({"schema": "cairn-meter-foundation/1", "collection": "unavailable",
+                              "usage": {tool: "unknown" for tool in TOOLS}}, sort_keys=True))
+        else:
+            print("meter: unavailable; usage remains unknown for all supported tools")
+        return 5
+
+
+def _main():
     """Config-only status by default; collection requires explicit refresh/rebuild."""
     parser = argparse.ArgumentParser(description="Cairn usage meter")
     parser.add_argument("--json", action="store_true", help="emit the status as JSON")
@@ -7542,16 +4610,6 @@ def main():
             print(f"meter {receipt['status']}: {receipt['reason']}")
         return code
 
-    if os.name == "nt":
-        status = _windows_config_status()
-        code = 0 if status == "disabled" else 5
-        result = {"schema": "cairn-meter-foundation/1", "collection": status,
-                  "usage": {tool: "unknown" for tool in TOOLS}}
-        if args.json:
-            print(json.dumps(result, sort_keys=True))
-        else:
-            print(f"meter: {status}; usage remains unknown for all supported tools")
-        return code
     try:
         home = _fixed_user_home()
         config = load_config(home / ".cairn" / "meter.json")
