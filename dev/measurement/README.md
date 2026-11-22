@@ -61,7 +61,7 @@ them.
   on Mac and Linux); installation creates no configuration or ledger. It reads
   only what the file lists, and only counts leave a log (an `antigravity` source
   also has the saved text files in each conversation folder searched for project
-  paths; only which listed projects matched leaves). The file's content is
+  paths; only how many files name each listed project leaves). The file's content is
   checked, not who wrote it. The config is version 1 with `enabled`, `sources`,
   and `projects`. A source names an alias, a tool (`codex`, `claude`, or
   `antigravity`) and the absolute root to scan; a project names an alias, its
@@ -144,10 +144,13 @@ them.
   makers' own and are not matched against a real log; a Codex reply whose log
   omits its cache-write count gets no total. The pulse prints each row's weighted total as `weighted=`, or `weighted=unknown` where the row has none.
 
-  An `antigravity` conversation counts toward the one listed project whose path
-  its own saved files name, and toward no project if they name none or several,
-  or if the search hits a limit (16 MiB, 5,000 entries or 8 folder levels per
-  conversation) or cannot read a file.
+  An `antigravity` conversation counts toward the listed project that the most
+  of its own saved files name, when that project's file count is at least ten
+  times the next project's; if only one project is named, one file is enough.
+  It counts toward no project if no project leads that clearly, if no file
+  names one, if the search hits a limit (128 MiB, 5,000 entries or 8 folder
+  levels per conversation) or if it cannot read a file. A folder named `chunks`
+  holds copies, so the search skips it without opening it.
   A project's export then carries `antigravity_project_inferred`, because
   matching text is an inference, not proof; a row whose source is no longer
   listed gets the same label. While any such conversation is
