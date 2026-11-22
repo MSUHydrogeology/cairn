@@ -1,7 +1,7 @@
 # Plan: Defect arc J, the meter's table of token weights
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -172,4 +172,39 @@ and add to (b): "a model whose long level has no write weights counts only fresh
 **Not covered.** The prices against the makers' pages; real logs; any test run; the Security Review questions.
 
 **Verdict**: REVISE
+**Elapsed time**: unknown. **Tokens**: unknown.
+
+## Security Review -- Reviewer (Claude Opus 5.5) -- 2026-11-22
+
+```
+Reviewed commit: 9acb1438
+```
+
+**Obligation**: Internal Security Review of the plan.
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes, on security grounds: the stored label and table are never read back. The project export writes the constant `RATIO_VERSION` and drops each daily row's `reference_index` -- `meter.py` 2299-2319.
+2. **Best alternative.** None safer: a fixed-form label check plus discarding the stored table keeps every other ledger check -- `meter.py` 1526-1534, 1579-1583.
+3. **What would show it wrong.** A ledger field that later reaches a summary or a printed line without a form check. I found none: the pulse reads `ratio_version` only at its test -- `pulse.py` 302.
+
+**Where I agree.** I agree with the usual review throughout. Its finding 1, answered as written (rule (b) counts only fresh input and cached reads as the prompt when the long level has no write weights), raises no security question: it reads no new input and writes only decimal strings. My words govern only the security answers below.
+
+**Answers.**
+
+- *What the equality check guarded.* It kept the stored figures consistent with one table. It did not defend against a hostile writer. The ledger is the user's own file. Anyone who can edit it could already set a folded day's figures, because those are checked only for decimal form and are never recomputed (`meter.py` 1531-1534). After the change, a crafted ledger gains nothing new. The stored table is replaced with no read of its content, and only after parsing, which the 64 MiB cap already bounds (`meter.py` 121, 1571). Any error still ends as `ledger_invalid` (`meter.py` 1732-1734). Nothing new is read or written outside the meter's own files.
+- *The label form.* `fullmatch` on a `str`, with ASCII `[0-9]`, lets nothing but the fixed prefix, digits and hyphens through. Both checks also test `isinstance(..., str)`, so a number or list cannot raise `TypeError` in the pulse. No stored label reaches a summary.
+- *Codex weighting.* The selected `model` has already passed `_safe_alias` (`meter.py` 161-165) and is already exported. It is used only to look up a row in a constant table, and the result is decimal text. No log text reaches the summary that could not reach it before.
+- *Reads and consent.* No new path is read, and the consent file is untouched.
+
+**Findings**
+
+1. Non-blocking. Rule (b) with the fix reads `long_level["cache_write_5m"]`, and the cache-write step reads `level[...]`. If an OpenAI `long_prompt` omitted the write keys, every Codex reply would raise `KeyError` at a refresh. The OpenAI table shows "fresh, read, output" only. Add to (a): "Each OpenAI `long_prompt` also carries `cache_write_5m` and `cache_write_1h` as `None`." T1b then exercises it.
+2. Non-blocking. State in (c) that the two overwrites happen inside the `try` of `_load_ledger`, before it returns.
+
+**Not covered.** Prices; real logs; any test run; places that call `_weighted_reference_tokens` other than the export and `_recompute_aggregates`.
+
+**Verdict**: ACCEPT (Security Review), provided the answered fix to the usual finding 1 is written into (b) as given.
 **Elapsed time**: unknown. **Tokens**: unknown.
