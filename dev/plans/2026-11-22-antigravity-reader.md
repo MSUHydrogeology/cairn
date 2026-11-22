@@ -78,3 +78,38 @@ Entries: `meter.py refresh` and `meter.read_records`. With `$HOME/conda_envs/lhm
 **Protected files, checked 2026-11-22.** `tests/fixtures/protected_test_roster.json` names none of the touched files. `tests/fixtures/gate_manifest.json` pins `tests/integration/test_meter.py` (a SHA-256 under `ordinary_test_files`, already different from the file today, and 368 node ids, to which C1 to C3 add) and names `templates/skills/_lib/meter.py` only inside two node ids; it freezes no meter file, README or changelog. The Maintainer sees the test file at his next signing. The twin is a Python template, a high-risk surface, so the Security Review applies.
 
 **Not checked.** I ran no test and read no Antigravity file or `~/.cairn/meter.json`. Unknown: the caps and depth, whether `input_tokens` includes cached text, Windows spellings of a folder in Antigravity's text, and whether `ANTIGRAVITY_TRAJECTORY_ID` equals the folder name. This plan runs about 2,400 words (`wc -w`) against a 1,500 target because it states a trust change and each limit in full.
+
+## Plan review -- Claude Opus 5.5 (Security reviewer) -- 2026-11-22
+
+Reviewed commit: 149606373bc17f885fe7fe8e1a72e2f5a8f3adeb (plan and `meter.py` unchanged at 5ba023b3)
+
+**Obligation**: the Security Review of the trust change (rule 5) and its reach
+**Tier**: Internal Security Review
+**Findings**: raised (2 blocking, 4 non-blocking)
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: option B is the reading of "function like everything else"; the harm of a wrong match is a wrong report figure -- plan rule 5; `_project_export` copies only counts (`meter.py` 2300-2408).
+2. **Best alternative.** None simpler gives a project figure; the fixed-name walker is safer than `_enumerate_jsonl`, whose 100,000-entry cap fails every tool (406, 2814-2816).
+3. **What would show it wrong.** Most conversations over the 16 MiB cap: 563 MB over 48 conversations averages 11.7 MB, so the caps may defeat the outcome; nobody has counted per-conversation size.
+
+**Blocking**
+
+B1. **S4 is false: a missed second name misattributes, it does not leave a conversation unattributed.** A synthetic check of rule 5's bytes gave `worked in /x/cairn and /x/cairn2.` -> `/x/cairn` only (period blocks `/x/cairn2`); also missed for the second project: `~`, case, NFD, `%20`, Windows `c:/`, and a name split across two 64 KiB blocks. A non-ASCII byte after the root (`/x/cairné`) wrongly matches `/x/cairn`. The prefix pair `/x/cairn`, `/x/cairn2` is correct. Rule 5 also omits the proposal's A.3 remote check (`verify_project`, 4400-4404). Exact words: in rule 5 replace "a sentence-final period blocks a match, which fails toward unattributed" with "a `.` counts as an end when the byte after it is not a letter, digit, `_` or `-`; any byte of 0x80 or above after the root blocks a match; blocks overlap by the root's length plus 7 bytes"; after "the replies carry it" add "if that project passes `verify_project`, as Claude's do"; replace S4 with "S4: a missing or unreadable file, or a cap, leaves a conversation unattributed; a second project named only in a spelling the rule misses gives the conversation to the first (accepted, a wrong report figure)". C2 adds: a root split across a block edge; `/x/cairné`; the period case.
+
+B2. **Caps and opens are underspecified where they matter.** The plan does not say which counter the new walker and the search charge. If either charges `MAX_REFRESH_ENTRIES` or `MAX_SOURCE_FILES`, a large `brain/` raises `source_budget_exceeded` and fails the refresh for Claude and Codex too (2815-2816). "Opens files without following" is false on Windows (`_O_NOFOLLOW` is 0, 335), and no open checks middle folders (827). Exact words: add to rule 5's Bounds "Search entries and bytes charge only the per-conversation caps and a per-refresh cap of 50,000 entries; over it, conversations wait (`catching_up`); the log walker stops at 2,000 conversations the same way; nothing in Antigravity's reader raises `source_budget_exceeded`. Each opened file's `fstat` device and inode must equal the walk's `lstat`, or the search is incomplete." C3 adds a refresh with Claude and an over-cap `brain/` where Claude still counts.
+
+**Non-blocking**
+
+N1. `antigravity_unattributed` sits in the ledger's reasons, which every export copies (2394), so every project, Claude- and Codex-only ones too, prints INCOMPLETE from the first refresh (4 conversations with tokens name no folder). State it; the Maintainer chooses.
+N2. Inferred events marked `proven` also feed the claim-to-artifact join (`_build_mappings`, 3116-3120); "no gate reads it" should say so. The export still tells inferred rows by tool and reason.
+N3. W1's share check repeats the look's own rule, so it tests the build, not the attribution; add a hand-labelled sample by the Maintainer and a count of conversations over each cap.
+N4. A hard link to `~/.gemini`'s credential file is a regular file and would be searched; only a yes/no leaves. Name it in S5.
+
+Consent (7), what leaves (4: fixed reason strings, digests of random ids, cursor keys digested at 2822) and the label (5) hold.
+
+**Verdict**: REVISE
+
+**Coverage**: read the plan, the look and Addendum, the proposal's rule A and Security review, the privacy rules, `meter.py` 30-470, 790-860, 2300-2410, 2791-3000, 3089-3275, 3551, 4400-4420, `pulse.py` 37-60, 455-470. Not read: `_conversation_project` (unbuilt), `read_records` body, tests, the usual review. Ran no test; read no Antigravity file or `meter.json`. Over target: two blocking findings need exact words.
+**Elapsed**: about 25 minutes
+**Tokens**: unknown
