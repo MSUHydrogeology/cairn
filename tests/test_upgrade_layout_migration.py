@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import shutil
+import stat
 import subprocess
 from pathlib import Path
 
@@ -210,7 +212,13 @@ def test_layout_migration_refuses_or_reconciles(layout, capsys, problem):
 
 def test_packaged_source_only_needs_history_for_legacy_paths(layout, capsys):
     source, target, _ = layout
-    shutil.rmtree(source / ".git")
+    def make_writable(function, name, _error):
+        # Windows marks Git's object files read-only and will not delete one
+        # until that is lifted.
+        os.chmod(name, stat.S_IWRITE)
+        function(name)
+
+    shutil.rmtree(source / ".git", onexc=make_writable)
     assert _upgrade(layout, "--plan") == 2
     error = capsys.readouterr().err
     assert "Git checkout" in error and OLD[0] in error

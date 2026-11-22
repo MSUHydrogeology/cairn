@@ -485,7 +485,7 @@ def test_adoption_treats_legacy_task_markers_as_project_text(
               "* [x] My preserved work\n"
               "<!-- cairn:module-task-end id=retired-module -->\n")
     text = text.replace(marker, legacy + marker)
-    planning.write_text(text, encoding="utf-8")
+    planning.write_text(text, encoding="utf-8", newline="\n")
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
     prefix = planning.read_bytes()
     assert s.main(base + ["--adopt-module", "dual-review"]) == 0

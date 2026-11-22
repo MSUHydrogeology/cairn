@@ -221,7 +221,8 @@ def test_adopter_edit_survives_an_upstream_change(tmp_path: Path, capsys, kept: 
     if kept == "adopted-fork":
         dst = _TARGET
         _make_untracked(target, keep_on_disk=True)
-        (target / dst).write_text("# my customized file\n", encoding="utf-8")
+        (target / dst).write_text("# my customized file\n", encoding="utf-8",
+                                  newline="\n")
         capsys.readouterr()
         assert s.main(base + ["--stage"]) == 0
         triple = next(tok for tok in capsys.readouterr().out.split()
@@ -231,24 +232,25 @@ def test_adopter_edit_survives_an_upstream_change(tmp_path: Path, capsys, kept: 
         dst = _VERBATIM_CLI
         script = target / dst
         script.write_text(script.read_text(encoding="utf-8")
-                          + "\n# adopter local change\n", encoding="utf-8")
+                          + "\n# adopter local change\n", encoding="utf-8",
+                          newline="\n")
         _lock_older_base(target, dst)
     else:
         dst = _SKILL_MD
         cache = target / "dev" / ".cairn" / "base" / dst
         live = target / dst
         cache.write_text(cache.read_text(encoding="utf-8").replace(
-            _SKILL_HEADER, "# OLD", 1), encoding="utf-8")
+            _SKILL_HEADER, "# OLD", 1), encoding="utf-8", newline="\n")
         live.write_text(live.read_text(encoding="utf-8").replace(
             _SKILL_HEADER, "# OLD", 1) + "\n" + _ADOPTER_NOTE + "\n",
-            encoding="utf-8")
+            encoding="utf-8", newline="\n")
         _lock_older_base(target, dst, cache.read_bytes())
     before = (target / dst).read_bytes()
 
     assert s.main(base + ["--stage"]) == 0
     assert s.main(base + ["--apply"]) == 0
 
-    after = (target / dst).read_text(encoding="utf-8")
+    after = (target / dst).read_bytes().decode("utf-8")
     if kept == "customized-skill-md":
         assert _ADOPTER_NOTE in after and _SKILL_HEADER in after
     else:

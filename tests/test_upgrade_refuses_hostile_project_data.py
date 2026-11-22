@@ -141,11 +141,14 @@ def _profile_link_world(world: World, how: str, tmp_path: Path) -> World:
         return world
     assert how == "dangling-relative-delivered-by-clone"
     link("../../../outside/from-clone.yml", profile)
+    # Git for Windows can be set up not to make links (`core.symlinks=false`);
+    # the test needs a project that carries one, so it asks for links by name.
+    links = ("-c", "core.symlinks=true")
     git(world.project, "init", "-q")
-    git(world.project, "add", "-A")
-    git(world.project, "commit", "-q", "-m", "a project that carries a link")
+    git(world.project, *links, "add", "-A")
+    git(world.project, *links, "commit", "-q", "-m", "a project that carries a link")
     clone = tmp_path / "clone"
-    git(tmp_path, "clone", "-q", str(world.project), str(clone))
+    git(tmp_path, *links, "clone", "-q", str(world.project), str(clone))
     assert (clone / LOCK_REL).is_file(), "the clone must carry the lockfile"
     assert (clone / PROFILE_REL).is_symlink(), "the clone must carry the link"
     return world._replace(project=clone)

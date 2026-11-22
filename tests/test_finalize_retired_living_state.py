@@ -84,7 +84,9 @@ def _record(project: Path, dst: str) -> dict:
 def _edit_records(project: Path, edit) -> None:
     lock = _lock(project)
     edit(lock["files"])
-    (project / LOCK_REL).write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+    # LF, as the installer writes it: the project's `.gitattributes` asks for LF
+    # and the dirty-tree check hashes the bytes it finds.
+    (project / LOCK_REL).write_text(s._emit_lock_yaml(lock), encoding="utf-8", newline="\n")
 
 
 @pytest.fixture(scope="module")
