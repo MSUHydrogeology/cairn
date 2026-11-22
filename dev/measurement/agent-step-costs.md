@@ -243,7 +243,9 @@ Measured:
 - **A two-line fix cost seven agent runs.** Plan K (2026-11-22) changed two lines of one tool. As a change to a
   shipped tool it took a plan, two plan reviews, a build, two code reviews and a response: 425,915 tokens by
   the harness's figures. Plan J the same day changed about 120 lines of code and cost 676,006 over the same
-  seven steps. The price of a step does not shrink with the size of the change.
+  seven steps. The price of a step does not shrink with the size of the change. Priced from the logs
+  ("Cost by plan, priced", below), those steps were cheap: 2.39 dollars for plan K and 6.37 for plan J at
+  public prices, against 47.73 for the coordinating session over the same 70 minutes.
 - **Replies of five lines work.** From 2026-11-21 each agent writes its full account into
   the plan or proposal and answers the coordinating session in a fixed form of five or six
   lines. Nine agents have done so; none needed a second ask.
@@ -371,6 +373,46 @@ The prices used:
 
 Assumed, not checked: the standard service speed and worldwide routing. A
 faster mode or US-only routing is priced higher.
+
+## Cost by plan, priced (measured 2026-11-22)
+
+The agents' work on a whole plan costs a few dollars at public prices. The
+coordinating session costs several times as much over the same stretch.
+
+**How it was measured.** A count-only read of the session's logs for
+2026-11-22 from 15:00 UTC to 16:10 UTC. The logs mark every reply of a
+sub-agent with that agent's run id, so each run's replies were summed and
+priced with the table above. Only sums, counts, times and model names left the
+logs. The Maintainer asked for this the same day: "how about we report costs
+per plan?"
+
+| Work | Step | Model | Replies | Tokens | At public prices |
+|---|---|---|---|---|---|
+| Plan J, the meter's table of weights | plan, fold, build and response, one agent | Sonnet 5.5 | 83 | 15,040,766 | $3.51 |
+| | plan review, usual | Sonnet 5.5 | 21 | 2,447,063 | $0.68 |
+| | plan review, Security | Opus 5.5 | 13 | 1,055,903 | $0.80 |
+| | code review, usual | Sonnet 5.5 | 10 | 880,276 | $0.29 |
+| | code review, Security | Opus 5.5 | 21 | 1,859,016 | $1.08 |
+| | **all of plan J's agents** | | 148 | 21,283,024 | **$6.37** |
+| Plan K, the pulse reads a report on Windows | plan, fold, build and response, one agent | Sonnet 5.5 | 31 | 3,039,283 | $0.79 |
+| | plan review, usual | Sonnet 5.5 | 9 | 598,216 | $0.17 |
+| | plan review, Security | Opus 5.5 | 14 | 1,137,284 | $0.63 |
+| | code review, usual | Sonnet 5.5 | 7 | 462,081 | $0.14 |
+| | code review, Security | Opus 5.5 | 14 | 979,665 | $0.65 |
+| | **all of plan K's agents** | | 75 | 6,216,529 | **$2.39** |
+| The coordinating session, same stretch | research, briefs, checks, records, reports | Fable 5.2 | 160 | 67,756,257 | $47.73 |
+
+- **The reviews are not where the money goes.** All four reviews of plan K
+  together cost 1.59 dollars, and all four of plan J 2.85.
+- **The coordinating session is.** Each of its 160 replies re-read about
+  423,000 tokens of conversation. It is not split by plan here: its replies
+  serve whichever plan is in hand, and nothing in the logs says which.
+- **The meter cannot yet report this by itself.** It ties a reply to a file
+  only while a single work claim is open around it. Measured in its own record
+  the same day: 298 claims, 0 of 295 replies tied. Claims are held for a
+  median of 22 seconds; every agent shares the coordinating session's tag, so
+  their claims overlap; and 109 claims were never released, which under the
+  meter's rule stops every later reply of that session from being tied.
 
 ## Keeping it
 
