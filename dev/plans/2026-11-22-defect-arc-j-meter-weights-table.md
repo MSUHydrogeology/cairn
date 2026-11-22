@@ -1,7 +1,7 @@
 # Plan: Defect arc J, the meter's table of token weights
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -222,5 +222,103 @@ Reviewed commit: 9acb1438
 - Usual finding 5: taken. The README paragraph carries the unchecked items; the template README writes `dev/tools/meter.py`.
 - Security finding 1: taken. (a) says each OpenAI `long_prompt` carries both write keys as `None`.
 - Security finding 2: taken. (c) says the two overwrites happen inside the `try` of `_load_ledger`.
+
+Not run for this response: any test. **Elapsed time**: unknown. **Tokens**: unknown.
+
+## Implementation record -- Claude Sonnet 5.5 (Implementation) -- 2026-11-22
+
+**Result.** All three chunks are built. The new totals and the ledger change work on every test run for them, except one pulse test that this machine fails by itself on some runs (below). Nothing was run on real logs.
+
+**Commits by chunk** (branch `arc-j-impl`, work folder `.claude/worktrees/arc-j`): status to implementing; C1 table, two price levels and Codex weighting, with its tests changed first; C2 ledger and pulse change, with T2, T3 and the two refusal lines; C3 shipped copies, both READMEs and the changelog; the lock in its own commit; this record. Hashes are in `git log 0ed25868..arc-j-impl`.
+
+**Tests, Windows, `C:\ProgramData\Anaconda3\python.exe`, each once as the plan says.**
+
+- Before the code change, all three C1 tests failed as expected: T1a, T1b (renamed), the index-pin test. T2 and T3 failed before the C2 code (T2 answered `unavailable` where `written` was expected, read from its failure line; T3 was refused for the new version). The two refusal lines were not run before, as the plan says.
+- After the change: T1a, T1b, T2, the index-pin test, the two comparing tests and both refusal lines passed, 8 of 8 in one run. T3 passed in its first run after the change and again failed in later runs.
+- **T3 failure is this machine's.** It is refused at `_read_pulse_report`, whose check that the file's identity and times did not change while it was read fails on this host (roadmap items (j) and (p)). Evidence: the untouched sibling `test_project_meter_v2_wait_rows_validate_and_reconcile` failed four times in four in the work folder, and in the main checkout (without my change) T3 failed in one of three runs. A direct call of `_parse_meter_aggregate` accepts `cairn-api-token-index/2027-01-15` and `2026-11-06` and refuses `cairn-api-token-index/latest`. Not chased further.
+
+**Direct check of the table.** One command loaded `dev/tools/meter.py` from the work folder and printed each model's weights as decimals, with each `long_prompt` level. I compared the print with the plan's three price tables cell by cell by eye: every cell matches, and the four older rows are unchanged. This was a read, not a test.
+
+**Differences from the plan.** (1) In `_load_ledger` the two overwrites sit right after the schema, label and table form checks, not after every later check; they are still inside the `try`, and a later failure discards the ledger either way. (2) `check_cairn` with no argument, once: OK. `install/verify_integrity.py --target .`: OK.
+
+**Not run.** Any other test, any other host, the whole suite, the real machine (Strategy's check: a refresh on the Windows Server machine with the old ledger left in place). The gate-manifest lines (test_meter, test_gauge hashes, the renamed node, the new T2 node) are owed at the Maintainer's signing.
+
+**Elapsed time**: unknown. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-22
+
+```
+Reviewed commit: 87a757ad669d62ac2028933f9d9b691ee9967687
+Range: 0ed25868722daa4f4a820803c41c1d8f94dfb680..87a757ad669d62ac2028933f9d9b691ee9967687
+```
+
+**Obligation**: Internal code review (usual pass); the Security Review follows.
+**Findings**: one non-blocking.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. It does what the plan says. The table matches the plan's three price tables cell by cell, the old four rows are untouched, and the level choice uses a strict "over" on fresh plus read, plus write only when the long level prices it -- `meter.py` 96-172, 3641-3680.
+2. **Best alternative.** None simpler: one two-level mechanism serves Haiku 5.5 and the OpenAI rows, and one label pattern in `pulse.py` serves meter and pulse -- `pulse.py` 38-39.
+3. **What would show it wrong.** A ledger with a bad label (`today`), a long prompt of exactly 100,000, or a Codex reply with no write count. The tests assert each of these -- `test_meter.py` T1a, T1b, T2 and the two refusal lines.
+
+**Checked, no fault.**
+
+- `_load_ledger` accepts only a `str` label of the exact form and a `dict` table, then overwrites both inside the `try`. Every other check is as before.
+- `_validate_aggregate_row` has the same form test.
+- `_add_rows` keeps equal labels and otherwise uses the current one.
+- Held replies are recomputed on each refresh.
+- The reader and `_validate_event` are untouched.
+- `cmp` of the two code pairs prints nothing. The README pair differs only by `dev/tools/meter.py`, as the plan says.
+- The lock commit holds only the lock, and `verify_integrity` reports OK.
+- Each changed test asserts the plan's numbers, and the old assertions were edited in place, not kept beside new ones.
+- The one addition beyond the named nodes is a fourth case in T1a, which is the plan's own list.
+- No frozen file changed beyond the lock and the shipped copies.
+
+**Finding.**
+
+1. Non-blocking. The README sentence "a reply with an unknown count, gets counts and no weighted total" is wider than the code. A model with no long level still gives partial figures when one count is unknown (the existing partial-figures test, T1a). Only a model with a second level blanks every figure. This is the plan's own wording, so no code change is needed. Suggested words: "a reply with an unknown count gets no total, and no figure at all where the model has a long-prompt level."
+
+**What the runs show.** The failing-before and passing-after runs cover the table, the level choice, Codex weighting and the ledger survival. They leave unshown the pulse refusal, because T3 is unstable on this host. I did not run it. Nor do they show any real log, which is Strategy's check.
+
+**Not covered.** The prices against the makers' pages, any test run by me, other hosts, and the Security Review questions.
+
+**Verdict**: ACCEPT
+**Elapsed time**: unknown. **Tokens**: unknown.
+
+## Code review -- Claude Opus 5.5 (Security Review) -- 2026-11-22
+
+```
+Reviewed commit: 87a757ad669d62ac2028933f9d9b691ee9967687
+Range: 0ed25868722daa4f4a820803c41c1d8f94dfb680..87a757ad669d62ac2028933f9d9b691ee9967687
+```
+
+**Obligation**: Internal Security Review of the code as built.
+**Findings**: none.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes, on security grounds: the stored label and table are checked for form, then replaced, and nothing reads them back -- `meter.py` 1652-1660.
+2. **Best alternative.** None safer: the label must still match one fixed pattern, and every other ledger check is unchanged -- `pulse.py` 39; `meter.py` 1598-1603.
+3. **What would show it wrong.** A stored label or log text reaching the summary or a printed line. None does: the export writes the constant `RATIO_VERSION`, and the pulse uses `ratio_version` only in its form test -- `meter.py` 2396-2400; `pulse.py` 304-305.
+
+**Where I agree.** I agree with the usual review throughout. Its one finding is about README wording and has no security bearing. My words govern only the answers below.
+
+**Answers.**
+
+- *A crafted or damaged ledger.* It can do nothing new. A wrong label or table is refused or replaced. Any error, including a missing attribute, still ends as `ledger_invalid` (`meter.py` 1809-1811). No new path is read or written. The write-then-reload check (`meter.py` 591) no longer covers the stored table's bytes. No harm follows, because they are replaced at every load.
+- *The label form.* I ran one planted check of the pattern, not a test. Only the exact label matched. A trailing newline, an Arabic-Indic digit, an escape sequence and `latest` were each refused.
+- *Codex weighting.* Only the Codex reader sets `selected_context` (`meter.py` 4248). The name has passed `_safe_alias` (`meter.py` 1272-1273). It is used only to look up a row in a fixed table, and the result is decimal text. No new text reaches the summary.
+- *Mixed labels.* `_add_rows` labels a merged row with the current table. That label is stored only in the ledger and never exported.
+- *Reads and consent.* No reader, path or consent check changed.
+
+**Not covered.** Prices; real logs; other hosts; any test run; the pulse's file-identity check, which this plan leaves unchanged.
+
+**Verdict**: ACCEPT (Security Review)
+**Elapsed time**: unknown. **Tokens**: unknown.
+
+## Response to code review -- Claude Sonnet 5.5 (Implementation) -- 2026-11-22
+
+- Usual code review (ACCEPT, one non-blocking note): taken. Both READMEs now say a model missing from the table gets counts and no weighted total, and a reply with an unknown count gets no total, and no figure at all where the model has a long-prompt level. No code changed. Cairn's lock was refreshed for `dev/measurement/README.md` in its own commit; `install/verify_integrity.py --target .` reports OK, and `tests/check_cairn.py` with no argument reports OK.
+- Security Review (ACCEPT, no findings): nothing to do.
 
 Not run for this response: any test. **Elapsed time**: unknown. **Tokens**: unknown.

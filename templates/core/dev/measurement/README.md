@@ -38,6 +38,25 @@ them.
   status and reason; an older project export is never used as fallback. Full
   handoff retains its separate locked pre-prune refresh.
 
+  Each summary row also carries weighted totals: its tokens priced at the
+  model maker's public list prices, in US dollars per million tokens, from the
+  table in `dev/tools/meter.py` dated 2026-11-22. A weighted total is a reference figure for
+  comparing work, never a bill; the table leaves out taxes, subscriptions and
+  introductory prices (Gemini 4 Argon's, which ends 2026-11-30, is not used). A
+  request whose prompt is over a model's long-prompt limit (100,000 tokens for
+  Claude Haiku 5.5, 272,000 for the OpenAI models listed) takes that model's
+  higher weights. A model missing from the table gets counts and no weighted
+  total. A reply with an unknown count gets no total, and no figure at all
+  where the model has a long-prompt level. A Codex reply is weighted by the
+  model its turn had selected. When the table changes, the ledger keeps
+  working: replies still held one by one are weighted by the new table at the
+  next refresh, and a day already folded keeps the weighting of its day. The
+  table date on a summary names the current table; a day folded earlier may
+  carry an earlier one. The Gemini rows wait for a reader of Antigravity logs,
+  which the meter does not have; the OpenAI and Google model names are the
+  makers' own and are not matched against a real log; a Codex reply whose log
+  omits its cache-write count gets no total.
+
   After explicit consent, create the version-1 config at the fixed account
   path with only the approved provider and project paths. The aliases below
   are examples; replace every placeholder with the actual approved value.

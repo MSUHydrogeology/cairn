@@ -64,7 +64,7 @@ _PULSE = _load_shared_pulse()
 LEDGER_SCHEMA = "cairn-meter-ledger/6"
 _OLD_LEDGER_SCHEMAS = frozenset({"cairn-meter-ledger/3", "cairn-meter-ledger/4",
                                  "cairn-meter-ledger/5"})
-RATIO_VERSION = "cairn-api-token-index/2026-11-06"
+RATIO_VERSION = "cairn-api-token-index/2026-11-22"
 _RATIO_INDEX = {
     "version": RATIO_VERSION,
     "profile": "Hypothetical first-party Standard/global API text-token reference profile; excludes tools, taxes, discounts, and subscriptions.",
@@ -73,13 +73,11 @@ _RATIO_INDEX = {
     "reference_rate": "1",
     "currency": "USD",
     "denominator_tokens": 1_000_000,
-    "as_of": "2026-11-06",
+    "as_of": "2026-11-22",
     "sources": [
-        "https://platform.claude.com/docs/en/models/haiku-4-5/overview",
-        "https://platform.claude.com/docs/en/models/sonnet-4-6/overview",
-        "https://platform.claude.com/docs/en/models/opus-5-5/overview",
-        "https://developers.openai.com/api/docs/models/gpt-5.3-codex",
-        "https://platform.claude.com/docs/en/build-with-claude/prompt-caching#1-hour-cache-duration",
+        "https://platform.claude.com/docs/en/about-claude/pricing",
+        "https://developers.openai.com/api/docs/pricing",
+        "https://aistudio.google.com/docs/pricing",
     ],
     "models": {
         "claude-haiku-4-5-20251001": {
@@ -96,6 +94,80 @@ _RATIO_INDEX = {
         },
         "gpt-5.3-codex": {
             "fresh_input": [7, 4], "cache_read": [7, 40], "output": [14, 1],
+            "cache_write_5m": None, "cache_write_1h": None,
+        },
+        "claude-fable-5-2": {
+            "fresh_input": [8, 1], "cache_read": [1, 5], "output": [40, 1],
+            "cache_write_5m": [10, 1], "cache_write_1h": [16, 1],
+        },
+        "claude-sonnet-5-5": {
+            "fresh_input": [2, 1], "cache_read": [1, 10], "output": [10, 1],
+            "cache_write_5m": [5, 2], "cache_write_1h": [4, 1],
+        },
+        "claude-haiku-5-5": {
+            "fresh_input": [1, 10], "cache_read": [1, 100], "output": [1, 2],
+            "cache_write_5m": [1, 8], "cache_write_1h": [1, 5],
+            "long_prompt": {
+                "over_tokens": 100_000,
+                "fresh_input": [1, 2], "cache_read": [1, 20], "output": [5, 2],
+                "cache_write_5m": [5, 8], "cache_write_1h": [1, 1],
+            },
+        },
+        "gpt-6.2-sol": {
+            "fresh_input": [2, 1], "cache_read": [1, 10], "output": [10, 1],
+            "cache_write_5m": None, "cache_write_1h": None,
+            "long_prompt": {
+                "over_tokens": 272_000,
+                "fresh_input": [4, 1], "cache_read": [1, 5], "output": [15, 1],
+                "cache_write_5m": None, "cache_write_1h": None,
+            },
+        },
+        "gpt-6.1-sol": {
+            "fresh_input": [2, 1], "cache_read": [1, 10], "output": [10, 1],
+            "cache_write_5m": None, "cache_write_1h": None,
+            "long_prompt": {
+                "over_tokens": 272_000,
+                "fresh_input": [4, 1], "cache_read": [1, 5], "output": [15, 1],
+                "cache_write_5m": None, "cache_write_1h": None,
+            },
+        },
+        "gpt-6-sol": {
+            "fresh_input": [2, 1], "cache_read": [1, 5], "output": [10, 1],
+            "cache_write_5m": None, "cache_write_1h": None,
+            "long_prompt": {
+                "over_tokens": 272_000,
+                "fresh_input": [4, 1], "cache_read": [2, 5], "output": [15, 1],
+                "cache_write_5m": None, "cache_write_1h": None,
+            },
+        },
+        "gpt-6.1-terra": {
+            "fresh_input": [1, 1], "cache_read": [1, 20], "output": [5, 1],
+            "cache_write_5m": None, "cache_write_1h": None,
+            "long_prompt": {
+                "over_tokens": 272_000,
+                "fresh_input": [2, 1], "cache_read": [1, 10], "output": [15, 2],
+                "cache_write_5m": None, "cache_write_1h": None,
+            },
+        },
+        "gpt-6-luna": {
+            "fresh_input": [1, 10], "cache_read": [1, 100], "output": [1, 2],
+            "cache_write_5m": None, "cache_write_1h": None,
+            "long_prompt": {
+                "over_tokens": 272_000,
+                "fresh_input": [1, 5], "cache_read": [1, 50], "output": [3, 4],
+                "cache_write_5m": None, "cache_write_1h": None,
+            },
+        },
+        "gemini-4-argon": {
+            "fresh_input": [4, 1], "cache_read": [1, 5], "output": [20, 1],
+            "cache_write_5m": None, "cache_write_1h": None,
+        },
+        "gemini-4-neon": {
+            "fresh_input": [3, 1], "cache_read": [3, 20], "output": [15, 1],
+            "cache_write_5m": None, "cache_write_1h": None,
+        },
+        "gemini-4-hydrogen": {
+            "fresh_input": [3, 2], "cache_read": [3, 40], "output": [15, 2],
             "cache_write_5m": None, "cache_write_1h": None,
         },
     },
@@ -1523,7 +1595,8 @@ def _validate_aggregate_row(aggregate):
     for value in kinds.values():
         if value is not None:
             _counter(value)
-    if (aggregate["reference_index"] != RATIO_VERSION
+    if (not isinstance(aggregate["reference_index"], str)
+            or not _PULSE.RATIO_VERSION_FORM.fullmatch(aggregate["reference_index"])
             or not isinstance(aggregate["reference_tokens"], dict)
             or set(aggregate["reference_tokens"])
             != {*_EVENT_KIND_NAMES, "total"}):
@@ -1578,9 +1651,13 @@ def _load_ledger(raw, now=None):
             raise ValueError
         if (ledger["schema"] != LEDGER_SCHEMA
                 or ledger["reader_version"] != READER_VERSION
-                or ledger["ratio_version"] != RATIO_VERSION
-                or ledger["ratio_index"] != _RATIO_INDEX):
+                or not isinstance(ledger["ratio_version"], str)
+                or not _PULSE.RATIO_VERSION_FORM.fullmatch(ledger["ratio_version"])
+                or not isinstance(ledger["ratio_index"], dict)):
             raise ValueError
+        # A ledger outlives a table change: nothing reads the stored table or label.
+        ledger["ratio_version"] = RATIO_VERSION
+        ledger["ratio_index"] = _ratio_index_copy()
         if any(not isinstance(ledger[key], list) for key in (
                 "events", "claims", "cursors", "mappings", "project_remotes",
                 "aggregates", "lineages", "waits", "starts", "daily")):
@@ -1962,7 +2039,10 @@ def _add_rows(left, right):
         "effective_model": left["effective_model"],
         "events": left["events"] + right["events"],
         "unknown_events": left["unknown_events"] + right["unknown_events"],
-        "kinds": kinds, "reference_index": left["reference_index"],
+        "kinds": kinds,
+        "reference_index": (left["reference_index"]
+                            if left["reference_index"] == right["reference_index"]
+                            else RATIO_VERSION),
         "reference_tokens": reference,
     }
 
@@ -3561,13 +3641,25 @@ def _fraction_text(value):
 def _weighted_reference_tokens(event):
     """Return hypothetical reference-token equivalents; never actual spend."""
     model = event["effective_model"]
+    if model is None and event["model_provenance"] == "selected_context":
+        model = event["model"]
     weights = _RATIO_INDEX["models"].get(model)
     if weights is None:
         return {name: None for name in (*_EVENT_KIND_NAMES, "total")}
     kinds = event["kinds"]
+    level = weights
+    long_level = weights.get("long_prompt")
+    if long_level is not None:
+        counts = [kinds["fresh_input"], kinds["cache_read"]]
+        if long_level["cache_write_5m"] is not None:
+            counts.append(kinds["cache_write"])
+        if None in counts:
+            return {name: None for name in (*_EVENT_KIND_NAMES, "total")}
+        if sum(counts) > long_level["over_tokens"]:
+            level = long_level
     components = {}
     for name in ("fresh_input", "cache_read", "output"):
-        weight = weights[name]
+        weight = level[name]
         count = kinds[name]
         components[name] = None if weight is None or count is None else (
             Fraction(*weight) * count)
@@ -3581,7 +3673,7 @@ def _weighted_reference_tokens(event):
         if ttl["five_minute"] is None:
             components["cache_write"] = None
         else:
-            short, long = weights["cache_write_5m"], weights["cache_write_1h"]
+            short, long = level["cache_write_5m"], level["cache_write_1h"]
             if short is None or long is None:
                 components["cache_write"] = None
             else:
