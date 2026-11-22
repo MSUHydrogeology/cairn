@@ -81,6 +81,7 @@ _IDENTITY_VARS = (
     "CAIRN_PYTHON",
     "CLAUDE_CODE_SESSION_ID",
     "CODEX_THREAD_ID",
+    "ANTIGRAVITY_CONVERSATION_ID",
     "ANTIGRAVITY_TRAJECTORY_ID",
 )
 
@@ -952,6 +953,25 @@ class TestIdentity:
         )
         assert res.returncode == 0  # always fail-soft
         assert "shadowing the per-session identity" in res.stderr
+
+    def test_antigravity_conversation_id_precedes_trajectory_id(
+        self, tool, monkeypatch, tmp_path
+    ) -> None:
+        self._clear(monkeypatch)
+        cfg = tmp_path / "agent.json"
+        monkeypatch.setenv("ANTIGRAVITY_CONVERSATION_ID", "conv-uuid-1111")
+        monkeypatch.setenv("ANTIGRAVITY_TRAJECTORY_ID", "traj-id-2222")
+        ident_conv = tool.resolve_agent_identity(config_path=cfg)
+        assert ident_conv is not None and ident_conv.startswith("antigravity-")
+        assert "conv-uuid" not in ident_conv and "traj-id" not in ident_conv
+
+        monkeypatch.setenv("ANTIGRAVITY_CONVERSATION_ID", "   ")
+        ident_traj = tool.resolve_agent_identity(config_path=cfg)
+        assert ident_traj is not None and ident_traj.startswith("antigravity-")
+        assert ident_traj != ident_conv
+
+        monkeypatch.delenv("ANTIGRAVITY_CONVERSATION_ID")
+        assert tool.resolve_agent_identity(config_path=cfg) == ident_traj
 
 
 # ---------------------------------------------------------------------------

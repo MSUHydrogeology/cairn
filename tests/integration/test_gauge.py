@@ -310,6 +310,129 @@ def test_meter_aggregate_rejects_paths_and_unknown_fields_without_echoing_input(
     assert "SECRET" not in result.stderr + result.stdout
 
 
+def test_project_meter_v3_tier_and_by_tier_validation_and_rendering(tmp_path):
+    meter = tmp_path / "meter-v3.json"
+    third_a = "0.3333333333333333333333333333"
+    value = {
+        "schema": "cairn-meter-project/3",
+        "project_alias": "sample",
+        "ratio_version": "cairn-api-token-index/2026-11-22",
+        "aggregates": [
+            {
+                "week": "2026-W45", "day": "2026-11-05", "artifact": "src/a.py",
+                "tool": "claude", "model": "claude-fable-5-2",
+                "model_provenance": "usage_record", "effective_model": "claude-fable-5-2",
+                "tier": "frontier",
+                "events": 1, "unknown_events": 0,
+                "kinds": {"fresh_input": 1, "cache_read": 0, "cache_write": 0, "output": 0},
+                "reference_tokens": {
+                    "fresh_input": third_a, "cache_read": "0",
+                    "cache_write": "0", "output": "0", "total": third_a,
+                },
+            },
+            {
+                "week": "2026-W45", "day": "2026-11-05", "artifact": "src/b.py",
+                "tool": "claude", "model": "claude-fable-5-2",
+                "model_provenance": "usage_record", "effective_model": "claude-fable-5-2",
+                "tier": "frontier",
+                "events": 1, "unknown_events": 0,
+                "kinds": {"fresh_input": 1, "cache_read": 0, "cache_write": 0, "output": 0},
+                "reference_tokens": {
+                    "fresh_input": third_a, "cache_read": "0",
+                    "cache_write": "0", "output": "0", "total": third_a,
+                },
+            },
+            {
+                "week": "2026-W45", "day": "2026-11-05", "artifact": None,
+                "tool": "antigravity", "model": None,
+                "model_provenance": "unknown", "effective_model": None,
+                "tier": "unknown",
+                "events": 1, "unknown_events": 1,
+                "kinds": {"fresh_input": 10, "cache_read": None, "cache_write": None, "output": 2},
+                "reference_tokens": {
+                    "fresh_input": None, "cache_read": None,
+                    "cache_write": None, "output": None, "total": None,
+                },
+            },
+        ],
+        "by_tier": [
+            {
+                "tier": "frontier", "events": 2, "unknown_events": 0,
+                "kinds": {"fresh_input": 2, "cache_read": 0, "cache_write": 0, "output": 0},
+                "reference_tokens": {
+                    "fresh_input": "0.6666666666666666666666666666", "cache_read": "0",
+                    "cache_write": "0", "output": "0",
+                    "total": "0.6666666666666666666666666666",
+                },
+            },
+            {
+                "tier": "unknown", "events": 1, "unknown_events": 1,
+                "kinds": {"fresh_input": 10, "cache_read": None, "cache_write": None, "output": 2},
+                "reference_tokens": {
+                    "fresh_input": None, "cache_read": None,
+                    "cache_write": None, "output": None, "total": None,
+                },
+            },
+        ],
+        "wait": {"coverage": "unknown", "observed": None,
+                 "by_day": [], "by_artifact": []},
+        "coverage": {"global": "unknown", "reasons": ["global_completeness_unknown"]},
+    }
+    meter.write_text(json.dumps(value), encoding="utf-8")
+    record = _record(_run("--json", "--meter-aggregate", str(meter)))
+    assert len(record["project_usage"]["by_tier"]) == 2
+    text = _run("--meter-aggregate", str(meter))
+    assert text.returncode == 0, text.stderr
+    assert "tier=frontier events=1" in text.stdout
+    assert "gauge: usage by tier tier=frontier events=2 unknown-events=0" in text.stdout
+    assert "gauge: usage by tier tier=unknown events=1 unknown-events=1" in text.stdout
+
+    # Unconfigured /3 allows ratio_version: None and models_config_missing without INCOMPLETE.
+    empty = {
+        "schema": "cairn-meter-project/3", "project_alias": "sample",
+        "ratio_version": None, "aggregates": [], "by_tier": [],
+        "wait": {"coverage": "unknown", "observed": None, "by_day": [], "by_artifact": []},
+        "coverage": {"global": "unknown",
+                     "reasons": ["global_completeness_unknown", "models_config_missing"]},
+    }
+    empty_path = tmp_path / "empty-v3.json"
+    empty_path.write_text(json.dumps(empty), encoding="utf-8")
+    empty_rec = _record(_run("--json", "--meter-aggregate", str(empty_path)))
+    assert empty_rec["project_usage"]["incomplete_reasons"] == []
+    empty_text = _run("--meter-aggregate", str(empty_path))
+    assert "INCOMPLETE" not in empty_text.stdout
+
+    # /1 and /2 still forbid ratio_version: None.
+    bad_v2 = {
+        "schema": "cairn-meter-project/2", "project_alias": "sample",
+        "ratio_version": None, "aggregates": [],
+        "wait": {"coverage": "unknown", "observed": None, "by_day": [], "by_artifact": []},
+        "coverage": {"global": "unknown", "reasons": ["global_completeness_unknown"]},
+    }
+    bad_v2_path = tmp_path / "bad-v2.json"
+    bad_v2_path.write_text(json.dumps(bad_v2), encoding="utf-8")
+    assert _run("--json", "--meter-aggregate", str(bad_v2_path)).returncode == 2
+
+    # Tampered /3 payloads fail closed.
+    import copy
+
+    def reject(mutator):
+        bad = copy.deepcopy(value)
+        mutator(bad)
+        meter.write_text(json.dumps(bad), encoding="utf-8")
+        res = _run("--json", "--meter-aggregate", str(meter))
+        assert res.returncode == 2
+
+    reject(lambda d: d["by_tier"][0].update(events=99))
+    reject(lambda d: d.update(by_tier=list(reversed(d["by_tier"]))))  # unknown not last
+    reject(lambda d: d["by_tier"].pop())                             # missing tier
+    reject(lambda d: d["aggregates"][1].update(tier="high"))         # per-model inconsistency
+    reject(lambda d: d["aggregates"][2].update(tier="high"))         # None model non-unknown
+    reject(lambda d: d["by_tier"][0]["reference_tokens"].update(total="0.666667"))
+    reject(lambda d: d["by_tier"][0].update(tier="unspecified"))
+    reject(lambda d: d["by_tier"][0].update(extra=1))
+
+
 def result_text(record: dict) -> str:
     return json.dumps(record)
 

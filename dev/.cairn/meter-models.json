@@ -1,0 +1,197 @@
+{
+  "schema": "cairn-meter-models/1",
+  "ratio_version": "cairn-api-token-index/2026-11-22",
+  "tiers": ["frontier", "high", "medium", "low"],
+  "models": {
+    "claude-fable-5-2": {
+      "tier": "frontier",
+      "prefixes": ["claude-fable-5-2-"],
+      "fresh_input": [8, 1],
+      "cache_read": [1, 5],
+      "output": [40, 1],
+      "cache_write_mode": "ttl_split",
+      "cache_write_5m": [10, 1],
+      "cache_write_1h": [16, 1]
+    },
+    "claude-opus-5-5": {
+      "tier": "high",
+      "prefixes": ["claude-opus-5-5-"],
+      "fresh_input": [4, 1],
+      "cache_read": [1, 5],
+      "output": [20, 1],
+      "cache_write_mode": "ttl_split",
+      "cache_write_5m": [5, 1],
+      "cache_write_1h": [8, 1]
+    },
+    "claude-sonnet-4-6": {
+      "tier": "medium",
+      "prefixes": ["claude-sonnet-4-6-"],
+      "fresh_input": [3, 1],
+      "cache_read": [3, 10],
+      "output": [15, 1],
+      "cache_write_mode": "ttl_split",
+      "cache_write_5m": [15, 4],
+      "cache_write_1h": [6, 1]
+    },
+    "claude-sonnet-5-5": {
+      "tier": "medium",
+      "prefixes": ["claude-sonnet-5-5-"],
+      "fresh_input": [2, 1],
+      "cache_read": [1, 10],
+      "output": [10, 1],
+      "cache_write_mode": "ttl_split",
+      "cache_write_5m": [5, 2],
+      "cache_write_1h": [4, 1]
+    },
+    "claude-haiku-4-5-20251001": {
+      "tier": "low",
+      "fresh_input": [1, 1],
+      "cache_read": [1, 10],
+      "output": [5, 1],
+      "cache_write_mode": "ttl_split",
+      "cache_write_5m": [5, 4],
+      "cache_write_1h": [2, 1]
+    },
+    "claude-haiku-5-5": {
+      "tier": "low",
+      "prefixes": ["claude-haiku-5-5-"],
+      "fresh_input": [1, 10],
+      "cache_read": [1, 100],
+      "output": [1, 2],
+      "cache_write_mode": "ttl_split",
+      "cache_write_5m": [1, 8],
+      "cache_write_1h": [1, 5],
+      "long_prompt": {
+        "over_tokens": 100000,
+        "fresh_input": [1, 2],
+        "cache_read": [1, 20],
+        "output": [5, 2],
+        "cache_write_5m": [5, 8],
+        "cache_write_1h": [1, 1]
+      }
+    },
+    "gpt-5.3-codex": {
+      "tier": "high",
+      "fresh_input": [7, 4],
+      "cache_read": [7, 40],
+      "output": [14, 1],
+      "cache_write_mode": "unbilled"
+    },
+    "gpt-6.2-sol": {
+      "tier": "high",
+      "fresh_input": [2, 1],
+      "cache_read": [1, 10],
+      "output": [10, 1],
+      "cache_write_mode": "unbilled",
+      "long_prompt": {
+        "over_tokens": 272000,
+        "fresh_input": [4, 1],
+        "cache_read": [1, 5],
+        "output": [15, 1]
+      }
+    },
+    "gpt-6.1-sol": {
+      "tier": "high",
+      "fresh_input": [2, 1],
+      "cache_read": [1, 10],
+      "output": [10, 1],
+      "cache_write_mode": "unbilled",
+      "long_prompt": {
+        "over_tokens": 272000,
+        "fresh_input": [4, 1],
+        "cache_read": [1, 5],
+        "output": [15, 1]
+      }
+    },
+    "gpt-6-sol": {
+      "tier": "high",
+      "fresh_input": [2, 1],
+      "cache_read": [1, 5],
+      "output": [10, 1],
+      "cache_write_mode": "unbilled",
+      "long_prompt": {
+        "over_tokens": 272000,
+        "fresh_input": [4, 1],
+        "cache_read": [2, 5],
+        "output": [15, 1]
+      }
+    },
+    "gpt-6.1-terra": {
+      "tier": "medium",
+      "fresh_input": [1, 1],
+      "cache_read": [1, 20],
+      "output": [5, 1],
+      "cache_write_mode": "unbilled",
+      "long_prompt": {
+        "over_tokens": 272000,
+        "fresh_input": [2, 1],
+        "cache_read": [1, 10],
+        "output": [15, 2]
+      }
+    },
+    "gpt-6-luna": {
+      "tier": "low",
+      "fresh_input": [1, 10],
+      "cache_read": [1, 100],
+      "output": [1, 2],
+      "cache_write_mode": "unbilled",
+      "long_prompt": {
+        "over_tokens": 272000,
+        "fresh_input": [1, 5],
+        "cache_read": [1, 50],
+        "output": [3, 4]
+      }
+    },
+    "gemini-4-argon": {
+      "tier": "high",
+      "prefixes": ["gemini-4-argon-"],
+      "fresh_input": [4, 1],
+      "cache_read": [1, 5],
+      "output": [20, 1],
+      "cache_write_mode": "unbilled"
+    },
+    "gemini-4-neon": {
+      "tier": "medium",
+      "prefixes": ["gemini-4-neon-"],
+      "fresh_input": [3, 1],
+      "cache_read": [3, 20],
+      "output": [15, 1],
+      "cache_write_mode": "unbilled"
+    },
+    "gemini-4-hydrogen": {
+      "tier": "low",
+      "prefixes": ["gemini-4-hydrogen-"],
+      "fresh_input": [3, 2],
+      "cache_read": [3, 40],
+      "output": [15, 2],
+      "cache_write_mode": "unbilled"
+    }
+  },
+  "tier_rules": [
+    {"prefix": "claude-fable-", "tier": "frontier"},
+    {"prefix": "claude-opus-", "tier": "high"},
+    {"prefix": "claude-sonnet-", "tier": "medium"},
+    {"prefix": "claude-haiku-", "tier": "low"},
+    {"segment": "fable", "tier": "frontier"},
+    {"segment": "astra", "tier": "frontier"},
+    {"segment": "carbon", "tier": "frontier"},
+    {"segment": "opus", "tier": "high"},
+    {"segment": "sol", "tier": "high"},
+    {"segment": "argon", "tier": "high"},
+    {"segment": "sonnet", "tier": "medium"},
+    {"segment": "terra", "tier": "medium"},
+    {"segment": "neon", "tier": "medium"},
+    {"segment": "haiku", "tier": "low"},
+    {"segment": "luna", "tier": "low"},
+    {"segment": "hydrogen", "tier": "low"}
+  ],
+  "tools": {
+    "antigravity": {
+      "log_filename": "transcript.jsonl",
+      "cache_read_field": "cache_read_tokens",
+      "lead_factor": 10,
+      "max_bytes": 134217728,
+      "max_entries": 20000
+    }
+  }
+}

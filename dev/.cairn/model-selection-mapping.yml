@@ -1,7 +1,7 @@
 # model-selection tier-to-model mapping (Cairn model-selection module).
 #
 # Cairn's own mapping, assigned by the Maintainer on 2026-10-28; the Neon and
-# Hydrogen rows on 2026-11-22.
+# Hydrogen rows on 2026-11-22; Fable, Astra, and Carbon (frontier) on 2026-11-22.
 # These dated assignments are by family name, not benchmarks. Re-verify with:
 #
 #   python dev/tools/check_model_selection.py
@@ -15,6 +15,24 @@
 # templates stay vendor-neutral.
 
 mapping:
+  - tier: frontier
+    model: "Fable"
+    date_verified: "2026-11-22"
+    task_family: "frontier strategy, novel architecture, and hardest security/design judgment (above high)"
+    source: "Maintainer assignment, 2026-11-22 -- family name, not benchmarked"
+    re_verification_trigger: a release that changes which family fits the tier
+  - tier: frontier
+    model: "Astra"
+    date_verified: "2026-11-22"
+    task_family: "frontier strategy, novel architecture, and hardest security/design judgment (above high)"
+    source: "Maintainer assignment, 2026-11-22 -- family name, not benchmarked"
+    re_verification_trigger: a release that changes which family fits the tier
+  - tier: frontier
+    model: "Carbon"
+    date_verified: "2026-11-22"
+    task_family: "frontier strategy, novel architecture, and hardest security/design judgment (above high)"
+    source: "Maintainer assignment, 2026-11-22 -- family name, not benchmarked"
+    re_verification_trigger: a release that changes which family fits the tier
   - tier: high
     model: "Opus"
     date_verified: "2026-10-28"

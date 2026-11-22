@@ -32,7 +32,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit, urlunsplit
 
 
-READER_VERSION = "cairn-source-readers/6"
+READER_VERSION = "cairn-source-readers/7"
 CODEX_CONTRACT = "49f0c6022596c361fe676a5c4738fb2be34e3a93"  # vendor-ok: pins reviewed input contract
 MAX_COUNTER = 2**63 - 1
 TOOLS = ("codex", "claude", "antigravity")  # vendor-ok: source adapters
@@ -61,117 +61,24 @@ def _load_shared_pulse():
 
 
 _PULSE = _load_shared_pulse()
-LEDGER_SCHEMA = "cairn-meter-ledger/6"
+LEDGER_SCHEMA = "cairn-meter-ledger/7"
 _OLD_LEDGER_SCHEMAS = frozenset({"cairn-meter-ledger/3", "cairn-meter-ledger/4",
                                  "cairn-meter-ledger/5"})
-RATIO_VERSION = "cairn-api-token-index/2026-11-22"
-_RATIO_INDEX = {
-    "version": RATIO_VERSION,
-    "profile": "Hypothetical first-party Standard/global API text-token reference profile; excludes tools, taxes, discounts, and subscriptions.",
-    "reference_model": "claude-haiku-4-5-20251001",
-    "reference_kind": "fresh_input",
-    "reference_rate": "1",
-    "currency": "USD",
-    "denominator_tokens": 1_000_000,
-    "as_of": "2026-11-22",
-    "sources": [
-        "https://platform.claude.com/docs/en/about-claude/pricing",
-        "https://developers.openai.com/api/docs/pricing",
-        "https://aistudio.google.com/docs/pricing",
-    ],
-    "models": {
-        "claude-haiku-4-5-20251001": {
-            "fresh_input": [1, 1], "cache_read": [1, 10], "output": [5, 1],
-            "cache_write_5m": [5, 4], "cache_write_1h": [2, 1],
-        },
-        "claude-sonnet-4-6": {
-            "fresh_input": [3, 1], "cache_read": [3, 10], "output": [15, 1],
-            "cache_write_5m": [15, 4], "cache_write_1h": [6, 1],
-        },
-        "claude-opus-5-5": {
-            "fresh_input": [4, 1], "cache_read": [1, 5], "output": [20, 1],
-            "cache_write_5m": [5, 1], "cache_write_1h": [8, 1],
-        },
-        "gpt-5.3-codex": {
-            "fresh_input": [7, 4], "cache_read": [7, 40], "output": [14, 1],
-            "cache_write_5m": None, "cache_write_1h": None,
-        },
-        "claude-fable-5-2": {
-            "fresh_input": [8, 1], "cache_read": [1, 5], "output": [40, 1],
-            "cache_write_5m": [10, 1], "cache_write_1h": [16, 1],
-        },
-        "claude-sonnet-5-5": {
-            "fresh_input": [2, 1], "cache_read": [1, 10], "output": [10, 1],
-            "cache_write_5m": [5, 2], "cache_write_1h": [4, 1],
-        },
-        "claude-haiku-5-5": {
-            "fresh_input": [1, 10], "cache_read": [1, 100], "output": [1, 2],
-            "cache_write_5m": [1, 8], "cache_write_1h": [1, 5],
-            "long_prompt": {
-                "over_tokens": 100_000,
-                "fresh_input": [1, 2], "cache_read": [1, 20], "output": [5, 2],
-                "cache_write_5m": [5, 8], "cache_write_1h": [1, 1],
-            },
-        },
-        "gpt-6.2-sol": {
-            "fresh_input": [2, 1], "cache_read": [1, 10], "output": [10, 1],
-            "cache_write_5m": None, "cache_write_1h": None,
-            "long_prompt": {
-                "over_tokens": 272_000,
-                "fresh_input": [4, 1], "cache_read": [1, 5], "output": [15, 1],
-                "cache_write_5m": None, "cache_write_1h": None,
-            },
-        },
-        "gpt-6.1-sol": {
-            "fresh_input": [2, 1], "cache_read": [1, 10], "output": [10, 1],
-            "cache_write_5m": None, "cache_write_1h": None,
-            "long_prompt": {
-                "over_tokens": 272_000,
-                "fresh_input": [4, 1], "cache_read": [1, 5], "output": [15, 1],
-                "cache_write_5m": None, "cache_write_1h": None,
-            },
-        },
-        "gpt-6-sol": {
-            "fresh_input": [2, 1], "cache_read": [1, 5], "output": [10, 1],
-            "cache_write_5m": None, "cache_write_1h": None,
-            "long_prompt": {
-                "over_tokens": 272_000,
-                "fresh_input": [4, 1], "cache_read": [2, 5], "output": [15, 1],
-                "cache_write_5m": None, "cache_write_1h": None,
-            },
-        },
-        "gpt-6.1-terra": {
-            "fresh_input": [1, 1], "cache_read": [1, 20], "output": [5, 1],
-            "cache_write_5m": None, "cache_write_1h": None,
-            "long_prompt": {
-                "over_tokens": 272_000,
-                "fresh_input": [2, 1], "cache_read": [1, 10], "output": [15, 2],
-                "cache_write_5m": None, "cache_write_1h": None,
-            },
-        },
-        "gpt-6-luna": {
-            "fresh_input": [1, 10], "cache_read": [1, 100], "output": [1, 2],
-            "cache_write_5m": None, "cache_write_1h": None,
-            "long_prompt": {
-                "over_tokens": 272_000,
-                "fresh_input": [1, 5], "cache_read": [1, 50], "output": [3, 4],
-                "cache_write_5m": None, "cache_write_1h": None,
-            },
-        },
-        "gemini-4-argon": {
-            "fresh_input": [4, 1], "cache_read": [1, 5], "output": [20, 1],
-            "cache_write_5m": None, "cache_write_1h": None,
-        },
-        "gemini-4-neon": {
-            "fresh_input": [3, 1], "cache_read": [3, 20], "output": [15, 1],
-            "cache_write_5m": None, "cache_write_1h": None,
-        },
-        "gemini-4-hydrogen": {
-            "fresh_input": [3, 2], "cache_read": [3, 40], "output": [15, 2],
-            "cache_write_5m": None, "cache_write_1h": None,
-        },
-    },
-}
+MODELS_CONFIG_SCHEMA = "cairn-meter-models/1"
+DEFAULT_MODELS_TIERS = ("high", "medium", "low")
+MAX_MODELS_ENTRIES = 128
+MAX_MODEL_PREFIXES = 32
+MAX_TIER_RULES = 128
+MAX_TIER_COUNT = 32
+_TIER_NAME_RE = re.compile(r"[a-z][a-z0-9_-]{0,31}\Z")
+_RESERVED_TIERS = frozenset({"unknown", "unspecified"})
+_SEGMENT_RE = re.compile(r"[a-z0-9]{1,32}\Z")
+_LOG_FILENAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}\.jsonl\Z")
+_CACHE_READ_FIELD_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,63}\Z")
+_ANTIGRAVITY_EXCLUDED_FIELDS = frozenset({
+    "input_tokens", "output_tokens", "created_at", "type", "model",
+    "conversationId", "conversation_id", "usage",
+})
 MAX_SOURCE_ROOT_DEPTH = 32
 MAX_REFRESH_ENTRIES = 100_000
 MAX_SOURCE_FILES = 10_000
@@ -288,10 +195,28 @@ def _strip_remote(value):
 
 def _safe_config_path(value):
     value = _safe_text(value)
+    if len(value) >= 2 and value[0] in "/\\" and value[1] in "/\\":
+        raise ValueError
     candidate = Path(value)
     if not candidate.is_absolute() or any(part in {".", ".."} for part in candidate.parts):
         raise ValueError
     return str(candidate)
+
+
+def _is_path_within(path_text, root_text):
+    candidate = Path(os.path.normcase(str(path_text)))
+    root = Path(os.path.normcase(str(root_text)))
+    return candidate.is_relative_to(root)
+
+
+def _is_real_path_within(path_text, root_text):
+    candidate = Path(str(path_text))
+    real_target = os.path.realpath(str(candidate))
+    real_parent = os.path.realpath(str(candidate.parent))
+    real_root = os.path.realpath(str(root_text))
+    return (_is_path_within(real_target, real_root)
+            or _is_path_within(os.path.join(real_parent, candidate.name), real_root)
+            or _is_path_within(real_parent, real_root))
 
 
 def validate_config_bytes(raw):
@@ -303,7 +228,7 @@ def validate_config_bytes(raw):
                            parse_constant=_reject_constant)
         required = {"version", "enabled", "sources", "projects"}
         if (not isinstance(value, dict) or not required <= set(value)
-                or set(value) - required - {"requested_accounts"}):
+                or set(value) - required - {"requested_accounts", "models_config"}):
             raise ValueError
         if type(value["version"]) is not int or value["version"] != CONFIG_VERSION:
             raise ValueError
@@ -344,9 +269,22 @@ def validate_config_bytes(raw):
         accounts = {}
         for alias, account in requested.items():
             accounts[_safe_alias(alias)] = _safe_text(account, limit=256)
-        return {"version": CONFIG_VERSION, "enabled": value["enabled"],
-                "sources": sources, "projects": projects,
-                "requested_accounts": accounts}
+        result = {"version": CONFIG_VERSION, "enabled": value["enabled"],
+                  "sources": sources, "projects": projects,
+                  "requested_accounts": accounts}
+        if "models_config" in value:
+            try:
+                models_config = _safe_config_path(value["models_config"])
+            except ValueError:
+                raise Unavailable("config_invalid") from None
+            for root in (*(item["root"] for item in sources),
+                         *(item["path"] for item in projects)):
+                if _is_path_within(models_config, root):
+                    raise Unavailable("config_invalid")
+            result["models_config"] = models_config
+        return result
+    except Unavailable:
+        raise
     except (ValueError, TypeError, KeyError, UnicodeError, RecursionError,
             OverflowError, AttributeError):
         raise Unavailable from None
@@ -417,17 +355,292 @@ def _read_limited(path, limit, reason="unavailable", *, nofollow=False):
         raise Unavailable(reason) from None
 
 
+def _read_account_json(path, limit, *, missing_ok, reason="config_invalid"):
+    """Read one account-owned config file <= `limit` without following links."""
+    path = Path(path)
+    try:
+        parent_info = os.lstat(path.parent)
+    except FileNotFoundError:
+        if missing_ok:
+            return None
+        raise Unavailable(reason) from None
+    except (OSError, ValueError):
+        raise Unavailable(reason) from None
+    if _is_link(parent_info) or not stat.S_ISDIR(parent_info.st_mode):
+        raise Unavailable(reason)
+    try:
+        target_info = os.lstat(path)
+    except FileNotFoundError:
+        if missing_ok:
+            return None
+        raise Unavailable(reason) from None
+    except (OSError, ValueError):
+        raise Unavailable(reason) from None
+    if _is_link(target_info) or not stat.S_ISREG(target_info.st_mode):
+        raise Unavailable(reason)
+    fd = -1
+    try:
+        fd = os.open(path, os.O_RDONLY | _O_BINARY | _O_NOFOLLOW | _O_NONBLOCK)
+        opened = os.fstat(fd)
+        if (not stat.S_ISREG(opened.st_mode)
+                or opened.st_nlink != 1
+                or (opened.st_dev, opened.st_ino) != (target_info.st_dev, target_info.st_ino)):
+            raise Unavailable(reason)
+        chunks, total = [], 0
+        while True:
+            block = os.read(fd, min(64 * 1024, limit + 1 - total))
+            if not block:
+                break
+            total += len(block)
+            if total > limit:
+                raise Unavailable(reason)
+            chunks.append(block)
+        return b"".join(chunks)
+    except Unavailable:
+        raise
+    except (OSError, ValueError):
+        raise Unavailable(reason) from None
+    finally:
+        if fd >= 0:
+            os.close(fd)
+
+
 def load_config(config_path):
     """Read only ~/.cairn/meter.json; a missing file is None, anything else must validate."""
-    path = Path(config_path)
+    raw = _read_account_json(config_path, MAX_CONFIG_BYTES,
+                             missing_ok=True, reason="unavailable")
+    if raw is None:
+        return None
+    return validate_config_bytes(raw)
+
+
+def _parse_ratio_weight(pair):
+    if type(pair) is not list or len(pair) != 2:
+        raise ValueError
+    num, den = pair
+    if (type(num) is not int or type(den) is not int
+            or num < 0 or num > MAX_COUNTER or den < 1 or den > MAX_COUNTER):
+        raise ValueError
+    return [num, den]
+
+
+def _check_non_overlapping_prefixes(prefixes):
+    if len(prefixes) != len(set(prefixes)):
+        raise ValueError
+    ordered = sorted(prefixes)
+    for left, right in zip(ordered, ordered[1:]):
+        if right.startswith(left):
+            raise ValueError
+
+
+def validate_models_config_bytes(raw):
+    """Validate the closed external model-weight, tier-rule, and adapter config schema."""
     try:
-        if not path.exists() and not path.is_symlink():
-            return None
-        if not path.is_file():
-            raise Unavailable
-    except OSError:
-        raise Unavailable from None
-    return validate_config_bytes(_read_limited(path, MAX_CONFIG_BYTES))
+        if not isinstance(raw, bytes) or len(raw) > MAX_CONFIG_BYTES:
+            raise ValueError
+        value = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_object,
+                           parse_constant=_reject_constant)
+        required = {"schema", "ratio_version", "models"}
+        optional = {"tiers", "tier_rules", "tools"}
+        if (type(value) is not dict or not required <= set(value)
+                or set(value) - required - optional):
+            raise ValueError
+        if value["schema"] != MODELS_CONFIG_SCHEMA:
+            raise ValueError
+        ratio_version = value["ratio_version"]
+        if (not isinstance(ratio_version, str)
+                or not _PULSE.RATIO_VERSION_FORM.fullmatch(ratio_version)):
+            raise ValueError
+        if "tiers" in value:
+            raw_tiers = value["tiers"]
+            if (type(raw_tiers) is not list
+                    or not 1 <= len(raw_tiers) <= MAX_TIER_COUNT):
+                raise ValueError
+            tiers = []
+            for item in raw_tiers:
+                if (not isinstance(item, str)
+                        or not _TIER_NAME_RE.fullmatch(item)
+                        or item in _RESERVED_TIERS):
+                    raise ValueError
+                tiers.append(item)
+            if len(tiers) != len(set(tiers)):
+                raise ValueError
+        else:
+            tiers = list(DEFAULT_MODELS_TIERS)
+        tier_set = frozenset(tiers)
+        raw_models = value["models"]
+        if type(raw_models) is not dict or len(raw_models) > MAX_MODELS_ENTRIES:
+            raise ValueError
+        models = {}
+        all_model_prefixes = []
+        model_req = {"fresh_input", "cache_read", "output", "cache_write_mode"}
+        model_opt = {"cache_write_5m", "cache_write_1h", "long_prompt", "tier", "prefixes"}
+        lp_req = {"over_tokens", "fresh_input", "cache_read", "output"}
+        lp_opt = {"cache_write_5m", "cache_write_1h"}
+        for raw_name, spec in raw_models.items():
+            name = _safe_alias(raw_name)
+            if (type(spec) is not dict or not model_req <= set(spec)
+                    or set(spec) - model_req - model_opt):
+                raise ValueError
+            mode = spec["cache_write_mode"]
+            if mode not in {"ttl_split", "unbilled"}:
+                raise ValueError
+
+            def _parse_level(src, check_over=False):
+                out = {
+                    "fresh_input": _parse_ratio_weight(src["fresh_input"]),
+                    "cache_read": _parse_ratio_weight(src["cache_read"]),
+                    "output": _parse_ratio_weight(src["output"]),
+                }
+                if check_over:
+                    over = src["over_tokens"]
+                    if type(over) is not int or over < 1 or over > MAX_COUNTER:
+                        raise ValueError
+                    out["over_tokens"] = over
+                if mode == "ttl_split":
+                    if "cache_write_5m" not in src or "cache_write_1h" not in src:
+                        raise ValueError
+                    out["cache_write_5m"] = _parse_ratio_weight(src["cache_write_5m"])
+                    out["cache_write_1h"] = _parse_ratio_weight(src["cache_write_1h"])
+                else:
+                    if (src.get("cache_write_5m") is not None
+                            or src.get("cache_write_1h") is not None):
+                        raise ValueError
+                    out["cache_write_5m"] = None
+                    out["cache_write_1h"] = None
+                return out
+
+            normalized_entry = _parse_level(spec)
+            normalized_entry["cache_write_mode"] = mode
+            if "long_prompt" in spec:
+                lp = spec["long_prompt"]
+                if (type(lp) is not dict or not lp_req <= set(lp)
+                        or set(lp) - lp_req - lp_opt):
+                    raise ValueError
+                normalized_entry["long_prompt"] = _parse_level(lp, check_over=True)
+            if "tier" in spec:
+                tier = spec["tier"]
+                if not isinstance(tier, str) or tier not in tier_set:
+                    raise ValueError
+                normalized_entry["tier"] = tier
+            if "prefixes" in spec:
+                raw_prefixes = spec["prefixes"]
+                if (type(raw_prefixes) is not list
+                        or len(raw_prefixes) > MAX_MODEL_PREFIXES):
+                    raise ValueError
+                prefixes = [_safe_alias(prefix) for prefix in raw_prefixes]
+                normalized_entry["prefixes"] = prefixes
+                all_model_prefixes.extend(prefixes)
+            models[name] = normalized_entry
+        _check_non_overlapping_prefixes(all_model_prefixes)
+        if any(prefix in models for prefix in all_model_prefixes):
+            raise ValueError
+        tier_rules = []
+        if "tier_rules" in value:
+            raw_rules = value["tier_rules"]
+            if type(raw_rules) is not list or len(raw_rules) > MAX_TIER_RULES:
+                raise ValueError
+            rule_prefixes = []
+            rule_segments = set()
+            forbidden_segments = tier_set | _RESERVED_TIERS
+            for rule in raw_rules:
+                if type(rule) is not dict:
+                    raise ValueError
+                tier = rule.get("tier")
+                if not isinstance(tier, str) or tier not in tier_set:
+                    raise ValueError
+                if set(rule) == {"prefix", "tier"}:
+                    prefix = _safe_alias(rule["prefix"])
+                    rule_prefixes.append(prefix)
+                    tier_rules.append({"prefix": prefix, "tier": tier})
+                elif set(rule) == {"segment", "tier"}:
+                    segment = rule["segment"]
+                    if (not isinstance(segment, str)
+                            or not _SEGMENT_RE.fullmatch(segment)
+                            or segment in forbidden_segments
+                            or segment in rule_segments):
+                        raise ValueError
+                    rule_segments.add(segment)
+                    tier_rules.append({"segment": segment, "tier": tier})
+                else:
+                    raise ValueError
+            _check_non_overlapping_prefixes(rule_prefixes)
+        ag_defaults = {
+            "log_filename": "transcript.jsonl",
+            "cache_read_field": None,
+            "lead_factor": ATTRIBUTION_LEAD_FACTOR,
+            "max_bytes": MAX_ATTRIBUTION_BYTES,
+            "max_entries": MAX_ATTRIBUTION_ENTRIES,
+        }
+        if "tools" in value:
+            raw_tools = value["tools"]
+            if type(raw_tools) is not dict or set(raw_tools) - {"antigravity"}:  # vendor-ok: source adapter settings
+                raise ValueError
+            if "antigravity" in raw_tools:  # vendor-ok: source adapter settings
+                ag = raw_tools["antigravity"]
+                allowed_ag = {"log_filename", "cache_read_field", "lead_factor",
+                              "max_bytes", "max_entries"}
+                if type(ag) is not dict or set(ag) - allowed_ag:
+                    raise ValueError
+                if "log_filename" in ag:
+                    filename = ag["log_filename"]
+                    if (not isinstance(filename, str)
+                            or not _LOG_FILENAME_RE.fullmatch(filename)):
+                        raise ValueError
+                    _windows_component(filename)
+                    ag_defaults["log_filename"] = filename
+                if "cache_read_field" in ag:
+                    field = ag["cache_read_field"]
+                    if field is not None:
+                        if (not isinstance(field, str)
+                                or not _CACHE_READ_FIELD_RE.fullmatch(field)
+                                or field in _ANTIGRAVITY_EXCLUDED_FIELDS):
+                            raise ValueError
+                    ag_defaults["cache_read_field"] = field
+                if "lead_factor" in ag:
+                    lf = ag["lead_factor"]
+                    if type(lf) is not int or lf < 2 or lf > 1_000:
+                        raise ValueError
+                    ag_defaults["lead_factor"] = lf
+                if "max_bytes" in ag:
+                    mb = ag["max_bytes"]
+                    if type(mb) is not int or mb < 1 or mb > MAX_ATTRIBUTION_BYTES:
+                        raise ValueError
+                    ag_defaults["max_bytes"] = mb
+                if "max_entries" in ag:
+                    me = ag["max_entries"]
+                    if type(me) is not int or me < 1 or me > MAX_ATTRIBUTION_ENTRIES:
+                        raise ValueError
+                    ag_defaults["max_entries"] = me
+        return {
+            "schema": MODELS_CONFIG_SCHEMA,
+            "ratio_version": ratio_version,
+            "tiers": tiers,
+            "models": models,
+            "tier_rules": tier_rules,
+            "tools": {"antigravity": ag_defaults},  # vendor-ok: source adapter settings
+        }
+    except Unavailable:
+        raise Unavailable("config_invalid") from None
+    except (ValueError, TypeError, KeyError, UnicodeError, RecursionError,
+            OverflowError, AttributeError):
+        raise Unavailable("config_invalid") from None
+
+
+def load_models_config(home, config):
+    """Read account-owned model weights & adapter settings; fail closed on invalid/linked/contained files."""
+    explicit = config.get("models_config")
+    target = (explicit if explicit is not None
+              else str(Path(home) / ".cairn" / "meter-models.json"))
+    for root in (*(item["root"] for item in config["sources"]),
+                 *(item["path"] for item in config["projects"])):
+        if _is_path_within(target, root) or _is_real_path_within(target, root):
+            raise Unavailable("config_invalid")
+    raw = _read_account_json(target, MAX_CONFIG_BYTES,
+                             missing_ok=(explicit is None), reason="config_invalid")
+    if raw is None:
+        return None
+    return validate_models_config_bytes(raw)
 
 
 def _enumerate_jsonl(root):
@@ -468,16 +681,16 @@ def _enumerate_jsonl(root):
     return files, entries
 
 
-def _enumerate_antigravity(root):  # vendor-ok: walk the one folder shape the tool writes
-    """List one antigravity root's logs by fixed names: `brain/<uuid>/.system_generated/logs/*.jsonl`.
+def _enumerate_antigravity(root, *, log_filename="transcript.jsonl"):  # vendor-ok: walk the one folder shape the tool writes
+    """List one antigravity root's logs by fixed names: `brain/<uuid>/.system_generated/logs/<log_filename>`.
 
-    Every path is built from those fixed names and listed entries, never from
-    record text; links are skipped at every level and a linked root is refused.
-    Returns `(files, entries, waiting)`: the files as `_enumerate_jsonl` lists
-    them, the entries listed, and whether a cap or an error inside one
-    conversation left something for the next refresh. A missing `brain/` or
-    `logs/` gives no files. Only a root that is missing, linked or not a folder
-    raises Unavailable.
+    Every path is built from those fixed names and listed conversation ids,
+    never from record text; links are skipped at every level and a linked root
+    is refused. Returns `(files, entries, waiting)`: the files as
+    `_enumerate_jsonl` lists them, the entries listed, and whether a cap or an
+    error inside one conversation left something for the next refresh. A
+    missing `brain/`, `logs/`, or target log gives no files. Only a root that
+    is missing, linked or not a folder raises Unavailable.
     """
     try:
         info = os.lstat(root)
@@ -527,24 +740,19 @@ def _enumerate_antigravity(root):  # vendor-ok: walk the one folder shape the to
             if any(_is_link(info) or not stat.S_ISDIR(info.st_mode)
                    for info in (os.lstat(system), os.lstat(logs))):
                 continue
-            with os.scandir(logs) as scan:
-                for entry in scan:
-                    entries += 1
-                    if entries > MAX_ATTRIBUTION_RUN_ENTRIES:
-                        found = None          # this conversation, and the rest, wait
-                        break
-                    info = entry.stat(follow_symlinks=False)
-                    if (_is_link(info) or not stat.S_ISREG(info.st_mode)
-                            or not entry.name.endswith(".jsonl")):
-                        continue
-                    info = os.lstat(entry.path)   # a directory entry has no file id on Windows
-                    found.append((f"brain/{conversation}/.system_generated/logs/{entry.name}", {
+            entries += 1
+            if entries > MAX_ATTRIBUTION_RUN_ENTRIES:
+                found = None          # this conversation, and the rest, wait
+            else:
+                info = os.lstat(os.path.join(logs, log_filename))
+                if not _is_link(info) and stat.S_ISREG(info.st_mode):
+                    found.append((f"brain/{conversation}/.system_generated/logs/{log_filename}", {
                         "dev": info.st_dev, "ino": info.st_ino,
                         "size": info.st_size, "mtime_ns": info.st_mtime_ns,
                         "ctime_ns": info.st_ctime_ns,
                     }))
         except FileNotFoundError:
-            continue                          # no logs folder: nothing to read here
+            continue                          # no logs folder or target log: nothing here
         except (OSError, ValueError):
             waiting = True                    # this conversation waits for the next refresh
             continue
@@ -673,15 +881,16 @@ def _open_search_folder(target, parent=None, identity=None):
     return None
 
 
-def _conversation_project(source_root, conversation, projects):  # vendor-ok: the saved files of one conversation
+def _conversation_project(source_root, conversation, projects, *,
+                          lead_factor=None, max_bytes=None, max_entries=None):  # vendor-ok: the saved files of one conversation
     """Which one listed project do a conversation's saved files name most? (plan rule 5)
 
     Searches the regular files under `brain/<conversation>/` (links skipped, any folder
     named `chunks` skipped unopened, at most MAX_ATTRIBUTION_DEPTH levels down,
-    MAX_ATTRIBUTION_ENTRIES entries and MAX_ATTRIBUTION_BYTES bytes) for each listed
+    `max_entries` entries and `max_bytes` bytes) for each listed
     project's path text, and counts the files that name each project. When the search
     completes, the project with the most files wins if its count is at least
-    ATTRIBUTION_LEAD_FACTOR times the next project's. Returns
+    `lead_factor` times the next project's. Returns
     `(alias, None, bytes read, entries)` for that project, else
     `(None, reason, bytes read, entries)` with the reason `antigravity_projects_ambiguous`
     (two or more named and none leads enough), `antigravity_search_incomplete` (a cap, an
@@ -693,6 +902,12 @@ def _conversation_project(source_root, conversation, projects):  # vendor-ok: th
     was listed is refused, never followed out of the root. Windows has no such
     open (plan rule 7): it walks by path, as the log stream does.
     """
+    if lead_factor is None:
+        lead_factor = ATTRIBUTION_LEAD_FACTOR
+    if max_bytes is None:
+        max_bytes = MAX_ATTRIBUTION_BYTES
+    if max_entries is None:
+        max_entries = MAX_ATTRIBUTION_ENTRIES
     names = {project["alias"]: _attribution_spellings(project["path"])
              for project in projects}
     if not names:
@@ -710,7 +925,7 @@ def _conversation_project(source_root, conversation, projects):  # vendor-ok: th
             with os.scandir(folder) as scan:
                 for entry in scan:
                     entries += 1
-                    if entries > MAX_ATTRIBUTION_ENTRIES:
+                    if entries > max_entries:
                         capped = True
                         break
                     info = entry.stat(follow_symlinks=False)
@@ -742,7 +957,7 @@ def _conversation_project(source_root, conversation, projects):  # vendor-ok: th
                     seen = (walked.st_dev, walked.st_ino)
                 hit, read, complete = _search_attribution_file(
                     name if _DIR_FD_WALK else path, seen,
-                    MAX_ATTRIBUTION_BYTES - used, names, overlap,
+                    max_bytes - used, names, overlap,
                     dir_fd=folder if _DIR_FD_WALK else None)
                 used += read
                 for alias in hit:
@@ -786,7 +1001,7 @@ def _conversation_project(source_root, conversation, projects):  # vendor-ok: th
         return None, "antigravity_project_not_named", used, entries
     ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
     next_count = ranked[1][1] if len(ranked) > 1 else 0
-    if ranked[0][1] < ATTRIBUTION_LEAD_FACTOR * next_count:
+    if ranked[0][1] < lead_factor * next_count:
         return None, "antigravity_projects_ambiguous", used, entries
     return ranked[0][0], None, used, entries
 
@@ -944,7 +1159,7 @@ def _atomic_replace_ledger(area, candidate):
     return "written"
 
 
-def _write_summary(project, ledger, config):
+def _write_summary(project, ledger, config, models_config=None):
     """Write one project's summary into its existing `dev/measurement`, never through a link."""
     candidate_remote = {item["alias"]: item["remote"]
                         for item in ledger["project_remotes"]}.get(project["alias"])
@@ -952,7 +1167,7 @@ def _write_summary(project, ledger, config):
         raise Unavailable("project_remote_unavailable")
     if candidate_remote != project["remote"]:
         raise Unavailable("project_remote_mismatch")
-    payload = _project_export_bytes(ledger, config, project["alias"])
+    payload = _project_export_bytes(ledger, config, project["alias"], models_config)
     dev = Path(project["path"]) / "dev"
     measurement = dev / "measurement"
     for folder in (dev, measurement):
@@ -1563,10 +1778,6 @@ def _copy_event(event):
             for name, value in event.items()}
 
 
-def _ratio_index_copy():
-    return json.loads(json.dumps(_RATIO_INDEX, sort_keys=True))
-
-
 def _validate_event(event):
     if not isinstance(event, dict) or set(event) != _LEDGER_EVENT_FIELDS:
         raise ValueError
@@ -1945,11 +2156,16 @@ def _validate_aggregate_row(aggregate):
     for value in kinds.values():
         if value is not None:
             _counter(value)
-    if (not isinstance(aggregate["reference_index"], str)
-            or not _PULSE.RATIO_VERSION_FORM.fullmatch(aggregate["reference_index"])
-            or not isinstance(aggregate["reference_tokens"], dict)
+    ref_index = aggregate["reference_index"]
+    if (not isinstance(aggregate["reference_tokens"], dict)
             or set(aggregate["reference_tokens"])
             != {*_EVENT_KIND_NAMES, "total"}):
+        raise ValueError
+    if ref_index is None:
+        if any(value is not None for value in aggregate["reference_tokens"].values()):
+            raise ValueError
+    elif (not isinstance(ref_index, str)
+            or not _PULSE.RATIO_VERSION_FORM.fullmatch(ref_index)):
         raise ValueError
     for value in aggregate["reference_tokens"].values():
         if value is not None and (not isinstance(value, str)
@@ -1983,7 +2199,7 @@ def _load_ledger(raw, now=None):
     if raw is None:
         return {
             "schema": LEDGER_SCHEMA, "reader_version": READER_VERSION,
-            "ratio_version": RATIO_VERSION, "ratio_index": _ratio_index_copy(),
+            "ratio_version": None, "ratio_index": None,
             "events": [], "claims": [], "cursors": [],
             "mappings": [], "project_remotes": [], "aggregates": [], "lineages": [],
             "waits": [], "starts": [], "fold_horizon": None, "daily": [],
@@ -1999,15 +2215,21 @@ def _load_ledger(raw, now=None):
             raise Unavailable("ledger_old_schema")
         if not isinstance(ledger, dict) or set(ledger) != _LEDGER_FIELDS:
             raise ValueError
-        if (ledger["schema"] != LEDGER_SCHEMA
-                or ledger["reader_version"] != READER_VERSION
-                or not isinstance(ledger["ratio_version"], str)
-                or not _PULSE.RATIO_VERSION_FORM.fullmatch(ledger["ratio_version"])
-                or not isinstance(ledger["ratio_index"], dict)):
+        pair = (ledger["schema"], ledger["reader_version"])
+        if pair == ("cairn-meter-ledger/6", "cairn-source-readers/6"):
+            ledger["schema"] = LEDGER_SCHEMA
+            ledger["reader_version"] = READER_VERSION
+        elif pair != (LEDGER_SCHEMA, READER_VERSION):
             raise ValueError
-        # A ledger outlives a table change: nothing reads the stored table or label.
-        ledger["ratio_version"] = RATIO_VERSION
-        ledger["ratio_index"] = _ratio_index_copy()
+        ratio_version = ledger["ratio_version"]
+        ratio_index = ledger["ratio_index"]
+        if (ratio_version is None) != (ratio_index is None):
+            raise ValueError
+        if ratio_version is not None and (
+                not isinstance(ratio_version, str)
+                or not _PULSE.RATIO_VERSION_FORM.fullmatch(ratio_version)
+                or not isinstance(ratio_index, dict)):
+            raise ValueError
         if any(not isinstance(ledger[key], list) for key in (
                 "events", "claims", "cursors", "mappings", "project_remotes",
                 "aggregates", "lineages", "waits", "starts", "daily")):
@@ -2317,8 +2539,10 @@ def _merge_wait_rows(retained, incoming):
     return result
 
 
-def _recompute_aggregates(events, config):
+def _recompute_aggregates(events, config, models_config=None):
     tool_by_alias = {source["alias"]: source["tool"] for source in config["sources"]}
+    current_ratio_version = (None if models_config is None
+                             else models_config["ratio_version"])
     groups = {}
     for event in events:
         aliases = event["source_aliases"]
@@ -2345,7 +2569,8 @@ def _recompute_aggregates(events, config):
         for name in _EVENT_KIND_NAMES:
             values = [event["kinds"][name] for event in group["events"]]
             kinds[name] = None if any(value is None for value in values) else sum(values)
-        weighted = [_weighted_reference_tokens(event) for event in group["events"]]
+        weighted = [_weighted_reference_tokens(event, models_config)
+                    for event in group["events"]]
         reference = {}
         for name in (*_EVENT_KIND_NAMES, "total"):
             values = [row[name] for row in weighted]
@@ -2357,7 +2582,7 @@ def _recompute_aggregates(events, config):
                        "model": model, "model_provenance": model_provenance,
                        "effective_model": effective_model, "events": len(group["events"]),
                        "unknown_events": group["unknown"], "kinds": kinds,
-                       "reference_index": RATIO_VERSION,
+                       "reference_index": current_ratio_version,
                        "reference_tokens": reference})
     return result
 
@@ -2371,17 +2596,23 @@ def _aggregate_sort_key(item):
     return tuple("" if value is None else str(value) for value in _aggregate_key(item))
 
 
-def _add_rows(left, right):
+def _add_rows(left, right, current_ratio_version=None):
     """Add two aggregate rows of equal key, as one pass over all their events would."""
     kinds = {}
     for name in _EVENT_KIND_NAMES:
         pair = (left["kinds"][name], right["kinds"][name])
         kinds[name] = None if None in pair else pair[0] + pair[1]
-    reference = {}
-    for name in (*_EVENT_KIND_NAMES, "total"):
-        pair = (left["reference_tokens"][name], right["reference_tokens"][name])
-        reference[name] = None if None in pair else _fraction_text(
-            Fraction(Decimal(pair[0])) + Fraction(Decimal(pair[1])))
+    ref_index = (left["reference_index"]
+                 if left["reference_index"] == right["reference_index"]
+                 else current_ratio_version)
+    if ref_index is None:
+        reference = {name: None for name in (*_EVENT_KIND_NAMES, "total")}
+    else:
+        reference = {}
+        for name in (*_EVENT_KIND_NAMES, "total"):
+            pair = (left["reference_tokens"][name], right["reference_tokens"][name])
+            reference[name] = None if None in pair else _fraction_text(
+                Fraction(Decimal(pair[0])) + Fraction(Decimal(pair[1])))
     return {
         "project_alias": left["project_alias"], "day": left["day"],
         "tool": left["tool"], "model": left["model"],
@@ -2390,19 +2621,18 @@ def _add_rows(left, right):
         "events": left["events"] + right["events"],
         "unknown_events": left["unknown_events"] + right["unknown_events"],
         "kinds": kinds,
-        "reference_index": (left["reference_index"]
-                            if left["reference_index"] == right["reference_index"]
-                            else RATIO_VERSION),
+        "reference_index": ref_index,
         "reference_tokens": reference,
     }
 
 
-def _merge_rows(rows):
+def _merge_rows(rows, current_ratio_version=None):
     """Rows of equal key added into one; sorted like `aggregates`."""
     by_key = {}
     for item in rows:
         key = _aggregate_key(item)
-        by_key[key] = _add_rows(by_key[key], item) if key in by_key else item
+        by_key[key] = (_add_rows(by_key[key], item, current_ratio_version)
+                       if key in by_key else item)
     return sorted(by_key.values(), key=_aggregate_sort_key)
 
 
@@ -2443,7 +2673,7 @@ def _fold_horizon_day(events, saved, now, catching_up):
     return horizon
 
 
-def _fold_events(events, daily, config, saved, now, catching_up):
+def _fold_events(events, daily, config, saved, now, catching_up, models_config=None):
     """Fold events of a known day before the horizon into the daily rows.
 
     Returns the events that stay, the daily rows and the saved horizon text. An event
@@ -2455,9 +2685,13 @@ def _fold_events(events, daily, config, saved, now, catching_up):
     old = [event for event in events
            if (day := _event_day(event)) is not None and day < horizon]
     if old:
+        current_ratio_version = (None if models_config is None
+                                 else models_config["ratio_version"])
         gone = {event["event_key"] for event in old}
         events = [event for event in events if event["event_key"] not in gone]
-        daily = _merge_rows([*daily, *_recompute_aggregates(old, config)])
+        daily = _merge_rows(
+            [*daily, *_recompute_aggregates(old, config, models_config)],
+            current_ratio_version)
     return events, daily, horizon.isoformat()
 
 
@@ -2647,7 +2881,7 @@ def _wait_export(waits, events, claims, config, project_alias):
             "by_day": day_rows, "by_artifact": artifact_rows}
 
 
-def _project_export(ledger, config, project_alias):
+def _project_export(ledger, config, project_alias, models_config=None):
     """Build one sanitized project-only aggregate without filesystem access."""
     if isinstance(config, bytes):
         config = validate_config_bytes(config)
@@ -2712,17 +2946,22 @@ def _project_export(ledger, config, project_alias):
         for name in _EVENT_KIND_NAMES:
             values = [event["kinds"][name] for event in group["events"]]
             kinds[name] = None if any(value is None for value in values) else sum(values)
-        weighted = [_weighted_reference_tokens(event) for event in group["events"]]
+        weighted = [_weighted_reference_tokens(event, models_config)
+                    for event in group["events"]]
         for name in (*_EVENT_KIND_NAMES, "total"):
             values = [row[name] for row in weighted]
             reference[name] = (None if any(value is None for value in values)
                                else _fraction_text(sum(
                                    (Fraction(Decimal(value)) for value in values),
                                    Fraction(0))))
+        resolved_model = (effective if effective is not None
+                          else (model if provenance == "selected_context" else None))
         aggregates.append({
             "week": week, "day": day, "artifact": artifact, "tool": tool,
             "model": model, "model_provenance": provenance,
-            "effective_model": effective, "events": len(group["events"]),
+            "effective_model": effective,
+            "tier": _resolve_model_tier(resolved_model, models_config),
+            "events": len(group["events"]),
             "unknown_events": group["unknown"], "kinds": kinds,
             "reference_tokens": reference,
         })
@@ -2730,17 +2969,55 @@ def _project_export(ledger, config, project_alias):
         if item["project_alias"] != project_alias:
             continue
         iso = datetime.fromisoformat(item["day"]).date().isocalendar()
+        resolved_model = (item["effective_model"]
+                          if item["effective_model"] is not None
+                          else (item["model"] if item["model_provenance"] == "selected_context"
+                                else None))
         aggregates.append({
             "week": f"{iso.year}-W{iso.week:02d}", "day": item["day"], "artifact": None,
             "tool": item["tool"], "model": item["model"],
             "model_provenance": item["model_provenance"],
-            "effective_model": item["effective_model"], "events": item["events"],
+            "effective_model": item["effective_model"],
+            "tier": _resolve_model_tier(resolved_model, models_config),
+            "events": item["events"],
             "unknown_events": item["unknown_events"], "kinds": dict(item["kinds"]),
             "reference_tokens": dict(item["reference_tokens"]),
         })
     aggregates.sort(key=lambda item: tuple("" if value is None else str(value) for value in (
         item["week"], item["day"], item["artifact"], item["tool"], item["model"],
         item["model_provenance"], item["effective_model"])))
+    tier_buckets = {}
+    for row in aggregates:
+        tier_buckets.setdefault(row["tier"], []).append(row)
+    configured_tiers = tuple(models_config["tiers"]) if models_config is not None else ()
+    extra_tiers = sorted(t for t in tier_buckets
+                         if t not in configured_tiers and t != "unknown")
+    ordered_tiers = []
+    for tier in (*configured_tiers, *extra_tiers, "unknown"):
+        if tier in tier_buckets and tier not in ordered_tiers:
+            ordered_tiers.append(tier)
+    by_tier = []
+    for tier in ordered_tiers:
+        rows = tier_buckets[tier]
+        tier_kinds = {
+            name: (None if any(r["kinds"][name] is None for r in rows)
+                   else sum(r["kinds"][name] for r in rows))
+            for name in _EVENT_KIND_NAMES
+        }
+        tier_ref = {
+            name: (None if any(r["reference_tokens"][name] is None for r in rows)
+                   else _fraction_text(sum(
+                       (Fraction(Decimal(r["reference_tokens"][name])) for r in rows),
+                       Fraction(0))))
+            for name in (*_EVENT_KIND_NAMES, "total")
+        }
+        by_tier.append({
+            "tier": tier,
+            "events": sum(r["events"] for r in rows),
+            "unknown_events": sum(r["unknown_events"] for r in rows),
+            "kinds": tier_kinds,
+            "reference_tokens": tier_ref,
+        })
     reasons = set(verified_ledger["coverage"]["reasons"])
     reasons.add("global_completeness_unknown")
     # A row's tool comes from the consent file's sources today, so a row whose source
@@ -2749,10 +3026,11 @@ def _project_export(ledger, config, project_alias):
     if any(row["tool"] in ("antigravity", None) for row in aggregates):  # vendor-ok: text match is an inference
         reasons.add("antigravity_project_inferred")
     result = {
-        "schema": "cairn-meter-project/2",
+        "schema": "cairn-meter-project/3",
         "project_alias": project_alias,
-        "ratio_version": RATIO_VERSION,
+        "ratio_version": (None if models_config is None else models_config["ratio_version"]),
         "aggregates": aggregates,
+        "by_tier": by_tier,
         "wait": _wait_export(verified_ledger["waits"], verified_ledger["events"],
                              verified_ledger["claims"], config, project_alias),
         "coverage": {"global": "unknown", "reasons": sorted(reasons)},
@@ -2763,8 +3041,8 @@ def _project_export(ledger, config, project_alias):
     return result
 
 
-def _project_export_bytes(ledger, config, project_alias):
-    output = _project_export(ledger, config, project_alias)
+def _project_export_bytes(ledger, config, project_alias, models_config=None):
+    output = _project_export(ledger, config, project_alias, models_config)
     payload = (json.dumps(output, sort_keys=True, separators=(",", ":"),
                           ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
     if len(payload) > MAX_LEDGER_BYTES:
@@ -3144,7 +3422,14 @@ def _read_fork_parents(source, config, files, previous, source_batches, spent):
 
 
 def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=None,
-                           agent_runs=None):
+                           agent_runs=None, models_config=None):
+    ag_cfg = ((models_config or {}).get("tools", {}).get("antigravity", {})  # vendor-ok: source adapter settings
+              if isinstance(models_config, dict) else {})
+    ag_log_filename = ag_cfg.get("log_filename", "transcript.jsonl")
+    ag_cache_read_field = ag_cfg.get("cache_read_field")
+    ag_lead_factor = ag_cfg.get("lead_factor", ATTRIBUTION_LEAD_FACTOR)
+    ag_max_bytes = ag_cfg.get("max_bytes", MAX_ATTRIBUTION_BYTES)
+    ag_max_entries = ag_cfg.get("max_entries", MAX_ATTRIBUTION_ENTRIES)
     previous = {cursor["file_key"]: cursor for cursor in prior_cursors}
     start_rows = {row["source_alias"]: row["started_at"] for row in starts}
     had_start = set(start_rows)
@@ -3170,7 +3455,8 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
         if source["tool"] == "antigravity":  # vendor-ok: its own bounded walker
             # Its entries and files charge only the attribution caps, so a large
             # folder here can never fail the refresh for another source.
-            files, entries, waiting = _enumerate_antigravity(source["root"])
+            files, entries, waiting = _enumerate_antigravity(
+                source["root"], log_filename=ag_log_filename)
             attribution_entries += entries
             if waiting:
                 reasons.add("catching_up")
@@ -3281,14 +3567,17 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                     conversation = relative.split("/")[1]
                     decided = conversations.get(conversation)
                     if decided is None:
-                        if (attribution_bytes + MAX_ATTRIBUTION_BYTES > MAX_ATTRIBUTION_RUN_BYTES
-                                or total_bytes + MAX_ATTRIBUTION_BYTES > MAX_RUN_READ_BYTES
-                                or attribution_entries + MAX_ATTRIBUTION_ENTRIES
+                        if (attribution_bytes + ag_max_bytes > MAX_ATTRIBUTION_RUN_BYTES
+                                or total_bytes + ag_max_bytes > MAX_RUN_READ_BYTES
+                                or attribution_entries + ag_max_entries
                                 > MAX_ATTRIBUTION_RUN_ENTRIES):
                             decided = "wait"
                         else:
                             named, unnamed, searched, listed = _conversation_project(
-                                source["root"], conversation, config["projects"])
+                                source["root"], conversation, config["projects"],
+                                lead_factor=ag_lead_factor,
+                                max_bytes=ag_max_bytes,
+                                max_entries=ag_max_entries)
                             attribution_bytes += searched
                             total_bytes += searched
                             attribution_entries += listed
@@ -3309,10 +3598,13 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                         source["root"], relative,
                         min(MAX_BATCH_BYTES, MAX_RUN_READ_BYTES - total_bytes),
                         piece=True, resume=resume)
-                    batch = read_records(source["tool"], stream, config=config,
-                                         source_aliases=[source["alias"]],
-                                         source_root=source["root"],
-                                         attribution=attribution)
+                    batch = read_records(
+                        source["tool"], stream, config=config,
+                        source_aliases=[source["alias"]],
+                        source_root=source["root"],
+                        attribution=attribution,
+                        cache_read_field=(ag_cache_read_field
+                                          if source["tool"] == "antigravity" else None))  # vendor-ok: source adapter settings
                     total_bytes += stream.bytes_read
                     if stream.terminal_reason == "source_read_unavailable":
                         break
@@ -3555,7 +3847,8 @@ def _build_mappings(events, claims, config):
 
 def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incoming_claims,
                 project_remotes, capture_status, scan_reasons, verified_forks,
-                fork_conflicts, starts=None, now=None, agent_runs=None):
+                fork_conflicts, starts=None, now=None, agent_runs=None,
+                models_config=None):
     starts = prior["starts"] if starts is None else starts
     now = _now_utc() if now is None else now
     if agent_runs is None:
@@ -3607,7 +3900,9 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
                 alias in old_remotes and old_remotes[alias] != current_remotes[alias])):
             item = {**item, "project_alias": None}
         daily.append(item)
-    daily = _merge_rows(daily)
+    current_ratio_version = (None if models_config is None
+                             else models_config["ratio_version"])
+    daily = _merge_rows(daily, current_ratio_version)
     claims = _merge_claim_history(prior["claims"], incoming_claims)
     lineages = _merge_lineage_history(prior["lineages"], verified_forks, fork_conflicts)
     conflicting_children = {
@@ -3637,14 +3932,17 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
             wait["model_provenance"] = "unknown"
             wait["reasons"] = sorted(set(wait["reasons"]) | {"conflicting_binding"})
     events, daily, fold_horizon = _fold_events(
-        events, daily, config, prior["fold_horizon"], now, "catching_up" in scan_reasons)
+        events, daily, config, prior["fold_horizon"], now, "catching_up" in scan_reasons,
+        models_config=models_config)
     if len(events) > MAX_RETAINED_EVENTS:
         raise Unavailable("source_budget_exceeded")
     lineages = _drop_folded_lineages(lineages, events, waits)
     mappings = _build_mappings(events, claims, config)
-    aggregates = sorted([*_recompute_aggregates(events, config), *daily],
+    aggregates = sorted([*_recompute_aggregates(events, config, models_config), *daily],
                         key=_aggregate_sort_key)
     reasons = set(scan_reasons)
+    if models_config is None:
+        reasons.add("models_config_missing")
     if runs["summaries"] or runs["unclassified"] > 0:
         reasons.add("agent_runs_incomplete")
     if any(row["project_alias"] is None and row["tool"] == "antigravity"  # vendor-ok: tokens that may be any project's
@@ -3655,9 +3953,11 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
     reasons.update(status for status in capture_status if status != "captured")
     if fork_conflicts or any(item["state"] == "conflicting" for item in lineages):
         reasons.add("conflicting_binding")
+    ratio_index = (None if models_config is None
+                   else json.loads(json.dumps(models_config, sort_keys=True)))
     return {
         "schema": LEDGER_SCHEMA, "reader_version": READER_VERSION,
-        "ratio_version": RATIO_VERSION, "ratio_index": _ratio_index_copy(),
+        "ratio_version": current_ratio_version, "ratio_index": ratio_index,
         "events": events, "waits": waits, "claims": claims,
         "cursors": cursors, "mappings": mappings,
         "project_remotes": sorted(project_remotes, key=lambda item: item["alias"]),
@@ -3678,6 +3978,7 @@ def _refresh_ledger(home, *, report_current_directory=None):
             return {"status": "disabled", "reason": "config_missing"}
         if not config["enabled"]:
             return {"status": "disabled", "reason": "disabled"}
+        models_config = load_models_config(home, config)
         report_project = (_current_report_project(config, report_current_directory)
                           if report_current_directory is not None else None)
         area = _meter_area(home)
@@ -3691,17 +3992,19 @@ def _refresh_ledger(home, *, report_current_directory=None):
         (incoming_events, cursors, scan_reasons, verified_forks, fork_conflicts,
          incoming_waits, starts) = _scan_approved_sources(
             config, prior["cursors"], starts=prior["starts"], now=now,
-            fold_horizon=prior["fold_horizon"], agent_runs=runs)
+            fold_horizon=prior["fold_horizon"], agent_runs=runs,
+            models_config=models_config)
         incoming_claims, project_remotes, capture_status = _capture_all_claims(config)
         candidate = _new_ledger(prior, config, incoming_events, incoming_waits, cursors,
                                 incoming_claims, project_remotes,
                                 capture_status, scan_reasons, verified_forks,
-                                fork_conflicts, starts=starts, now=now, agent_runs=runs)
+                                fork_conflicts, starts=starts, now=now, agent_runs=runs,
+                                models_config=models_config)
         result = _atomic_replace_ledger(area, candidate)
         current_aggregate = None
         for project in sorted(config["projects"], key=lambda item: item["alias"]):
             try:
-                state = _write_summary(project, candidate, config)
+                state = _write_summary(project, candidate, config, models_config)
             except Unavailable as exc:
                 return {"status": "unavailable", "reason": exc.reason,
                         "coverage": "unknown"}
@@ -3710,7 +4013,8 @@ def _refresh_ledger(home, *, report_current_directory=None):
                         "coverage": "unknown"}
             if report_project is not None and project["alias"] == report_project["alias"]:
                 current_aggregate = _project_export_bytes(candidate, config,
-                                                          project["alias"])
+                                                          project["alias"],
+                                                          models_config)
         partial_reason = ("catching_up" if "catching_up" in candidate["coverage"]["reasons"]
                           else "source_too_large" if "source_too_large" in
                           candidate["coverage"]["reasons"] else None)
@@ -4014,12 +4318,12 @@ def _claude_usage(data):  # vendor-ok: normalize the supported input protocol
     return kinds
 
 
-def _antigravity_usage(record):  # vendor-ok: normalize the supported input protocol
+def _antigravity_usage(record, *, cache_read_field=None):  # vendor-ok: normalize the supported input protocol
     """The kinds of one antigravity token record, or None when it holds neither token field.
 
     One field, or a number that is not a non-negative whole number (a boolean
-    included), raises ValueError. Only input and output are stated: both cache
-    kinds stay unknown (None, never 0).
+    included), raises ValueError. Both cache kinds stay unknown (None) unless a
+    configured `cache_read_field` is present on the record.
     """
     names = ("input_tokens", "output_tokens")
     present = [name in record for name in names]
@@ -4030,6 +4334,8 @@ def _antigravity_usage(record):  # vendor-ok: normalize the supported input prot
     kinds = _unknown_kinds()
     kinds["fresh_input"] = _counter(record["input_tokens"])
     kinds["output"] = _counter(record["output_tokens"])
+    if cache_read_field is not None and cache_read_field in record:
+        kinds["cache_read"] = _counter(record[cache_read_field])
     return kinds
 
 
@@ -4086,19 +4392,73 @@ def _unknown_kinds():
     return {name: None for name in _EVENT_KIND_NAMES}
 
 
-def _fraction_text(value):
-    if value is None:
+_fraction_text = _PULSE._fraction_text
+
+
+def _lookup_model_weights(model, models_config):
+    """Return configured weight spec for `model`, failing ambiguous prefix matches closed."""
+    if models_config is None or model is None:
         return None
-    decimal = Decimal(value.numerator) / Decimal(value.denominator)
-    return format(decimal, "f")
+    models = models_config["models"]
+    exact = models.get(model)
+    if exact is not None:
+        return exact
+    matches = [
+        entry
+        for entry in models.values()
+        if any(model.startswith(prefix) for prefix in entry.get("prefixes", ()))
+    ]
+    return matches[0] if len(matches) == 1 else None
 
 
-def _weighted_reference_tokens(event):
+def _resolve_model_tier(model, models_config):
+    """Return configured capability tier for `model`, failing closed to `unknown`."""
+    if models_config is None or model is None:
+        return "unknown"
+    models = models_config["models"]
+    exact = models.get(model)
+    if exact is not None:
+        tier = exact.get("tier")
+        if tier is not None:
+            return tier
+    else:
+        prefix_tiers = [
+            entry["tier"]
+            for entry in models.values()
+            if entry.get("tier") is not None
+            and any(model.startswith(prefix) for prefix in entry.get("prefixes", ()))
+        ]
+        if len(prefix_tiers) > 1:
+            return "unknown"
+        if len(prefix_tiers) == 1:
+            return prefix_tiers[0]
+    rules = models_config.get("tier_rules", ())
+    rule_prefix_matches = [
+        rule["tier"]
+        for rule in rules
+        if "prefix" in rule and model.startswith(rule["prefix"])
+    ]
+    if len(rule_prefix_matches) > 1:
+        return "unknown"
+    if len(rule_prefix_matches) == 1:
+        return rule_prefix_matches[0]
+    segments = {part.lower() for part in model.split("-") if part}
+    rule_segment_matches = [
+        rule["tier"]
+        for rule in rules
+        if "segment" in rule and rule["segment"] in segments
+    ]
+    if len(rule_segment_matches) == 1:
+        return rule_segment_matches[0]
+    return "unknown"
+
+
+def _weighted_reference_tokens(event, models_config=None):
     """Return hypothetical reference-token equivalents; never actual spend."""
     model = event["effective_model"]
     if model is None and event["model_provenance"] == "selected_context":
         model = event["model"]
-    weights = _RATIO_INDEX["models"].get(model)
+    weights = _lookup_model_weights(model, models_config)
     if weights is None:
         return {name: None for name in (*_EVENT_KIND_NAMES, "total")}
     kinds = event["kinds"]
@@ -4106,7 +4466,7 @@ def _weighted_reference_tokens(event):
     long_level = weights.get("long_prompt")
     if long_level is not None:
         counts = [kinds["fresh_input"], kinds["cache_read"]]
-        if long_level["cache_write_5m"] is not None:
+        if weights["cache_write_mode"] == "ttl_split":
             counts.append(kinds["cache_write"])
         if None in counts:
             return {name: None for name in (*_EVENT_KIND_NAMES, "total")}
@@ -4119,7 +4479,14 @@ def _weighted_reference_tokens(event):
         components[name] = None if weight is None or count is None else (
             Fraction(*weight) * count)
     writes = kinds["cache_write"]
-    if writes is None:
+    if weights["cache_write_mode"] == "unbilled":
+        if (writes in (None, 0)
+                and all(kinds[name] is not None
+                        for name in ("fresh_input", "cache_read", "output"))):
+            components["cache_write"] = Fraction(0)
+        else:
+            components["cache_write"] = None
+    elif writes is None:
         components["cache_write"] = None
     elif writes == 0:
         components["cache_write"] = Fraction(0)
@@ -4331,7 +4698,7 @@ def _summary_run(record):
 
 
 def read_records(tool, lines, *, config=None, source_aliases=(), source_root=None,
-                 conversation=None, attribution=None):
+                 conversation=None, attribution=None, cache_read_field=None):
     """Normalize a bounded source batch without exposing raw IDs or paths.
 
     `lines` may be synthetic bytes or an exhausted `_ApprovedLineStream`. Any
@@ -4445,9 +4812,18 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                 # line with neither token field is skipped (a `usage` key shows
                 # a changed format); anything half-formed is closed and uncounted.
                 try:
-                    kinds = _antigravity_usage(record)
+                    kinds = _antigravity_usage(
+                        record, cache_read_field=cache_read_field)
                     if kinds is not None:
                         timestamp = _timestamp(record.get("created_at"))
+                        if "model" in record:
+                            record_model = _safe_alias(record["model"])
+                            model_provenance = "usage_record"
+                            effective_model = record_model
+                        else:
+                            record_model = None
+                            model_provenance = "unknown"
+                            effective_model = None
                 except (ValueError, TypeError, OverflowError):
                     issues.add("invalid_record")
                     continue
@@ -4503,6 +4879,9 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     session_digest=_short_session_digest(antigravity_id),
                     timestamp=timestamp, time_known=True, kinds=kinds,
                     reasons=reasons,
+                    model=record_model,
+                    model_provenance=model_provenance,
+                    effective_model=effective_model,
                     project_alias=bound["alias"] if bound else None,
                     project_state="current_local_verified" if bound else "unknown",
                     ownership="proven" if bound else "unknown")

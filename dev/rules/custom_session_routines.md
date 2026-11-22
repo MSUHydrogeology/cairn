@@ -46,7 +46,7 @@ or replace them.
 `type`, `message`, `id`, `model`, `usage`, `sessionId`, `requestId`, `cwd`,
 `timestamp`, `created_at`, `conversationId`, `conversation_id`,
 `isSidechain`, `agentId`, `input_tokens`, `output_tokens`,
-`cache_creation_input_tokens`, `cache_read_input_tokens`, `cache_creation`,
+`cache_creation_input_tokens`, `cache_read_input_tokens`, `cache_read_tokens`, `cache_creation`,
 `ephemeral_5m_input_tokens`, `ephemeral_1h_input_tokens`, `totalTokens`,
 `toolUses`, `durationMs`, the frame name `task-id`, and the record type names
 `assistant`, `attachment`, `user`, `system`, `progress` and

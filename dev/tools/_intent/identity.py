@@ -44,6 +44,7 @@ DEFAULT_CONFIG_PATH = Path("~/.cairn/agent.json")
 HARNESS_SESSION_VARS: Tuple[Tuple[str, str], ...] = (
     ("claude", "CLAUDE_CODE_SESSION_ID"),
     ("codex", "CODEX_THREAD_ID"),
+    ("antigravity", "ANTIGRAVITY_CONVERSATION_ID"),
     ("antigravity", "ANTIGRAVITY_TRAJECTORY_ID"),
 )
 
