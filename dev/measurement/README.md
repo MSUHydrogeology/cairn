@@ -127,8 +127,9 @@ them.
   introductory prices (Gemini 4 Argon's, which ends 2026-11-30, is not used). A
   request whose prompt is over a model's long-prompt limit (100,000 tokens for
   Claude Haiku 5.5, 272,000 for the OpenAI models listed) takes that model's
-  higher weights. A model missing from the table, or a reply with an unknown
-  count, gets counts and no weighted total. A Codex reply is weighted by the
+  higher weights. A model missing from the table gets counts and no weighted
+  total. A reply with an unknown count gets no total, and no figure at all
+  where the model has a long-prompt level. A Codex reply is weighted by the
   model its turn had selected. When the table changes, the ledger keeps
   working: replies still held one by one are weighted by the new table at the
   next refresh, and a day already folded keeps the weighting of its day. The
