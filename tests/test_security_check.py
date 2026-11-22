@@ -31,6 +31,14 @@ import pytest
 
 from tests._repo_root import repository_root
 
+# The strict native-evidence check records and joins only a Mac and a Windows
+# host (release/security_check.py refuses any other platform by design), so
+# its tests have nothing to certify on Linux.
+pytestmark = pytest.mark.skipif(
+    sys.platform not in {"darwin", "win32"},
+    reason="the strict native-evidence check supports only the Mac and Windows",
+)
+
 CAIRN_ROOT = repository_root(Path(__file__))
 sys.path.insert(0, str(CAIRN_ROOT))
 
