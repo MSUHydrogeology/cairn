@@ -1,6 +1,7 @@
 # model-selection tier-to-model mapping (Cairn model-selection module).
 #
-# Cairn's own mapping, assigned by the Maintainer on 2026-10-28.
+# Cairn's own mapping, assigned by the Maintainer on 2026-10-28; the Neon and
+# Hydrogen rows on 2026-11-22.
 # These dated assignments are by family name, not benchmarks. Re-verify with:
 #
 #   python dev/tools/check_model_selection.py
@@ -45,10 +46,10 @@ mapping:
     source: "Maintainer assignment, 2026-10-28 -- family name, not benchmarked"
     re_verification_trigger: a release that changes which family fits the tier
   - tier: medium
-    model: "Pro"
-    date_verified: "2026-10-28"
+    model: "Neon"
+    date_verified: "2026-11-22"
     task_family: "ordinary proposal authoring and ordinary proposal, plan and code reviews"
-    source: "Maintainer assignment, 2026-10-28 -- family name, not benchmarked"
+    source: "Maintainer assignment, 2026-11-22 -- family name, not benchmarked"
     re_verification_trigger: a release that changes which family fits the tier
   - tier: low
     model: "Haiku"
@@ -63,8 +64,8 @@ mapping:
     source: "Maintainer assignment, 2026-10-28 -- family name, not benchmarked"
     re_verification_trigger: a release that changes which family fits the tier
   - tier: low
-    model: "Flash"
-    date_verified: "2026-10-28"
+    model: "Hydrogen"
+    date_verified: "2026-11-22"
     task_family: "execution of accepted reviewed plans, trivial implementation, authorized Decision scribing"
-    source: "Maintainer assignment, 2026-10-28 -- family name, not benchmarked"
+    source: "Maintainer assignment, 2026-11-22 -- family name, not benchmarked"
     re_verification_trigger: a release that changes which family fits the tier
