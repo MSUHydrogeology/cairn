@@ -2628,6 +2628,8 @@ INVALID_LEDGER_EDITS = {
     "fold-horizon-number": lambda ledger: ledger.update(fold_horizon=20261105),
     "fold-horizon-short-spelling": lambda ledger: ledger.update(fold_horizon="2026-11-5"),
     "fold-horizon-after-today": lambda ledger: ledger.update(fold_horizon="2026-11-06"),
+    "ratio-version-not-a-label": lambda ledger: ledger.update(ratio_version="today"),
+    "daily-reference-index-not-a-label": edit_daily([daily_row(reference_index="today")]),
     "daily-repeated-key": edit_daily([daily_row(), daily_row(events=9)]),
     "daily-without-a-day": edit_daily([daily_row(day=None)]),
     "daily-day-on-the-horizon": edit_daily([daily_row("2026-11-03")], "2026-11-03"),
@@ -4063,10 +4065,13 @@ def day_stamp(day, hour=10, month=11):
     return f"2026-{month:02d}-{day:02d}T{hour:02d}:00:00Z"
 
 
-def priced_lines(message_id, timestamp, *, fresh=10, output=4, cache_read=8):
+def priced_lines(message_id, timestamp, *, fresh=10, output=4, cache_read=8,
+                 model="claude-sonnet-4-6", cwd=None):
     """One reply by a model with a reference rate, so its reference tokens are numbers."""
     record = claude_record(message_id, timestamp)
-    record["message"]["model"] = "claude-sonnet-4-6"
+    record["message"]["model"] = model
+    if cwd is not None:
+        record["cwd"] = cwd
     record["message"]["usage"] = {"input_tokens": fresh, "output_tokens": output,
                                   "cache_creation_input_tokens": 0,
                                   "cache_read_input_tokens": cache_read}
@@ -4125,6 +4130,42 @@ def test_folding_changes_no_aggregate_sum(tmp_path, monkeypatch):
     assert [event["observed_at"] for event in folded["events"]] == [None]   # no time: never folded
     assert folded["mappings"] == []
     assert meter._load_ledger(as_bytes(folded), LATER)["daily"] == folded["daily"]
+
+
+def test_a_ledger_written_under_an_older_table_loads_and_is_weighted_by_the_current_one(
+        tmp_path, monkeypatch):
+    at_clock(monkeypatch, CLOCK)
+    home, log, config_path = claude_home_started(tmp_path, monkeypatch)
+    project = json.loads(config_path.read_text(encoding="utf-8"))["projects"][0]["path"]
+    grow(log, priced_lines("old-day", day_stamp(5), cwd=project)
+         + priced_lines("recent", day_stamp(29), model="claude-sonnet-5-5", cwd=project))
+    at_clock(monkeypatch, LATER)
+    assert meter._refresh_ledger(home)["status"] == "written"
+    ledger_path = home / ".cairn" / "meter" / "ledger.json"
+    ledger = json.loads(ledger_path.read_bytes())
+    folded, = ledger["daily"]
+    assert folded["reference_tokens"]["total"] == "92.4"
+
+    previous = "cairn-api-token-index/2026-11-06"
+    ledger["ratio_version"] = previous
+    ledger["ratio_index"] = {"version": previous, "models": {}}
+    for row in (*ledger["daily"], *ledger["aggregates"]):
+        row["reference_index"] = previous
+        if row["model"] == "claude-sonnet-5-5":
+            row["reference_tokens"] = {name: None for name in row["reference_tokens"]}
+    ledger_path.write_bytes(as_bytes(ledger))
+
+    assert meter._refresh_ledger(home)["status"] == "written"
+    after = ledger_of(home)
+    assert after["ratio_version"] == meter.RATIO_VERSION
+    assert after["ratio_index"] == meter._RATIO_INDEX
+    assert after["daily"] == [{**folded, "reference_index": previous}]
+    held, = [row for row in after["aggregates"] if row["model"] == "claude-sonnet-5-5"]
+    assert held["reference_tokens"]["total"] == "60.8"
+    assert held["reference_index"] == meter.RATIO_VERSION
+    summary = json.loads((Path(project) / "dev" / "measurement" / "meter.json").read_bytes())
+    totals = {row["model"]: row["reference_tokens"]["total"] for row in summary["aggregates"]}
+    assert totals == {"claude-sonnet-4-6": "92.4", "claude-sonnet-5-5": "60.8"}
 
 
 def test_the_export_shows_folded_days_without_an_artifact_and_waits_are_unchanged(

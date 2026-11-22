@@ -150,7 +150,7 @@ def test_explicit_project_meter_aggregate_joins_pulse_without_private_reads(tmp_
     meter.write_text(json.dumps({
         "schema": "cairn-meter-project/1",
         "project_alias": "sample",
-        "ratio_version": "cairn-api-token-index/2026-11-06",
+        "ratio_version": "cairn-api-token-index/2027-01-15",
         "aggregates": [{
             "week": "2026-W45", "day": "2026-11-05", "artifact": "src/app.py",
             "tool": "codex", "model": "gpt-5.3-codex",
@@ -172,6 +172,13 @@ def test_explicit_project_meter_aggregate_joins_pulse_without_private_reads(tmp_
         "claude": "UNKNOWN", "codex": "PARTIAL", "antigravity": "UNKNOWN"}
     assert record["coverage"]["private_collection_join"] == "explicit_project_aggregate"
     assert "session.jsonl" not in result_text(record)
+
+    value = json.loads(meter.read_text(encoding="utf-8"))
+    value["ratio_version"] = "cairn-api-token-index/latest"
+    meter.write_text(json.dumps(value), encoding="utf-8")
+    rejected = _run("--json", "--meter-aggregate", str(meter))
+    assert rejected.returncode == 2
+    assert "meter aggregate is unreadable or invalid" in rejected.stderr
 
 
 @pytest.mark.parametrize("reasons, expected", [

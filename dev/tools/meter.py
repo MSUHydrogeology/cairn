@@ -1595,7 +1595,8 @@ def _validate_aggregate_row(aggregate):
     for value in kinds.values():
         if value is not None:
             _counter(value)
-    if (aggregate["reference_index"] != RATIO_VERSION
+    if (not isinstance(aggregate["reference_index"], str)
+            or not _PULSE.RATIO_VERSION_FORM.fullmatch(aggregate["reference_index"])
             or not isinstance(aggregate["reference_tokens"], dict)
             or set(aggregate["reference_tokens"])
             != {*_EVENT_KIND_NAMES, "total"}):
@@ -1650,9 +1651,13 @@ def _load_ledger(raw, now=None):
             raise ValueError
         if (ledger["schema"] != LEDGER_SCHEMA
                 or ledger["reader_version"] != READER_VERSION
-                or ledger["ratio_version"] != RATIO_VERSION
-                or ledger["ratio_index"] != _RATIO_INDEX):
+                or not isinstance(ledger["ratio_version"], str)
+                or not _PULSE.RATIO_VERSION_FORM.fullmatch(ledger["ratio_version"])
+                or not isinstance(ledger["ratio_index"], dict)):
             raise ValueError
+        # A ledger outlives a table change: nothing reads the stored table or label.
+        ledger["ratio_version"] = RATIO_VERSION
+        ledger["ratio_index"] = _ratio_index_copy()
         if any(not isinstance(ledger[key], list) for key in (
                 "events", "claims", "cursors", "mappings", "project_remotes",
                 "aggregates", "lineages", "waits", "starts", "daily")):
@@ -2034,7 +2039,10 @@ def _add_rows(left, right):
         "effective_model": left["effective_model"],
         "events": left["events"] + right["events"],
         "unknown_events": left["unknown_events"] + right["unknown_events"],
-        "kinds": kinds, "reference_index": left["reference_index"],
+        "kinds": kinds,
+        "reference_index": (left["reference_index"]
+                            if left["reference_index"] == right["reference_index"]
+                            else RATIO_VERSION),
         "reference_tokens": reference,
     }
 
