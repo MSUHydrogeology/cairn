@@ -241,3 +241,39 @@ Reviewed range: 7202294d3ab5733ea7b6b58ee72fd1b063e10b5d (merge-base with 0.9-de
 **Left unshown**: the Mac; a real refresh; links on Windows other than junctions; a Windows run of the file-link case. A pulse import failure still prints a traceback before `main` runs (not changed here).
 
 **Not covered**: running any test; the full diff of the kept tests (read the five named in the plan and both added tests); the gate manifest.
+
+## Code review -- Claude Opus 5.5 (Security Review) -- 2026-11-21
+
+```
+Reviewed range: 7202294d3ab5733ea7b6b58ee72fd1b063e10b5d (merge-base with 0.9-dev) .. d581e8e62b8b4e2ed3231f7d1d6d31df368d82f2
+```
+
+**Obligation**: clears the Internal Security Review of the code, and is the protected-surfaces review of the tests and pinned rows it removes.
+**Findings**: raised (0 blocking, 2 non-blocking)
+**Verdict**: ACCEPT
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this have been built as framed?** Yes. Both promises sit in code the diff leaves alone or narrows: `validate_config_bytes` is unchanged and `read_records` differs only in its signature and remote line (`git diff 7202294d HEAD -- dev/tools/meter.py`, hunks at new lines 3776 and 3792).
+2. **Does it do what the plan says?** Yes. The walk skips links and redirect tags, the claims and summary refuse a linked `dev`, the lock follows D5, and `main` prints only closed answers (`dev/tools/meter.py` lines 289 to 547 and 4540 to 4557).
+3. **What would show it wrong?** A real refresh on Windows or the Mac whose summary or record holds anything but counts (Strategy's checks, not run here).
+
+**Agreement.** I agree with the usual review's four findings. On its N1 my wording below governs.
+
+**What can leave.** Every refusal is an `Unavailable` whose reason must match `[a-z][a-z0-9_]*` (line 136), and each receipt passes `_closed_refresh_receipt`. Any other exception reaches `main`'s `except Exception`, which prints a fixed answer; the lock is still released in `_refresh_ledger`'s `finally`. Nothing writes to standard error. I found no route by which log text, a file name, a path or system text reaches a receipt, the record or the summary.
+
+**What is read.** The consent file; the listed roots and the files under them; the old ledger and the lock; per project `dev`, `dev/intents.jsonl`, and the names in `dev/measurement` (only to remove `.meter-*.tmp`). Nothing else.
+
+**Lock and renames.** As D5 says; a busy run removes nothing. Two runs at once can still lose one run's counts until the next run, as accepted. One more case: one run's clean-up can delete the other's temporary summary, so that run answers `project_export_unavailable`. That is harmless.
+
+**Pinned list.** Loaded by its own validator: 28 and 314, fingerprint accepted. Four meter rows stay, matching the four `POSIX_ONLY` tests. The quoted guard line matches line 606.
+
+**Non-blocking**
+
+- N1. The claims test the owner accepted should have two cases: `dev` as a folder link (a junction on Windows) and `dev/intents.jsonl` as a file link where one can be made. Each link points at an outside file holding a valid claim. Assert that `_capture_project_claims` returns no claims and `attribution_unavailable`.
+- N2. `_capture_project_claims` checks `dev/intents.jsonl` with `lstat` and then opens it by name without `O_NOFOLLOW` (lines 377 to 386). The plan allows that. Passing `_O_NOFOLLOW` on this one open would close the gap on Mac and Linux.
+
+**Not covered**: running any test or the meter; real machines; how Windows reparse tags behave on a real profile; `pulse.py` output in `--report` mode; the gate manifest.
