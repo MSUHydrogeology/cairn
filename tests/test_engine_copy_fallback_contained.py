@@ -362,15 +362,18 @@ def test_a_refusal_is_fixed_words_a_project_relative_name_and_a_remedy(
 @needs_links
 def test_a_refusal_puts_no_raw_control_bytes_on_the_terminal(tmp_path, copy_mode, capsys):
     target, outside, profile = _world(tmp_path)
-    awkward = "\x1b]0;retitled\x07.md"
+    # A Windows name cannot hold a control character; a bidirectional override is
+    # the other kind of character the terminal must not be handed raw.
+    awkward = "\x1b]0;retitled\x07.md" if os.name != "nt" else "\u202eretitled\u202c.md"
     _canonical(target, "session-start", awkward, "x")
     os.symlink(outside / "nothing", _copy_dir(target, "session-start") / awkward)
 
     code, err = _install_in_copy_mode(target, profile, capsys)
 
     assert code == 2
-    assert "\x1b" not in err and "\x07" not in err
-    assert "\\x1b" in err  # shown as an escape, so the reader can still see it
+    assert "\x1b" not in err and "\x07" not in err and "\u202e" not in err
+    # shown as an escape, so the reader can still see it
+    assert "\\x1b" in err or (os.name == "nt" and "\\u202e" in err)
 
 
 # Declared exception (internal hook): Hook: copy_mode fixture replaces INS._symlinks_available with a no-link answer (the Windows-without-Developer-Mode case); the copy path is unreachable.
@@ -556,7 +559,15 @@ def test_a_link_swapped_in_at_the_quarantine_name_after_its_check_is_replaced_no
                 os.symlink(outside_dir, late)
 
     _after_each_check(monkeypatch, swap)
-    INS.fan_out_skills(TEMPLATES_ROOT, repo, targets=[_CLAUDE_ROW], allow_symlinks=False)
+    try:
+        INS.fan_out_skills(TEMPLATES_ROOT, repo, targets=[_CLAUDE_ROW], allow_symlinks=False)
+    except PermissionError:
+        # Windows will not rename a file onto a link to a folder: the install
+        # stops there instead of replacing the link.  Nothing moved into the folder.
+        if os.name != "nt":
+            raise
+        assert list(outside_dir.iterdir()) == [], "the divergent file was moved into the link's folder"
+        return
 
     assert list(outside_dir.iterdir()) == [], "the divergent file was moved into the link's folder"
     bak = skills / "_data" / "vendor_targets.yml.diverged.bak"
@@ -649,16 +660,18 @@ def test_the_divergence_warning_names_files_escaped_and_relative_to_the_project(
     a file name with an escape and a bell in it must not reach the terminal as
     those bytes, and the folder is named relative to the project."""
     target, _outside, profile = _world(tmp_path)
-    awkward = "x\x1b]0;retitled\x07.md"
+    awkward = ("x\x1b]0;retitled\x07.md" if os.name != "nt"
+               else "x\u202eretitled\u202c.md")  # a Windows name has no control character
     _canonical(target, "session-start", awkward, "canonical\n")
     (_copy_dir(target, "session-start") / awkward).write_text("a local edit\n", encoding="utf-8")
 
     code, err = _install_in_copy_mode(target, profile, capsys)
 
     assert code == 0, err
-    assert "\x1b" not in err and "\x07" not in err
+    assert "\x1b" not in err and "\x07" not in err and "\u202e" not in err
     (warning,) = [line for line in err.splitlines() if "copy-fallback divergence" in line]
-    assert "\\x1b" in warning, "the name was dropped instead of shown as an escape"
+    assert "\\x1b" in warning or (os.name == "nt" and "\\u202e" in warning), (
+        "the name was dropped instead of shown as an escape")
     assert "under .claude/skills:" in warning
     assert str(target) not in warning
 
