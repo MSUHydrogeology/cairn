@@ -1,7 +1,7 @@
 # Plan: Config-driven model weights, configurable agent tiers, and Antigravity fixes
 
 **Source proposal**: dev/proposals/archive/2026-11-22-neon-config-driven-meter-tiers-and-antigravity.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/custom_session_routines.md, dev/rules/development-environment.md
@@ -207,3 +207,20 @@ Reviewed commit: 5598376f1e71e2fefbe2bb0f2a0a1417680b38f8
    - *Exact closure*: Close via Usual Review `B1`'s exact closure (commit the two-hunk `dev/tools/meter.py` sync matching `templates/skills/_lib/meter.py` `419df915` and re-run `cmp`, `verify_integrity.py`, and the two test nodes once).
 
 **Not covered**: Full test suite (Boundary B), Windows runtime, and private `~/.cairn/`/`~/.gemini/` files (ran targeted security `pytest` nodes `8 passed`, planted bad-input falsification, `check_model_selection.py`, `quality_gate.py --sub neutrality`, `sync_doc_snippets.py --check`, `claim_check.py`, and `check_cairn.py` on `/Users/kendal30/conda_envs/lhm/bin/python3.13`). Exceeds the 300-word target to record S1–S5 audit citations and planted bad-input command results.
+
+## Code response -- Gemini 4 Neon (Author) -- 2026-11-22
+
+**Disposition**: ready-to-archive
+
+Folded all findings from both required 1-round Code Reviews (`B1` from Usual Review `5598376f`, `SB1` from Security Review `d19626b7`, and non-blocking `N1`) in commit `63e262cd`:
+
+- **B1 & SB1 (taken — `dev/tools/meter.py` commit sync):** Committed the exact `_conversation_project` runtime-default (`None`) fallback and `_resolve_model_tier` `else:` guard already present in `templates/skills/_lib/meter.py` into `dev/tools/meter.py`, synced `templates/skills/_lib/meter.py` byte-for-byte, and finalized `dev/.cairn/cairn-lock.yml`.
+- **N1 (taken — minor cleanup):** Removed unused `(req_keys, opt_keys)` parameters from `_parse_level`, reused `_PULSE._fraction_text` in `dev/tools/meter.py`, passed the `monkeypatch` fixture in `test_tier_resolution_prefix_segment_weights_and_by_tier_export`, and removed unused `import json` from `tests/test_model_selection_stub.py`.
+
+**Post-fix verification (`/Users/kendal30/conda_envs/lhm/bin/python3.13`):** `cmp` across all three twin pairs exits `0`, `install/verify_integrity.py --target .` reports `OK -- 70 recorded file(s)`, `tests/quality_gate.py --sub neutrality` reports `fail=0`, `dev/tools/check_model_selection.py` and `dev/tools/sync_doc_snippets.py --check` exit `0`, targeted `-k` re-run on all modified `test_meter.py` / `test_gauge.py` / `test_intents_tool.py` / `test_model_selection_stub.py` cases passes (`46 passed in 0.89s`), and `tests/test_model_selection_stub.py` + `tests/test_meter_claude_usage.py` + `tests/test_meter_usage_free_records.py` + `tests/integration/test_gauge.py` pass (`217 passed in 26.18s`; prior full 6-file run with both `B1` hunks on disk passed `878 passed, 1 skipped`).
+
+## Implementation closeout -- Gemini 4 Neon -- 2026-11-22
+
+Delivered across commits `bfec19e2` (C1), `f00c25cf` (C2), `45c1b65d` (C3), `fed51674` (C4), and `63e262cd` (Code Review `B1`/`SB1`/`N1` fixes) on `meter-config-tiers-v081`:
+- External model config `dev/.cairn/meter-models.json` (`cairn-meter-models/1`, `frontier`/`high`/`medium`/`low` tiers with `Fable`, `Astra`, `Carbon` in `frontier`), `dev/.cairn/model-selection-mapping.yml`, `v6->v7` in-place ledger migration, `cairn-meter-project/3` with `tier` and `by_tier`, `pulse.py` `/3` validation & rendering, Antigravity single-transcript/`model`/`cache_read_tokens`/`ANTIGRAVITY_CONVERSATION_ID`, `dev/rules/custom_session_routines.md`, synced twins, vendor-neutral template docs (`neutrality` `fail=0`), updated `cairn-lock.yml`, and verification tests.
+- **Not covered**: Full test suite (reserved for release certification on all three hosts), native Windows runtime (`1 skipped` in `tests/test_intents_tool.py`), and post-merge live `~/.cairn/` setup (completed right after merge in Phase C).
