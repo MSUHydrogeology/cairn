@@ -2953,10 +2953,14 @@ def _project_export(ledger, config, project_alias, models_config=None):
                                else _fraction_text(sum(
                                    (Fraction(Decimal(value)) for value in values),
                                    Fraction(0))))
+        resolved_model = (effective if effective is not None
+                          else (model if provenance == "selected_context" else None))
         aggregates.append({
             "week": week, "day": day, "artifact": artifact, "tool": tool,
             "model": model, "model_provenance": provenance,
-            "effective_model": effective, "events": len(group["events"]),
+            "effective_model": effective,
+            "tier": _resolve_model_tier(resolved_model, models_config),
+            "events": len(group["events"]),
             "unknown_events": group["unknown"], "kinds": kinds,
             "reference_tokens": reference,
         })
@@ -2964,17 +2968,55 @@ def _project_export(ledger, config, project_alias, models_config=None):
         if item["project_alias"] != project_alias:
             continue
         iso = datetime.fromisoformat(item["day"]).date().isocalendar()
+        resolved_model = (item["effective_model"]
+                          if item["effective_model"] is not None
+                          else (item["model"] if item["model_provenance"] == "selected_context"
+                                else None))
         aggregates.append({
             "week": f"{iso.year}-W{iso.week:02d}", "day": item["day"], "artifact": None,
             "tool": item["tool"], "model": item["model"],
             "model_provenance": item["model_provenance"],
-            "effective_model": item["effective_model"], "events": item["events"],
+            "effective_model": item["effective_model"],
+            "tier": _resolve_model_tier(resolved_model, models_config),
+            "events": item["events"],
             "unknown_events": item["unknown_events"], "kinds": dict(item["kinds"]),
             "reference_tokens": dict(item["reference_tokens"]),
         })
     aggregates.sort(key=lambda item: tuple("" if value is None else str(value) for value in (
         item["week"], item["day"], item["artifact"], item["tool"], item["model"],
         item["model_provenance"], item["effective_model"])))
+    tier_buckets = {}
+    for row in aggregates:
+        tier_buckets.setdefault(row["tier"], []).append(row)
+    configured_tiers = tuple(models_config["tiers"]) if models_config is not None else ()
+    extra_tiers = sorted(t for t in tier_buckets
+                         if t not in configured_tiers and t != "unknown")
+    ordered_tiers = []
+    for tier in (*configured_tiers, *extra_tiers, "unknown"):
+        if tier in tier_buckets and tier not in ordered_tiers:
+            ordered_tiers.append(tier)
+    by_tier = []
+    for tier in ordered_tiers:
+        rows = tier_buckets[tier]
+        tier_kinds = {
+            name: (None if any(r["kinds"][name] is None for r in rows)
+                   else sum(r["kinds"][name] for r in rows))
+            for name in _EVENT_KIND_NAMES
+        }
+        tier_ref = {
+            name: (None if any(r["reference_tokens"][name] is None for r in rows)
+                   else _fraction_text(sum(
+                       (Fraction(Decimal(r["reference_tokens"][name])) for r in rows),
+                       Fraction(0))))
+            for name in (*_EVENT_KIND_NAMES, "total")
+        }
+        by_tier.append({
+            "tier": tier,
+            "events": sum(r["events"] for r in rows),
+            "unknown_events": sum(r["unknown_events"] for r in rows),
+            "kinds": tier_kinds,
+            "reference_tokens": tier_ref,
+        })
     reasons = set(verified_ledger["coverage"]["reasons"])
     reasons.add("global_completeness_unknown")
     # A row's tool comes from the consent file's sources today, so a row whose source
@@ -2983,10 +3025,11 @@ def _project_export(ledger, config, project_alias, models_config=None):
     if any(row["tool"] in ("antigravity", None) for row in aggregates):  # vendor-ok: text match is an inference
         reasons.add("antigravity_project_inferred")
     result = {
-        "schema": "cairn-meter-project/2",
+        "schema": "cairn-meter-project/3",
         "project_alias": project_alias,
         "ratio_version": (None if models_config is None else models_config["ratio_version"]),
         "aggregates": aggregates,
+        "by_tier": by_tier,
         "wait": _wait_export(verified_ledger["waits"], verified_ledger["events"],
                              verified_ledger["claims"], config, project_alias),
         "coverage": {"global": "unknown", "reasons": sorted(reasons)},

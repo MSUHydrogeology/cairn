@@ -10,6 +10,8 @@ import argparse
 import collections
 import datetime as _dt
 import datetime
+from decimal import Decimal
+from fractions import Fraction
 import json
 import math
 import os
@@ -35,6 +37,7 @@ _PULSE_OPEN_FLAGS = (os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
                      | getattr(os, "O_NONBLOCK", 0)
                      | getattr(os, "O_BINARY", 0))
 _PULSE_LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:+-]{0,127}\Z")
+_PULSE_TIER_NAME = re.compile(r"[a-z][a-z0-9_-]{0,31}\Z")
 # The form of a meter table's version label; the meter loads this module and shares it.
 RATIO_VERSION_FORM = re.compile(r"cairn-api-token-index/[0-9]{4}-[0-9]{2}-[0-9]{2}")
 _PULSE_BENIGN_REASONS = frozenset({
@@ -45,9 +48,17 @@ _PULSE_BENIGN_REASONS = frozenset({
     "timing_identity_unknown", "project_remote_mismatch", "no_supported_usage",
     "fork_parent_unavailable", "capture_gap", "attribution_unavailable",
     "conflicting_binding", "global_completeness_unknown",
+    "models_config_missing",
     "resume_failed_file_replaced", "resume_failed_cursor_past_end",
     "resume_failed_not_line_boundary", "resume_failed_digest_mismatch",
 })
+
+
+def _fraction_text(value):
+    if value is None:
+        return None
+    decimal = Decimal(value.numerator) / Decimal(value.denominator)
+    return format(decimal, "f")
 
 
 class _PulseInputError(ValueError):
@@ -299,23 +310,37 @@ def _parse_meter_aggregate(data: bytes) -> dict:
     except (UnicodeDecodeError, json.JSONDecodeError, RecursionError,
             ValueError, TypeError) as exc:
         raise _PulseInputError from exc
+    schema = value.get("schema") if type(value) is dict else None
+    if schema not in {"cairn-meter-project/1", "cairn-meter-project/2", "cairn-meter-project/3"}:
+        raise _PulseInputError
     required = {"schema", "project_alias", "ratio_version", "aggregates", "wait", "coverage"}
-    if (type(value) is not dict or set(value) != required
-            or value["schema"] not in {"cairn-meter-project/1", "cairn-meter-project/2"}
-            or not isinstance(value["ratio_version"], str)
-            or not RATIO_VERSION_FORM.fullmatch(value["ratio_version"])
-            or not isinstance(value["project_alias"], str)
+    if schema == "cairn-meter-project/3":
+        required = required | {"by_tier"}
+    if type(value) is not dict or set(value) != required:
+        raise _PulseInputError
+    ratio_version = value["ratio_version"]
+    if ratio_version is None:
+        if schema != "cairn-meter-project/3":
+            raise _PulseInputError
+    elif (not isinstance(ratio_version, str)
+          or not RATIO_VERSION_FORM.fullmatch(ratio_version)):
+        raise _PulseInputError
+    if (not isinstance(value["project_alias"], str)
             or not _PULSE_LABEL.fullmatch(value["project_alias"])):
         raise _PulseInputError
     rows = value["aggregates"]
     row_fields = {"week", "day", "artifact", "tool", "model", "model_provenance",
                   "effective_model", "events", "unknown_events", "kinds",
                   "reference_tokens"}
+    if schema == "cairn-meter-project/3":
+        row_fields = row_fields | {"tier"}
     if type(rows) is not list or len(rows) > _PULSE_MAX_METER_ROWS:
         raise _PulseInputError
     normalized = []
     seen = set()
     kind_names = {"fresh_input", "cache_read", "cache_write", "output"}
+    number_form = re.compile(r"(?:0|[1-9][0-9]*)(?:\.[0-9]+)?")
+    model_tiers = {}
     for row in rows:
         if type(row) is not dict or set(row) != row_fields:
             raise _PulseInputError
@@ -349,6 +374,23 @@ def _parse_meter_aggregate(data: bytes) -> dict:
         if row["model_provenance"] not in {
                 "usage_record", "selected_context", "unknown"}:
             raise _PulseInputError
+        if schema == "cairn-meter-project/3":
+            row_tier = row["tier"]
+            if (not isinstance(row_tier, str)
+                    or not _PULSE_TIER_NAME.fullmatch(row_tier)
+                    or row_tier == "unspecified"):
+                raise _PulseInputError
+            resolved_model = (row["effective_model"] if row["effective_model"] is not None
+                              else (row["model"]
+                                    if row["model_provenance"] == "selected_context"
+                                    else None))
+            if resolved_model is None:
+                if row_tier != "unknown":
+                    raise _PulseInputError
+            else:
+                expected_model_tier = model_tiers.setdefault(resolved_model, row_tier)
+                if expected_model_tier != row_tier:
+                    raise _PulseInputError
         events = _inventory_count(row["events"])
         unknown = _inventory_count(row["unknown_events"])
         if events < 1 or unknown > events:
@@ -364,7 +406,7 @@ def _parse_meter_aggregate(data: bytes) -> dict:
             raise _PulseInputError
         for amount in references.values():
             if amount is not None and (not isinstance(amount, str)
-                    or not re.fullmatch(r"(?:0|[1-9][0-9]*)(?:\.[0-9]+)?", amount)):
+                    or not number_form.fullmatch(amount)):
                 raise _PulseInputError
         identity = (week, day, artifact, row["tool"], row["model"],
                     row["model_provenance"], row["effective_model"])
@@ -373,6 +415,71 @@ def _parse_meter_aggregate(data: bytes) -> dict:
         seen.add(identity)
         normalized.append({**row, "events": events, "unknown_events": unknown,
                            "kinds": parsed_kinds})
+    if schema == "cairn-meter-project/3":
+        by_tier = value["by_tier"]
+        if type(by_tier) is not list or len(by_tier) > _PULSE_MAX_TIERS + 1:
+            raise _PulseInputError
+        tier_groups = {}
+        for row in normalized:
+            tier_groups.setdefault(row["tier"], []).append(row)
+        seen_tiers = []
+        seen_tier_set = set()
+        tier_fields = {"tier", "events", "unknown_events", "kinds", "reference_tokens"}
+        normalized_by_tier = []
+        for entry in by_tier:
+            if type(entry) is not dict or set(entry) != tier_fields:
+                raise _PulseInputError
+            tier = entry["tier"]
+            if (not isinstance(tier, str)
+                    or not _PULSE_TIER_NAME.fullmatch(tier)
+                    or tier == "unspecified"
+                    or tier in seen_tier_set):
+                raise _PulseInputError
+            seen_tiers.append(tier)
+            seen_tier_set.add(tier)
+            group = tier_groups.get(tier)
+            if not group:
+                raise _PulseInputError
+            events = _inventory_count(entry["events"])
+            unknown = _inventory_count(entry["unknown_events"])
+            if (events < 1 or unknown > events
+                    or events != sum(r["events"] for r in group)
+                    or unknown != sum(r["unknown_events"] for r in group)):
+                raise _PulseInputError
+            ekinds = entry["kinds"]
+            if type(ekinds) is not dict or set(ekinds) != kind_names:
+                raise _PulseInputError
+            parsed_ekinds = {name: (None if ekinds[name] is None
+                                    else _inventory_count(ekinds[name]))
+                             for name in kind_names}
+            for name in kind_names:
+                exp_kind = (None if any(r["kinds"][name] is None for r in group)
+                            else sum(r["kinds"][name] for r in group))
+                if parsed_ekinds[name] != exp_kind:
+                    raise _PulseInputError
+            erefs = entry["reference_tokens"]
+            if type(erefs) is not dict or set(erefs) != {*kind_names, "total"}:
+                raise _PulseInputError
+            for name in (*kind_names, "total"):
+                amount = erefs[name]
+                if amount is not None and (not isinstance(amount, str)
+                        or not number_form.fullmatch(amount)):
+                    raise _PulseInputError
+                vals = [r["reference_tokens"][name] for r in group]
+                exp_ref = (None if any(v is None for v in vals)
+                           else _fraction_text(sum(
+                               (Fraction(Decimal(v)) for v in vals), Fraction(0))))
+                if amount != exp_ref:
+                    raise _PulseInputError
+            normalized_by_tier.append({
+                "tier": tier, "events": events, "unknown_events": unknown,
+                "kinds": parsed_ekinds, "reference_tokens": erefs,
+            })
+        if "unknown" in seen_tier_set and seen_tiers[-1] != "unknown":
+            raise _PulseInputError
+        if seen_tier_set != set(tier_groups):
+            raise _PulseInputError
+        value = {**value, "by_tier": normalized_by_tier}
     wait = value["wait"]
     if value["schema"] == "cairn-meter-project/1":
         if (type(wait) is not dict or set(wait) != {"seconds", "coverage"}
@@ -891,17 +998,32 @@ def render_text(pulse):
             kind_values = " ".join(
                 f"{name}={row['kinds'][name] if row['kinds'][name] is not None else 'unknown'}"
                 for name in ("fresh_input", "cache_read", "cache_write", "output"))
+            model_part = f"model={row['model'] or 'unknown'} "
+            if "tier" in row:
+                model_part += f"tier={row['tier']} "
             lines.append("gauge: usage "
                          + f"week={row['week'] or 'unknown'} "
                          + f"day={row['day'] or 'unknown'} "
                          + f"artifact={row['artifact'] or 'project'} "
                          + f"tool={row['tool'] or 'unknown'} "
-                         + f"model={row['model'] or 'unknown'} "
+                         + model_part
                          + f"events={row['events']} unknown-events={row['unknown_events']} "
                          + kind_values
                          + " weighted="
                          + (str(row['reference_tokens']['total'])
                             if row['reference_tokens']['total'] is not None
+                            else 'unknown'))
+        for entry in meter_usage.get("by_tier", ()):
+            kind_values = " ".join(
+                f"{name}={entry['kinds'][name] if entry['kinds'][name] is not None else 'unknown'}"
+                for name in ("fresh_input", "cache_read", "cache_write", "output"))
+            lines.append("gauge: usage by tier "
+                         + f"tier={entry['tier']} "
+                         + f"events={entry['events']} unknown-events={entry['unknown_events']} "
+                         + kind_values
+                         + " weighted="
+                         + (str(entry['reference_tokens']['total'])
+                            if entry['reference_tokens']['total'] is not None
                             else 'unknown'))
         wait = meter_usage["wait"]
         if "observed" not in wait or wait["observed"] is None:
