@@ -98,6 +98,7 @@ from tests.test_security_net import (  # noqa: E402
 )
 
 from tests._repo_root import repository_root
+from tests._windows_programs import SYSTEM_ENV
 
 REPO_ROOT = repository_root(Path(__file__))
 TEMPLATE_DIR = REPO_ROOT / "templates" / "modules" / "team-gated"
@@ -313,6 +314,7 @@ def run(root: Path, kind: str, argv: "list[str]", *, tmproot: Path,
         "api_access_security.py" if kind == "api" else "web_hosting_security.py"
     )
     env = {
+        **SYSTEM_ENV,
         "PATH": os.environ.get("PATH", ""),
         "PYTHONDONTWRITEBYTECODE": "1",
         "HOME": os.environ.get("HOME", ""),
@@ -1296,6 +1298,7 @@ def run_dispatcher(root: Path, *, tmproot: Path) -> subprocess.CompletedProcess:
     closed allowlist, so the child's report directory lands inside it too."""
     tmproot.mkdir(parents=True, exist_ok=True)
     env = {
+        **SYSTEM_ENV,
         "PATH": os.environ.get("PATH", ""),
         "PYTHONDONTWRITEBYTECODE": "1",
         "HOME": os.environ.get("HOME", ""),

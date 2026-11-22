@@ -944,6 +944,12 @@ def test_a6_an_oversized_request_body_refuses_before_connecting(engine, serve):
 
 def _openssl() -> str:
     found = shutil.which("openssl")
+    if found is None and os.name == "nt":
+        # Git for Windows ships OpenSSL, but not on the default path.
+        git_copy = (Path(os.environ.get("ProgramFiles", r"C:\Program Files"))
+                    / "Git" / "usr" / "bin" / "openssl.exe")
+        if git_copy.is_file():
+            found = str(git_copy)
     # Deliberately a hard failure rather than a skip: the plan's acceptance
     # criteria require zero skipped nodes, and a TLS gate that quietly skips is
     # a TLS gate that does not exist.  Recorded as a portability omission.
