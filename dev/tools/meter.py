@@ -175,6 +175,15 @@ _RATIO_INDEX = {
 MAX_SOURCE_ROOT_DEPTH = 32
 MAX_REFRESH_ENTRIES = 100_000
 MAX_SOURCE_FILES = 10_000
+# The antigravity attribution search (plan 2026-11-22-antigravity-reader, rule 5).
+# Starting values, not measured: per conversation, then per refresh. A conversation
+# over a cap is left unattributed, never guessed; one the refresh cannot pay for waits.
+MAX_ATTRIBUTION_BYTES = 16 * 1024 * 1024
+MAX_ATTRIBUTION_ENTRIES = 5_000
+MAX_ATTRIBUTION_DEPTH = 8
+MAX_ATTRIBUTION_RUN_BYTES = 256 * 1024 * 1024
+MAX_ATTRIBUTION_RUN_ENTRIES = 50_000
+MAX_ANTIGRAVITY_CONVERSATIONS = 2_000
 # C7, synthetic-only on macOS from clean source commit 835dc50c, Python 3.13.13:
 # The 16 x 64 MiB workload took a median 8.98 s (114.01 MiB/s). Rereading a
 # 400 MiB structured log took 7.61 s with peak RSS 406 MiB. The 1 GiB cap meets
@@ -439,6 +448,254 @@ def _enumerate_jsonl(root):
         raise Unavailable from None
     files.sort(key=lambda item: item[0])
     return files, entries
+
+
+def _enumerate_antigravity(root):  # vendor-ok: walk the one folder shape the tool writes
+    """List one antigravity root's logs by fixed names: `brain/<uuid>/.system_generated/logs/*.jsonl`.
+
+    Every path is built from those fixed names and listed entries, never from
+    record text; links are skipped at every level and a linked root is refused.
+    Returns `(files, entries, waiting)`: the files as `_enumerate_jsonl` lists
+    them, the entries listed, and whether a cap or an error inside one
+    conversation left something for the next refresh. A missing `brain/` or
+    `logs/` gives no files. Only a missing or linked root raises Unavailable.
+    """
+    try:
+        info = os.lstat(root)
+    except (OSError, ValueError, TypeError):
+        raise Unavailable from None
+    if _is_link(info) or not stat.S_ISDIR(info.st_mode):
+        raise Unavailable
+    files, entries, waiting = [], 0, False
+    brain = os.path.join(root, "brain")
+    try:
+        info = os.lstat(brain)
+    except FileNotFoundError:
+        return files, entries, False
+    except (OSError, ValueError):
+        return files, entries, True
+    if _is_link(info) or not stat.S_ISDIR(info.st_mode):
+        return files, entries, False
+    conversations = []
+    try:
+        with os.scandir(brain) as scan:
+            for entry in scan:
+                entries += 1
+                if entries > MAX_ATTRIBUTION_RUN_ENTRIES:
+                    return files, entries, True
+                try:
+                    name = _codex_uuid(entry.name)
+                except ValueError:
+                    continue                  # not a conversation folder
+                try:
+                    info = entry.stat(follow_symlinks=False)
+                except OSError:
+                    waiting = True
+                    continue
+                if not _is_link(info) and stat.S_ISDIR(info.st_mode):
+                    conversations.append(name)
+    except (OSError, ValueError):
+        return files, entries, True
+    conversations.sort()
+    if len(conversations) > MAX_ANTIGRAVITY_CONVERSATIONS:
+        del conversations[MAX_ANTIGRAVITY_CONVERSATIONS:]
+        waiting = True
+    for conversation in conversations:
+        system = os.path.join(brain, conversation, ".system_generated")
+        logs = os.path.join(system, "logs")
+        found = []
+        try:
+            if any(_is_link(info) or not stat.S_ISDIR(info.st_mode)
+                   for info in (os.lstat(system), os.lstat(logs))):
+                continue
+            with os.scandir(logs) as scan:
+                for entry in scan:
+                    entries += 1
+                    if entries > MAX_ATTRIBUTION_RUN_ENTRIES:
+                        found = None          # this conversation, and the rest, wait
+                        break
+                    info = entry.stat(follow_symlinks=False)
+                    if (_is_link(info) or not stat.S_ISREG(info.st_mode)
+                            or not entry.name.endswith(".jsonl")):
+                        continue
+                    info = os.lstat(entry.path)   # a directory entry has no file id on Windows
+                    found.append((f"brain/{conversation}/.system_generated/logs/{entry.name}", {
+                        "dev": info.st_dev, "ino": info.st_ino,
+                        "size": info.st_size, "mtime_ns": info.st_mtime_ns,
+                        "ctime_ns": info.st_ctime_ns,
+                    }))
+        except FileNotFoundError:
+            continue                          # no logs folder: nothing to read here
+        except (OSError, ValueError):
+            waiting = True                    # this conversation waits for the next refresh
+            continue
+        if found is None:
+            waiting = True
+            break
+        files.extend(found)
+    files.sort(key=lambda item: item[0])
+    return files, entries, waiting
+
+
+_ATTRIBUTION_SUFFIXES = (".txt", ".md", ".json", ".jsonl", ".log")
+_NAME_ALNUM = frozenset(b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+_NAME_BEFORE_BLOCKED = _NAME_ALNUM | frozenset(b"._-~%/")
+_NAME_AFTER_BLOCKED = _NAME_ALNUM | frozenset(b"_-")
+
+
+def _attribution_spellings(path):
+    """The byte spellings of a project path that a saved file may hold."""
+    spellings = [path.encode("utf-8", "surrogatepass")]
+    if os.name == "nt":                       # JSON text doubles each backslash
+        doubled = path.replace("\\", "\\\\").encode("utf-8", "surrogatepass")
+        if doubled != spellings[0]:
+            spellings.append(doubled)
+    return spellings
+
+
+def _names_project(window, spelling, at_start, at_end):
+    """Whether `spelling` occurs in `window` as a whole name (plan rule 5).
+
+    The byte before is not a letter, digit, `.`, `_`, `-`, `~`, `%` or `/`, but
+    the `/` of a literal `file://` is allowed. The byte after is not a letter,
+    digit, `_`, `-` or a byte of 0x80 or above; a `.` after counts as an end
+    when the byte after it is not a letter, digit, `_` or `-`. A match is judged
+    only when the 7 bytes before it and the 2 after it are in the window, or the
+    window starts or ends the file; the overlap between windows makes that so.
+    """
+    size, length = len(spelling), len(window)
+    position = window.find(spelling)
+    while position >= 0:
+        end = position + size
+        if (position >= 7 or at_start) and (end + 2 <= length or at_end):
+            before = window[position - 1] if position > 0 else None
+            after = window[end] if end < length else None
+            before_ok = (before is None or before not in _NAME_BEFORE_BLOCKED
+                         or (before == 0x2F and position >= 7
+                             and window[position - 7:position] == b"file://"))
+            if after is None:
+                after_ok = True
+            elif after >= 0x80 or after in _NAME_AFTER_BLOCKED:
+                after_ok = False
+            elif after == 0x2E:
+                following = window[end + 1] if end + 1 < length else None
+                after_ok = following is None or following not in _NAME_AFTER_BLOCKED
+            else:
+                after_ok = True
+            if before_ok and after_ok:
+                return True
+        position = window.find(spelling, position + 1)
+    return False
+
+
+def _search_attribution_file(path, identity, allowance, names, overlap):
+    """Search one file's text for project names, reading at most `allowance` bytes.
+
+    Returns (aliases named, bytes read, complete). The file must open without
+    following a link and be the file the walk saw (same device and inode); a file
+    larger than the allowance is not opened for reading. Never raises on a read.
+    """
+    named, used = set(), 0
+    try:
+        fd = os.open(path, os.O_RDONLY | _O_BINARY | _O_NOFOLLOW)
+    except (OSError, ValueError):
+        return named, used, False
+    try:
+        opened = os.fstat(fd)
+        if (not stat.S_ISREG(opened.st_mode)
+                or (opened.st_dev, opened.st_ino) != identity
+                or opened.st_size > allowance):
+            return named, used, False
+        size, window, base = opened.st_size, b"", 0
+        while used < size:
+            block = os.read(fd, min(64 * 1024, size - used))
+            if not block:
+                break                         # the file shrank since it was opened
+            used += len(block)
+            window += block
+            for alias, spellings in names.items():
+                if alias not in named and any(
+                        _names_project(window, spelling, base == 0, used >= size)
+                        for spelling in spellings):
+                    named.add(alias)
+            keep = min(len(window), overlap)
+            base += len(window) - keep
+            window = window[len(window) - keep:]
+        return named, used, True
+    except (OSError, ValueError):
+        return named, used, False
+    finally:
+        os.close(fd)
+
+
+def _conversation_project(source_root, conversation, projects):  # vendor-ok: the saved files of one conversation
+    """Which one listed project do a conversation's saved files name? (plan rule 5)
+
+    Searches the regular files under `brain/<conversation>/` (links skipped, at most
+    MAX_ATTRIBUTION_DEPTH levels down, MAX_ATTRIBUTION_ENTRIES entries and
+    MAX_ATTRIBUTION_BYTES bytes) for each listed project's path text. Returns
+    `(alias, None, bytes read, entries)` for exactly one project named, else
+    `(None, reason, bytes read, entries)` with the reason `antigravity_projects_ambiguous`
+    (two or more named, found first), `antigravity_search_incomplete` (a cap, an
+    unreadable file or folder) or `antigravity_project_not_named`. Only which
+    projects matched leaves the search.
+    """
+    names = {project["alias"]: _attribution_spellings(project["path"])
+             for project in projects}
+    if not names:
+        return None, "antigravity_project_not_named", 0, 0
+    overlap = max(len(spelling) for spellings in names.values()
+                  for spelling in spellings) + 8
+    named, incomplete, capped = set(), False, False
+    used = entries = 0
+    stack = [(os.path.join(source_root, "brain", conversation), 0)]
+    while stack and len(named) < 2 and not capped:
+        directory, depth = stack.pop()
+        listing = []
+        try:
+            with os.scandir(directory) as scan:
+                for entry in scan:
+                    entries += 1
+                    if entries > MAX_ATTRIBUTION_ENTRIES:
+                        capped = True
+                        break
+                    info = entry.stat(follow_symlinks=False)
+                    if not _is_link(info):
+                        listing.append((entry.name, entry.path, info))
+        except (OSError, ValueError):
+            incomplete = True
+        if capped:
+            incomplete = True
+            break
+        folders = []
+        for name, path, info in sorted(listing, key=lambda item: item[0]):
+            if stat.S_ISDIR(info.st_mode):
+                if depth >= MAX_ATTRIBUTION_DEPTH:
+                    incomplete = True
+                else:
+                    folders.append((path, depth + 1))
+            elif stat.S_ISREG(info.st_mode) and name.endswith(_ATTRIBUTION_SUFFIXES):
+                try:
+                    walked = os.lstat(path)
+                except (OSError, ValueError):
+                    incomplete = True
+                    continue
+                hit, read, complete = _search_attribution_file(
+                    path, (walked.st_dev, walked.st_ino),
+                    MAX_ATTRIBUTION_BYTES - used, names, overlap)
+                used += read
+                named |= hit
+                incomplete = incomplete or not complete
+                if len(named) >= 2:
+                    break
+        stack.extend(reversed(folders))
+    if len(named) >= 2:
+        return None, "antigravity_projects_ambiguous", used, entries
+    if incomplete:
+        return None, "antigravity_search_incomplete", used, entries
+    if not named:
+        return None, "antigravity_project_not_named", used, entries
+    return next(iter(named)), None, used, entries
 
 
 def _capture_project_claims(project):
@@ -2797,6 +3054,7 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
     batches, cursors, reasons = [], {}, set()
     context_batches = []          # parents read only to verify a fork; never counted
     total_entries = total_files = total_bytes = run_events = 0
+    attribution_bytes = attribution_entries = 0
     horizon_day = now.astimezone(timezone.utc).date() - timedelta(days=FOLD_AFTER_DAYS)
     if fold_horizon is not None:
         horizon_day = max(horizon_day, _parse_fold_day(fold_horizon))
@@ -2810,11 +3068,20 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
         start_rows.setdefault(source["alias"], now_stamp)
         started_at = _parse_start(start_rows[source["alias"]])
         started_ns = int(started_at.timestamp()) * 1_000_000_000
-        files, entries = _enumerate_jsonl(source["root"])
-        total_entries += entries
-        total_files += len(files)
-        if total_entries > MAX_REFRESH_ENTRIES or total_files > MAX_SOURCE_FILES:
-            raise Unavailable("source_budget_exceeded")
+        conversations = {}        # each conversation's attribution, once per refresh
+        if source["tool"] == "antigravity":  # vendor-ok: its own bounded walker
+            # Its entries and files charge only the attribution caps, so a large
+            # folder here can never fail the refresh for another source.
+            files, entries, waiting = _enumerate_antigravity(source["root"])
+            attribution_entries += entries
+            if waiting:
+                reasons.add("catching_up")
+        else:
+            files, entries = _enumerate_jsonl(source["root"])
+            total_entries += entries
+            total_files += len(files)
+            if total_entries > MAX_REFRESH_ENTRIES or total_files > MAX_SOURCE_FILES:
+                raise Unavailable("source_budget_exceeded")
         first_batch = len(batches)
         for relative, enumerated in files:
             if enumerated["size"] < 0:
@@ -2908,6 +3175,30 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                     source, file_key, stream, old, resumed, whole_log=True,
                     owner_key=batch["source_owner_key"])
             else:
+                attribution = None
+                if source["tool"] == "antigravity":  # vendor-ok: one search per conversation
+                    conversation = relative.split("/")[1]
+                    decided = conversations.get(conversation)
+                    if decided is None:
+                        if (attribution_bytes + MAX_ATTRIBUTION_BYTES > MAX_ATTRIBUTION_RUN_BYTES
+                                or total_bytes + MAX_ATTRIBUTION_BYTES > MAX_RUN_READ_BYTES
+                                or attribution_entries + MAX_ATTRIBUTION_ENTRIES
+                                > MAX_ATTRIBUTION_RUN_ENTRIES):
+                            decided = "wait"
+                        else:
+                            named, unnamed, searched, listed = _conversation_project(
+                                source["root"], conversation, config["projects"])
+                            attribution_bytes += searched
+                            total_bytes += searched
+                            attribution_entries += listed
+                            decided = (named, unnamed)
+                        conversations[conversation] = decided
+                    if decided == "wait":
+                        reasons.add("catching_up")       # left for the next run
+                        if old is not None:
+                            cursors[file_key] = dict(old)
+                        continue
+                    attribution = {conversation: decided}
                 resumed = old is not None
                 resume = None if old is None else {
                     "dev": old["dev"], "ino": old["ino"],
@@ -2919,7 +3210,8 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                         piece=True, resume=resume)
                     batch = read_records(source["tool"], stream, config=config,
                                          source_aliases=[source["alias"]],
-                                         source_root=source["root"])
+                                         source_root=source["root"],
+                                         attribution=attribution)
                     total_bytes += stream.bytes_read
                     if stream.terminal_reason == "source_read_unavailable":
                         break
@@ -2948,7 +3240,7 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
             batch["source_alias"] = source["alias"]
             batch["file_key"] = file_key
             batch["cursor"] = dict(cursors[file_key])
-            if not resumed:
+            if not resumed or source["tool"] == "antigravity":  # vendor-ok: copies keep their original time
                 batch["started_at"] = started_at
             batches.append(batch)
             if agent_runs is not None:
