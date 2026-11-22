@@ -1,14 +1,11 @@
 # Plan: Config-driven model weights, configurable agent tiers, and Antigravity fixes
 
 **Source proposal**: dev/proposals/archive/2026-11-22-neon-config-driven-meter-tiers-and-antigravity.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/custom_session_routines.md, dev/rules/development-environment.md
 **In brief**: Implement config-driven model weights and configurable ordered agent tiers (including `frontier`) in meter and pulse, migrate version-6 ledgers to version 7, and fix Antigravity's identity, transcript, model, and `cache_read_tokens` extraction for v0.8.1.
-
-Proposed paths:
-- `dev/.cairn/meter-models.json`
 
 ## Build summary
 
