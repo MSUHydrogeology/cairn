@@ -173,8 +173,11 @@ runs cost machine time, not tokens, and are listed separately.
 | | code review, Security | High | 77,004 | 1 | accept; two notes, neither asking for a change |
 | | response to both code reviews, the same agent resumed | Medium | 3,820 | 1 | ready to archive; the harness reports 116,118 for the agent in all |
 | Five easy defect repairs (2026-11-22) | all five, by one agent on the trivial path, with no plan and no review | Medium | 94,582 | 4 | merged; one more fault seen in a test |
+| Cost per plan, the proposal (2026-11-22) | a probe of what a sub-agent's environment holds, by an execution agent | Low | 60,878 | 1 | it holds no id of its own |
+| | proposal review, usual | Medium | 93,178 | 1 | revise: three blocking, each with its exact words |
+| | proposal review, Security | High | 95,670 | 2 | revise: two blocking, each with its exact words; Strategy wrote the proposal and folded both reviews itself |
 
-Total for the day so far: 20,124,050 tokens across 149 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 20,373,776 tokens across 152 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -239,7 +242,7 @@ Measured:
   Strategy put every design decision in the brief, so the author did no
   design, and Strategy folded the reviews itself, so no agent was resumed or
   spawned for that. Two against two is a small sample.
-- **Seventy-seven review passes so far.** Two were further passes that a design change required: one
+- **Seventy-nine review passes so far.** Two were further passes that a design change required: one
   by the Maintainer, and one to close a Security finding with a simpler rule. No pass has yet had to come back to check a fix.
 - **A two-line fix cost seven agent runs.** Plan K (2026-11-22) changed two lines of one tool. As a change to a
   shipped tool it took a plan, two plan reviews, a build, two code reviews and a response: 425,915 tokens by
