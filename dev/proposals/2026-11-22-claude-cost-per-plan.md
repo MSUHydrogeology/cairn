@@ -1,7 +1,7 @@
 # Cost per plan, from the usage meter
 
 **Author**: Claude Fable 5.2 (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it changes three shipped tools (the usage meter, the work-claim tool and the pulse) and adds one working rule
 **Plan review**: required(Internal + Internal Security Review)
@@ -118,5 +118,34 @@ Declarations get forgotten, and the untied row stays large. Per-step totals disa
 - Proposal item 2, add: "The declaration is a new event kind in the claim record. The meter's reader skips any line of a kind or shape it does not know, and the writer and conflict code ignore it; a malformed line never makes the project unavailable. Test (a) plants one."
 - Rule 3, add: "A run's replies before its first declaration count toward that declaration; a run never declared stays untied."
 - Item 6, replace with: "The ledger schema is raised and a version-6 ledger is migrated, not refused. After a refresh the event count and each day's token sums equal their values before; replies counted earlier are reported once as 'before run tracking', not as untied. Test (b) checks this."
+
+**Time and tokens**: unknown; unknown.
+
+## Review -- Claude Opus 5.5 (Security Review) -- 2026-11-22
+
+**Reviewed commit**: 3713da3c, with the author's answers to the usual review applied and the release settled as v0.9. **Verdict**: REVISE.
+
+I agree with the usual review's four findings as the author has taken them. My words govern S2 and the declaration's contents.
+
+**Preflight, one by one.**
+- **S1** true, incomplete: today's tie keys on the project (`_build_mappings` groups by `project_alias`); the text must keep that.
+- **S2** false after the author's narrowing: a sub-agent's first declaration, dated after its replies, now ties them. Test (a) would plant the wrong expectation.
+- **S3** true.
+- **S4** true only with the author's answer, and incomplete: a line over 64 KiB still refuses the whole record at read, and `prune_intents.py` keeps unknown events forever, so declarations grow toward the 8 MiB cap.
+- **S5** incomplete: the summary `meter.json` sits in the project folder (ignored by Git, readable by anyone who reads the folder), and the closeout is committed. A raw run id written into the record is a log value outside the meter.
+
+**Findings.**
+1. **Blocking: S2 and the tie window.** Exact words below.
+2. **Blocking: what a declaration holds, and where fingerprints go.** Exact words below.
+3. Non-blocking: removing the old tie also empties the pulse's wait time by file (`by_artifact`); say what replaces it. The pulse must re-check plan and step names when it reads the summary, as it now checks file names.
+4. Non-blocking: say whether a closeout table commits first and last times (working hours) or totals only.
+
+The change does not widen what the meter reads: the record and `agentId` are read today, and consent is untouched. The fingerprint is an unsalted digest of a run id; it adds a per-run timeline to the private ledger only.
+
+**Not covered**: logs, run-id entropy (assumed high, not checked), running anything.
+
+**Exact words.**
+- Replace S2: "A declaration ties only replies of the run it names, in the same project. A sub-agent's replies before its first declaration count toward it; a session's thread counts from its declaration on. Two declarations of one run at the same time leave its replies untied. Test (a) plants each."
+- Add to item 2: "The command stamps the time itself and stores the run as its fingerprint, never the raw id. Run fingerprints stay in the ledger; the summary, the pulse and the report print plan, step and one untied row, never a fingerprint. Over-long lines are skipped like malformed ones; the summary shows at most 200 plan and step rows, then one 'other' row. The meter keeps the declarations it has read in its ledger, as it keeps claims today, so the session-end prune may drop them."
 
 **Time and tokens**: unknown; unknown.
