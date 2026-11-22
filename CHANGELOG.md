@@ -65,6 +65,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Changed** — In Cairn's own repository, not shipped to adopters: the test files that only protect Cairn's own release cut (the signing and re-anchor ceremony, the gate, oracle and quality-gate tools, the release's own checks and the strict native-evidence check) are now listed as release-only in `tests/test_tiers.json`. They run on the Mac at certification and never on Linux, and `python tests/tier_inventory.py for` no longer selects them for an ordinary change; `python tests/tier_inventory.py release-only` prints the list. ([proposal](dev/proposals/2026-11-21-claude-three-host-certification.md))
 - **Fixed** — The quickstart's commit step no longer names a `docs/` folder that a fresh install does not create, so its `git add` line no longer stops with a pathspec error. ([quickstart](docs/quickstart.md))
 - **Fixed** — On Windows, the lock that stops two full handoffs running at once is now released when the process that held it has exited and its lease has run out. Before, it stayed held until someone deleted the lock file by hand.
+- **Fixed** — On Windows, the code map no longer leaves out a folder that holds more than a few files and reports `incomplete`. Windows gives a folder's size one way when listing it and another when opening it, and the map read that as the folder having changed; it now compares sizes only for files.
 
 ## 0.8.0 — 2026-11-19
 

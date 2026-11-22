@@ -389,10 +389,13 @@ class _WindowsAPI:
                 raise _WindowsUnavailable("parent-changed")
             if child["identity"][0] != before["identity"][0]:
                 raise _WindowsUnavailable("volume-changed")
+            # A directory's size is not one number on NTFS: the listing gives 0
+            # and the open handle gives 4096 or more, so only a file's size is
+            # compared; a directory is checked by its identity and its type.
             if isinstance(entry, dict) and (
                     child["identity"][1] != entry["file_id"]
                     or child["directory"] != entry["directory"]
-                    or child["size"] != entry["size"]):
+                    or (not entry["directory"] and child["size"] != entry["size"])):
                 raise _WindowsUnavailable("enumerated-identity-or-type-changed")
             return handle
         except BaseException:
