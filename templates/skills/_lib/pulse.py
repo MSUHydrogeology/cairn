@@ -35,6 +35,8 @@ _PULSE_OPEN_FLAGS = (os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
                      | getattr(os, "O_NONBLOCK", 0)
                      | getattr(os, "O_BINARY", 0))
 _PULSE_LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:+-]{0,127}\Z")
+# The form of a meter table's version label; the meter loads this module and shares it.
+RATIO_VERSION_FORM = re.compile(r"cairn-api-token-index/[0-9]{4}-[0-9]{2}-[0-9]{2}")
 _PULSE_BENIGN_REASONS = frozenset({
     "invalid_record", "unsupported_usage_contract", "unsupported_record",
     "unsupported_or_invalid_session_metadata", "conflicting_session_metadata",
@@ -299,7 +301,8 @@ def _parse_meter_aggregate(data: bytes) -> dict:
     required = {"schema", "project_alias", "ratio_version", "aggregates", "wait", "coverage"}
     if (type(value) is not dict or set(value) != required
             or value["schema"] not in {"cairn-meter-project/1", "cairn-meter-project/2"}
-            or value["ratio_version"] != "cairn-api-token-index/2026-11-06"
+            or not isinstance(value["ratio_version"], str)
+            or not RATIO_VERSION_FORM.fullmatch(value["ratio_version"])
             or not isinstance(value["project_alias"], str)
             or not _PULSE_LABEL.fullmatch(value["project_alias"])):
         raise _PulseInputError
