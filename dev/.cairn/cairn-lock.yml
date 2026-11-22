@@ -73,7 +73,7 @@
     },
     {
       "dst": "dev/measurement/README.md",
-      "hash": "sha256:861d8cc4710554cde86902cd87db90aa5228f93971bce68268e376fa5eaf6c94",
+      "hash": "sha256:011164de33e1a0dac786dc8cb0236714ba76fd5b1b9e43fbea54da63740a22ac",
       "src": "core/dev/measurement/README.md",
       "unrecoverable_base": true,
       "verbatim": false
