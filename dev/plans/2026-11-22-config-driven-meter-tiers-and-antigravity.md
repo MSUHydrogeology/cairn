@@ -178,3 +178,32 @@ Reviewed commit: b3e675c5699509b187dff3d9c6b54c2e25f7e8a7
 2. **N1 (Non-blocking — minor cleanup):** `_fraction_text` is duplicated between `dev/tools/meter.py:4392` and `dev/tools/pulse.py:57` (while `meter.py` already loads `_PULSE`), `_parse_level` (`dev/tools/meter.py:525`) takes unused `req_keys, opt_keys`, `tests/integration/test_meter.py:5793` passes `pytest.MonkeyPatch` (class) instead of the `monkeypatch` fixture to `c1_home`, and `tests/test_model_selection_stub.py:1054` has an unused `import json`. Author's call.
 
 **Not covered**: Code Security Review pass (separate required review), full test suite (Boundary B), Windows runtime (`1 skipped` in `tests/test_intents_tool.py:3569`), and private `~/.cairn/`/`~/.gemini/` files. Exceeds the 300-word target to record committed-byte falsification evidence and exact one-round closure for B1.
+
+## Code review -- Gemini 4 Argon (Security Review) -- 2026-11-22
+
+```
+Reviewed commit: 5598376f1e71e2fefbe2bb0f2a0a1417680b38f8
+```
+
+**Tier**: high
+**Model**: Gemini 4 Argon (High)
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: ~5m
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes — every S1–S5 and SB1–SB2 trust-boundary invariant holds in shipped `templates/skills/_lib/meter.py` (`419df915`), `dev/tools/pulse.py` (`21faac16`), `dev/tools/_intent/identity.py` (`c5bc5e1a`), and `dev/.cairn/meter-models.json` (`dcdb4a44`), with only the uncommitted two-hunk `dev/tools/meter.py` omission already flagged as Usual Review `B1` remaining to commit -- audited `30ff811e..5598376f` across `templates/skills/_lib/meter.py:67-81, 196-285, 358-645, 685-765, 885-912, 2160-2234, 2600-2627, 2885-3043, 3425-3638, 4322-4514, 4815-4895, 5619-5633`, `dev/tools/pulse.py:37-62, 310-483, 998-1027`, and `dev/tools/_intent/identity.py:44-76`.
+2. **Best alternative.** Keep the design as built and commit the two security-verified hunks already in `templates/skills/_lib/meter.py` (`419df915`) to `dev/tools/meter.py` per Usual Review `B1` -- verified `_safe_config_path` mixed UNC blocking (`\\`, `//`, `\/`, `/\`), `_is_path_within`/`_is_real_path_within` containment, `_read_account_json` parent+target `_is_link` + `O_NOFOLLOW | O_NONBLOCK` + `S_ISREG` + `st_nlink == 1` + `(st_dev, st_ino)` checks, closed `cairn-meter-models/1` / `tier_rules` / `tools.antigravity` bounds, and whole-ID SHA-256 hashing in `_intent/identity.py`.
+3. **What would show it wrong.** On committed `5598376f:dev/tools/meter.py`, planted config with `"gpt-5.3-codex"` (no `tier`) and `"gpt-5-other"` (`"tier": "low"`, `"prefixes": ["gpt-5."]`) returns `"low"` instead of `"unknown"`, whereas `templates/skills/_lib/meter.py:4425-4439` returns `"unknown"`, and planted `\/attacker/share/m.json`, `/\attacker/share/m.json`, `/synthetic/project/m.json`, and `"unbilled"` `cache_write: 1` all fail closed (`/Users/kendal30/conda_envs/lhm/bin/python3.13`).
+
+**Does any rule weaken or disappear?** No: `dev/rules/custom_session_routines.md:49` adds only authorized `cache_read_tokens`, `dev/measurement/README.md` and `templates/core/dev/measurement/README.md` include the S3 boundary sentence, and `tests/quality_gate.py --sub neutrality` exits `0` (`fail=0`).
+
+**Findings**
+
+1. **SB1 (Blocking — concurs with Usual Review `B1` on omitted `dev/tools/meter.py` commit):** Committed `5598376f:dev/tools/meter.py` (`cad0a485`) omits the two hunks already landed in `templates/skills/_lib/meter.py` (`419df915`), failing `install/verify_integrity.py --target .` against `dev/.cairn/cairn-lock.yml:510` and allowing an exact model entry without `tier` (`dev/tools/meter.py:4425-4434`) to borrow a sibling model's prefix tier. I audited both hunks in `templates/skills/_lib/meter.py:885-912, 4425-4439` and confirmed they are security-sound.
+   - *Exact closure*: Close via Usual Review `B1`'s exact closure (commit the two-hunk `dev/tools/meter.py` sync matching `templates/skills/_lib/meter.py` `419df915` and re-run `cmp`, `verify_integrity.py`, and the two test nodes once).
+
+**Not covered**: Full test suite (Boundary B), Windows runtime, and private `~/.cairn/`/`~/.gemini/` files (ran targeted security `pytest` nodes `8 passed`, planted bad-input falsification, `check_model_selection.py`, `quality_gate.py --sub neutrality`, `sync_doc_snippets.py --check`, `claim_check.py`, and `check_cairn.py` on `/Users/kendal30/conda_envs/lhm/bin/python3.13`). Exceeds the 300-word target to record S1–S5 audit citations and planted bad-input command results.
