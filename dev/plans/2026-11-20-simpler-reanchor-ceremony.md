@@ -201,3 +201,25 @@ Not checked: nothing was run. Which Linux or macOS host runs the ceremony tests 
 **Not checked.** Any ceremony, any key, and the passphrase step; a reader following the card on a real re-anchor; the other six selected files after the changes (measured only at the start); `test_repin.py` beyond the one refusal node; the full suite and the joined run, which wait for the arc; the Windows and Linux hosts. I did not run a mutation probe: the controls are inside the tests (an undamaged record reaches the first child; the per-commit walk refuses the same history; the real run reaches the key probe where check-only passed).
 
 **Elapsed and tokens.** The status commit was at 12:11:56 and C3 at 12:42:27 by the commit clock (about 31 minutes; about 18 of them waiting for the starting measurement). Test time: 1081.87 s, 86.64 s and 31.21 s. Tokens: unknown.
+
+## Code review -- Claude Opus 5.5 (Security reviewer) -- 2026-11-22
+
+Reviewed commit: a92b170e858464e98f44e22b6d3403c44a94c3eb
+**Tier**: Security Review
+
+**Foundations**
+1. **Should this happen as framed?** Yes: the record binds the three raw blobs at the candidate, whose only parent is the read commit and whose only change is the record, and the net-change digest is compared before `reading("validate")` -- `release/repin.py:2915-2923`, `2942-2944`, `3080-3087`.
+2. **Best alternative.** None safer at this size; the two non-blocking tightenings below would close display and key-path gaps.
+3. **What would show it wrong.** A changed pin or a one-digit-off net digest that reaches the first child. Direct check: in a scratch clone I disabled each comparison (`3085`, `2943`) in turn; test (b) failed both times ("a net-change digest one digit off", "a pinned digest one digit off").
+
+**Findings (none blocking)**
+1. The display is lossy where consumers are not: `parse_output` keys lock records by `dst` (`1055`), so a duplicate `dst` record shows only the last, while `install/verify_integrity.py:252` reads every record. The reader is told to read the text, not the blob. Suggest `display_only` refuse a duplicate `dst` or duplicate JSON key.
+2. The `.pub` check is by name only (`3005`): a `x.pub` that is a link to, or a copy of, the private file is still read by `ssh-keygen -lf` and `read_text` (`1727`, `3108`). Suggest refusing a link or a `-----BEGIN` file there.
+3. `--check-only` does run candidate code: the packet-pinned `reanchor.sh validate` via the launcher (`3097`; template line 766), exactly as the real run does. "started no stage" is true; the Maintainer should know an agent runs it.
+4. The card's "only `HOME`, `PATH`, `TERM` and `LANG`" omits the two `CAIRN_LAYOUT_CONTEXT*` values in a layout run (`3223`); no askpass either way. The printed interpreter (`2985`) is the agent's; the card does not ask the Maintainer to check it.
+5. Mode changes are not bound (blob digest only); a symlink pin fails parsing and refuses. Accepted residual is exactly as stated: intermediate pinned states are never shown, and nothing else the walk checked is lost (`2570-2617` covers only pinned paths). The missing-file refusal fails closed; the legacy branch of `check_stop_records` is dead (layout is `ceremony --transition` only, `3346`, `3515`), not a risk. Ordinary paths unchanged except the `.pub` refusal.
+
+**Verdict**: ACCEPT
+
+**Coverage**: read the full diff of the four files, `run_ceremony`, `check_record`, `check_stop_records`, `main` dispatch; two mutation runs (3.2 s, 8.7 s) in a scratch clone. Not covered: other test nodes, the full launcher, `reanchor.sh validate` internals, any key or ceremony. Over target for five findings.
+**Elapsed**: about 25 minutes. **Tokens**: unknown.
