@@ -2,7 +2,7 @@
 
 ## The card: what to have, check and type
 
-This card is all you need to run a ceremony an agent has prepared. The rest of this page, and everything below its end marker, is reference for the agent and for review.
+This card is all you need to run a ceremony an agent has prepared. The rest of this page, and everything below its end marker, is reference for the agent and for review, except Phase 5, the push, whose command the driver prints.
 
 **Have ready.**
 
@@ -11,23 +11,24 @@ This card is all you need to run a ceremony an agent has prepared. The rest of t
 
 **What the agent hands you.**
 
-- The command to run. The agent has already run it with `--check-only`, which makes every check the ceremony makes before it touches your key, and it passed.
+- The command to run. The agent has already run it with `--check-only`, which makes every check the ceremony makes before it touches your key, and it passed. `--check-only` runs the packet-pinned validate script through the launcher, exactly as the real run does, so an agent has already started that code on this machine; it starts neither signing stage.
 - The reader's record, committed on the commit to be signed, with its launcher digest.
 - The trusted checkout, which is the folder the command runs in. It must be at the record's commit, and the `checkout` line of the values file names it, not your own working copy. `--check-only` finds a stale checkout or a wrong path before you start.
 
 **What you check.**
 
 1. In the command, `--expected-fingerprint` is the old signer's fingerprint that you hold yourself, not one the agent supplied.
-2. At the first prompt, the launcher digest the driver computed is printed beside the one you paste from the record. They must match.
-3. At Summary 2, the package digest and your signing-key fingerprint.
-4. Just before Summary 2, the net change of the three pinned files (the install lock and the two AST baseline files) since the old anchor. Your `yes` at Summary 2 covers it.
+2. In the command, the Python path that starts it is the one on the `python` line of your values file, not another interpreter.
+3. At the first prompt, the launcher digest the driver computed is printed beside the one you paste from the record. They must match.
+4. At Summary 2, the package digest and your signing-key fingerprint.
+5. Just before Summary 2, the net change of the three pinned files (the install lock and the two AST baseline files) since the old anchor. Your `yes` at Summary 2 covers it.
 
 **What you type.**
 
 - The launcher digest at the first prompt.
 - `yes`, the whole lowercase word, at each prompt.
 - `YES` once at `verify-candidate`, if you are asked to run it.
-- Your key's passphrase, once, in the terminal. The signing stage receives only `HOME`, `PATH`, `TERM` and `LANG`, so `SSH_ASKPASS` never reaches it and no graphical prompt appears. The [graphical prompt](../dev/rules/development-environment.md) applies to `baseline-install` and to manual release-tag signing, not here.
+- Your key's passphrase, once, in the terminal. The signing stage receives only `HOME`, `PATH`, `TERM` and `LANG`, and in a layout run two `CAIRN_LAYOUT_CONTEXT` values (`CAIRN_LAYOUT_CONTEXT` and `CAIRN_LAYOUT_CONTEXT_SHA256`), so `SSH_ASKPASS` never reaches it and no graphical prompt appears. The [graphical prompt](../dev/rules/development-environment.md) applies to `baseline-install` and to manual release-tag signing, not here.
 
 Do not run the launcher by hand.
 
