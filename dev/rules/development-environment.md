@@ -129,16 +129,6 @@ Measured 2026-11-16 over SSH.
 - **Transfers.** `scp <file> cairn-windows:C:/Users/cairn/<name>` works, and
   `tar.exe` is on the SSH login's path. A clean tree for a commit is
   `git archive --format=tar <commit>`, `scp`, then `tar -xf` inside a new folder.
-- **pytest's temp folders are owner-only.** `icacls` on
-  `%TEMP%\pytest-of-cairn` shows explicit entries (SYSTEM, Administrators and
-  `OWNER RIGHTS`, all full control) instead of the folder above it, which
-  inherits. The meter's project `.git/config` read (`dev/tools/meter.py`,
-  `check_acl` with role `ancestor`) refuses a project under such a folder, so a
-  real meter read there reports `project_remote_unavailable`. A folder made with
-  the default mode under `%TEMP%` passes; a `tempfile.mkdtemp` folder failed the
-  same way as pytest's. The `OWNER RIGHTS` entry is the likely cause; I did not
-  isolate it. `test_git_read_routes.py` builds its meter repository under such a
-  default-mode folder on Windows.
 
 The shell's `python3` may select Python 3.12. Use the explicit canonical interpreter above for Cairn's own certification and record the interpreter used for compatibility checks. Python 3.12 compatibility for the shared Git reader and installed entry points is tracked in the Python 3.12 support plan.
 

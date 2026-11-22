@@ -56,15 +56,15 @@ them.
   Replace the example labels with the explicit cohort and manifests being
   measured. The example is not a completeness claim.
 
-* **Opt-in Meter collection** — `tools/meter.py` reads consent from the fixed
-  OS account home at `~/.cairn/meter.json`; environment home values do not
-  select consent, and installation creates no configuration or ledger. The
-  config is version 1 with `enabled`, `sources`, and `projects`. Each source
-  names an alias, supported tool (`codex`, `claude`, or `antigravity`), and the
-  absolute root the collector may scan. Each project names an alias, absolute
-  project path, and its expected direct Git remote. For example, replace these
-  paths and remote with the exact local locations you intend to include:
-
+* **Opt-in Meter collection** — `tools/meter.py` reads consent from
+  `~/.cairn/meter.json` in the account's home folder (not the `HOME` variable,
+  on Mac and Linux); installation creates no configuration or ledger. It reads
+  only what the file lists, and only counts leave a log. The file's content is
+  checked, not who wrote it. The config is version 1 with `enabled`, `sources`,
+  and `projects`. A source names an alias, a tool (`codex`, `claude`, or
+  `antigravity`) and the absolute root to scan; a project names an alias, its
+  absolute path and its Git remote, taken as written. For example, replace
+  these paths and remote with the locations you intend to include:
   ```json
   {
     "version": 1,
@@ -82,45 +82,43 @@ them.
   }
   ```
 
-  Keep the config and private ledger under the account's protected `.cairn`
-  directory. On Windows the Meter runs only when `.cairn` and `meter.json` are owned by your own account; if you made them from an administrator shell, make your account their owner. The bare `python tools/meter.py --json` command checks only
-  whether configuration is disabled or unavailable; it does not collect.
-  `python tools/meter.py refresh --json` explicitly reads only configured
-  source roots, verifies configured projects, updates the private ledger at
-  `~/.cairn/meter/ledger.json`, and writes sanitized project aggregates to
-  a sanitized `meter.json` aggregate under each project's `dev/measurement/`
-  folder. `rebuild --json` uses the same
-  explicit refresh path. These commands are not scheduled or background work.
-  Counting starts when the Meter first runs for a source: it records where
-  each existing log ends and counts nothing before that, and `rebuild` does
-  not back-fill history. Each later run reads only what a log has gained;
-  Codex logs are read again from their first line when they grow, because their
-  lines depend on earlier lines. Individual usage events are kept for up to
-  14 days (fewer when more than 50,000 would pile up); older ones are folded
-  into daily totals, which lose the per-artifact split. A run that stopped at
-  its read limit prints `meter partial: catching_up` and exits 5; run `refresh`
-  again until it prints `ok`. A Codex log over 512 MiB is skipped each run and
-  the run prints `meter partial: source_too_large`. While the receipt is not
-  `ok` or `disabled`, `python tools/session.py session-end --handoff` skips
-  both prunes and exits 5. The per-project summary lists `incomplete` among
-  its coverage reasons and the pulse report prints `INCOMPLETE` beside the
-  supplied usage. An older ledger is refused with `ledger_old_schema`; move
-  `~/.cairn/meter/ledger.json` aside to start a new one.
+  The bare `python tools/meter.py --json` command checks only whether
+  configuration is disabled or unavailable; it does not collect.
+  `python tools/meter.py refresh --json` reads only configured source roots
+  (skipping links), updates the ledger at
+  `~/.cairn/meter/ledger.json`, and writes a `meter.json` summary of counts,
+  times, model names and plan names into each project's existing
+  `dev/measurement/` folder. It never creates that folder or `dev`, and never
+  writes through a link. Where the system has file modes only you can read the
+  ledger and summary; on Windows the summary takes the project folder's access,
+  so whoever may read that folder may read the counts. Each file is written
+  beside its place and renamed in, and a lock left by a dead run is taken over
+  after 15 minutes, so a run killed mid-way can make the next say `ledger_busy` until then. `rebuild --json` takes the same path; neither is scheduled.
+  Counting starts at a source's first run: the Meter records where each log ends
+  and counts nothing before that, and `rebuild` does not back-fill. Later runs
+  read only what a log has gained, except Codex logs, which are read again from
+  their first line when they grow. Usage events older than 14 days (or beyond
+  50,000) are folded into daily totals, which lose the per-artifact split. A run
+  that stopped at its limit or could not open a log prints `meter partial:
+  catching_up` and exits 5; run `refresh` again until it prints `ok`. A Codex
+  log over 512 MiB is skipped each run (`meter partial: source_too_large`).
+  While the receipt is not `ok` or `disabled`, `python tools/session.py
+  session-end --handoff` skips both prunes and exits 5. The summary lists
+  `incomplete` among its coverage reasons and the pulse report prints
+  `INCOMPLETE` beside the usage. An older ledger is refused with
+  `ledger_old_schema`; move `~/.cairn/meter/ledger.json` aside to start a new one.
   A Claude record counts toward a project when its own working folder is the
-  project's or lies inside it, its log is under an approved root, and the
-  project's remote checks out. On Windows a log may have a second name (the
-  Claude desktop app keeps one for each background sub-agent); the Meter reads
-  it once, and only when no other account may write it. A Claude reply logged
-  in several pieces is dated by its earliest piece, unless the pieces fall in
-  two refreshes. Summaries of finished sub-agents are not
-  counted; a reading whose summaries cannot be tied to a read transcript prints
-  INCOMPLETE. The runs are kept for every session under the approved roots, so
-  one untied summary anywhere marks every project, and it clears only when the
-  ledger is replaced (which loses history: a new ledger counts nothing before
-  its first refresh).
-  Missing configuration stays disabled, and invalid or unsupported privacy
-  state fails closed as unavailable. Aggregate coverage remains globally
-  unknown; the output does not claim complete project history.
+  project's or lies inside it and its log is under an approved root. The Meter
+  does not open the project's Git settings, so `current_local_verified` and
+  `proven` mean that the folder matched; a Codex log that names its repository
+  is still compared with the remote in the config. A Claude reply logged in
+  several pieces is dated by its earliest piece, unless the pieces fall in two
+  refreshes. Summaries of finished sub-agents are not counted; one that cannot
+  be tied to a read transcript prints INCOMPLETE for every project until the
+  ledger is replaced (a new ledger counts nothing before its first refresh).
+  Missing configuration stays disabled, and invalid configuration is
+  unavailable. Aggregate coverage remains globally unknown; the output does not
+  claim complete project history.
 
   To refresh and render the complete pulse, run
   `python tools/meter.py refresh --report --json`. The report joins only the

@@ -29,7 +29,7 @@ report joins only the current configured project after its export succeeds. Do
 not read an older `meter.json` export in `dev/measurement/`, pass an aggregate path, or
 commit a per-project export. If it exits without a valid pulse or closed
 receipt, report unavailable without raw diagnostics. Collection reads only roots and projects in the
-private consent file `~/.cairn/meter.json`; never create or edit it without the
+consent file `~/.cairn/meter.json`; never create or edit it without the
 Maintainer's clear yes. Nothing read from a provider log goes into a plan,
 test, fixture, commit, report, chat reply or agent prompt except counts, the
 meter's own sanitized output, and names on the list kept in this file; any
