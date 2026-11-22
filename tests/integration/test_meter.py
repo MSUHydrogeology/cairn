@@ -5040,6 +5040,23 @@ def test_an_antigravity_search_cap_is_128_mib_a_conversation_over_it_is_not_gues
     assert found[:2] == (None, "antigravity_search_incomplete")
 
 
+def test_an_antigravity_search_entry_cap_is_20000_so_a_conversation_of_5200_files_is_searched(
+        tmp_path):
+    assert meter.MAX_ATTRIBUTION_ENTRIES == 20_000
+    assert meter.MAX_ATTRIBUTION_RUN_ENTRIES == 50_000
+    folder = tmp_path / "brain" / AG_CONVERSATION / "steps"
+    folder.mkdir(parents=True)
+    (folder / "notes.md").write_text("/synthetic/project\n", encoding="utf-8")
+    for number in range(5_200):                       # past the old 5,000, within the new cap
+        (folder / f"step{number}.log").write_text("nothing\n", encoding="utf-8")
+    projects = [{"alias": "only", "path": "/synthetic/project",
+                 "remote": "https://example.test/team/p.git"}]
+    alias, reason, _used, listed = meter._conversation_project(
+        str(tmp_path), AG_CONVERSATION, projects)
+    assert (alias, reason) == ("only", None)
+    assert 5_200 < listed <= meter.MAX_ATTRIBUTION_ENTRIES
+
+
 def test_an_antigravity_search_refuses_a_file_that_is_not_the_one_the_walk_saw(tmp_path):
     note = tmp_path / "notes.md"
     note.write_text("/synthetic/project\n", encoding="utf-8")

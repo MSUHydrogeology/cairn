@@ -181,9 +181,11 @@ MAX_SOURCE_FILES = 10_000
 # the refresh cannot pay for waits. The per-conversation byte cap is 128 MiB because a
 # whole count needs the whole search: measured on one Mac, 47 conversations had a median
 # 1.0 MiB of searchable text, 3 were over 16 MiB, and the largest held 60 MiB without
-# its `chunks/` copies. The per-refresh byte cap stays at 256 MiB.
+# its `chunks/` copies. The per-refresh byte cap stays at 256 MiB. The per-conversation
+# entry cap is 20,000 because the one live conversation held 5,194 entries outside
+# `chunks/` (the other 46 held fewer than 5,000); the per-refresh entry cap stays at 50,000.
 MAX_ATTRIBUTION_BYTES = 128 * 1024 * 1024
-MAX_ATTRIBUTION_ENTRIES = 5_000
+MAX_ATTRIBUTION_ENTRIES = 20_000
 MAX_ATTRIBUTION_DEPTH = 8
 MAX_ATTRIBUTION_RUN_BYTES = 256 * 1024 * 1024
 MAX_ATTRIBUTION_RUN_ENTRIES = 50_000
