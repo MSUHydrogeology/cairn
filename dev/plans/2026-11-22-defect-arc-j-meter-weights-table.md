@@ -1,7 +1,7 @@
 # Plan: Defect arc J, the meter's table of token weights
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -315,3 +315,10 @@ Range: 0ed25868722daa4f4a820803c41c1d8f94dfb680..87a757ad669d62ac2028933f9d9b691
 
 **Verdict**: ACCEPT (Security Review)
 **Elapsed time**: unknown. **Tokens**: unknown.
+
+## Response to code review -- Claude Sonnet 5.5 (Implementation) -- 2026-11-22
+
+- Usual code review (ACCEPT, one non-blocking note): taken. Both READMEs now say a model missing from the table gets counts and no weighted total, and a reply with an unknown count gets no total, and no figure at all where the model has a long-prompt level. No code changed. Cairn's lock was refreshed for `dev/measurement/README.md` in its own commit; `install/verify_integrity.py --target .` reports OK, and `tests/check_cairn.py` with no argument reports OK.
+- Security Review (ACCEPT, no findings): nothing to do.
+
+Not run for this response: any test. **Elapsed time**: unknown. **Tokens**: unknown.
