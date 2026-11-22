@@ -209,3 +209,35 @@ The meter is built as the plan says, on branch `simple-meter-impl` (work folder 
 **Not run.** Every other test file; the real machines (Strategy's checks); a real refresh; `CAIRN_FULL_SUITE`; the gate manifest's signing lines, which this build did not touch.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-21
+
+```
+Reviewed range: 7202294d3ab5733ea7b6b58ee72fd1b063e10b5d (merge-base with 0.9-dev) .. e1c14ee94a72d10b95b487ba6d95bf73f4351ac9
+```
+
+**Obligation**: clears the usual code review; the Security Review pass follows.
+**Findings**: raised (0 blocking, 4 non-blocking)
+**Verdict**: ACCEPT
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this have been built as framed?** Yes. The two promises sit in code the diff leaves alone: `read_records` differs only in its signature and the one remote call (`git diff 0.9-dev HEAD`, lines 3779 to 3800 of `dev/tools/meter.py`), and `validate_config_bytes` and `_claim_snapshot` are untouched.
+2. **Does the change do what the plan says?** Yes. The walk (`_enumerate_jsonl`), the claims read, `_write_summary`, `_take_lock` and `main` match detail D5, D7, D13 and D14. No `exec`, `git_read`, owner test or `dir_fd` remains (searched). Nothing named for Windows is left but the two parsers and two `nt` branches.
+3. **What would show it wrong?** A real refresh on the Windows Server machine and the Mac (Strategy's checks, not run here).
+
+**Checked, not run**: `cmp` of the two meter copies prints nothing. The lock commit holds one file, two lines. `verify_integrity.py --target .` reports OK for 70 files. The pinned list, loaded by its own validator, gives 28 and 314 with the fingerprint accepted; the guard line in `tests/test_security_check.py` matches line 606 of the manifest. The `B102` entry was the only change in `release/security_check.py`. The deleted tests are the plan's 86 in `test_meter.py` (65 Windows, 21 listed), plus one each in the other two files; none tests consent or counts-only. The two added tests are as the plan names them.
+
+**Non-blocking**
+
+- N1. No test covers the claims link rule (plan C1: a link at `dev/intents.jsonl` yields no claims). The kept export test patches `_capture_project_claims` out. The code reads right (`_capture_project_claims`, lines 372 to 395); a hand check or one test would close it.
+- N2. The test that quotes the guard line (`test_committed_fixture_connects_real_record_and_join_entrypoints`) skips off a Mac, so no recorded run exercised that edit. The manifest's own validator runs at every collection and accepts it.
+- N3. The five Windows failures are called this host's, but the record does not show the same five failing on `0.9-dev`. The Linux run was at `548018c5`, before the prose and lock commits.
+- N4. If the lock file is created but its token write fails, an empty lock stays for 15 minutes (`_take_lock`, `make`). Rare, and the same wait as a killed run.
+
+**Left unshown**: the Mac; a real refresh; links on Windows other than junctions; a Windows run of the file-link case. A pulse import failure still prints a traceback before `main` runs (not changed here).
+
+**Not covered**: running any test; the full diff of the kept tests (read the five named in the plan and both added tests); the gate manifest.
