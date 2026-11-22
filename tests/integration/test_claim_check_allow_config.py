@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -64,11 +65,11 @@ class TestTheConfigIsWhereExemptionsLive:
             f'{[f.message for f in with_cfg.hard_flags]}')
 
         moved = tmp_path / 'claim-check-allow.json'
-        CONFIG.rename(moved)
+        shutil.move(CONFIG, moved)
         try:
             without = cc.check_file(REPO / rel, REPO)
         finally:
-            moved.rename(CONFIG)
+            shutil.move(moved, CONFIG)
         assert without.hard_flags, (
             f'{rel} is clean even without the config -- the config is not '
             f'load-bearing, so this suite proves nothing about it')
