@@ -16,8 +16,13 @@ runs the full suite. Never set
 once, as above. Linux and Windows run only the shipped files that can depend
 on the system: the files `python tests/tier_inventory.py cert-files` prints,
 with `@PATH` (the file `cert-files --write PATH` saved) in place of `tests` in
-the command above. Cairn-only tests and the files `tests/test_tiers.json` lists
-as system-independent run on the Mac only. Each run is at the
+the command above. Cairn-only tests, the release-only files
+(`python tests/tier_inventory.py release-only`) and the files
+`tests/test_tiers.json` lists as system-independent run on the Mac only; the
+strict native-evidence check's file also runs on Windows, whose list is
+`cert-files --host windows`. At an ordinary development change do not run a
+release-only file unless the change touches its subject;
+`python tests/tier_inventory.py for` leaves it out. Each run is at the
 release commit, on a clean tree, under Python 3.13; on Linux and Windows an
 earlier run stands for the files whose inputs have not changed (last paragraph).
 The release note gives the
@@ -41,7 +46,7 @@ commit E stands for the release commit R, one test file at a time, for each file
 that passed there (a recorded skip counts as the same skip at R) and whose inputs
 are the same at R: the test file, every file
 under `tests/` it imports, `tests/conftest.py`, and every file it names
-(`python tests/tier_inventory.py for` over `git diff --name-only --diff-filter=d E R`
+(`python tests/tier_inventory.py for --include-release-only` over `git diff --name-only --diff-filter=d E R`
 lists the tests that name them) or sweeps. A file that failed at E, or whose
 inputs you cannot show unchanged, is run at R; a failed node fixed since is run
 alone, and its commit is named. Keep every run, finished or not, under
