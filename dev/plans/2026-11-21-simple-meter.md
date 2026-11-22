@@ -1,7 +1,7 @@
 # Plan: A simple usage meter
 
 **Source proposal**: dev/proposals/archive/2026-11-21-claude-simple-meter.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/custom_session_routines.md, dev/rules/development-environment.md
@@ -185,5 +185,27 @@ Security Review:
 7. N4 (`O_NOFOLLOW` on a leaf): taken, in C1 and detail D14.
 
 Not run for this response: any test.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record -- Claude Sonnet 5.5 (Implementation) -- 2026-11-21
+
+The meter is built as the plan says, on branch `simple-meter-impl` (work folder `.claude/worktrees/simple-meter`), not merged. Read from the code and the runs below; nothing else was run.
+
+**Commits by chunk.** C1 to C3 `f7f4ddda` (the plain layer, the Windows layer, owner tests and Git read deleted, both copies, the `B102` allowance removed). C4 `386ae2d2` (tests) and `45aaef44` (pinned list: `nt` 63 to 28, `posix` 362 to 314, fingerprint recomputed by the validator's formula, which accepts it; guard line changed in both files). `548018c5` fixes found by the first Windows run. C5 `4489b295` (documents and changelog) and `e3790d46` (Cairn's lock, alone; `verify_integrity.py --target .` reports OK for 70 files). Status commit `9307dcbc`.
+
+**Lines of `dev/tools/meter.py`.** 7,573 before, 4,624 after (`wc -l`). The shipped copy is identical (`cmp` prints nothing).
+
+**Tests, counts by function.** 88 deleted, 104 changed, 106 kept as they were, 2 added (the changed count is one over the plan's 103 after the review fold; `test_meter.py` holds 176 functions, `test_meter_claude_usage.py` 32). Node ids collected: 371, 73 and 14 for the three meter files.
+
+**Windows (this host, Python 3.13).** `test_meter.py` 367 passed, 4 skipped (the four tests that keep `POSIX_ONLY`); `test_meter_claude_usage.py` 73 passed; `test_meter_usage_free_records.py` 14 passed. Also `tests/test_security_check.py` (4 failed) and `tests/test_skills_install.py` (1 failed): 650 passed, 5 failed, 6 skipped in all. The five failures are this host's: four signing-history tests stop at "detached checkout path ... does not match commit" or "git-read-binding-failed", and the skills test cannot make a symbolic link (`WinError 1314`, the privilege is not held). None names the meter or the pinned list.
+
+**Linux subsystem (Ubuntu, Python 3.14, commit `548018c5`).** The same five files: 575 passed, 10 skipped, 77 failed. All 77 are in `tests/test_security_check.py` and end at "join refuses this platform (native evidence platform is unsupported or inconsistent)", which is that file's Mac-only signing path. The three meter files and `test_skills_install.py` passed whole.
+
+**Found by the Windows run, fixed.** A directory entry carries no file id on Windows, so the walk reads each file by name. A handle and a name report different change times for one file on Windows, so the stream takes its identity by name; before this the unchanged-log skip failed on a fraction of runs. Not fixed, outside this plan: `dev/tools/pulse.py` refuses a just-written report on Windows for the same reason (30% of 40 files in a direct check), so the explicit-report part of `test_report_freshness_public` runs off Windows only, with a comment saying why. This is a parity gap in the pulse for Strategy.
+
+**Differences from the plan.** (1) The claims reader keeps the name `_capture_project_claims`, and the ledger writer `_atomic_replace_ledger`, because kept tests patch those names. (2) `_is_link` tests the reparse attribute and tag by attribute, with no `os.name` branch, so `os.name == "nt"` stays in two functions, not three. (3) `main` wraps a new `_main` to print only a closed answer. (4) `test_codex_normalized_events_bind_only_exact_approved_local_projects` keeps its `project_remote_mismatch` assertion, which is the Codex log's own repository name compared with the consent file's remote; only its patch went. (5) The added link test lists a file-link case only where the host can make one; on this host it has the folder-link (junction) case only. (6) `tests/check_cairn.py` with no argument reports 3 issues this plan caused: line-bounds citations of ranges that end near line 690 of `tests/security_manifest.py` in `dev/proposals/2026-11-19-codex-native-release-membership.md` (line 86, and line 140 inside a review) and `dev/strategy/2026-11-21-claude-read-of-six-unsigned-files.md` (line 32). They are not edited: one is inside a review and one is Strategy's note. The file is now 608 lines.
+
+**Not run.** Every other test file; the real machines (Strategy's checks); a real refresh; `CAIRN_FULL_SUITE`; the gate manifest's signing lines, which this build did not touch.
 
 **Elapsed**: unknown. **Tokens**: unknown.
