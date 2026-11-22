@@ -1228,10 +1228,11 @@ _SPACING_SAMPLES = [
 def test_nothing_the_note_prints_is_outside_printable_ascii(
     tmp_path: Path, capsys
 ) -> None:
-    _need_control_names()
     hostile_slot = "pl\x1b[31maceho\u200flder-é"
     text = _slot(hostile_slot, "Placeholder.")
-    _note_tree(tmp_path, [{"dst": "we\x1b[2Jird\nname.md",
+    # a Windows file name cannot hold the escape or the new line
+    odd_name = "we\x1b[2Jird\nname.md" if os.name != "nt" else "we\u202e\u0430ird name.md"
+    _note_tree(tmp_path, [{"dst": odd_name,
                            "installed": text.encode(), "base": text.encode()},
                           {"dst": _LIVING, "installed": text.encode(),
                            "base": text.encode(), "living": True}])
@@ -1574,6 +1575,13 @@ _ZERO_HASH = "sha256:" + "0" * 64
 # the printable ASCII around it untouched, no quotes added.
 _WRITTEN = "e\\x1b]0;pwned\\x07\\u202ev\\u0430.md"
 
+# `_EVIL` and `_WRITTEN` for a file that is really on disk.  A Windows file name
+# cannot hold the escape or the bell, so there the name keeps only the
+# bidirectional override and the non-ASCII letter, which it can.
+_EVIL_NAME, _WRITTEN_NAME = (
+    (_EVIL, _WRITTEN) if os.name != "nt"
+    else ("e\u202ev\u0430.md", "e\\u202ev\\u0430.md"))
+
 
 class _ReportSite(NamedTuple):
     """One place the report prints lockfile text: a tree that reaches it, the
@@ -1618,16 +1626,14 @@ def _r_missing(target: Path) -> None:
 
 
 def _r_modified(target: Path) -> None:
-    _need_control_names()
-    _note_tree(target, [{"dst": _EVIL}])
-    (target / _EVIL).write_bytes(b"modified after install\n")
+    _note_tree(target, [{"dst": _EVIL_NAME}])
+    (target / _EVIL_NAME).write_bytes(b"modified after install\n")
 
 
 def _r_hint(target: Path) -> None:
-    _need_control_names()
     slot = _slot("s", "Placeholder.").encode()
-    _note_tree(target, [{"dst": _EVIL, "installed": slot, "base": slot}])
-    (target / _EVIL).write_bytes(
+    _note_tree(target, [{"dst": _EVIL_NAME, "installed": slot, "base": slot}])
+    (target / _EVIL_NAME).write_bytes(
         _slot("s", "<!-- cairn:customized -->\nours").encode())
 
 
@@ -1652,8 +1658,8 @@ _REPORT_SITES: list[_ReportSite] = [
                 "  illegal living_state opt-out: " + _WRITTEN + " is not an "),
     _ReportSite("missing", _r_missing, 1, "  missing: " + _WRITTEN + "\n"),
     _ReportSite("modified", _r_modified, 1,
-                "  modified (hash mismatch): " + _WRITTEN + "\n"),
-    _ReportSite("finalize-hint", _r_hint, 1, "--finalize " + _WRITTEN + "\n"),
+                "  modified (hash mismatch): " + _WRITTEN_NAME + "\n"),
+    _ReportSite("finalize-hint", _r_hint, 1, "--finalize " + _WRITTEN_NAME + "\n"),
     _ReportSite("forked-facade-advisory", _r_advisory, 0,
                 "while this tree records its install from Cairn 9.9.9"
                 + _WRITTEN + ".\n"),
