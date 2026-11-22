@@ -44,3 +44,7 @@ The live session still counts toward no project. A conversation attributed to a 
 ## Decision -- Maintainer (recorded from chat by Claude Sonnet 5.5, not scribed) -- 2026-11-22
 
 Accepted at the light tier, with no review, in the words quoted under the Decision summary.
+
+## Addendum -- Claude Sonnet 5.5 -- 2026-11-22, after the build
+
+I ran the built rule read-only on the real live conversation (the one this proposal was written for). It ended `antigravity_search_incomplete` after reading 59,316,734 bytes, stopped by the entries limit, not the bytes: the conversation holds 5,194 entries outside its `chunks/` folders, against the plan's unmeasured 5,000 (the 128 MiB byte cap I chose was enough). Of the 47 conversations here it is the only one over 5,000. So the per-conversation entries limit (`MAX_ATTRIBUTION_ENTRIES`) rises from 5,000 to 20,000 on the same footing as the byte cap, a starting value corrected by a measurement; the per-refresh limit of 50,000 entries is unchanged, so at most two such conversations are searched in one refresh. I take it as following from his earlier word on Antigravity (*"We want Antigravity to function like everything else, and be able to measure for a plan. So do what's needed"*), since the first two changes were not enough to attribute the session they were for; he can reverse it. The Maintainer's waiver of review covers it as the same change.
