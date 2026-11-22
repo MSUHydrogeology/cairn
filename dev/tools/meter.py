@@ -486,7 +486,7 @@ def validate_models_config_bytes(raw):
             if mode not in {"ttl_split", "unbilled"}:
                 raise ValueError
 
-            def _parse_level(src, req_keys, opt_keys, check_over=False):
+            def _parse_level(src, check_over=False):
                 out = {
                     "fresh_input": _parse_ratio_weight(src["fresh_input"]),
                     "cache_read": _parse_ratio_weight(src["cache_read"]),
@@ -510,15 +510,14 @@ def validate_models_config_bytes(raw):
                     out["cache_write_1h"] = None
                 return out
 
-            normalized_entry = _parse_level(spec, model_req, model_opt)
+            normalized_entry = _parse_level(spec)
             normalized_entry["cache_write_mode"] = mode
             if "long_prompt" in spec:
                 lp = spec["long_prompt"]
                 if (type(lp) is not dict or not lp_req <= set(lp)
                         or set(lp) - lp_req - lp_opt):
                     raise ValueError
-                normalized_entry["long_prompt"] = _parse_level(
-                    lp, lp_req, lp_opt, check_over=True)
+                normalized_entry["long_prompt"] = _parse_level(lp, check_over=True)
             if "tier" in spec:
                 tier = spec["tier"]
                 if not isinstance(tier, str) or tier not in tier_set:
@@ -883,9 +882,7 @@ def _open_search_folder(target, parent=None, identity=None):
 
 
 def _conversation_project(source_root, conversation, projects, *,
-                          lead_factor=ATTRIBUTION_LEAD_FACTOR,
-                          max_bytes=MAX_ATTRIBUTION_BYTES,
-                          max_entries=MAX_ATTRIBUTION_ENTRIES):  # vendor-ok: the saved files of one conversation
+                          lead_factor=None, max_bytes=None, max_entries=None):  # vendor-ok: the saved files of one conversation
     """Which one listed project do a conversation's saved files name most? (plan rule 5)
 
     Searches the regular files under `brain/<conversation>/` (links skipped, any folder
@@ -905,6 +902,12 @@ def _conversation_project(source_root, conversation, projects, *,
     was listed is refused, never followed out of the root. Windows has no such
     open (plan rule 7): it walks by path, as the log stream does.
     """
+    if lead_factor is None:
+        lead_factor = ATTRIBUTION_LEAD_FACTOR
+    if max_bytes is None:
+        max_bytes = MAX_ATTRIBUTION_BYTES
+    if max_entries is None:
+        max_entries = MAX_ATTRIBUTION_ENTRIES
     names = {project["alias"]: _attribution_spellings(project["path"])
              for project in projects}
     if not names:
@@ -4389,11 +4392,7 @@ def _unknown_kinds():
     return {name: None for name in _EVENT_KIND_NAMES}
 
 
-def _fraction_text(value):
-    if value is None:
-        return None
-    decimal = Decimal(value.numerator) / Decimal(value.denominator)
-    return format(decimal, "f")
+_fraction_text = _PULSE._fraction_text
 
 
 def _lookup_model_weights(model, models_config):
@@ -4422,16 +4421,17 @@ def _resolve_model_tier(model, models_config):
         tier = exact.get("tier")
         if tier is not None:
             return tier
-    prefix_tiers = [
-        entry["tier"]
-        for entry in models.values()
-        if entry.get("tier") is not None
-        and any(model.startswith(prefix) for prefix in entry.get("prefixes", ()))
-    ]
-    if len(prefix_tiers) > 1:
-        return "unknown"
-    if len(prefix_tiers) == 1:
-        return prefix_tiers[0]
+    else:
+        prefix_tiers = [
+            entry["tier"]
+            for entry in models.values()
+            if entry.get("tier") is not None
+            and any(model.startswith(prefix) for prefix in entry.get("prefixes", ()))
+        ]
+        if len(prefix_tiers) > 1:
+            return "unknown"
+        if len(prefix_tiers) == 1:
+            return prefix_tiers[0]
     rules = models_config.get("tier_rules", ())
     rule_prefix_matches = [
         rule["tier"]

@@ -1052,7 +1052,6 @@ class TestCairnMeterModelsAlignment:
     """Self-check that Cairn's external meter model config agrees with model-selection-mapping."""
 
     def test_meter_models_config_matches_model_selection_mapping(self) -> None:
-        import json
         import yaml
 
         meter_path = CAIRN_ROOT / "dev" / "tools" / "meter.py"

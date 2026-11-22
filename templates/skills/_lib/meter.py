@@ -486,7 +486,7 @@ def validate_models_config_bytes(raw):
             if mode not in {"ttl_split", "unbilled"}:
                 raise ValueError
 
-            def _parse_level(src, req_keys, opt_keys, check_over=False):
+            def _parse_level(src, check_over=False):
                 out = {
                     "fresh_input": _parse_ratio_weight(src["fresh_input"]),
                     "cache_read": _parse_ratio_weight(src["cache_read"]),
@@ -510,15 +510,14 @@ def validate_models_config_bytes(raw):
                     out["cache_write_1h"] = None
                 return out
 
-            normalized_entry = _parse_level(spec, model_req, model_opt)
+            normalized_entry = _parse_level(spec)
             normalized_entry["cache_write_mode"] = mode
             if "long_prompt" in spec:
                 lp = spec["long_prompt"]
                 if (type(lp) is not dict or not lp_req <= set(lp)
                         or set(lp) - lp_req - lp_opt):
                     raise ValueError
-                normalized_entry["long_prompt"] = _parse_level(
-                    lp, lp_req, lp_opt, check_over=True)
+                normalized_entry["long_prompt"] = _parse_level(lp, check_over=True)
             if "tier" in spec:
                 tier = spec["tier"]
                 if not isinstance(tier, str) or tier not in tier_set:
@@ -4393,11 +4392,7 @@ def _unknown_kinds():
     return {name: None for name in _EVENT_KIND_NAMES}
 
 
-def _fraction_text(value):
-    if value is None:
-        return None
-    decimal = Decimal(value.numerator) / Decimal(value.denominator)
-    return format(decimal, "f")
+_fraction_text = _PULSE._fraction_text
 
 
 def _lookup_model_weights(model, models_config):

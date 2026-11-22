@@ -5718,7 +5718,7 @@ def test_ledger_v6_migrates_to_v7_in_place_and_rejects_mismatched_pairs(
     meter._validate_aggregate_row(merged)
 
 
-def test_tier_resolution_prefix_segment_weights_and_by_tier_export(tmp_path):
+def test_tier_resolution_prefix_segment_weights_and_by_tier_export(tmp_path, monkeypatch):
     cfg = reference_models()
     # Exact, prefix, segment without effort collision (-high != high), and ties.
     assert meter._resolve_model_tier("claude-fable-5-2", cfg) == "frontier"
@@ -5748,7 +5748,7 @@ def test_tier_resolution_prefix_segment_weights_and_by_tier_export(tmp_path):
     assert meter._resolve_model_tier("alpha-1-fast", custom) == "top"
     assert meter._resolve_model_tier("gamma-beta-x", custom) == "base"
 
-    home, claude_root, _codex_root, project, _cfg_path = c1_home(tmp_path, pytest.MonkeyPatch)
+    home, claude_root, _codex_root, project, _cfg_path = c1_home(tmp_path, monkeypatch)
     install_models_config(home, custom)
     config = meter.validate_config_bytes((home / ".cairn" / "meter.json").read_bytes())
     log = claude_root / "session.jsonl"
