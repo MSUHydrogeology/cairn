@@ -102,9 +102,10 @@ def _check_cairn_delivery(base: Path, *, wrong_link_pin: bool = False,
     helper.write_bytes(helper.read_bytes() + (
         b"\nimport os as _cairn_test_os\n"
         b"from pathlib import Path as _cairn_test_Path\n"
-        b"with _cairn_test_Path(_cairn_test_os.environ['CAIRN_TEST_HELPER_MARKER'])"
+        b"if 'CAIRN_TEST_HELPER_MARKER' in _cairn_test_os.environ:\n"
+        b"    with _cairn_test_Path(_cairn_test_os.environ['CAIRN_TEST_HELPER_MARKER'])"
         b".open('a', encoding='utf-8') as _cairn_test_marker:\n"
-        b"    _cairn_test_marker.write('helper-ran\\n')\n"
+        b"        _cairn_test_marker.write('helper-ran\\n')\n"
     ))
     template_helper = root / "templates/skills/_lib/git_read.py"
     template_helper.write_bytes(helper.read_bytes())

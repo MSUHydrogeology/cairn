@@ -122,9 +122,10 @@ def _run_public_git_route(
     helper_bytes = (CAIRN_ROOT / "dev/tools/git_read.py").read_bytes() + (
         b"\nimport os as _route_os\n"
         b"from pathlib import Path as _route_Path\n"
-        b"with _route_Path(_route_os.environ['CAIRN_TEST_HELPER_MARKER'])"
+        b"if 'CAIRN_TEST_HELPER_MARKER' in _route_os.environ:\n"
+        b"    with _route_Path(_route_os.environ['CAIRN_TEST_HELPER_MARKER'])"
         b".open('a', encoding='utf-8') as _route_marker:\n"
-        b"    _route_marker.write('helper-ran\\n')\n"
+        b"        _route_marker.write('helper-ran\\n')\n"
     )
     helper.write_bytes(helper_bytes)
     pin = hashlib.sha256(helper_bytes).hexdigest()
@@ -294,9 +295,10 @@ def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
     helper_bytes = (CAIRN_ROOT / "dev/tools/git_read.py").read_bytes() + (
         b"\nimport os as _binding_os\n"
         b"from pathlib import Path as _binding_Path\n"
-        b"with _binding_Path(_binding_os.environ['CAIRN_TEST_HELPER_MARKER'])"
+        b"if 'CAIRN_TEST_HELPER_MARKER' in _binding_os.environ:\n"
+        b"    with _binding_Path(_binding_os.environ['CAIRN_TEST_HELPER_MARKER'])"
         b".open('a', encoding='utf-8') as _binding_marker:\n"
-        b"    _binding_marker.write('helper-ran\\n')\n"
+        b"        _binding_marker.write('helper-ran\\n')\n"
     )
     helper.write_bytes(helper_bytes)
     pin = hashlib.sha256(helper_bytes).hexdigest()

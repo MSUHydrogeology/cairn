@@ -36,6 +36,7 @@ import ast
 import hashlib
 import importlib.util
 import json
+import os
 import re
 import subprocess
 import sys
@@ -130,6 +131,8 @@ def _run_session_start(root: Path) -> bytes:
 
 def test_hostile_artifact_name_cannot_forge_orientation_lines(tmp_path):
     """Subprocess bytes provide three independent anti-forgery oracles."""
+    if os.name == "nt":
+        pytest.skip("a Windows file name cannot hold a new line")
     repo = _git_repo(tmp_path)
     proposals = repo / "dev" / "proposals"
     proposals.mkdir(parents=True)
@@ -213,6 +216,9 @@ def test_git_text_and_status_cannot_forge_or_flood_session_start_lines(tmp_path)
     )
 
     out = _run_session_start(repo)
+    # A Windows child ends each line with a carriage return and a new line; a lone
+    # carriage return is still forgery.
+    out = out.replace(b"\r\n", b"\n")
 
     status_lines = [
         ln for ln in out.splitlines()

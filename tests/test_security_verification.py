@@ -38,6 +38,7 @@ import ast
 import hashlib
 import importlib.util
 import json
+import os
 import py_compile
 import re
 import sys
@@ -1072,12 +1073,20 @@ class TestTheNonSilentInstall:
         real = {attr: getattr(sp, attr) for attr in
                 ("run", "Popen", "check_output", "check_call", "call")}
 
+        def is_git_worker(vector: list[str]) -> bool:
+            # On Windows the bound Git reader runs Git from a small Python worker
+            # it starts itself, with this fixed form.  Any other Python launch is
+            # still a failure.
+            return (os.name == "nt" and len(vector) == 6
+                    and vector[1:5] == ["-I", "-S", "-B", "-c"]
+                    and "import base64, hashlib, json, sys, types" in vector[5])
+
         def guard(attr: str):
             def spy(argv, *args, **kwargs):
                 vector = list(argv) if not isinstance(argv, str) else [argv]
                 calls.append(vector)
                 exe = Path(vector[0]).name if vector else ""
-                if exe != "git":
+                if exe != "git" and not is_git_worker(vector):
                     raise AssertionError(
                         f"the install executed a non-git subprocess: {vector!r}"
                     )
