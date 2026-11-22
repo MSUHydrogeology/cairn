@@ -323,3 +323,46 @@ Security read:
 **Still owed, each with its home.** Python 3.13 on the Linux machine, with the Maintainer's word, and the line in `dev/rules/development-environment.md` that records it (part C). Making the suite pass on Linux and Windows (part D). Both: `dev/PLANNING.md`, "Waiting on you", the Mac session's jobs. This proposal stays open until they are done.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Decision -- Maintainer (recorded from chat by Claude Sonnet 5.5, not scribed) -- 2026-11-22
+
+**Tier**: light
+
+**CHANGED, by the Maintainer's own words.** Earlier on 2026-11-22, asked about a first full run on Linux and Windows, he wrote (chat): "Why are we running a 'shakedown' test set?" and "And why would windows require hours? Prose is no different on Windows. So tests there are identical to Linux or Mac". Then he set the direction (chat, 2026-11-22):
+
+> "What I want you to do is mark tests as those that are system independent, and those that depend on a system's behavior. Do not re-run system independent tests for certification. That is silly. Think carefully before running tests, and use them for their purpose--not mindlessly."
+
+What changes:
+
+- **The choice** "the whole suite once on each of the three platforms" becomes "the whole suite once on the Mac; Linux and Windows run the shipped, system-dependent files". The shipped, system-dependent files are every test file except Cairn's own signing, gate and release tests (`RELEASE_EXCLUDED_TESTS` in `tests/security_manifest.py`) and the files listed under `system_independent` in `tests/test_tiers.json`. Cairn-only tests and the system-independent files run on the Mac only.
+- **A file is system-dependent unless shown otherwise.** The `system_independent` list starts empty. Until a file is listed, it runs on every host. A file is listed only with evidence that it has no sign of system dependence and that it passed, with no skip, on the Mac, Linux and Windows in one full run (`tests/README.md`).
+- **Scope delta**: lost. The whole suite on Linux and Windows, the outcome that parts A and B of the operative text state. **disposition**: accept, by the words above.
+- **Unchanged**: Python 3.13 on a clean tree at the release commit on every platform; the three results, each skip with its reason and the Maintainer's quoted words for any waiver in the release note; the Mac's membership check and the secrets scan at the cut; any nonzero exit stops the cut.
+- **The operative text above is left as accepted.** This section supersedes it for Linux and Windows wherever it says the whole suite runs on each platform; the two documents that carry the rule (`dev/rules/certifying-runs.md`, step 3 of "Order of the cut" in `release/RELEASE_PROCESS.md`) are edited to match.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record -- Claude Sonnet 5.5 -- 2026-11-22
+
+**Role**: Implementation. No plan: light tier. Commits: `3d479cba` (code and tests), `fdd1673a` (the two rule pages and `tests/README.md`); this record and the changelog entry follow in their own commits.
+
+**Built.**
+- `tests/test_tiers.json`: a top-level `hosts` key with an `about` and an empty `system_independent` list, in the tiers' own pattern language (matched on the file stem, by the existing `classify`).
+- `tests/tier_inventory.py`: `cert-files [--write PATH]` prints, sorted and repository-relative, every test file not in `RELEASE_EXCLUDED_TESTS` and not matched by `system_independent`, with a one-line count on stderr. `--write` takes an absolute path and refuses one that exists. `RELEASE_EXCLUDED_TESTS` is read from `tests/security_manifest.py` with `ast.literal_eval`, never imported; each row's first item is the test path. `check` now also fails on a `system_independent` pattern that places no file, matches a security-tier file or matches an excluded file.
+- `tests/contract/test_test_tiers.py`: six tests, one per promise (the three refusals, the selection that keeps a new unlisted file, `--write` refusing an existing path, `--write` saving the printed lines and refusing a relative path).
+- `dev/rules/certifying-runs.md`, `release/RELEASE_PROCESS.md` step 3 and `tests/README.md`, by exact replacement; no fenced command block changed.
+
+**Commands and results (measured).**
+- Before the change, the six new tests, run by name: 6 failed, 40 deselected. I saw the traceback only for the last, `invalid choice: 'cert-files'`; that the three refusal tests fail because the old `check` ignores the new key is read from the code, not seen.
+- After the change, the same six: 6 passed. Then `tests/contract/test_test_tiers.py` once, whole, under Python 3.13.13 and pytest 9.0.3: 46 passed in 12.12 s.
+- `python tests/tier_inventory.py check` on this repository: `ok: 142 test files, each in exactly one of 5 tiers`, exit 0, with the list empty.
+- `python tests/tier_inventory.py cert-files` on this repository: 126 of 142 files, exit 0. The 16 left out are the 16 rows of `RELEASE_EXCLUDED_TESTS`; the set read by `ast.literal_eval` equals what `security_manifest.release_excluded_files()` returns.
+- With a scratch copy of the configuration naming `test_repin`, `test_security_marker` and a pattern that matches nothing, `check` on this repository refused all three kinds and exited 1.
+- `pytest @list.txt` on a three-file scratch directory outside the repository ran only the two listed files (pytest 9.0.3).
+- The claim check, the link check and `check_cairn` passed on the three edited pages before their commit.
+
+**The command a Linux or Windows run uses**, from the repository root at the release commit under Python 3.13: `python tests/tier_inventory.py cert-files --write <new absolute path outside the clone>`, then `CAIRN_FULL_SUITE=1 python -m pytest @<that path> --quality-gate-shuffle-seed=0 -rs` (`-rs` lists each skip with its reason). On Windows, set the variable first.
+
+**Not checked.** No run on Linux or Windows; `cert-files` was not run there, and that pytest accepts the forward-slash paths it prints on Windows is assumed. The real `@PATH` run of 126 files was not made on this Mac; the broad-run guard reads collected items, so a file list is read as assumed, not run. No other test file and no test family was run. The `system_independent` list is empty, so no file is yet left to the Mac. `-rs` in the command is my addition to meet "every skip listed with its reason". The pre-commit claims check warned on both commits that my own claim held the paths (the claim carries an agent label that differs from the session's); it warns only.
+
+**Elapsed**: unknown. **Tokens**: unknown.
