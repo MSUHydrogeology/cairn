@@ -59,6 +59,13 @@ CAIRN_GATE_ROSTER = REPO_ROOT / "dev" / ".cairn" / "allowed_signers"
 
 # The script's documented exit contract.  Named, because a bare ``1`` in an
 # assertion says nothing about which of four outcomes was expected.
+#: Git Bash puts its own tool folders (`/usr/bin`) ahead of the PATH it is given,
+#: so on Windows a PATH can neither hide `git` or `ssh-keygen` from the script
+#: nor put a stand-in in front of them.
+needs_path_control = pytest.mark.skipif(
+    os.name == "nt",
+    reason="Git Bash puts its own tools ahead of PATH, so PATH cannot hide or replace one")
+
 PROVENANCED = 0
 REFUSED = 1
 USAGE = 2
@@ -146,9 +153,18 @@ class Lab:
             env.update(env_extra)
         return subprocess.run(
             ["bash", str(SCRIPT), *[str(a) for a in args]],
-            capture_output=True, text=True, env=env,
-            cwd=None if cwd is None else str(cwd),
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            env=env, cwd=None if cwd is None else str(cwd),
         )
+
+
+def _bash_path(path: Path) -> str:
+    """*path* as a script run by Git Bash wants it: its `tar -C` reads `C:\\x` as
+    a host name, so a Windows path is spelled `/c/x` there."""
+    text = Path(path).as_posix()
+    if os.name == "nt" and text[1:2] == ":":
+        return "/" + text[0].lower() + text[2:]
+    return text
 
 
 def _pub(priv: Path) -> str:
@@ -388,6 +404,7 @@ def test_relative_candidate_path_reaches_the_candidate(lab: Lab):
     assert "v0.3.0" in r.stdout
 
 
+@needs_path_control
 def test_verification_that_could_not_run_does_not_blame_the_roster(
         lab: Lab, tmp_path: Path):
     """Claim <= evidence, at the signature step.
@@ -542,6 +559,7 @@ def test_comma_separated_principals_are_parsed_and_counted(lab: Lab, tmp_path: P
     assert "names 2 principals" in r.stderr, r.stderr
 
 
+@needs_path_control
 def test_toolchain_absence_refuses_rather_than_degrades(lab: Lab, tmp_path: Path):
     """With ``ssh-keygen`` removed from PATH the script must REFUSE, not
     fall through to an unverified accept."""
@@ -557,6 +575,7 @@ def test_toolchain_absence_refuses_rather_than_degrades(lab: Lab, tmp_path: Path
     assert "ssh-keygen" in r.stderr
 
 
+@needs_path_control
 def test_missing_git_refuses_naming_git_not_the_repository(lab: Lab, tmp_path: Path):
     """The other half of the missing-``ssh-keygen`` pair, and the reason the check
     had to move.
@@ -646,11 +665,13 @@ def test_slash_namespaced_tag_name_binds_on_the_full_name(lab: Lab):
     assert ok.returncode == PROVENANCED, f"{ok.stdout}{ok.stderr}"
 
 
-def test_refspec_metacharacter_fails_closed(lab: Lab):
+def test_refspec_metacharacter_fails_closed(lab: Lab, tmp_path: Path):
     """Edge case: ``REF='*'`` produces a VALID refspec and fetches every tag.
     It must then fail closed at the resolve step rather than report on whichever
     tag happened to land."""
-    r = lab.verify("--signers", lab.good_roster, lab.candidate, "*")
+    # Git Bash expands a bare `*` in its arguments against the working folder, so
+    # the script runs in an empty one: the `*` then arrives as typed.
+    r = lab.verify("--signers", lab.good_roster, lab.candidate, "*", cwd=tmp_path)
     assert r.returncode == REFUSED, f"{r.stdout}{r.stderr}"
     assert "PROVENANCED" not in r.stdout
 
@@ -953,6 +974,7 @@ def test_mutation_dropping_the_candidate_abspath_breaks_a_relative_path(
     assert "could not fetch" in r.stderr, r.stderr
 
 
+@needs_path_control
 def test_mutation_collapsing_the_verify_classes_blames_the_roster(
         lab: Lab, tmp_path: Path):
     """Collapse the two verification-failure classes back into one claim and a
@@ -996,6 +1018,7 @@ def test_mutation_collapsing_the_verify_classes_blames_the_roster_for_an_unsigne
         "the mutant still distinguishes the classes — it is not the control under test"
 
 
+@needs_path_control
 def test_mutation_moving_the_git_check_back_misdiagnoses_a_missing_git(
         lab: Lab, tmp_path: Path):
     """Delete the relocated toolchain check and a missing git is once again
@@ -1114,9 +1137,10 @@ def test_acceptance_build_uses_archived_recipe_after_live_substitution(
         + _extract_marked(body, "SOURCE-BUILD")
         + 'build A test-image\n'
     )
-    env = dict(lab.env, REPO=str(repo), WORK=str(tmp_path / "work"),
-               COMMIT=commit, REF=commit, OCI=str(oci), CAPTURE=str(capture),
-               DOCKERFILE=str(repo / "install/container/Dockerfile"))
+    env = dict(lab.env, REPO=_bash_path(repo), WORK=_bash_path(tmp_path / "work"),
+               COMMIT=commit, REF=commit, OCI=_bash_path(oci),
+               CAPTURE=_bash_path(capture),
+               DOCKERFILE=_bash_path(repo / "install/container/Dockerfile"))
     result = subprocess.run(["bash", str(harness)], capture_output=True, text=True, env=env)
     assert result.returncode == 0, f"{result.stdout}{result.stderr}"
     assert capture.read_text() == "verified recipe\n"
@@ -1537,8 +1561,8 @@ def _commit_with_timezone(lab: Lab, repo: Path, timezone: str) -> str:
     done = subprocess.run(
         ["git", "-C", str(repo), "hash-object", "-t", "commit", "-w",
          "--literally", "--stdin"],
-        input=body, capture_output=True, text=True, check=True, env=lab.env)
-    return done.stdout.strip()
+        input=body.encode("utf-8"), capture_output=True, check=True, env=lab.env)
+    return done.stdout.decode("ascii").strip()
 
 
 @pytest.mark.parametrize("skiplist", [False, True],
