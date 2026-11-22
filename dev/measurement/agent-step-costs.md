@@ -172,8 +172,9 @@ runs cost machine time, not tokens, and are listed separately.
 | | code review, usual | Medium | 70,678 | 1 | accept; two notes |
 | | code review, Security | High | 77,004 | 1 | accept; two notes, neither asking for a change |
 | | response to both code reviews, the same agent resumed | Medium | 3,820 | 1 | ready to archive; the harness reports 116,118 for the agent in all |
+| Five easy defect repairs (2026-11-22) | all five, by one agent on the trivial path, with no plan and no review | Medium | 94,582 | 4 | merged; one more fault seen in a test |
 
-Total for the day so far: 20,029,468 tokens across 148 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 20,124,050 tokens across 149 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -401,9 +402,12 @@ per plan?"
 | | code review, Security | Opus 5.5 | 14 | 979,665 | $0.65 |
 | | **all of plan K's agents** | | 75 | 6,216,529 | **$2.39** |
 | The coordinating session, same stretch | research, briefs, checks, records, reports | Fable 5.2 | 160 | 67,756,257 | $47.73 |
+| Five easy defect repairs, 16:07 to 16:11 UTC | all five, one agent, no plan and no review | Sonnet 5.5 | 36 | 2,813,108 | $0.64 |
 
 - **The reviews are not where the money goes.** All four reviews of plan K
   together cost 1.59 dollars, and all four of plan J 2.85.
+- **Five repairs on the trivial path cost 64 cents**, a quarter of what plan
+  K's seven steps cost for one two-line change.
 - **The coordinating session is.** Each of its 160 replies re-read about
   423,000 tokens of conversation. It is not split by plan here: its replies
   serve whichever plan is in hand, and nothing in the logs says which.
