@@ -298,8 +298,59 @@ record of that message (counting every record doubles the sum).
   hold in mind. It says nothing about how many steps a run took, and steps
   multiply the cost.
 
-Not known: the price of each kind of token. Cache reads are billed below fresh
-input; the rates were not looked up, so no figure in money is given here.
+The price of each kind of token was looked up on 2026-11-22. The next section
+gives the count again, in money.
+
+## The same count, priced (measured 2026-11-22)
+
+At the makers' public prices this session's work comes to about 703 US
+dollars, and three quarters of that is the coordinating session, not the
+agents. It is a reference figure: what the same tokens would cost if each were
+bought at the public price. It is not a bill.
+
+**How it was measured.** The same count-only read as above, taken at about
+15:45 UTC on 2026-11-22 over the whole session (2026-11-19 to 2026-11-22):
+152 log files and 6,940 replies, each counted once. Only sums, counts and
+model names left the logs. The prices are from Anthropic's pricing page, read
+the same day, in US dollars per million tokens.
+
+| | Model | Replies | Fresh input | Cache writes | Cache reads | Output | All four | At public prices |
+|---|---|---|---|---|---|---|---|---|
+| The coordinating session | Fable 5.2 | 1,993 | 4,324 | 9,729,845 | 1,051,752,396 | 4,097,834 | 1,065,584,399 | $530 |
+| Sub-agents, 151 transcripts | Sonnet 5.5 | 3,282 | 6,646 | 15,236,529 | 513,751,872 | 2,650,935 | 531,645,982 | $116 |
+| | Opus 5.5 | 835 | 1,682 | 4,153,264 | 83,798,760 | 631,199 | 88,584,905 | $50 |
+| | Haiku 5.5 | 830 | 1,676 | 2,996,836 | 101,151,309 | 795,083 | 104,944,904 | $7 |
+| All | | 6,940 | 14,328 | 32,116,474 | 1,750,454,337 | 8,175,051 | 1,790,760,190 | $703 |
+
+The prices used:
+
+| Model | Fresh input | Cache write | Cache read | Output |
+|---|---|---|---|---|
+| Fable 5.2 | 8 | 16 (kept one hour) | 0.20 | 40 |
+| Opus 5.5 | 4 | 5 (kept five minutes) | 0.20 | 20 |
+| Sonnet 5.5 | 2 | 2.50 (kept five minutes) | 0.10 | 10 |
+| Haiku 5.5, prompt up to 100,000 tokens | 0.10 | 0.125 (kept five minutes) | 0.01 | 0.50 |
+| Haiku 5.5, prompt over 100,000 tokens | 0.50 | 0.625 (kept five minutes) | 0.05 | 2.50 |
+
+- **By count, 98 percent of the tokens are cache reads. By price they are 40
+  percent** ($283). Cache writes are 31 percent ($216) and output is 29
+  percent ($205). Fresh input comes to six cents.
+- **The coordinating session is 75 percent of the priced total.** It re-read
+  about 528,000 tokens at each of its 1,993 replies, and its cache is kept
+  for an hour, which is priced at twice the model's input price where a
+  five-minute cache is priced at one and a quarter times.
+- **The harness's figures for the agent runs listed above sum to about 18.9
+  million tokens. The logs show 725 million for the agents**, 38 times that.
+- **The logs hold 151 agent transcripts; the tables above list 134 runs.** The
+  two do not line up one for one. An agent that carries a plan starts its own
+  agents for the plan's chunks, and the harness reports those to that agent,
+  not to this session, so they are in the logs and not in the tables. A
+  resumed agent is several rows and one transcript.
+- **Haiku 5.5 took its higher price on 564 of its 830 replies**, because the
+  prompt was over 100,000 tokens.
+
+Assumed, not checked: the standard service speed and worldwide routing. A
+faster mode or US-only routing is priced higher.
 
 ## Keeping it
 
