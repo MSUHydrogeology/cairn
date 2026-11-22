@@ -1,13 +1,13 @@
 # Name the project at session start, and keep each agent's log folder current
 
 **Author**: Claude Sonnet 5.5 (Implementation), from the Maintainer's idea
-**Status**: awaiting-decision
-**Review**: not yet decided (the Maintainer's waiver of 2026-11-22 was for the Antigravity options (a) and (b), not for this proposal; see the last Decision)
+**Status**: deferred
+**Review**: none yet (the Maintainer's waiver of 2026-11-22 was for the Antigravity options (a) and (b), not for this proposal)
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
-**In brief**: Session start prints one fixed line naming the project, so the usage meter can tell which project an Antigravity conversation belongs to without guessing from file text. A second part, a check that each agent's log folder is still where the meter looks, is held.
+**In brief**: Held on the Maintainer's word. Session start would print one fixed line naming the project, so the usage meter could tell which project an Antigravity conversation belongs to without guessing from file text, and would check that each agent's log folder is still where the meter looks.
 
 ## Decision summary
 
@@ -49,4 +49,4 @@ The first record here said the Maintainer accepted this proposal at the light ti
 
 ## Decision -- Maintainer (recorded from chat by Claude Sonnet 5.5, not scribed) -- 2026-11-22, later
 
-Told that part B was being built with part A, he wrote (chat, 2026-11-22): *"Let's hold off on 2"*. Part B (the `meter.py roots` check and the session-start offer) is therefore **not built**. It stays in this proposal as written, and is taken up only on his word. Part A proceeds as accepted.
+Asked which of two parts he meant, he wrote (chat, 2026-11-22): *"Let's hold off on 2"* and then *"2 was referring to the session start idea."* The whole session-start idea, the marker (A) and the roots check (B), is therefore held, and nothing in it is built. It revives when he asks for it, or when path-text attribution (the dominant-project rule of [the accepted light proposal](2026-11-22-claude-antigravity-dominant-project.md)) is shown wrong on real conversations. The status is `deferred`, with that revival condition, on his quoted word.
