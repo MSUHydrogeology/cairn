@@ -24,7 +24,7 @@ when the arguments contain `--drain`.
 python dev/tools/session.py session-start
 ```
 
-If `python` is not found (on Windows the message mentions the Microsoft Store),
+If `python` is not found (on Windows the message mentions an app store),
 run the same command with `py -3`, or with the full path of your interpreter.
 The installer saved that path as the `interpreter` entry of the
 `local-env.json` file in your project's Git folder, under `cairn`.

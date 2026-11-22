@@ -42,22 +42,22 @@ them.
   model maker's public list prices, in US dollars per million tokens, from the
   table in `dev/tools/meter.py` dated 2026-11-22. A weighted total is a reference figure for
   comparing work, never a bill; the table leaves out taxes, subscriptions and
-  introductory prices (Gemini 4 Argon's, which ends 2026-11-30, is not used). A
-  request whose prompt is over a model's long-prompt limit (100,000 tokens for
-  Claude Haiku 5.5, 272,000 for the OpenAI models listed) takes that model's
+  introductory prices (one vendor's, which ends 2026-11-30, is not used). A
+  request whose prompt is over a model's long-prompt limit (the table
+  gives each model's; 100,000 tokens for one model, 272,000 for the others that have one)
+  takes that model's
   higher weights. A model missing from the table gets counts and no weighted
   total. A reply with an unknown count gets no total, and no figure at all
-  where the model has a long-prompt level. A Codex reply is weighted by the
-  model its turn had selected. When the table changes, the ledger keeps
+  where the model has a long-prompt level. A reply whose log
+  names the model its turn selected is weighted by that model. When the table changes, the ledger keeps
   working: replies still held one by one are weighted by the new table at the
   next refresh, and a day already folded keeps the weighting of its day. The
   table date on a summary names the current table; a day folded earlier may
   carry an earlier one. A reply from an `antigravity` source states input and
   output counts only (no model, no cache counts), so its rows show
-  `weighted=unknown`: they say how many tokens, not what they cost. The OpenAI
-  and Google model names are the
-  makers' own and are not matched against a real log; a Codex reply whose log
-  omits its cache-write count gets no total. The pulse prints each row's weighted total as `weighted=`, or `weighted=unknown` where the row has none.
+  `weighted=unknown`: they say how many tokens, not what they cost. The model
+  names in the table are the makers' own and are not matched against a real log;
+  a reply whose log omits its cache-write count gets no total. The pulse prints each row's weighted total as `weighted=`, or `weighted=unknown` where the row has none.
 
   An `antigravity` conversation counts toward the listed project that the most
   of its own saved files name, when that project's file count is at least ten
