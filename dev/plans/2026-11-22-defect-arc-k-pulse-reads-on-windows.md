@@ -1,15 +1,15 @@
 # Plan: Defect arc K, the pulse reads a report on Windows
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
-**In brief**: The pulse will stop refusing a report it has just written on Windows, by no longer comparing a file-time field that Windows reports differently by name and by handle.
+**In brief**: The pulse will stop refusing a report it has just written on Windows, by comparing the file's change time only between its two readings by handle, not with the reading by name, where Windows reports another time.
 
 ## Build summary
 
-On Windows the pulse refuses most reports it has just written, so `tests/integration/test_gauge.py` fails 24 to 27 of 77 tests, differently each run. This plan removes the one field that causes it.
+On Windows the pulse refuses most reports it has just written, so `tests/integration/test_gauge.py` fails 24 to 27 of 77 tests, differently each run. This plan stops comparing that one field against the reading by name.
 
 ## Source proposal
 
@@ -21,18 +21,22 @@ The defect arc fixes 0.8 faults; this is roadmap items (j) and (p).
 
 Measured (Strategy, 2026-11-22; Python 3.13.5, Windows Server 2022, 300 rounds, two drives): the handle and name readings differ in `st_ctime_ns`, and no other field, in 299 or 300 of 300 rounds. By handle it is the last change time; by name, the creation time. They match only within one clock tick, so failures vary by run. Read, not run: on Mac and Linux both come from one field.
 
-**The change.** Remove `st_ctime_ns` from the tuple:
+**The change.** Take `st_ctime_ns` out of the tuple, and compare it only between the two readings by handle:
 
 ```python
 identity = lambda st: (st.st_dev, st.st_ino, st.st_size,
                        st.st_mtime_ns, st.st_nlink)
+if (identity(opened) != identity(after)
+        or opened.st_ctime_ns != after.st_ctime_ns
+        or identity(after) != identity(name_after)):
+    raise _PulseInputError
 ```
 
 Everything else stays.
 
-**One plain code path, no Windows-only step.** `exact_replace.py`, `git_read.py` and `session.py` swap in the creation time on Windows first. The pulse will not: the Maintainer's 2026-11-21 direction for the meter was one plain code path, with checks matched to what they protect ("That is way too much for a log that doesn't actually do anything."). It was about the meter; applying it here is Strategy's reading, and a reviewer may disagree.
+**One plain code path, no Windows-only step.** `exact_replace.py`, `git_read.py` and `session.py` swap in the creation time on Windows first. The pulse will not, and it is still one plain code path: the change time is still compared where both readings come from the open file. The Maintainer's 2026-11-21 direction for the meter was one plain code path, with checks matched to what they protect ("That is way too much for a log that doesn't actually do anything."). It was about the meter; applying it here is Strategy's reading, and a reviewer may disagree.
 
-**For the Security Review.** The removed field guarded notice of a change to the file's record alone (permissions or owner) during the read; no byte the pulse reads changes. Kept: the bytes still come from one file (same device and file id by handle and by name), whose size, last write time and count of names did not change during the read, reached through no link.
+**For the Security Review.** The change time is kept between the two readings by handle and dropped only from the reading by name, where Windows reports another time. Kept: the bytes still come from one file (same device and file id by handle and by name), whose size, last write time and count of names did not change during the read, reached through no link.
 
 **Reuse.** N/A: no code added. No doctrine surface; no non-archived document says the pulse compares change time (searched `.md` files for `ctime`, `change time` and `pulse`), so no correction.
 
@@ -40,15 +44,15 @@ Everything else stays.
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
-| C1 | Remove the field; shipped copy; lock; changelog | Plan J merged first (it also edits `pulse.py`) | `pulse.py` and its copy |
+| C1 | Narrow the change-time test; shipped copy; lock; changelog | Plan J merged first (it also edits `pulse.py`) | `pulse.py` and its copy |
 
 ## Acceptance criteria
 
-C1: the direct check below refuses most rounds before and none after. `tests/integration/test_gauge.py` runs once, whole, after the change: each remaining failure is named with its cause; a cause other than this fault is reported, not chased. `cmp` of the two copies prints nothing; `verify_integrity.py` reports OK; `CHANGELOG.md` gains one `Fixed` line under Minor changes.
+C1: the direct check below refuses at least one round before and none after. `tests/integration/test_gauge.py` runs once, whole, after the change: each remaining failure is named with its cause; a cause other than this fault is reported, not chased. `cmp` of the two copies prints nothing; `verify_integrity.py` reports OK; `CHANGELOG.md` gains one `Fixed` line under Minor changes, citing this plan.
 
 ## Verification
 
-Direct check, once before and once after, from the work folder:
+Direct check, once before and once after, from the work folder, run in Git Bash:
 
 ```
 C:\ProgramData\Anaconda3\python.exe -c '
@@ -63,7 +67,7 @@ def refused():
 print(sum(refused() for _ in range(300)), "of 300 refused"); f.unlink()'
 ```
 
-Expected: most refused before, 0 after. Then `cp dev/tools/pulse.py templates/skills/_lib/pulse.py`; then, alone in its commit, `install/scaffold.py upgrade --target . --finalize dev/tools/pulse.py`, then `install/verify_integrity.py --target .`.
+Expected: at least one refused before (the count may be well below 300), 0 after. Then `cp dev/tools/pulse.py templates/skills/_lib/pulse.py`; then, alone in its commit, `install/scaffold.py upgrade --target . --finalize dev/tools/pulse.py`, then `install/verify_integrity.py --target .`.
 
 Not run: a second host, the rest of the suite.
 
@@ -132,3 +136,13 @@ Not covered: Mac and Linux behaviour (read, not run), the tests.
 Elapsed: about 12 minutes. Tokens: unknown.
 
 **Verdict**: REVISE
+
+## Plan response -- Claude Sonnet 5.5 (Implementation, for the plan's owner) -- 2026-11-22
+
+- Security 1 (blocking): took the exact code and the replacement sentence; the In brief line, Build summary, "The change" lead-in and one-code-path paragraph now agree.
+- Security 2 (blocking): "most refused" became "at least one refused" in Acceptance criteria and Verification.
+- Usual 1: settled by Security 2; Verification also says the count may be well below 300.
+- Usual 2: Verification says the check is run in Git Bash.
+- Usual 3: Acceptance criteria say the changelog line cites this plan.
+
+Disposition: ready-to-implement. Not run for this response: any test. Elapsed: unknown. Tokens: unknown.
