@@ -331,8 +331,10 @@ stay with the Maintainer.
    `python tests/tier_inventory.py cert-files --write <new absolute path>`
    saves their names, and, from the repository root,
    `CAIRN_FULL_SUITE=1 python -m pytest @<that path> --quality-gate-shuffle-seed=0 -rs`
-   runs them (on Windows, set the variable first). The Cairn-only tests and
-   the system-independent files run on the Mac only. Write the three results
+   runs them (on Windows, set the variable first). A file that passed in an
+   earlier run on that platform, with every input unchanged since, is left
+   out of the list (`dev/rules/certifying-runs.md`, last paragraph). The
+   Cairn-only tests and the system-independent files run on the Mac only. Write the three results
    in the release notes (`dev/rules/certifying-runs.md`), with every test
    skipped on each platform and its reason, and, for Linux and Windows, the
    `cert-files` command and its file count. Any nonzero exit on any platform, a membership refusal on
