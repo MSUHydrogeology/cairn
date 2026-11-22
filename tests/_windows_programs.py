@@ -11,7 +11,9 @@ swapped after it was checked rely on. The launcher is compiled once per process
 with the .NET compiler every Windows ships, as
 `tests/security/test_git_read_routes.py` does for its own stand-in.
 
-Nothing here runs on a POSIX host except `link` and `program_name`.
+On a POSIX host `place_program` writes the script with its `#!` line and the
+execute bit, `program_name` returns the name unchanged, `SYSTEM_ENV` is empty and
+nothing is compiled.
 """
 from __future__ import annotations
 
