@@ -185,3 +185,31 @@ Not covered: Mac and Linux behaviour, any test or direct-check run, whether the 
 Elapsed: about 6 minutes. Tokens: unknown.
 
 **Verdict**: ACCEPT
+
+## Code review -- Claude Opus 5.5 (Security Review) -- 2026-11-22
+
+Reviewed commit: b76327b3cc6d1ce1c5d352a6d8eb153ff0bb3485; range b79c55b1180523d9b0167cffe5d5240e415a6637 to that commit.
+
+**Obligation**: Internal Security Review (code)
+**Findings**: raised (none blocking)
+
+I agree with the usual review on the diff, the copy, the lock and the changelog; on what stays enforced, my wording governs.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The built code is the plan Security Review's code exactly; nothing else in the file moved -- `git diff b79c55b1 b76327b3 -- dev/tools/pulse.py`.
+2. **Best alternative.** None better. Still enforced: no link or reparse point on any path part, a regular file with one name, the same device and file id at open, after the read and by name, size and write time unchanged, and change time unchanged between the two readings by handle -- `dev/tools/pulse.py` 66-109.
+3. **What would show it wrong.** A refusal in the direct check after the change; the record says 0 of 300, which I did not rerun.
+
+**Findings**
+
+1. Non-blocking. On Mac and Linux the change time is no longer compared with the reading by name, so a permissions or owner change made after the last read by handle goes unseen. No byte read can change in that moment, and the reading by name still ties the name to the same file; acceptable.
+2. Non-blocking. The one failing test's cause holds on reading: `tests/test_verify_counts.py` 436-437 puts a quoted Windows path inside a second string, so `\U` reaches Python unescaped. It does not touch the pulse.
+
+The change reads and prints nothing new. `cmp` of the two copies prints nothing; `verify_integrity.py` reports OK (70 files).
+
+Not covered: Mac and Linux (read, not run), any test or direct-check run.
+
+Elapsed: about 8 minutes. Tokens: unknown.
+
+**Verdict**: ACCEPT
