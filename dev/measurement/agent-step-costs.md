@@ -139,14 +139,26 @@ runs cost machine time, not tokens, and are listed separately.
 | Arc H, the meter reads a real Claude log folder | plan, by the plan's agent | Medium | 127,139 | 3 | awaiting plan review; found the Windows-only tests fail in their set-up |
 | | plan review, usual | Medium | 145,226 | 4 | revise: three blocking |
 | | plan review, Security | High | 97,922 | 3 | revise: one blocking |
-| Arc H, the meter reads a real Claude log folder | build, by the plan's agent | Medium | 160,249 | 3 | awaiting code review; the Windows-only tests cannot run on this machine |
+| Arc H, the meter reads a real Claude log folder | build, by the plan's agent, resumed | Medium | 33,110 | 3 | awaiting code review; the Windows-only tests cannot run on this machine; the harness reports 160,249 for the agent in all |
 | | code review, usual | Medium | 81,648 | 1 | accept; three notes |
 | | code review, Security | High | 97,118 | 2 | accept; two notes |
 | Certify on three platforms | edits to the two pages | Medium | 89,182 | 1 | done; Strategy found the secrets scans left without a step |
 | | Security read of the edits | High | 109,610 | 2 | revise: three blocking, fixed in its words |
-| | the same reviewer, one clause of its wording | High | 113,211 | 1 | the narrower form is acceptable |
+| | the same reviewer, resumed, on one clause of its wording | High | 3,601 | 1 | the narrower form is acceptable; the harness reports 113,211 for the agent in all |
+| Arc I, the meter does not judge a project's folders | plan, by the plan's agent | Medium | 187,761 | 5 | awaiting plan review; found that an earlier plan's markers broke the document check |
+| | plan review, usual | Medium | 175,832 | 4 | revise: two blocking |
+| | plan review, Security | High | 102,959 | 2 | revise: one blocking; the plan was then withdrawn for the simple meter |
+| A simple usage meter | proposal review, usual | Medium | 147,778 | 3 | revise: four blocking, all on the wording |
+| | proposal review, Security | High | 95,910 | 2 | revise: one blocking; the direction and the consent answer judged right |
+| | plan, by the plan's agent | Medium | 406,099 | 18 | awaiting plan review; five chunks |
+| | plan review, usual | Medium | 118,168 | 2 | revise: two blocking |
+| | plan review, Security | High | 148,659 | 4 | revise: three blocking; one needed the Maintainer's word |
+| | fold of both plan reviews and the build, the same agent resumed | Medium | 197,825 | 33 | awaiting code review; the meter goes from 7,573 lines to 4,624; the harness reports 603,924 for the agent in all |
+| | code review, usual | Medium | 148,768 | 2 | accept; four notes |
+| | code review, Security | High | 143,691 | 3 | accept; two notes |
+| | response to both code reviews, the same agent resumed | Medium | 16,827 | 2 | ready to archive; the harness reports 620,751 for the agent in all |
 
-Total for the day so far: 17,213,992 tokens across 121 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 18,867,520 tokens across 133 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -211,7 +223,7 @@ Measured:
   Strategy put every design decision in the brief, so the author did no
   design, and Strategy folded the reviews itself, so no agent was resumed or
   spawned for that. Two against two is a small sample.
-- **Sixty-one review passes so far.** Two were further passes that a design change required: one
+- **Sixty-nine review passes so far.** Two were further passes that a design change required: one
   by the Maintainer, and one to close a Security finding with a simpler rule. No pass has yet had to come back to check a fix.
 - **Replies of five lines work.** From 2026-11-21 each agent writes its full account into
   the plan or proposal and answers the coordinating session in a fixed form of five or six
@@ -293,5 +305,5 @@ input; the rates were not looked up, so no figure in money is given here.
 
 Add a dated section for each working day. Take tokens and minutes from the
 harness's own report for each run, and write `unknown` where it gives none.
-Never estimate a token figure. The row at the end of v0.9 on recounting review
+Never estimate a token figure. A resumed agent's figure is its running total, because the harness reports the size of the agent's last request: for a resumed stage, write the increase over the agent's previous figure and name the running total in the result. Rows before the evening of 2026-11-21 for resumed stages may count an agent's earlier stages twice. The row at the end of v0.9 on recounting review
 passes (`dev/PLANNING.md`, section 2) reads this file.
