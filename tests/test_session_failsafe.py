@@ -353,7 +353,7 @@ def test_interpreter_resolved_from_local_env_and_reported(repo, capsys):
 
     out = capsys.readouterr().out
     assert rc == 0
-    assert f"interpreter: {interp}  (from local-env.json)" in out
+    assert f"interpreter: {Path(interp).as_posix()}  (from local-env.json)" in out
 
 
 def test_absent_local_env_uses_fallback_with_guidance(repo, capsys):

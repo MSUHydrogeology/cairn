@@ -434,7 +434,7 @@ finally:
         action = (
             "import sys,types; poisoned=types.ModuleType('_cairn_verified_git_read'); "
             "exec(\"def __getattr__(name):\\n"
-            f" from pathlib import Path; Path({str(cache_marker)!r}).write_text('cache')\\n"
+            f" from pathlib import Path; Path({cache_marker.as_posix()!r}).write_text('cache')\\n"
             " raise AssertionError('cached helper used')\", poisoned.__dict__); "
             "sys.modules['_cairn_verified_git_read']=poisoned; " + action
         )

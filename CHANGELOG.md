@@ -45,6 +45,9 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
+- **Fixed: The snapshot step writes UTF-8 on Windows.** A snapshot written to a file no longer turns non-ASCII characters into console-encoded text or adds carriage returns, so the pulse reads it.
+- **Fixed: The pulse prints each usage row's weighted total.** The usage line ends with `weighted=` and the row's total, or `weighted=unknown` where the row has none.
+- **Fixed: Three tests that could not pass on Windows now can.** One built a path that broke inside generated code, one moved a file between drives with a rename, and one expected backslashes in a path that session start prints with forward slashes.
 - **Fixed: The pulse reads a report it has just written on Windows.** On Windows the pulse no longer refuses a fresh report because the file's creation time and change time differ; it still refuses a file that changed during the read. ([plan](dev/plans/archive/2026-11-22-defect-arc-k-pulse-reads-on-windows.md))
 - **Fixed: The usage meter's table of token weights covers the models now in use.** It has rows for Claude Fable 5.2, Sonnet 5.5 and Haiku 5.5 and for the newest OpenAI and Gemini models, prices a long prompt at its higher weights, and weights a Codex reply by its turn's selected model. ([plan](dev/plans/archive/2026-11-22-defect-arc-j-meter-weights-table.md))
 - **Fixed: A new table of token weights no longer makes the usage ledger unreadable.** Days already folded keep their earlier weighting. ([plan](dev/plans/archive/2026-11-22-defect-arc-j-meter-weights-table.md))

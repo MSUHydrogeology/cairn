@@ -898,7 +898,11 @@ def render_text(pulse):
                          + f"tool={row['tool'] or 'unknown'} "
                          + f"model={row['model'] or 'unknown'} "
                          + f"events={row['events']} unknown-events={row['unknown_events']} "
-                         + kind_values)
+                         + kind_values
+                         + " weighted="
+                         + (str(row['reference_tokens']['total'])
+                            if row['reference_tokens']['total'] is not None
+                            else 'unknown'))
         wait = meter_usage["wait"]
         if "observed" not in wait or wait["observed"] is None:
             lines.append("gauge: test waits observed=unknown; coverage=unknown")

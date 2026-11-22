@@ -354,7 +354,13 @@ def main(argv: Optional[List[str]] = None) -> int:
             print("audit: pulse input incomplete: explicit public snapshot is unreadable or invalid",
                   file=sys.stderr)
             return 2
-        sys.stdout.write(output.decode("utf-8"))
+        stream = getattr(sys.stdout, "buffer", None)
+        if stream is None:
+            sys.stdout.write(output.decode("utf-8"))
+        else:
+            sys.stdout.flush()
+            stream.write(output)
+            stream.flush()
         return 0
     if (args.week is not None or args.project_alias is not None or args.artifact
             or args.always_loaded or args.deliberation or args.model_tier
