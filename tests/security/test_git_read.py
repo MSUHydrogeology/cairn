@@ -607,6 +607,9 @@ def test_old_git_admits_only_reviewed_metadata_config_and_index_list_forms(
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="real Git unavailable")
+@pytest.mark.skipif(os.name == "nt",
+                    reason="the test replaces the POSIX capture function; Windows runs "
+                           "the hook-index read in its worker")
 def test_hook_index_uses_private_snapshot_and_closed_child_environment(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     git = shutil.which("git")
@@ -1282,8 +1285,10 @@ _WORKTREE_EXTENSION = b"[extensions]\n\tworktreeConfig = true\n"
 _WORKTREE_ORIGIN = b'[remote "origin"]\n\turl = https://example.invalid/repo.git\n'
 
 
-def _real_git_config_control(tmp_path: Path) -> tuple[Path, str]:
+def _real_git_config_control(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, str]:
     """A target folder and PATH for real Git 2.44 or newer, else skip the control."""
+    _bind_worker_source(monkeypatch)  # Windows: bind the worker, clear the version cache
     target = tmp_path / "target"
     target.mkdir()
     git_path = shutil.which("git")
@@ -1306,8 +1311,9 @@ def _real_git_config_control(tmp_path: Path) -> tuple[Path, str]:
     (_WORKTREE_ORIGIN + _WORKTREE_EXTENSION, b"https://example.invalid/repo.git\0"),
 ], ids=["https", "ssh", "extension-after-origin"])
 def test_read_origin_ignores_the_worktree_config_extension(
-        config: bytes, expected: bytes, tmp_path: Path) -> None:
-    target, path_value = _real_git_config_control(tmp_path)
+        config: bytes, expected: bytes, tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    target, path_value = _real_git_config_control(tmp_path, monkeypatch)
     result = git_read.read_origin_from_config(
         config, target=target, path_value=path_value)
     assert result.state == "completed" and result.returncode == 0
@@ -1328,8 +1334,8 @@ def test_read_origin_ignores_the_worktree_config_extension(
 ], ids=["include", "includeif", "no-origin", "two-origins", "empty-origin",
         "valueless-origin"])
 def test_read_origin_with_the_worktree_config_extension_still_refuses_other_shapes(
-        config: bytes, tmp_path: Path) -> None:
-    target, path_value = _real_git_config_control(tmp_path)
+        config: bytes, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    target, path_value = _real_git_config_control(tmp_path, monkeypatch)
     result = git_read.read_origin_from_config(
         config, target=target, path_value=path_value)
     assert result.state == "failed" and result.stdout == b""
