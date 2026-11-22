@@ -364,6 +364,14 @@ The prices used:
   about 528,000 tokens at each of its 1,993 replies, and its cache is kept
   for an hour, which is priced at twice the model's input price where a
   five-minute cache is priced at one and a quarter times.
+- **The same tokens at other models' prices.** This is a re-pricing, not a
+  forecast: another model would read and write different amounts. The
+  coordinating session's 530 dollars would be about 370 at Opus 5.5's prices
+  and 185 at Sonnet 5.5's. Opus reads the cache at Fable's price, so it saves
+  only on new material and on output. Of the 530, about 40 percent is reading
+  the conversation back from the cache, 29 percent is new material entering
+  the cache and 31 percent is what the session writes. The Maintainer asked
+  for this comparison on 2026-11-22.
 - **When this count was taken, the harness's figures for the agent runs listed
   above summed to about 18.9 million tokens. The logs showed 725 million for
   the agents**, 38 times that.
