@@ -64,6 +64,9 @@ from install._scaffold.config import (  # noqa: E402
 from install._scaffold.lockfile import read_lockfile  # noqa: E402
 
 from tests._repo_root import repository_root
+from tests._windows_programs import (
+    SYSTEM_ENV as _SYSTEM_ENV, make_symlink, place_program, program_name,
+)
 
 CAIRN_ROOT = repository_root(Path(__file__))
 MODULE = "portable-security-sweeps"
@@ -246,14 +249,14 @@ _check_argv(sys.argv[1:])
 
 _FAKE_HISTORY_GIT = '''
 if len(sys.argv) > 2 and sys.argv[1] == "git":
-    _history_marker = os.path.join(os.path.dirname(__file__), ".history-git-used")
+    _history_marker = os.path.join(os.path.dirname(SELF), ".history-git-used")
     if not HISTORY_GIT_FIRST_ONLY or not os.path.exists(_history_marker):
         if HISTORY_GIT_FIRST_ONLY:
             open(_history_marker, "w").close()
         import subprocess as _history_subprocess
         _history = _history_subprocess.run(
-            ["git", "-C", sys.argv[2], "log", "-p", "-U0", "--all",
-             "--full-history", "--text", "--no-textconv", "--no-ext-diff"],
+            ["git", "-C", sys.argv[2], "log", "-p", "-U0",
+             *sys.argv[sys.argv.index("--log-opts") + 1].split()],
             capture_output=True, env=os.environ.copy(), check=False)
         if _history.returncode != 0:
             raise SystemExit(_history.returncode)
@@ -355,6 +358,16 @@ def fake_tool(
     version_line = version if bare_version else f"gitleaks version {version}"
     body = f'''#!{sys.executable}
 import json, os, sys
+SELF = os.path.abspath(sys.argv[0])
+def swap_self(text):
+    if os.name == "nt":
+        # Windows will not let a running program be written to, but it lets one
+        # be renamed: move the file aside, put a copy back, then change the copy.
+        import shutil
+        os.replace(SELF, SELF + ".was-running")
+        shutil.copyfile(SELF + ".was-running", SELF)
+    with open(SELF, "a", encoding="utf-8") as fh:
+        fh.write(text)
 GLOBAL_FLAGS = {ADAPTER_GLOBAL_FLAGS!r}
 SUBCOMMAND_FLAGS = {ADAPTER_SUBCOMMAND_FLAGS!r}
 HISTORY_GIT_FIRST_ONLY = {history_git_first_only!r}
@@ -376,9 +389,8 @@ def record(kind):
 if "--version" in sys.argv[1:]:
     record("version")
     if {mutate_self_on_version!r}:
-        with open(__file__, "a", encoding="utf-8") as fh:
-            fh.write("# swapped between validation and invocation\\n")
-    sys.stdout.write({version_line!r} + "\\n")
+        swap_self("# swapped between validation and invocation\\n")
+    sys.stdout.buffer.write(({version_line!r} + "\\n").encode("utf-8"))
     raise SystemExit({version_rc!r})
 record("scan")
 {_FAKE_ARGV_GATE}
@@ -404,20 +416,20 @@ if {write_report!r} and "--report-path" in sys.argv:
         with open(dest, "w", encoding="utf-8") as fh:
             json.dump(_findings, fh)
 if {stdout_text!r}:
-    sys.stdout.write({stdout_text!r})
+    sys.stdout.buffer.write({stdout_text!r}.encode("utf-8"))
 if {stderr_text!r}:
-    sys.stderr.write({stderr_text!r})
+    sys.stderr.buffer.write({stderr_text!r}.encode("utf-8"))
 if {hang!r}:
     import time
     time.sleep(3600)
 if {die_on_signal!r}:
+    if os.name == "nt":
+        os._exit(0xC0000005)  # Windows has no signals; this is an access violation
     import signal
     os.kill(os.getpid(), signal.SIGKILL)
 raise SystemExit(_rc)
 '''
-    path.write_text(body, encoding="utf-8")
-    path.chmod(0o755)
-    return path
+    return place_program(path, body)
 
 
 def read_log(log: Path) -> list[dict]:
@@ -435,7 +447,7 @@ def run_runner(
     argv += extra_argv if extra_argv is not None else ["--json"]
     proc = subprocess.run(
         argv, capture_output=True, text=True, timeout=180,
-        env={"PATH": path_env, "HOME": str(target), "LC_ALL": "C",
+        env={**_SYSTEM_ENV, "PATH": path_env, "HOME": str(target), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1"},
     )
     payload: dict = {}
@@ -657,7 +669,7 @@ def test_a_repo_local_symlink_to_an_outside_binary_is_refused(
     cellar = tmp_path / "cellar"
     cellar.mkdir()
     real = fake_tool(cellar / "gitleaks-real", log=tmp_path / "log.jsonl")
-    (sweep_target / "gitleaks").symlink_to(real)
+    make_symlink(sweep_target / program_name("gitleaks"), real)
     runner = runner_copy(tmp_path)
     rc, summary, out = run_runner(runner, sweep_target, path_env=str(sweep_target))
     assert rc == 20, out
@@ -673,10 +685,10 @@ def test_a_symlink_resolving_into_the_repo_is_refused(
     tree whose target resolves **inside** it."""
     inner = sweep_target / "tools"
     inner.mkdir()
-    fake_tool(inner / "gitleaks-real", log=tmp_path / "log.jsonl")
+    real = fake_tool(inner / "gitleaks-real", log=tmp_path / "log.jsonl")
     bindir = tmp_path / "bin"
     bindir.mkdir()
-    (bindir / "gitleaks").symlink_to(inner / "gitleaks-real")
+    make_symlink(bindir / program_name("gitleaks"), real)
     runner = runner_copy(tmp_path)
     rc, summary, out = run_runner(runner, sweep_target, path_env=str(bindir))
     assert rc == 20, out
@@ -696,13 +708,16 @@ def test_a_package_manager_symlink_outside_the_repo_is_accepted_and_both_paths_r
     real = fake_tool(cellar / "gitleaks-8.30.1", log=tmp_path / "log.jsonl")
     bindir = tmp_path / "bin"
     bindir.mkdir()
-    (bindir / "gitleaks").symlink_to(real)
+    make_symlink(bindir / program_name("gitleaks"), real)
     runner = runner_copy(tmp_path)
     rc, summary, out = run_runner(runner, sweep_target, path_env=str(bindir))
     assert rc != 20, out
     facts = summary["adapter_facts"]
-    assert facts["adapter_lexical"] == str(bindir / "gitleaks")
-    assert facts["adapter_resolved"] == str(real)
+    # Windows spells the lexical name with the case its extension list gives
+    # (`.EXE`), so the two spellings are compared case-insensitively there.
+    assert (os.path.normcase(facts["adapter_lexical"])
+            == os.path.normcase(str(bindir / program_name("gitleaks"))))
+    assert os.path.normcase(facts["adapter_resolved"]) == os.path.normcase(str(real))
     assert facts["adapter_lexical"] != facts["adapter_resolved"]
 
 
@@ -712,7 +727,12 @@ def test_a_non_executable_file_is_degraded(
     bindir = tmp_path / "bin"
     bindir.mkdir()
     tool = fake_tool(bindir / "gitleaks")
-    tool.chmod(0o644)
+    if os.name == "nt":
+        # Windows has no executable bit: a program is a file whose name ends in
+        # an executable extension, so a file that does not is the same case.
+        tool.rename(tool.with_suffix(".dat"))
+    else:
+        tool.chmod(0o644)
     runner = runner_copy(tmp_path)
     rc, summary, out = run_runner(runner, sweep_target, path_env=str(bindir))
     # shutil.which() itself screens on the executable bit, so the observable is
@@ -775,8 +795,7 @@ def test_probe_version_is_guarded_by_revalidation(
     gitdir = tmp_path / "gitbin"
     gitdir.mkdir()
     common_dir = str((sweep_target / ".git").resolve())
-    (gitdir / "git").write_text(
-        f'''#!{sys.executable}
+    place_program(gitdir / "git", f'''#!{sys.executable}
 import sys
 args = sys.argv[1:]
 if args == ["--version"]:
@@ -787,10 +806,7 @@ with open({str(adapter)!r}, "ab") as fh:
 if "rev-parse" in args:
     sys.stdout.write({common_dir!r} + "\\n")
 sys.exit(0)
-''',
-        encoding="utf-8",
-    )
-    (gitdir / "git").chmod(0o755)
+''')
     runner = runner_copy(tmp_path)
     rc, summary, out = run_runner(
         runner, sweep_target,
@@ -820,9 +836,7 @@ def test_the_commit_reachability_probes_git_call_is_guarded_by_revalidation(
     gitdir.mkdir()
     log = tmp_path / "log.jsonl"
     git_fake = git_shim(gitdir / "git", log)
-    adapter = bindir / "gitleaks"
-    adapter.write_text(
-        f'''#!{sys.executable}
+    adapter = place_program(bindir / "gitleaks", f'''#!{sys.executable}
 import json, os, sys
 LOG = {str(log)!r}
 def record(kind):
@@ -840,10 +854,7 @@ if "--report-path" in sys.argv:
     with open(dest, "w", encoding="utf-8") as fh:
         json.dump([], fh)
 raise SystemExit(0)
-''',
-        encoding="utf-8",
-    )
-    adapter.chmod(0o755)
+''')
     digest = hashlib.sha256(adapter.read_bytes()).hexdigest()
     runner = runner_copy(
         tmp_path, {platform_triple("8.30.1"): (digest, "GL-test")}
@@ -853,11 +864,17 @@ raise SystemExit(0)
         path_env=os.pathsep.join([str(bindir), str(gitdir)]),
     )
     assert rc == 20, out
-    history = leg(summary, "history")
-    assert history["status"] == "DEGRADED", history
-    assert "drifted between validation and invocation" in history["reason"], (
-        history
-    )
+    if os.name == "nt":
+        # Windows builds its Git relay before the history question is asked, and
+        # the builder revalidates Git first: it meets the swap and the run stops
+        # at the preflight leg, without the history leg's own wording.
+        assert [item["leg"] for item in summary["legs"]] == ["preflight"], summary
+    else:
+        history = leg(summary, "history")
+        assert history["status"] == "DEGRADED", history
+        assert "drifted between validation and invocation" in history["reason"], (
+            history
+        )
     git_entries = [e for e in read_log(log) if e.get("kind") == "git"]
     assert not any("HEAD^{commit}" in e["argv"] for e in git_entries), (
         "the commit-reachability probe ran against a Git binary that had "
@@ -876,9 +893,15 @@ def test_reduced_mode_child_path_is_an_empty_off_tree_directory(
     fake_tool(bindir / "gitleaks", log=log)
     # git IS resolvable here, so the empty PATH is a choice, not an accident.
     assert REAL_GIT, "real Git unavailable"
-    (bindir / "git").symlink_to(os.path.realpath(REAL_GIT))
+    path_env = str(bindir)
+    if os.name == "nt":
+        # Git for Windows runs only from its own install folder, so that folder
+        # goes on the path where a POSIX host links the program in.
+        path_env = os.pathsep.join([path_env, os.path.dirname(REAL_GIT)])
+    else:
+        (bindir / "git").symlink_to(os.path.realpath(REAL_GIT))
     runner = runner_copy(tmp_path)
-    rc, summary, out = run_runner(runner, sweep_target, path_env=str(bindir))
+    rc, summary, out = run_runner(runner, sweep_target, path_env=path_env)
     assert summary["mode"] == "reduced", out
     scans = [entry for entry in read_log(log) if entry["kind"] == "scan"]
     assert scans, "the current-tree leg did not run"
@@ -907,7 +930,11 @@ def test_full_mode_child_path_contains_only_the_verified_git_directory(
     log = tmp_path / "log.jsonl"
     adapter = fake_tool(bindir / "gitleaks", log=log)
     assert REAL_GIT, "real Git unavailable"
-    (gitdir / "git").symlink_to(os.path.realpath(REAL_GIT))
+    if os.name == "nt":
+        gitdir = Path(os.path.dirname(REAL_GIT))
+        git_repo(sweep_target)  # only the history scan reaches Git there
+    else:
+        (gitdir / "git").symlink_to(os.path.realpath(REAL_GIT))
     digest = hashlib.sha256(adapter.read_bytes()).hexdigest()
     runner = runner_copy(tmp_path, {
         platform_triple("8.30.1"): (digest, "GL-8.30.1-test"),
@@ -919,6 +946,19 @@ def test_full_mode_child_path_contains_only_the_verified_git_directory(
     assert summary["mode"] == "full", out
     scans = [entry for entry in read_log(log) if entry["kind"] == "scan"]
     assert scans, "no scan leg ran in full mode"
+    if os.name == "nt":
+        # Windows reaches Git through a relay program the runner builds in a
+        # folder of its own, and the scan's path is that folder alone.  (An
+        # ordinary Windows run does not start the history scan, so the
+        # current-tree scan is the one that shows it.)
+        child_path = scans[0]["env"]["PATH"]
+        assert Path(child_path).name.startswith("relay-"), child_path
+        assert os.pathsep not in child_path, child_path
+        assert str(gitdir) not in child_path and str(bindir) not in child_path
+        (_folder, listing), = scans[0]["path_probe"]
+        assert [name for name in listing if name.endswith(".exe")] == ["git.exe"]
+        assert leg(summary, "current-tree")["result"] == 0, out
+        return
     child_path = scans[0]["env"]["PATH"]
     assert Path(child_path).name == "git-shim", child_path
     assert str(gitdir) not in child_path
@@ -932,6 +972,16 @@ def test_full_mode_child_path_contains_only_the_verified_git_directory(
 # --- the candidate-configuration boundary ----------------------------------
 
 REAL_GIT = shutil.which("git")
+
+#: The last lines of a fake Git that hands the call to the real one.  A POSIX
+#: host replaces the process; Windows has no such call (its `os.execv` starts a
+#: new process and returns at once), so there the fake waits and passes the
+#: exit code on.
+_RUN_REAL_GIT = (
+    f"import subprocess\nraise SystemExit(subprocess.call([{REAL_GIT!r}] + sys.argv[1:]))"
+    if os.name == "nt"
+    else f"os.execv({REAL_GIT!r}, [{REAL_GIT!r}] + sys.argv[1:])"
+)
 
 
 def git_repo(target: Path) -> Path:
@@ -960,11 +1010,9 @@ import json, os, sys
 with open({str(log)!r}, "a", encoding="utf-8") as fh:
     fh.write(json.dumps({{"kind": "git", "argv": sys.argv[1:],
                           "env": dict(os.environ)}}) + "\\n")
-os.execv({REAL_GIT!r}, [{REAL_GIT!r}] + sys.argv[1:])
+{_RUN_REAL_GIT}
 '''
-    path.write_text(body, encoding="utf-8")
-    path.chmod(0o755)
-    return path
+    return place_program(path, body)
 
 
 def _screen_fake_git(path: Path, target: Path, log: Path, mode: str = "valid") -> Path:
@@ -999,9 +1047,7 @@ elif "config" in args:
         sys.stdout.buffer.write(("file:" + {config!r} + "\\0"
                                  + "core.repositoryformatversion\\n0\\0").encode())
 '''
-    path.write_text(body, encoding="utf-8")
-    path.chmod(0o755)
-    return path
+    return place_program(path, body)
 
 
 @pytest.fixture()
@@ -1059,7 +1105,7 @@ def test_both_gitleaks_config_env_vars_are_dropped(
     argv = [sys.executable, str(runner), "--target", str(sweep_target), "--json"]
     proc = subprocess.run(
         argv, capture_output=True, text=True, timeout=180,
-        env={"PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
+        env={**_SYSTEM_ENV, "PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
              "GITLEAKS_CONFIG": "/hostile.toml",
              "GITLEAKS_CONFIG_TOML": "hostile",
              "PYTHONDONTWRITEBYTECODE": "1"},
@@ -1090,7 +1136,7 @@ def test_a_candidate_gitleaksignore_refuses_before_execution(
     if placement == "symlink":
         outside = tmp_path / "elsewhere.txt"
         outside.write_text("abc\n", encoding="utf-8")
-        (sweep_target / ".gitleaksignore").symlink_to(outside)
+        make_symlink(sweep_target / ".gitleaksignore", outside)
     elif placement == "nested":
         deep = sweep_target / "a" / "b" / "c"
         deep.mkdir(parents=True)
@@ -1121,13 +1167,25 @@ def test_the_history_leg_argv_carries_text_no_textconv_and_no_ext_diff(
         path_env=os.pathsep.join([str(bd), os.path.dirname(REAL_GIT)]),
     )
     assert summary["mode"] == "full", out
-    history = [e for e in read_log(log) if e["kind"] == "scan"][1]["argv"]
+    if os.name == "nt":
+        # An ordinary Windows run never starts the history scan (it runs only from
+        # a frozen store that the release controller binds), so what it would send
+        # is read from the argv the runner builds for that leg.
+        module = load_runner(runner)
+        work = module.materialize_workspace(str(tmp_path / "work"), [])
+        history, _report = module._leg_argv(
+            module.resolve_executable("gitleaks", sweep_target, str(bd)),
+            "history", sweep_target, work)
+    else:
+        history = [e for e in read_log(log) if e["kind"] == "scan"][1]["argv"]
     assert "--log-opts" in history, history
     opts = history[history.index("--log-opts") + 1]
-    for flag in ("--all", "--full-history", "--text", "--no-textconv",
-                 "--no-ext-diff"):
+    # Windows names no `--all`: the frozen store's own roots stand in for it.
+    for flag in (("--all" if os.name != "nt" else "--root"), "--full-history",
+                 "--text", "--no-textconv", "--no-ext-diff"):
         assert flag in opts.split(), (flag, opts)
-    assert rc == 0, out
+    if os.name != "nt":
+        assert rc == 0, out
 
 
 def test_hostile_repo_local_config_loses_to_the_counted_keys(
@@ -1148,7 +1206,7 @@ def test_hostile_repo_local_config_loses_to_the_counted_keys(
     git_repo(sweep_target)
     fired = tmp_path / "sentinel-fired"
     sentinel = tmp_path / "sentinel.sh"
-    sentinel.write_text(f"#!/bin/sh\necho fired > {fired}\n", encoding="utf-8")
+    sentinel.write_text(f"#!/bin/sh\necho fired > {fired.as_posix()}\n", encoding="utf-8")
     sentinel.chmod(0o755)
     hooks = tmp_path / "hooks"
     hooks.mkdir()
@@ -1156,11 +1214,11 @@ def test_hostile_repo_local_config_loses_to_the_counted_keys(
     config.write_text(
         config.read_text(encoding="utf-8")
         + f"\tuseReplaceRefs = true\n"
-        + f"\thooksPath = {hooks}\n"
-        + f"\tfsmonitor = {sentinel}\n"
-        + f"\tpager = {sentinel}\n"
+        + f"\thooksPath = {hooks.as_posix()}\n"
+        + f"\tfsmonitor = {sentinel.as_posix()}\n"
+        + f"\tpager = {sentinel.as_posix()}\n"
         + "\tquotePath = true\n"
-        + f"[diff]\n\texternal = {sentinel}\n"
+        + f"[diff]\n\texternal = {sentinel.as_posix()}\n"
         + "[protocol]\n\tallow = always\n",
         encoding="utf-8",
     )
@@ -1205,7 +1263,7 @@ def test_every_inherited_git_variable_is_dropped(
     proc = subprocess.run(
         [sys.executable, str(runner), "--target", str(sweep_target), "--json"],
         capture_output=True, text=True, timeout=180,
-        env={"PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
+        env={**_SYSTEM_ENV, "PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1", **seeded},
     )
     assert proc.returncode != 0, proc.stdout
@@ -1250,7 +1308,7 @@ def test_policy_fingerprints_reach_an_off_tree_ignore_file_only(
         [sys.executable, str(runner), "--target", str(sweep_target),
          "--policy", str(policy), "--json"],
         capture_output=True, text=True, timeout=180,
-        env={"PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
+        env={**_SYSTEM_ENV, "PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1"},
     )
     summary = json.loads(proc.stdout)
@@ -1420,11 +1478,11 @@ def test_the_screen_does_not_execute_candidate_configuration(
     git_repo(sweep_target)
     fired = tmp_path / "sentinel-fired"
     sentinel = tmp_path / "sentinel.sh"
-    sentinel.write_text(f"#!/bin/sh\necho fired > {fired}\n", encoding="utf-8")
+    sentinel.write_text(f"#!/bin/sh\necho fired > {fired.as_posix()}\n", encoding="utf-8")
     sentinel.chmod(0o755)
     config = sweep_target / ".git" / "config"
     config.write_text(
-        config.read_text(encoding="utf-8") + f"\tpager = {sentinel}\n",
+        config.read_text(encoding="utf-8") + f"\tpager = {sentinel.as_posix()}\n",
         encoding="utf-8",
     )
     rc, _summary, out, log = _sweep(tmp_path, sweep_target)
@@ -1450,7 +1508,7 @@ def test_a_config_origin_outside_the_git_directory_refuses(
     outside = tmp_path / "outside.config"
     outside.write_text(config.read_text(encoding="utf-8"), encoding="utf-8")
     config.unlink()
-    config.symlink_to(outside)
+    make_symlink(config, outside)
     rc, summary, out, log = _sweep(tmp_path, sweep_target)
     assert rc == 20, out
     assert read_log(log) == []
@@ -1468,7 +1526,7 @@ def test_the_screen_accepts_an_ordinary_repository(
         [REAL_GIT, "-C", str(sweep_target), "remote", "add", "origin",
          "https://example.invalid/x.git"],
         check=True, capture_output=True,
-        env={"PATH": os.path.dirname(REAL_GIT), "HOME": str(sweep_target),
+        env={**_SYSTEM_ENV, "PATH": os.path.dirname(REAL_GIT), "HOME": str(sweep_target),
              "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull},
     )
     rc, summary, out, log = _sweep(tmp_path, sweep_target)
@@ -1635,7 +1693,7 @@ def test_an_include_origin_outside_the_git_dir_refuses_immediately(
         encoding="utf-8",
     )
     config.unlink()
-    config.symlink_to(outside)
+    make_symlink(config, outside)
     rc, summary, out, log = _sweep(tmp_path, sweep_target)
     assert rc == 20, out
     assert read_log(log) == []
@@ -1647,11 +1705,9 @@ def test_an_include_origin_outside_the_git_dir_refuses_immediately(
     runner = load_runner()
     gitdir = tmp_path / "gitshim"
     gitdir.mkdir()
-    fake_git = gitdir / "git"
     common_dir = str((sweep_target / ".git").resolve())
     listing = "command line:\0cairnprobe.injected\ntrue\0"
-    fake_git.write_text(
-        f'''#!{sys.executable}
+    fake_git = place_program(gitdir / "git", f'''#!{sys.executable}
 import sys
 args = sys.argv[1:]
 if args == ["--version"]:
@@ -1664,10 +1720,7 @@ if "config" in args:
     sys.stdout.buffer.write({listing!r}.encode("utf-8"))
     raise SystemExit(0)
 raise SystemExit(97)
-''',
-        encoding="utf-8",
-    )
-    fake_git.chmod(0o755)
+''')
     resolved = os.path.realpath(str(fake_git))
     shimmed = runner.Resolved("git", str(fake_git), resolved,
                               os.path.dirname(resolved),
@@ -1721,20 +1774,22 @@ def test_the_config_screens_second_git_call_is_guarded_by_revalidation(
     log = tmp_path / "log.jsonl"
     gitdir = tmp_path / "gitshim"
     gitdir.mkdir()
-    git_fake = gitdir / "git"
-    git_fake.write_text(
-        f'''#!{sys.executable}
+    place_program(gitdir / "git", f'''#!{sys.executable}
 import json, os, sys
+SELF = os.path.abspath(sys.argv[0])
 with open({str(log)!r}, "a", encoding="utf-8") as fh:
     fh.write(json.dumps({{"kind": "git", "argv": sys.argv[1:]}}) + "\\n")
 if "rev-parse" in sys.argv[1:]:
-    with open(__file__, "a", encoding="utf-8") as fh2:
+    if os.name == "nt":
+        # Windows will not let a running program be written to, but it lets one
+        # be renamed: move the file aside, put a copy back, then change the copy.
+        import shutil
+        os.replace(SELF, SELF + ".was-running")
+        shutil.copyfile(SELF + ".was-running", SELF)
+    with open(SELF, "a", encoding="utf-8") as fh2:
         fh2.write("# swapped after servicing rev-parse\\n")
-os.execv({REAL_GIT!r}, [{REAL_GIT!r}] + sys.argv[1:])
-''',
-        encoding="utf-8",
-    )
-    git_fake.chmod(0o755)
+{_RUN_REAL_GIT}
+''')
     bd = tmp_path / "bin"
     bd.mkdir()
     fake_tool(bd / "gitleaks", log=log)
@@ -1769,7 +1824,7 @@ def test_the_residual_is_printed_not_only_documented(
     proc = subprocess.run(
         [sys.executable, str(runner), "--target", str(sweep_target)],
         capture_output=True, text=True, timeout=180,
-        env={"PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
+        env={**_SYSTEM_ENV, "PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1"},
     )
     report = proc.stdout
@@ -1822,7 +1877,7 @@ def _human_report(tmp_path: Path, target: Path, **tool) -> str:
     proc = subprocess.run(
         [sys.executable, str(runner), "--target", str(target)],
         capture_output=True, text=True, timeout=180,
-        env={"PATH": os.pathsep.join(parts), "HOME": str(target), "LC_ALL": "C",
+        env={**_SYSTEM_ENV, "PATH": os.pathsep.join(parts), "HOME": str(target), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1"},
     )
     return proc.stdout
@@ -1852,7 +1907,7 @@ def test_a_hostile_path_string_cannot_forge_a_report_line(
         [sys.executable, str(runner), "--target", str(sweep_target),
          "--json", "--triage-record", str(triage)],
         capture_output=True, text=True, timeout=180,
-        env={"PATH": str(bd), "HOME": str(tmp_path), "LC_ALL": "C",
+        env={**_SYSTEM_ENV, "PATH": str(bd), "HOME": str(tmp_path), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1"},
     )
     assert proc.returncode == 10
@@ -1880,7 +1935,7 @@ def test_bidi_and_nul_in_a_result_field_render_escaped(
         [sys.executable, str(runner), "--target", str(sweep_target),
          "--json", "--triage-record", str(triage)],
         capture_output=True, text=True, timeout=180,
-        env={"PATH": str(bd), "HOME": str(tmp_path), "LC_ALL": "C",
+        env={**_SYSTEM_ENV, "PATH": str(bd), "HOME": str(tmp_path), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1"},
     )
     assert proc.returncode == 10
@@ -1925,7 +1980,7 @@ def test_no_secret_bearing_field_reaches_any_sink(
         [sys.executable, str(runner), "--target", str(sweep_target),
          "--security-verification"],
         capture_output=True, text=True, timeout=180,
-        env={"PATH": str(bd2), "HOME": str(sweep_target), "LC_ALL": "C",
+        env={**_SYSTEM_ENV, "PATH": str(bd2), "HOME": str(sweep_target), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1"},
     )
     sinks.append(proc.stdout)
@@ -2060,7 +2115,10 @@ def test_signal_death_is_degraded(tmp_path: Path, sweep_target: Path) -> None:
     rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target,
                                             die_on_signal=True)
     assert rc == 20, out
-    assert "died on signal" in leg(summary, "current-tree")["reason"]
+    # Windows has no signals: a program that crashes is an exit code the runner
+    # has no meaning for, and that is refused just the same.
+    expected = "died on signal" if os.name != "nt" else "no documented meaning"
+    assert expected in leg(summary, "current-tree")["reason"]
 
 
 def test_a_finding_is_not_hidden_by_an_incomplete_history_leg(
@@ -2084,7 +2142,7 @@ def test_not_applicable_is_distinct_from_incomplete(
     assert REAL_GIT
     subprocess.run([REAL_GIT, "-C", str(sweep_target), "init", "-q"],
                    check=True, capture_output=True,
-                   env={"PATH": os.path.dirname(REAL_GIT),
+                   env={**_SYSTEM_ENV, "PATH": os.path.dirname(REAL_GIT),
                         "HOME": str(sweep_target),
                         "GIT_CONFIG_NOSYSTEM": "1",
                         "GIT_CONFIG_GLOBAL": os.devnull})
@@ -2129,8 +2187,14 @@ def test_a_detached_head_with_its_only_branch_deleted_still_scans_history(
     history = leg(summary, "history")
     assert history["status"] != "NOT_APPLICABLE", history
     scans = [e for e in read_log(log) if e["kind"] == "scan"]
-    assert len(scans) == 2, "the history leg did not run"
-    assert rc == 0, out
+    if os.name == "nt":
+        # An ordinary Windows run does not start the history scan: it asks for
+        # the frozen store the release controller binds, and says so.
+        assert "frozen history" in history["reason"], history
+        assert rc == 20, out
+    else:
+        assert len(scans) == 2, "the history leg did not run"
+        assert rc == 0, out
 
 
 def test_a_shallow_clone_cannot_claim_full_history_coverage(
@@ -2198,7 +2262,7 @@ def test_the_child_document_matches_the_registry_contract_exactly(
         [sys.executable, str(runner), "--target", str(sweep_target),
          "--security-verification"],
         capture_output=True, text=True, timeout=180,
-        env={"PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
+        env={**_SYSTEM_ENV, "PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1"},
     )
     doc = json.loads(proc.stdout)
@@ -2230,7 +2294,7 @@ def test_the_child_document_is_bounded_strict_utf8_json(
         [sys.executable, str(runner), "--target", str(sweep_target),
          "--security-verification"],
         capture_output=True, timeout=180,
-        env={"PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
+        env={**_SYSTEM_ENV, "PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1"},
     )
     raw = proc.stdout
@@ -2334,7 +2398,7 @@ def _admit_cmd(runner: Path, candidate: Path, target: Path, *,
     parts = [os.path.dirname(REAL_GIT)] if REAL_GIT else []
     proc = subprocess.run(
         argv, capture_output=True, text=True, timeout=300,
-        env={"PATH": os.pathsep.join(parts) or "/nonexistent",
+        env={**_SYSTEM_ENV, "PATH": os.pathsep.join(parts) or "/nonexistent",
              "HOME": str(target), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1"},
     )
@@ -2641,9 +2705,9 @@ def test_verify_version_support_refuses_a_candidate_inside_the_repository_under_
     assert read_log(log) == []
 
     real = fake_tool(sweep_target / "tools_real", findings=[], log=log)
-    link = tmp_path / "linked-candidate"
-    link.symlink_to(real)
-    rc2, record2, out2 = _admit_cmd(runner, link, sweep_target)
+    linked = tmp_path / program_name("linked-candidate")
+    make_symlink(linked, real)
+    rc2, record2, out2 = _admit_cmd(runner, linked, sweep_target)
     assert rc2 == 20, out2
     assert any("resolved" in r and "inside the repository under check" in r
                for r in record2["refusals"]), record2["refusals"]
@@ -2659,7 +2723,7 @@ def test_verify_version_support_refuses_a_relative_candidate_path(
          "--verify-version-support", "candidate",
          "--confirm-executing-an-unadmitted-binary"],
         capture_output=True, text=True, timeout=120,
-        env={"PATH": "/nonexistent", "HOME": str(sweep_target), "LC_ALL": "C",
+        env={**_SYSTEM_ENV, "PATH": "/nonexistent", "HOME": str(sweep_target), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1"},
     )
     assert proc.returncode == 20, proc.stdout
@@ -2681,6 +2745,8 @@ def test_reduced_mode_is_reachable_without_any_source_change(
     assert rc == 5
 
 
+@pytest.mark.skipif(os.name != "posix",
+                    reason="the POSIX Git shim; Windows reaches Git through a compiled relay")
 def test_generated_git_shim_uses_bound_log_and_no_contact_url_forms(tmp_path):
     runner = load_runner()
     real_git = shutil.which("git")
@@ -2868,17 +2934,15 @@ def test_production_records_the_selected_git_version_read(
     bindir.mkdir()
     fake_tool(bindir / "gitleaks", log=tmp_path / "adapter.jsonl")
     version_log = tmp_path / "git-version-args.jsonl"
-    git = bindir / "git"
-    git.write_text(
+    place_program(
+        bindir / "git",
         f"#!{sys.executable}\nimport json, sys\n"
         f"open({str(version_log)!r}, 'a').write(json.dumps(sys.argv[1:]) + '\\n')\n"
         "if sys.argv[1:] == ['--version']:\n"
         "    print('git version 2.45.0')\n"
         "    raise SystemExit(0)\n"
         "raise SystemExit(128)\n",
-        encoding="utf-8",
     )
-    git.chmod(0o755)
     runner = runner_copy(tmp_path)
     rc, _summary, out = run_runner(
         runner, sweep_target, path_env=str(bindir))
@@ -2918,7 +2982,7 @@ def _cli_sweep(tmp_path: Path, target: Path, *, tool: dict | None = None,
         [sys.executable, str(runner), "--target", str(target), "--json",
          *extra_argv],
         capture_output=True, text=True, timeout=180, cwd=str(target),
-        env={"PATH": os.pathsep.join(parts), "HOME": str(target),
+        env={**_SYSTEM_ENV, "PATH": os.pathsep.join(parts), "HOME": str(target),
              "LC_ALL": "C", "PYTHONDONTWRITEBYTECODE": "1"},
     )
     summary = json.loads(proc.stdout) if proc.stdout.strip() else {}
@@ -3124,7 +3188,7 @@ def test_cairns_own_run_with_gitleaks_absent_is_incomplete(tmp_path: Path) -> No
     proc = subprocess.run(
         [sys.executable, str(installed_runner), "--target", str(target), "--json"],
         capture_output=True, text=True, timeout=300,
-        env={"PATH": str(empty), "HOME": str(tmp_path), "LC_ALL": "C",
+        env={**_SYSTEM_ENV, "PATH": str(empty), "HOME": str(tmp_path), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1"},
     )
     assert proc.returncode == 5, proc.stdout + proc.stderr
@@ -3159,7 +3223,7 @@ def test_private_triage_record_isolates_findings_from_public_outputs(
         [sys.executable, str(runner), "--target", str(sweep_target),
          "--json", "--triage-record", str(triage_path)],
         capture_output=True, text=True, timeout=180,
-        env={"PATH": str(bd), "HOME": str(tmp_path), "LC_ALL": "C",
+        env={**_SYSTEM_ENV, "PATH": str(bd), "HOME": str(tmp_path), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1"},
     )
     assert proc.returncode == 10, proc.stdout + proc.stderr
