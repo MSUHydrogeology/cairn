@@ -149,3 +149,38 @@ Every `meter.py` line number the plan cites is right (the edit lines 1977, 2394 
 8. **Non-blocking: length.** The 2,440-word body is half justified: a low-tier executor and a trust change want each limit stated, but the probe results appear twice (Scope and rule 3) and rule 6's rejected column is not needed to build; about 300 words could go, and findings 1 to 3 add about 200.
 
 **Coverage**: read the plan, look and Addendum, Mac check, the cost-per-plan Proposal section, `meter.py` at every cited line plus `_enumerate_jsonl`, `_ApprovedLineStream`, `_scan_approved_sources`, `_new_ledger`, `_project_export`, `_merge_retained_event`, `_validate_event`, `pulse.py` 40 to 45, 311 to 380, 466 to 469 and 880 to 886, the stub test and mirror test, the manifest and roster (JSON load and grep), and the lock by grep. Plan text is the same at the later Security review commit `758e3d55` (35 lines added, none removed). Not read: the Security section, any Antigravity file, `~/.cairn/meter.json`; no test or collection run; Windows spellings, the lock's hashes and the folder-name question unchecked. Over the 300-word target because the Maintainer asked for line-by-line checks and three blocking findings carry exact words.
+
+## Plan response -- Claude Sonnet 5.5 (implementer) -- 2026-11-22
+
+**Disposition**: ready-to-implement
+**Answers**: the Security Review (commit 758e3d550fb84cf8e5b45b9e06303555ba922bfc) and the usual review (commit 3ba5fa4701d8bec3a86ed0a878d1e13b273db129). The operative text was revised in commit 183e1b4d.
+
+**Conclusion.** I applied all five blocking findings with the reviewers' words, adapted in four places (marked below), and folded in the nine non-blocking ones, declining part of one. The folder-name check found no match, so the conversation fingerprint cannot join a declared run; the plan now says so. The Maintainer's word does not name option B, so the plan builds B and asks him once (W2) instead of closing the board's wait.
+
+**Blocking, Security Review**
+
+- B1, attribution matching: accepted (rule 5, the S4 line, C2). Three adaptations to the exact text. (a) I removed `.` from the base "byte after" list; the reviewer's period sentence would have contradicted it. (b) The block overlap is the longest path plus 8 bytes, not 7: a match needs 7 bytes before it (`file://`) and 2 after it (a period and the byte beyond), so the window is the path plus 9 bytes and the overlap must be one byte shorter. The arithmetic is mine; a reader can check it. (c) `verify_project` is defined at 3893 and used for Claude at 4047 to 4055; the reviewer's 4400 to 4404 is the Codex wait. It returns the consent file's remote for every project (3893 to 3895), so the clause keeps parity with Claude and changes no result today.
+- B2, counters and opens: accepted (the Bounds paragraph, rule 7, C2). Adaptations: the walker's listing shares the 50,000-entry cap, so the walker is bounded too (my choice); rule 7's "opens files without following" is corrected, since Windows has no `O_NOFOLLOW`; the over-cap refresh beside Claude moved to C2, where the walker now is. Log reads keep the stream's existing open (827); changing it would touch Claude and Codex lines.
+- N1 to N4: accepted. N1 in rule 6, the Build summary and C3; N2 in "Weakness"; N3 in W1; N4 in S5. The reviewer's third foundation (conversations may exceed the 16 MiB cap) is not a finding; the caps stay "starting values, not measured", and W1 now counts conversations over each cap.
+
+**Blocking, usual review**
+
+- 1, C2 cannot pass its test: accepted as written (the Sequence table; each test sits with its chunk).
+- 2, C1 design open: accepted (rule 1, C1). I deleted the model branch, the lighter option offered (rule 2, C1, Reuse).
+- 3, failure and budget design open: accepted, with one conflict settled. The reviewer's "walker counts against `MAX_REFRESH_ENTRIES` and `MAX_SOURCE_FILES`" contradicts Security B2 ("nothing in Antigravity's reader raises `source_budget_exceeded`"), because those shared totals fail every tool's refresh. I followed B2: the walker (the code that lists the log files) returns `(files, entries, waiting)`, and the scan adds neither count to the shared totals (rule 7). The rest is as written (missing folders, per-conversation errors, the search-budget test, event reasons). I added one sentence the plan left open: a skipped conversation's cursors drop and its logs are read again from their start, and the merge counts each reply once. I read this in the scan code (cursors are kept only for listed files); I did not run it.
+
+**Non-blocking, usual review**
+
+- 4: accepted (rule 6, Build summary, C3). I dropped the offered one-line pulse change, since a benign reason is not printed at all (`pulse.py` 466 to 469).
+- 5: accepted (Build summary, W2).
+- 6: done; the result is below.
+- 7: accepted except the merge advice. C2 gains the byte-before, `file://`, entry-cap and depth-cap cases, decoys with counts that differ, and the exact set of opened paths. The three test files run once at C3. Snippet and neutrality gates, `_usage_values` and `_codex_uuid` are added. Not merged: the two C3 tests, because the split puts the read-set test in C2 and the reasons test in C3; each refresh test makes one refresh pair for all its checks.
+- 8, length: part accepted. I cut rule 3's repeated probe count and rule 6's rejected-column sentence (about 100 words). The body is about 3,560 words against the 1,000 target (`wc -w`; it was about 2,380). The growth is these findings' text; I cut no more because a low-tier executor needs each limit stated.
+- Corrections folded in: INCOMPLETE prints once on the header line and reaches every project (rule 6); 366 node ids, not 368 (Verification); target 1,000 (Not checked); the three Claude test files named (Tests).
+
+**Folder-name check, names only.** Counts: 10 distinct run tags in `dev/intents.jsonl`; 48 entries in `brain/`, 47 of them spelled as canonical UUIDs. Tags equal to a name's first 8 characters: 0. Tags equal to `sha256(name)[:8]`, how `_session_digest` writes a tag: 0. So the folder name is not shown to be the id agents declare under, and as built the fingerprint cannot join a declared run. Two causes fit; I cannot tell them apart without folder dates or contents, which this check did not allow: the ids differ, or those sessions' folders are not on this Mac. Cost: cost-per-plan work that ties a run's replies to a declared stage by identity cannot use Antigravity replies. It needs a time-window join (weaker where runs overlap) or must leave Antigravity out; that choice belongs to the cost-per-plan plan and I did not make it. I kept the fingerprint: it groups a conversation's replies and adds no work. I listed the names with Python's `os.listdir` on that one folder (the names `ls` prints) and touched nothing else under `~/.gemini`.
+
+**Not checked.** I ran no test, read no Antigravity file contents and no `~/.cairn/meter.json`. I checked the cited `meter.py` lines by reading (3893, 4047 to 4055, 2813 to 2834, 2910 to 2951, 2394, 3246); I did not check the 50,000-entry cap against real data, or Windows. I ran the claim check (exit 0), the link check on the plan (exit 0) and `tests/check_cairn.py` (exit 0). The whole-tree link check reports 3 issues in `templates/modules/default-on/documentation-plan.md`, a file I did not touch and that is the same at HEAD. I did not run the snippet or neutrality gates.
+
+**Over target**: about 1,050 words against 300, because it answers 5 blocking and 9 non-blocking findings and records one measurement.
+**Elapsed**: about 15 minutes. **Tokens**: unknown.
