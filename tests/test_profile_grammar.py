@@ -51,6 +51,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import os
 import shutil
 import subprocess
 import sys
@@ -154,7 +155,8 @@ def test_an_upgrade_that_cannot_use_the_committed_profile_says_why_and_carries_o
     assert {
         "rc": rc,
         "silent": err == "",
-        "profile named": "dev/.cairn/profile.yml" in err,
+        # The message names the file in the host's own spelling.
+        "profile named": "dev/.cairn/profile.yml" in err.replace(os.sep, "/"),
         "causes missing": [c for c in causes if c not in err],
         "plan unchanged": plan == plan_without_a_profile,
     } == {

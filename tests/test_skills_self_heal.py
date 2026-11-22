@@ -250,5 +250,6 @@ def test_session_start_leaves_hand_made_content_and_the_outside_alone(
     lifecycle.main(["session-start"])
 
     err = capsys.readouterr().err
+    # The message prints a path with `/` on Windows, so it can be pasted back.
     assert (_snapshot(root / ".claude", outside) == before,
-            str(root / named) in err) == (True, True)
+            (root / named).as_posix() in err) == (True, True)

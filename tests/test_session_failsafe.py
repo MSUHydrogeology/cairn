@@ -445,8 +445,9 @@ def test_stale_interpreter_path_degrades_with_guidance(repo, stale_kind, capsys)
     # The Decision's binding condition requires both the stale value and
     # the substituted interpreter named in the warning, not merely a generic
     # remedy string.
-    assert stale in err
-    assert sys.executable in err
+    # The warning prints a path with `/` on Windows so it can be pasted back.
+    assert stale.replace(os.sep, "/") in err
+    assert sys.executable.replace(os.sep, "/") in err
 
 
 def test_stale_binding_is_not_rewritten(repo):

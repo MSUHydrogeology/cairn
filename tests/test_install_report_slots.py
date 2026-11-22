@@ -31,6 +31,7 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import io
+import os
 import re
 import subprocess
 import sys
@@ -118,7 +119,10 @@ def _report_lists(out: str) -> dict:
                 if found:
                     break
                 continue
-            found.append(m.groups())
+            # The report names a file in the host's own spelling (`dev\agent_x.md`
+            # on Windows); the checks spell it with `/`.
+            path, slot, rest = m.groups()
+            found.append((path.replace(os.sep, "/"), slot, rest))
         return found
 
     return {
