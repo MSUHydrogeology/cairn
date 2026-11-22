@@ -1925,7 +1925,9 @@ def test_every_tool_pins_the_digest_of_the_helper_it_runs() -> None:
                 if match.group(2) != digest:
                     stale.append(f"{path.relative_to(ROOT).as_posix()}: {match.group(1)}")
     assert not stale, stale
-    assert found >= 23, found
+    # 22 tools run the helper. The simple meter (2026-11-21) reads no Git, so
+    # dev/tools/meter.py and its shipped copy no longer carry a pin.
+    assert found >= 22, found
     report_pin = re.compile(r'(?m)^_REPORT_SHA256 = "([0-9a-f]{64})"')
     for replacer, report in (
             ("dev/tools/exact_replace.py", "dev/tools/prose_diff.py"),
