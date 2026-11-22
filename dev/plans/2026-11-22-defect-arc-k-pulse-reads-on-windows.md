@@ -1,7 +1,7 @@
 # Plan: Defect arc K, the pulse reads a report on Windows
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -94,3 +94,41 @@ Not covered: the measurement itself (not repeated), the Security Review question
 Elapsed: about 6 minutes. Tokens: unknown.
 
 **Verdict**: ACCEPT
+
+## Plan review -- Security Reviewer (Claude Opus 5.5) -- 2026-11-22
+
+Reviewed commit: 6486febc8fd3044468d1a3ebad191dcbcf72be33
+
+**Obligation**: Internal Security Review (plan)
+**Tier**: Internal Security Review
+**Findings**: raised (two blocking)
+
+I agree with the usual review on the cause, the gate and the records. On the check's count and on the change itself, my wording governs.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes, but drop the change time only from the by-name comparison: the plan says no byte can change unseen, yet the writer of a file can rewrite it at the same size and put the write time back (`os.utime`); on Mac and Linux only the change time shows that -- reasoning; `dev/tools/pulse.py` 102-106.
+2. **Best alternative.** Keep the change time between the two by-handle readings, in one plain code path: on Windows they never differed (0 of 300 rounds) -- my scratch probe, Python 3.13.5, deleted after.
+3. **What would show it wrong.** A refusal in the direct check after the change -- not run.
+
+**Findings**
+
+1. Blocking. Replace the code block under "The change" with:
+   ```python
+   identity = lambda st: (st.st_dev, st.st_ino, st.st_size,
+                          st.st_mtime_ns, st.st_nlink)
+   if (identity(opened) != identity(after)
+           or opened.st_ctime_ns != after.st_ctime_ns
+           or identity(after) != identity(name_after)):
+       raise _PulseInputError
+   ```
+   and in "For the Security Review" replace "The removed field guarded notice of a change to the file's record alone (permissions or owner) during the read; no byte the pulse reads changes." with "The change time is kept between the two readings by handle and dropped only from the reading by name, where Windows reports another time."
+2. Blocking. My probe, which deletes and recreates one name like the direct check, saw the by-name time differ in 47 of 300 rounds, not most. In Acceptance criteria replace "refuses most rounds before and none after" with "refuses at least one round before and none after"; in Verification replace "most refused before" with "at least one refused before".
+
+Kept, as the plan says: no link on the path, a regular file with one name, the same device and file id by handle and by name, and size and write time unchanged. Nothing new is read or printed. An attacker who can write the report gains no new output: reports are parsed as untrusted (`dev/tools/pulse.py` 695-765).
+
+Not covered: Mac and Linux behaviour (read, not run), the tests.
+
+Elapsed: about 12 minutes. Tokens: unknown.
+
+**Verdict**: REVISE
