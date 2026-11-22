@@ -1,7 +1,7 @@
 # Cost per plan, from the usage meter
 
 **Author**: Claude Fable 5.2 (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it changes three shipped tools (the usage meter, the work-claim tool and the pulse) and adds one working rule
 **Plan review**: required(Internal + Internal Security Review)
@@ -15,34 +15,35 @@ Every review and record in a plan ends with a token figure, and it almost always
 
 This proposal makes the meter count by **run**: one agent's stretch of work, which the log already marks. A one-line **stage declaration** in the project's own record says which plan and step a run is doing. The end-of-session report then prints the cost of each plan and step, and a plan's closeout carries its table.
 
-The cost is one short command each time an agent is started or resumed. Three choices are the Maintainer's; they end the Proposal section.
+The cost is one short command each time an agent is started or resumed. The Maintainer has placed the work in v0.9. Two choices remain his; they end the Proposal section.
 
 ## Context
 
-- **The field is empty.** In the 35 plans and proposals of 20 to 22 November, 158 of 163 token figures say "unknown" (counted by search). The Maintainer wrote on 2026-11-22: "This was always the intent of the tokens field in the plan".
-- **The meter's present tie does not work.** It ties a reply to a file only while one work claim (the short notice an agent files before editing) is open around it. Measured in the meter's own record on 2026-11-22: 298 claims, and 0 of 295 replies tied. Claims last a median of 22 seconds, sub-agents share one tag so their claims collide, and 109 claims never released block every later tie.
-- **The logs do mark runs.** Each reply of a Claude sub-agent carries that agent's run id, and it equals the id the tool gives the session that started the agent: 11 of 11 on 2026-11-22. Summed by hand that day, plan J's agents cost 6.37 dollars at public prices and plan K's 2.39, against 47.73 for the coordinating session (`dev/measurement/agent-step-costs.md`, "Cost by plan, priced").
+- **The field is empty.** In the 35 plans and proposals of 20 to 22 November, 158 of 163 token figures say "unknown" (a search for `Tokens:` lines in those files; a narrower search in review found 131 of 136). The Maintainer wrote on 2026-11-22: "This was always the intent of the tokens field in the plan".
+- **The meter's present tie does not work.** It ties a reply to a file only while one work claim (the short notice an agent files before editing) is open around it. Measured in the meter's own record on 2026-11-22: 298 claims, and 0 of 295 replies tied. Claims last a median of 22 seconds, sub-agents share one tag so their claims collide, a claim on several files never ties, and 109 claims never released block every later tie.
+- **The logs do mark runs.** Each reply of a Claude sub-agent carries that agent's run id, and it equals the id the tool gives the session that started the agent: 11 of 11 on 2026-11-22. Summed by hand that day they give each plan's cost (`dev/measurement/agent-step-costs.md`, "Cost by plan, priced").
 - **A sub-agent cannot name itself.** Its environment holds the same names and the same session tag as the session that started it (probed 2026-11-22). So its starter must declare it.
 
 ## Proposal
 
 One outcome, in one plan: **the report gives the cost of each plan and step.**
 
-1. **Runs.** With each reply it counts, the meter records which run made it: a session's own thread, or a sub-agent's run id kept as a digest (a one-way fingerprint). For Codex a run is a thread. Antigravity follows when its reader exists.
-2. **Stage declarations.** A new command of the work-claim tool writes one line to the project's own claim record: the run, the plan or proposal, a short step name and the time. An agent declares its own thread. Whoever starts or resumes a sub-agent declares it, with the id the tool returned.
-3. **The tie.** A reply counts toward the latest declaration of its run at or before its time. A reply of a run with no declaration is reported as not tied, with its cost, so gaps show.
-4. **The report.** The summary and the pulse give, for each plan and step: model, replies, tokens by kind, the weighted total, first and last time. Then each plan's total, then what is not tied.
-5. **The record.** A plan's closeout carries its table from the meter. Step records keep their own field and may still say "unknown".
-6. **A ledger survives the change.** A ledger from before it loads and is brought forward, not refused.
+1. **Runs.** With each reply it counts, the meter records which run made it: a session's own thread, or a sub-agent's run id kept as a digest (a one-way fingerprint). This is new for each reply: today the meter records only which sub-agent logs exist. For Codex a run is a thread. Antigravity follows when its reader exists.
+2. **Stage declarations.** A new command of the work-claim tool writes one line, a new kind of event, to the project's own claim record: the run, the plan or proposal, a short step name and the time. An agent declares its own thread. Whoever starts or resumes a sub-agent declares it, with the id the tool returned. The command stamps the time itself and stores the run as its fingerprint, never the raw id. The meter's reader skips any line of a kind or shape it does not know, and any malformed or over-long line, and reports how many it skipped; such a line never makes the project unavailable. The tool's writer and conflict code ignore the new kind. The meter keeps the declarations it has read in its ledger, as it keeps claims today, so the session-end prune may drop them.
+3. **The tie.** A declaration ties only replies of the run it names, in the same project. A sub-agent's replies before its first declaration count toward it; a session's own thread counts from its declaration on. After that a reply counts toward the latest declaration of its run at or before its time. Two declarations of one run at the same time leave its replies untied. Replies of a run never declared are reported as not tied, with their cost, so gaps show.
+4. **The report.** The summary and the pulse give, for each plan and step: model, replies, tokens by kind, the weighted total, first and last time. Then each plan's total, then one row for what is not tied. Plan and step replace the file column, for usage and for test waits. Neither prints a fingerprint; those stay in the ledger. The summary holds at most 200 plan and step rows, then one row for the rest. The pulse checks plan and step names when it reads the summary, as it checks file names today.
+5. **The record.** A plan's closeout carries its table from the meter: each step's model, replies, tokens by kind and weighted total, and no times of day. Step records keep their own field and may still say "unknown".
+6. **A ledger survives the change.** The ledger's schema is raised and a version-6 ledger is migrated, not refused. After a refresh the reply count and each day's token sums equal their values before. Replies counted earlier are reported once as "before run tracking", not as untied.
 7. **The old tie goes.** The claim-window tie to files is removed, with its rule that an unreleased claim blocks later ties.
 
-Kept: the meter reads only what the consent file lists, and takes from a log only counts, times, model names and run fingerprints. Plan and step names come from the project's own record, checked for form and length.
+Kept: the meter reads only what the consent file lists, and takes from a log only counts, times, model names and run fingerprints. Plan and step names come from the project's own record and pass the same check for safe names as a claim's file names.
+
+**Settled: the release.** v0.9, and not v0.8.1. The Maintainer wrote on 2026-11-22: "But put it on the v0.9 plan, not the v0.8.1". For this one item that sets aside the defect arc's choice to keep v0.9 free of notable new features.
 
 **Choices for the Decision.**
 
-1. **Release.** v0.9, although the defect arc's Decision kept v0.9 free of notable new features; or v0.10. Recommended: v0.9. The tightening needs this measurement, and it completes a field Cairn already has.
-2. **The old tie.** Remove it (recommended), or keep it beside the new one.
-3. **Tier.** Heavy, as proposed.
+1. **The old tie.** Remove it (recommended), or keep it beside the new one.
+2. **Tier.** Heavy, as proposed.
 
 ## Rationale
 
@@ -65,7 +66,7 @@ Strategy checks the first plan built after the change, on a real machine: the me
 
 ### Tests required
 
-Two, each through a refresh. (a) A session thread and two sub-agent runs working at once on two plans, with one run resumed for a second step and one run undeclared: exact totals for each step, and the untied row. (b) A ledger written before the change loads and keeps its counts.
+Two, each through a refresh. (a) A session thread and two sub-agent runs working at once on two plans, with one run resumed for a second step and one run undeclared: exact totals for each step, and the untied row. It plants a malformed line, an over-long line, a declaration that names another run, and two declarations of one run at the same time. (b) A version-6 ledger is migrated: its reply count and each day's token sums are unchanged, and its earlier replies are reported as "before run tracking".
 
 ### Examples / smoke checks
 
@@ -73,11 +74,11 @@ Two, each through a refresh. (a) A session thread and two sub-agent runs working
 
 #### Security preflight — five questions, answered in writing
 
-- **S1.** The meter decides which plan a reply counts toward, from the run id and time on the log record and the declaration in the project's own claim record. A log cannot name its own plan. Whoever can write the project can write a declaration, and already owns the report.
-- **S2.** A declaration that names another run, or is dated after the reply, ties nothing. Test (a) plants both.
+- **S1.** The meter decides which plan a reply counts toward, from the run id and time on the log record and the declaration in the same project's claim record. A log cannot name its own plan. Whoever can write the project can write a declaration, and already owns the report.
+- **S2.** A declaration ties only replies of the run it names, in the same project. A sub-agent's replies before its first declaration count toward it; a session's thread counts from its declaration on. Two declarations of one run at the same time leave its replies untied. Test (a) plants each.
 - **S3.** `meter.py refresh` runs the tie over the consented sources and the listed projects. The README will say: "a reply counts toward a plan only when the project's own record declares the run that made it."
-- **S4.** A malformed declaration is skipped and its replies stay untied. Less is tied, and nothing more is read.
-- **S5.** Someone who can write the project's record can misfile costs in a report they can already edit, and no more. For log content the class is closed by construction: only counts, times, model names and fingerprints cross.
+- **S4.** A malformed, over-long or unknown line is skipped and counted, and its replies stay untied. Less is tied, and nothing more is read.
+- **S5.** Someone who can write the project's record can misfile costs in a report they can already edit, and no more. For log content the class is closed by construction: only counts, times, model names and fingerprints cross, and fingerprints stay in the ledger. The summary sits in the project folder, outside Git; whoever can read that folder can read plan and step totals with their times. The committed closeout holds totals only.
 
 ### Independent scientific check
 
@@ -149,3 +150,28 @@ The change does not widen what the meter reads: the record and `agentId` are rea
 - Add to item 2: "The command stamps the time itself and stores the run as its fingerprint, never the raw id. Run fingerprints stay in the ledger; the summary, the pulse and the report print plan, step and one untied row, never a fingerprint. Over-long lines are skipped like malformed ones; the summary shows at most 200 plan and step rows, then one 'other' row. The meter keeps the declarations it has read in its ledger, as it keeps claims today, so the session-end prune may drop them."
 
 **Time and tokens**: unknown; unknown.
+
+## Response -- Claude Fable 5.2 (Strategy) -- 2026-11-22
+
+Both reviews are folded. Every finding is taken; none is refused.
+
+**Usual review.**
+
+- 1 (blocking, the declaration's format): taken in its words, in item 2. Its question is answered there: an unknown, malformed or over-long line is skipped and counted, never refused.
+- 2 (blocking, early replies): taken with one narrowing, in item 3. A sub-agent's earlier replies count toward its first declaration; a session's own thread counts from its declaration on.
+- 3 (blocking, the ledger): taken in its words, in item 6 and test (b).
+- 4 (non-blocking): taken in item 4 and the "Kept" paragraph. Context now names the search behind the count and gives the reviewer's own count beside it.
+
+**Security Review.**
+
+- 1 (blocking, S2 and the tie window): S2 is replaced with its words; item 3 and test (a) agree with it.
+- 2 (blocking, what a declaration holds and where fingerprints go): taken in its words, in items 2 and 4.
+- 3 (non-blocking): taken in item 4. Plan and step replace the file column for test waits too, and the pulse checks the names.
+- 4 (non-blocking) and its question: a closeout carries totals only, with no times of day. Times stay in the summary, which sits in the project folder outside Git; S5 now says who can read it.
+- S1, S4 and S5 are completed as it asked.
+
+**Changed since opening, raised by no review.** The Maintainer placed the work. He wrote on 2026-11-22: "But put it on the v0.9 plan, not the v0.8.1". The release is recorded as settled, and two choices remain for the Decision: the old tie, and the tier.
+
+**Length.** The text below the header is now about 1,616 words against a target of 1,000. The growth is the reviewers' required words on what a declaration holds and on the tie.
+
+Not run for this response: any test. **Elapsed**: unknown. **Tokens**: unknown.
