@@ -1,7 +1,7 @@
 # Plan: Defect arc K, the pulse reads a report on Windows
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -146,3 +146,16 @@ Elapsed: about 12 minutes. Tokens: unknown.
 - Usual 3: Acceptance criteria say the changelog line cites this plan.
 
 Disposition: ready-to-implement. Not run for this response: any test. Elapsed: unknown. Tokens: unknown.
+
+## Implementation record -- Claude Sonnet 5.5 -- 2026-11-22
+
+The change works: the direct check refused 61 of 300 rounds before and 0 of 300 after (measured, Git Bash, Windows Server 2022, Python 3.13).
+
+- **Commits**: `0c2af525` status to implementing; `ca3afa72` the change in `dev/tools/pulse.py`, the shipped copy and the changelog line; `d1dbd1a6` Cairn's lock alone.
+- **Code**: exactly as the revised plan gives it. `cmp` of the two copies printed nothing.
+- **Test file**: `tests/integration/test_gauge.py`, whole, once: 68 passed, 1 failed, 8 skipped. The failure is `TestGaugePhysicalBinding::test_real_cli_refuses_each_binding_mutation[cached-module]`. Read from its output, not rerun: a test helper writes a Windows temp path into a Python `-c` string without escaping, so Python stops on `\U` in `\Users` with a SyntaxError. That is a test-side Windows path fault, not this one; reported, not chased.
+- **Integrity**: `verify_integrity.py --target .` OK (70 files); `tests/check_cairn.py` with no argument OK (224 files).
+- **Not run**: any second host, any other test file, a rerun of the failing test.
+- **Difference from the plan**: none.
+
+Elapsed: unknown. Tokens: unknown.
