@@ -1,7 +1,7 @@
 # Config-driven model weights, agent-tier reporting, and Antigravity reader fixes
 
 **Author**: Gemini 4 Neon (Author; Maintainer-selected session)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — alters three shipped tools (`meter.py`, `pulse.py`, `_intent/identity.py`) and adds an external model and adapter configuration file
 **Plan review**: required(Internal + Internal Security Review)
@@ -104,3 +104,43 @@ Real Claude or Antigravity replies land in `tier=unknown` despite populated conf
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Gemini 4 Neon (Reviewer) -- 2026-11-22
+
+```
+Reviewed commit: dcffaffe89566ccd44d2b3352c85be8d712df24e
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: ~6m
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes in aim—externalizing `_RATIO_INDEX`, adding `by_tier`, and fixing Antigravity's transcript/model/cache/identity gaps all rest on verified code and measurements—but three contract gaps block implementation and decision readiness (B1–B3) -- read `dev/tools/meter.py:68-174`, `dev/tools/_intent/identity.py:47`, `dev/measurement/antigravity-log-fields-2026-11-22.md:11-30`, and ran `tests/quality_gate.py --sub neutrality --report` (8 failures: 7 in `templates/core/dev/measurement/README.md:45-59`, 1 in `templates/skills/session-start/SKILL.md:27`).
+2. **Best alternative.** Neutralize those 7 template lines now for v0.8.1 and land external weights, `by_tier`, and Antigravity schema bumps beside accepted v0.9 `dev/proposals/2026-11-22-claude-cost-per-plan.md` to avoid double-bumping `cairn-meter-ledger` and `cairn-meter-project` -- read `dev/proposals/2026-11-22-claude-cost-per-plan.md:34-41`, `dev/PLANNING.md:19-26, 61`.
+3. **What would show it wrong.** Unconfigured refreshes failing `ledger_invalid` or printing `INCOMPLETE`, Antigravity replies staying `weighted=None`, or users losing weights silently on upgrade -- checked `dev/tools/meter.py:941, 1948-1950, 2004-2010, 4098-4100, 4500-4508`, `dev/tools/pulse.py:40-50, 467-468`.
+
+**Does any rule weaken or disappear?** No: adding one authorized key to `dev/rules/custom_session_routines.md` keeps its allowlist intact, and clearing vendor tokens from `templates/core/dev/measurement/README.md` enforces neutrality.
+
+**Steelman and gist.** The top reads cleanly: move vendor weights, tier rules, and bounded Antigravity settings to `~/.cairn/meter-models.json`, add `by_tier`, and fix Antigravity's duplicate logs, `model`, cache-read, and `ANTIGRAVITY_CONVERSATION_ID` gaps (all line citations and twin `cmp` parity verified).
+
+**Findings**
+
+1. **B1 (Blocking): Unconfigured ledger/export schema and `pulse.py` completeness are underspecified.** `_validate_aggregate_row` (`dev/tools/meter.py:1948-1950`) rejects `reference_index: None`; `_load_ledger` (`2004-2010`) requires dict `ratio_index` and string `ratio_version` and overwrites both from globals (breaking `_atomic_replace_ledger` at `941`); `cairn-meter-models/1` omits its `ratio_version` field; and `dev/tools/pulse.py:40-50, 467-468` prints `INCOMPLETE` for any reason outside `_PULSE_BENIGN_REASONS`.
+   - *Exact closure*: Append to item 1: `"cairn-meter-models/1 supplies ratio_version matching pulse.RATIO_VERSION_FORM; add models_config_missing to pulse._PULSE_BENIGN_REASONS so missing weights degrade precision without printing INCOMPLETE."` Replace item 4: `"Bump LEDGER_SCHEMA to cairn-meter-ledger/7 and READER_VERSION to cairn-source-readers/7. Migrate cairn-meter-ledger/6 (cairn-source-readers/6) in place (keeping /3–/5 refused with ledger_old_schema), preserving events, cursors, reply counts, and daily sums. Allow ledger ratio_version: None, ratio_index: None, and aggregate/daily reference_index: None when unconfigured while preserving saved reference_index on folded daily rows; stop _load_ledger from overwriting ratio_version/ratio_index from removed globals."`
+
+2. **B2 (Blocking): Antigravity provenance, tier selector, and `by_tier` wire shape are unspecified.** `_event_record` (`dev/tools/meter.py:4154, 4500-4508`) defaults to `model_provenance="unknown", effective_model=None`, so `_weighted_reference_tokens` (`4098-4100`) leaves Antigravity `weighted=None`. Item 3 omits the Codex `selected_context` tier selector, omits list vs dict for `by_tier` (`dev/tools/pulse.py:1025` uses `sort_keys=True`, alphabetizing dicts out of `high, medium, low, unknown`), and omits `/1`/`/2` rendering.
+   - *Exact closure*: Append to item 7: `"Set model_provenance='usage_record' and effective_model=model when valid; absent model/cache_read stays None/'unknown', while present invalid values flag invalid_record."` Replace item 3's first two sentences: `"Resolve each row's 'tier' at export from effective_model if non-None, else model when model_provenance == 'selected_context', else None ('unknown'), including folded daily rows. Emit 'tier' per row and top-level 'by_tier' as a list of {'tier', 'events', 'unknown_events', 'kinds', 'reference_tokens'} objects ordered high, medium, low, unknown ([] when empty) with None-propagation. Update dev/tools/pulse.py and its twin for /1, /2 (rendered unchanged without tier/by_tier), and /3 (allowing ratio_version: None on /3 only; verifying by_tier via exact Fraction sums), printing tier=... and gauge: usage by tier ...."`
+
+3. **B3 (Blocking): Decision summary omits upgrade impact, and Choice 1 has no recommendation.** Removing `_RATIO_INDEX` drops existing users to `weighted=unknown` / `tier=unknown` until they copy `dev/.cairn/meter-models.json` to `~/.cairn/meter-models.json`, and Choice 1 lacks a recommendation and cost-to-be-wrong (`dev/rules/working-agreements.md:8`; `dev/agent_collaboration.md:62, 268, 277`).
+   - *Exact closure*: Add to `Decision summary` before the last sentence: `"Tradeoff: existing consented users see weighted=unknown and tier=unknown until they copy dev/.cairn/meter-models.json to ~/.cairn/meter-models.json once (raw counts stay intact)."` Replace Choice 1: `"1. **Release placement:** **v0.9** beside cost-per-plan, fixing the 7 template neutrality lines separately before v0.8.1 (**Recommended** — avoids delaying v0.8.1 and double-bumping ledger/export schemas; cost if wrong: Antigravity weighting and by_tier wait for v0.9), OR **v0.8.1** now (adds a 4-chunk heavy plan before cut and requires cost-per-plan to migrate /6 and /7)."`
+
+4. **N1 (Non-blocking): Antigravity v6-to-v7 re-read collision.** Because `event_key` (`dev/tools/meter.py:4477-4478`) omits `model` and `cache_read`, re-reading a v6 `transcript.jsonl` from offset 0 under v7 triggers `conflicting_usage`/`conflicting_binding` (`2169-2199`); note this boundary in item 4 or Signals.
+
+5. **N2 (Non-blocking): Neutrality tokens and Plan J test.** Two of the 7 `templates/core/dev/measurement/README.md:45-59` failures are `Codex` (lines 50, 59); clear those too, and list updating `test_selected_codex_model_is_weighted_and_a_missing_write_is_not` (`tests/integration/test_meter.py:2272-2288`) for `"unbilled"` models.
+
+**Not covered**: Private logs/`~/.cairn/`, Security Review pass and formal S1–S5 check, and `pytest` execution (ran only `quality_gate.py --sub neutrality --report` and twin `cmp`). Exceeds the 300-word target to supply exact one-round closure wording for B1–B3.
