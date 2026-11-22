@@ -144,3 +144,43 @@ Reviewed commit: dcffaffe89566ccd44d2b3352c85be8d712df24e
 5. **N2 (Non-blocking): Neutrality tokens and Plan J test.** Two of the 7 `templates/core/dev/measurement/README.md:45-59` failures are `Codex` (lines 50, 59); clear those too, and list updating `test_selected_codex_model_is_weighted_and_a_missing_write_is_not` (`tests/integration/test_meter.py:2272-2288`) for `"unbilled"` models.
 
 **Not covered**: Private logs/`~/.cairn/`, Security Review pass and formal S1–S5 check, and `pytest` execution (ran only `quality_gate.py --sub neutrality --report` and twin `cmp`). Exceeds the 300-word target to supply exact one-round closure wording for B1–B3.
+
+## Review -- Gemini 4 Argon (Security Review) -- 2026-11-22
+
+```
+Reviewed commit: 2c7e77a452c15d4124163b5a4f0851f5f6dd3cb3
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: ~5m
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes in aim—moving volatile weights, tier rules, and Antigravity log/field settings to an account-owned JSON file while hashing `ANTIGRAVITY_CONVERSATION_ID` keeps the trust boundary local—but two trust-boundary and arithmetic gaps in `models_config`, `tools.antigravity`, and `"unbilled"` weighting require closure (SB1–SB2) alongside the usual review's B1–B3 -- audited `dev/tools/meter.py:289-431, 471-557, 776-792, 1296-1326, 1916-2015, 2320-2398, 2650-2763, 4017-4149, 4429-4511`, `dev/tools/pulse.py:40-50, 291-470, 879-926`, and `dev/tools/_intent/identity.py:44-92`.
+2. **Best alternative.** Fix the 7 `templates/core/dev/measurement/README.md` neutrality lines for v0.8.1 now and land this proposal in v0.9 with `dev/proposals/2026-11-22-claude-cost-per-plan.md` so schema migrations and security tests land once -- read `dev/proposals/2026-11-22-claude-cost-per-plan.md:36-41, 125-152`.
+3. **What would show it wrong.** `models_config` loading a repo-controlled or UNC path, `lead_factor=1` silently misattributing tied conversations, zero/negative weights escaping validation, or `"unbilled"` emitting `"0"` on `_unknown_kinds()` records -- checked `dev/tools/meter.py:289-294, 420-430, 787-791, 3726, 4089-4141`.
+
+**Does any rule weaken or disappear?** No, provided the unapproved Antigravity cache-token field name is withheld from `dev/.cairn/meter-models.json` and `tests/` unless Choice 2 is approved and adds it to `dev/rules/custom_session_routines.md:44-54`.
+
+**Steelman and preflight check (S1–S5).** I concur with the usual review's B1–B3, N1, and N2. `_session_digest` in `dev/tools/_intent/identity.py:51-75` hashes the full stripped UTF-8 `ANTIGRAVITY_CONVERSATION_ID` to 8 hex chars, safely handling malformed or overlong env values. Auditing S1–S5:
+- **S1** is *false as written*: `_safe_config_path` (`dev/tools/meter.py:289-294`) allows `models_config` inside configured `projects`/`sources` (e.g. a checkout's `dev/.cairn/meter-models.json`, re-enabling repo config injection) and on Windows does not reject UNC/device shares (`\\host\share`, `//host/share`, `\\?\`) before `lstat`/`open` (`dev/modules/security-review.md:47-54`).
+- **S2** is *incomplete*: it omits negative controls for repo/UNC `models_config`, zero/negative/boolean `[num, den]` weights, out-of-range adapter bounds (`lead_factor < 2`, `max_bytes < 1`, `max_entries < 1`, Windows reserved `log_filename`, colliding `cache_read_field`), and `"unbilled"` on `_unknown_kinds()`.
+- **S3** is *incomplete*: bare `meter.py [--json]` (`dev/tools/meter.py:5235-5249`) must validate `meter.json` syntax/containment without opening `models_config`.
+- **S4** is *false on two paths*: (1) in `_conversation_project` (`dev/tools/meter.py:787-791`), `ranked[0][1] < lead_factor * next_count` with `lead_factor = 1` evaluates `False` on an exact tie (`1 < 1`), breaking toward false attribution to the alphabetically first project alias; (2) `"unbilled"` setting `reference_tokens["cache_write"] = "0"` whenever `kinds["cache_write"] is None` emits `"0"` on `_unknown_kinds()` (`invalid_record`/`account_filter_unproven`) or when `cache_read` is `None`.
+- **S5** holds once SB1 and SB2 close repo/UNC `models_config` paths and adapter/weight bounds.
+
+**Findings**
+
+1. **SB1 (Blocking): `models_config` path containment, descriptor validation, and weight/rule bounds in `cairn-meter-models/1` are underspecified.** `load_config` (`dev/tools/meter.py:420-430`) uses `path.is_file()` (following symlinks) and `_read_limited` with `nofollow=False` (`397`), without checking `_is_link` on `~/.cairn` and the target or verifying `stat.S_ISREG(os.fstat(fd).st_mode)` and `(st_dev, st_ino)` after `os.open(..., O_NOFOLLOW | O_NONBLOCK)`. In `cairn-meter-models/1`, unconstrained `[num, den]` allows `den == 0` (raising `ZeroDivisionError`, uncaught at `dev/tools/meter.py:3726`) or `num < 0` (failing `_validate_aggregate_row` at `1956`).
+   - *Exact closure*: Append to item 1 (with B1): `"Refuse any models_config (or source/project path) using a Windows UNC/device prefix (\\\\, //, \\\\?\\, \\\\.\\) before any filesystem call, and refuse models_config inside or equal to any configured projects[i]['path'] or sources[i]['root']. Open meter.json and meter-models.json with _is_link checks on ~/.cairn and the target, O_NOFOLLOW | O_NONBLOCK, and fstat regular-file + (st_dev, st_ino) verification; bare meter.py [--json] validates meter.json without opening models_config."` Append to item 2: `"Cap models at <= 128 _safe_alias keys and each prefixes list at <= 32 non-empty _safe_alias strings; require strict int weights (type(x) is int, 0 <= num <= MAX_COUNTER, 1 <= den <= MAX_COUNTER) and 1 <= over_tokens <= MAX_COUNTER."` Update S1 and S3 to state that `models_config` outside configured project/source roots and non-UNC paths is enforced and bare `meter.py` never opens `models_config`.
+
+2. **SB2 (Blocking): `tools.antigravity` bounds (`lead_factor`, `max_bytes`, `max_entries`, `log_filename`, `cache_read_field`) and `"unbilled"` unknown-usage handling break S2 and S4.** `lead_factor = 1` breaks tie detection at `dev/tools/meter.py:787-791`; `max_bytes <= 0` or `max_entries <= 0` breaks or underflows budget checks (`3284`); `log_filename` needs `_windows_component` (`1296-1311`) to reject `CON.jsonl`/`NUL.jsonl`/ADS/backslashes; `cache_read_field` must not alias `"input_tokens"`, `"output_tokens"`, or metadata keys; and `"unbilled"` or `reference_index: None` must never emit `"0"` when required token counts are `None`.
+   - *Exact closure*: In item 2, replace the `"unbilled"` parenthetical with: `"(kinds['cache_write'] stays None when omitted by logs, while reference_tokens['cache_write'] is '0' only when kinds['cache_write'] in (None, 0) and fresh_input, cache_read, and output are all non-None, else None; rows with reference_index: None require all-None reference_tokens)"`. Replace item 6's second sentence with: `"Validate log_filename via _windows_component and r'[A-Za-z0-9][A-Za-z0-9._-]{0,63}\\.jsonl', and require strict ints 2 <= lead_factor <= 1_000, 1 <= max_bytes <= 128 MiB, and 1 <= max_entries <= 20,000."` Append to item 7 (with B2): `"Validate optional cache_read_field (default None) against r'[A-Za-z_][A-Za-z0-9_]{0,63}' excluding input_tokens, output_tokens, and non-counter metadata keys; withhold the real Antigravity field name from dev/.cairn/meter-models.json and tests/ unless Choice 2 adds it to dev/rules/custom_session_routines.md."` Update S2 and S4 to include these bounds and negative controls.
+
+3. **SN1 (Non-blocking): List protected twin templates and `dev/.cairn/cairn-lock.yml` under `Documentation / doctrine surface`.** Editing `templates/skills/_lib/meter.py`, `templates/skills/_lib/pulse.py`, and `templates/modules/team-gated/_intent/identity.py` touches protected Python templates (`dev/rules/protected-surfaces.md:11-15`) and updates `dev/.cairn/cairn-lock.yml`.
+
+**Not covered**: Private logs/`~/.cairn/`, live count-only lookup for Choice 2 (awaiting Maintainer Decision), and `pytest` execution. Exceeds the 300-word target to record S1–S5 verification and exact one-round closure text for SB1–SB2.
