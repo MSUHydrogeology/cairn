@@ -2687,6 +2687,9 @@ def test_a_transition_displays_a_baseline_key_an_agent_commit_rewrote_before_sig
     assert len(changed) == 1 and "rewritten-by-an-agent" in changed[0], lines
     assert f"{BASELINE}: 1 changed" in lines and f"{KNOWN_NEW}: no change" in lines
     assert out.index("Net change of the three pinned files") < out.index("Summary 2")
+    # the yes is said to cover the net change: that line follows the display and Summary 2, and comes before the question
+    heading, covers = out.index("Summary 2: what you are about to sign"), out.index("Your yes below also approves the net change")
+    assert out.index("Net change of the three pinned files") < heading < covers < out.index("Does Summary 2"), out
 
 
 def test_the_ordinary_ceremony_still_refuses_a_pin_commit_no_stop_record_describes(cbed):
