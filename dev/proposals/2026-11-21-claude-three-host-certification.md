@@ -374,3 +374,22 @@ About the Linux and Windows trial runs made ahead of the cut, the Maintainer wro
 **Done on his word, in a light-lane commit.** `dev/rules/certifying-runs.md` has a last paragraph saying so: what stands (a file that passed at E, a recorded skip counted), what is run again (a file that failed at E or whose inputs cannot be shown unchanged; a fixed node alone, with its commit), where every run is kept (`dev/measurement/certification-evidence/`), and what the release note names. `release/RELEASE_PROCESS.md` step 3 leaves a standing file out of the Linux and Windows list. The Linux run at `891dfd6a` is kept there with its junit report, per-file counts and a table of its eight failing files; the Windows run is added when it ends.
 
 **Not decided here, and why it matters.** "Inputs unchanged" is judged by a reader from `git diff` and `python tests/tier_inventory.py for`. That command's own docstring says folder sweeps do not name the files they find, so a test that scans a folder can miss a changed member; the rule's answer is that a reader who cannot show a file's inputs unchanged runs it, and the Mac's whole-suite run at the release commit is the check on this. No tool was built to compute the set: one release has not shown it would earn its keep. If the judgment proves heavy at the cut, a command that lists the files to rerun is the next step, and it is the Maintainer's to ask for.
+
+## Decision -- Maintainer (recorded from chat by Claude Sonnet 5.5, not scribed) -- 2026-11-22
+
+**Tier**: light
+
+About running Cairn's own release tests on Linux, the Maintainer wrote (chat, 2026-11-22): *"Cairn should work as a first-class developer tool on Linux, but we don't need the release procedure to"* and *"And develop a better suite of which tests are release only"*.
+
+**What this adds.** Some test files exist only to protect Cairn's own cut: the signing and re-anchor ceremony, the gate and oracle tools, the quality gate, the release's publication and member checks, and the strict native-evidence check. They test the release procedure, not code an adopter runs. They run at certification on the Mac (the strict check also on Windows, which records its half), never on Linux, and an agent doing ordinary development does not run them unless its change touches their subject. The earlier `RELEASE_EXCLUDED_TESTS` list stays as it is; the new list covers all of it and adds three files.
+
+**Done on his word, in the light lane; no review was requested.** Commits `7bde5a25` (the list, the commands, their tests) and `21bfb901` (`tests/README.md`, `dev/rules/certifying-runs.md`, `release/RELEASE_PROCESS.md`); the changelog entry and this addendum follow in their own commit.
+- `tests/test_tiers.json`: `hosts.release_only`, six groups and 19 test files, each group with the hosts that run it and a one-line reason; `hosts.release_paths`, the release machinery. `system_independent` is untouched.
+- `tests/tier_inventory.py`: `cert-files` leaves release-only files out, and `--host windows` keeps the one listed for Windows; a `release-only` verb prints the list; `check` refuses an inconsistent list, including a `RELEASE_EXCLUDED_TESTS` file that is missing or listed for Windows; `for` holds release-only tests back unless a changed path is release machinery or the test file itself, and `--include-release-only` keeps them.
+- The list shared by Linux and Windows went from 126 to 123 of 142 test files; `--host windows` gives 124.
+
+**Measured.** `tests/contract/test_test_tiers.py`: 69 passed (23 new); `python tests/tier_inventory.py check` exits 0; 28 one-line mutations in a scratch copy each made a new test fail. **Not run**: the whole suite, any other test file, and any run on Linux or Windows.
+
+**Left out, and why.** Judged to test code an adopter or a developer runs, or only partly the cut: `tests/test_ast_attest.py` (the baseline pin on the shipped engine; the closest call, and a one-line addition if the Maintainer wants it), `tests/test_security_marker.py` (the `-m security` split developers use, besides its checks of the exclusion list), `tests/test_security_lint.py` (Bandit over shipped code), `tests/test_verify_ref.py` (adopters run `verify-ref.sh`), `tests/contract/test_verification_boundaries.py` (half is a shipped-copy match), `tests/test_replay_ordinary_c2_mutants.py` (a review helper), `tests/test_broad_run_guard.py` (the guard the certifying run itself meets), and the other files the release membership check requires, which test code adopters run.
+
+**Elapsed**: unknown. **Tokens**: unknown.
