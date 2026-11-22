@@ -1,7 +1,7 @@
 # Plan: let the re-anchor pass a long history, and shrink the Maintainer's part
 
 **Source proposal**: `dev/proposals/archive/2026-11-19-claude-simpler-reanchor-ceremony.md`
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-20
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/certifying-runs.md, dev/rules/working-agreements.md, dev/rules/development-environment.md
