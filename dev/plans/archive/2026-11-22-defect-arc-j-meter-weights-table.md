@@ -1,7 +1,7 @@
 # Plan: Defect arc J, the meter's table of token weights
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -322,3 +322,25 @@ Range: 0ed25868722daa4f4a820803c41c1d8f94dfb680..87a757ad669d62ac2028933f9d9b691
 - Security Review (ACCEPT, no findings): nothing to do.
 
 Not run for this response: any test. **Elapsed time**: unknown. **Tokens**: unknown.
+
+## Implementation closeout -- Claude Fable 5.2 (Strategy) -- 2026-11-22
+
+The table is filled, both plan reviews and both code reviews are done with no finding left open, and on the Windows Server machine the meter's weighted totals equal an independent pricing of the same replies.
+
+- **C1 held.** The table has rows for the Claude, OpenAI and Gemini models in use and a second price level for long prompts, and a Codex reply is weighted by its turn's selected model. Its three tests fail before the change and pass after.
+- **C2 held, though its pulse test cannot show it on this machine.** A ledger written under the older table loads; T2 and the two refusal lines pass. The pulse's new version test passes when called directly. Its test T3 passed once and then failed on most runs, for a fault in the pulse's comparison of file times that this plan did not cause; plan K of the defect arc repairs it.
+- **C3 held.** The shipped copies are identical, both READMEs and the changelog carry the plan's sentences as revised in review, and `install/verify_integrity.py --target .` reports OK for 70 files.
+
+The branch merged into `0.9-dev` at `e6937f83`. On the merged tree `cmp` of each shipped pair prints nothing and `tests/check_cairn.py` over the whole tree reports no issue.
+
+**Strategy's check on the Windows Server machine, with the merged meter: met.** The probe prints numbers, days and model ids only. The ledger there was written under the older table (4 rows) and held 10 replies; it was left in place. One refresh answered `ok`. Afterwards the ledger carries the new table (15 rows) and holds 295 replies of 2026-11-22, each dated and each filed under the project: 107 from `claude-fable-5-2`, 135 from `claude-sonnet-5-5`, 48 from `claude-opus-5-5` and 5 from `claude-haiku-5-5`. For each model the meter's counts and all five of its weighted figures equal an independent pricing of the same replies, from a table typed separately from the makers' pages. The totals are 38,207,682.2, 4,968,401.7, 2,516,178.2 and 10,385.92, together 45,702,648.02, which is 45.70 dollars at public prices. The summary names the new table, has a weighted total on each of its four rows, and sums to the same figure. Over 00:30 to 15:34 UTC the meter's counts by kind equal an independent count of the logs, for the three models with replies in that stretch.
+
+Not shown on real usage: the higher long-prompt level, since none of the 5 Haiku replies had a prompt over 100,000 tokens; a folded day keeping its earlier weighting, since this ledger has no folded day; a Codex reply; any Gemini row. The tests show the first three.
+Not run: the whole suite; any other host. Home: the certification.
+Remaining: the OpenAI and Gemini model names against a real log, whether Codex work gets a weighted total there, and whether Codex records carry cache-write counts. Home: `dev/PLANNING.md`, section 1, the Mac session's job 6.
+Remaining: the Gemini rows do nothing until the meter can read Antigravity logs. Home: `dev/PLANNING.md`, section 1, the Mac session's Antigravity job.
+Remaining: the frozen files this plan changed, each a line at the Maintainer's signing. Home: `dev/PLANNING.md`, section 1, "What the one signing will show".
+Open: weighting a Codex reply by its turn's selected model is Strategy's choice. Both reviews accepted it. It was put to the Maintainer on 2026-11-22 and he has not answered. Home: `dev/PLANNING.md`, section 1, item (q).
+Seen: Gemini 4 Argon is weighted at its standard price, which starts on 2026-12-01; until 2026-11-30 its introductory price is half that.
+
+**Elapsed**: unknown. **Tokens**: unknown.
