@@ -283,3 +283,66 @@ N9. **Code quality, small** (`dev/tools/meter.py`). (a) The project-binding bloc
 
 **Elapsed**: about 17 minutes by clock. **Tokens**: unknown.
 **Over target**: about 2,100 words against the usual 300, because I walked three criteria clause by clause, ran one-line mutations to test the tests, and gave a fix I had verified for each finding.
+
+## Code response -- Claude Sonnet 5.5 (implementer) -- 2026-11-22
+
+**Disposition**: ready-to-archive
+**Answers**: the Security Review (commit 7456b8fb) and the usual review (commit 414d5b95), both of range `f64488f6^..1a54cc54`. Fix commits: `8df85a0d` (code and tests), `b1f558e2` (a comment, so the neutrality gate adds nothing), `cc347700` (READMEs, changelog, plan wording), `83977093` (lock). The status moved to `revising-code` in `21a0b2c2`.
+
+**Conclusion.** All five blocking findings are fixed in code, and each has a test that fails without its fix (Security B1 to B4, usual B1). The cheap non-blocking ones are done too. Declined: refactors of Claude's code (out of scope) and the findings below marked declined. Three things I want the Maintainer to see: (1) on Mac and Linux the attribution search now holds each folder open and opens names inside it, so a folder swapped for a link is refused; the log walker and the log stream still resolve paths, as before (see "Not done"). (2) The far-future time fix sits in `_timestamp`, which Claude's and Codex's readers also use, so it changes their behavior for one input (below). (3) The label fix over-labels a removed source of any tool; that is the safe direction, and the READMEs say so.
+
+**Tests that fail without each fix.** I checked each by changing one line in a scratch COPY of the tree outside the repo (never the working tree) and running `tests/integration/test_meter.py -k "antigravity or year_9999"`. Unchanged, 68 pass; against the previous `meter.py` 9 of the new or changed cases fail (the rest cover controls that already existed but had no test).
+
+| Finding | Mutation (one change) | Test that fails (only this) |
+|---|---|---|
+| Security B1, after the start | an over-long line raises again | `test_one_over_long_antigravity_line_skips_that_log_and_never_stops_another_tool[after-the-start]` (the at-the-start case also fails, since the start reads the log first) |
+| Security B1, at the start | the start bookmark raises again | `...[at-the-start]` |
+| Security B2 | `_DIR_FD_WALK = False` (path walk) | `test_a_folder_swapped_for_a_link_during_the_antigravity_search_is_not_followed` |
+| Security B2, defence | folder open without `O_NOFOLLOW`, or file open without it | `test_an_antigravity_refresh_reads_only_conversation_logs_and_counts_each_reply_once` (flags asserted). The identity check also refuses a swapped folder, so only removing both makes the swap test fail. |
+| Security B3 | label only for tool `antigravity` | `test_an_inferred_figure_keeps_its_label_after_the_antigravity_source_is_removed` |
+| Security B4 (a) | walker follows a linked `brain/<uuid>`; or a linked `.system_generated` or `logs` | `test_an_antigravity_walk_never_follows_a_link_at_any_level_and_stops_at_its_entry_caps` |
+| Security B4 (b) | per-refresh entries pre-check removed | `test_an_antigravity_conversation_the_refresh_cannot_pay_for_waits_for_the_next_refresh[search-entries]` |
+| Security B4 (c) | 256 MiB pre-check removed | `...[search-bytes]` |
+| usual N1 | read-budget pre-check removed; walker entry cap in `brain/` removed; in `logs/` removed | `...[read-bytes]`; the walk test (twice) |
+| usual B1 | `MAX_ATTRIBUTION_BYTES - used` replaced by `MAX_ATTRIBUTION_BYTES` | exactly one test: `...only_to_the_one_listed_project_its_files_name[a-byte-cap-passed-across-files]` |
+| Security N1 | `O_NONBLOCK` removed from the file open | the refresh test (flags asserted) |
+| Security N2, usual N5 | the key digests the written time | `test_antigravity_token_records_become_events_with_unknown_cache_kinds` |
+| usual N3 | every id field counts as a conflict | the same test (own-id case) |
+| usual N4 | the `_timestamp` line removed | `test_a_claude_time_beyond_the_year_9999_limit_is_an_unknown_time_not_a_stopped_refresh` |
+| unreadable folder | an unreadable folder counted complete | `test_an_antigravity_conversation_with_an_unreadable_folder_is_left_unattributed` (and the swap test) |
+
+**Security review.**
+
+- **B1, one long line stops every tool: fixed** (`8df85a0d`). For tool `antigravity` a terminal reason other than `source_read_unavailable`, in a log or at its start bookmark, skips that log with `source_too_large`, keeps the old cursor and goes on. `source_too_large` is already in the refresh receipt's reason list and in the partial mapping, so nothing else needed adding; it is documented in `dev/measurement/README.md` (one sentence) and plan rule 7. The template README has no passage on partial runs to extend. The test puts a new Claude reply beside the long line and asserts the reply counts, the refresh is `partial`/`source_too_large`, and (after the start) the cursor is unchanged.
+- **B2, a folder swapped for a link: fixed on Mac and Linux** (`8df85a0d`). `_conversation_project` walks by open handles: `os.open(name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_NONBLOCK, dir_fd=parent)`, the handle's device and inode are compared with the listing's, `os.scandir(fd)` lists it, files open with `dir_fd`. A swapped folder leaves the conversation `antigravity_search_incomplete`. **Windows keeps the path walk: this is the plan's already stated limit (rule 7: Windows has no `O_NOFOLLOW`), not new scope.** The swap test replaces a listed folder with a link while the search reads a sibling file. I changed the existing refresh test's `os.open` spy to resolve names opened inside a folder handle back to whole paths, so it still asserts the exact set of opened paths.
+- **B3, label lost after the source is removed: fixed** (`8df85a0d`). I took the reviewer's smallest fix: `antigravity_project_inferred` is added when any row's tool is `antigravity` or no tool. It also labels the figures of a removed Claude or Codex source (the safe direction; README and rule 6 say so). The sturdier fix (a reason on each event) would not reach days already folded into daily rows, which keep no reasons (read in the code, not run), so I did not take it. The other half (`antigravity_unattributed` after the source is removed): **declined**, as the reviewer marked it non-blocking; those tokens are in no project's export, and the same change would put INCOMPLETE on every report after any source removal. Plan rule 6 says so.
+- **B4, controls without a failing test: fixed** (`8df85a0d`). The three tests, with the reviewer's mutations, are in the table. **Plan wording amendment, not a scope change:** C2 now says a `chunks/` copy is never read as a log (the search opens its text like any other `.jsonl` under the conversation) and that a linked log, a non-UUID folder and a file beside the root are never opened. I also made the usual review's N7 correction in the same replacement (an over-cap `brain/` gives `written` under the shared limit and `partial`/`catching_up` under the conversation cap). Not mutation-tested: dropping `O_NOFOLLOW` from the search's file open was in the reviewer's list as defence in depth; it now fails the refresh test through the flags check.
+- **N1, named pipe: fixed** (`O_NONBLOCK` on the search's file and folder opens where the platform has it). No pipe test: it would hang if it failed; the flags are asserted instead.
+- **N2, one instant in two offsets: fixed** (the key digests the UTC time; `observed_at` keeps the written time). Plan rule 3 now says so and that a fraction longer than 6 digits is cut to 6.
+- **N3, a reply copied between conversations counts twice: declined**; the design accepts it and W1's own-id count should look for it.
+- **N4, waits in a fixed order, and N5, the search budget spent on logs first: declined this round**; both are labelled, not silent, and W1 measures them. I did not add them to W1's text.
+- **N6, folders not spelled as canonical UUIDs skipped with no reason: declined** (47 of 48 were canonical on the Mac); for W1.
+- **N7, account filter and the shared read budget: no change**; both are labelled.
+
+**Usual review.**
+
+- **B1, the byte-limit case: fixed**, with the reviewer's words (the limit follows the root's length, and the patch loop accepts a value computed from the root). The reviewer's mutation fails exactly one test.
+- **N1, per-refresh limits: fixed** for the 256 MiB, entries and read-budget pre-checks (`[search-bytes]`, `[search-entries]`, `[read-bytes]`, each ending with the restored limit and both conversations counted) and for the two walker caps. **Not covered:** charging the search's bytes to the shared read total (`total_bytes += searched`); removing it leaves every test passing.
+- **N2, link skipping at five levels: fixed** (a linked conversation, a linked `.system_generated` and a linked `logs`, each pointing at an outside tree holding a log with different counts).
+- **N3, own-id case: fixed.**
+- **N4, a time past year 9999: fixed, in `_timestamp`, one line, a defect fix that also covers Claude (and Codex's reader, untested).** The reviewer put the line in the Antigravity branch; I put it where the time is parsed, so a Claude record with such a time no longer stops every tool's refresh: it counts with its time unknown, as any unreadable time already did (tested for Claude; Codex's reader calls the same function and I did not test it). Antigravity's far-future record is `invalid_record` (a case in the existing list, and the key's UTC conversion also refuses it). The Claude test fails without the line (the refresh returns `unavailable`).
+- **N5, one instant in two offsets: fixed** (with Security N2).
+- **N6, READMEs: fixed in both**, with the reviewer's words. The template README has no "only counts leave a log" sentence, so its search sentence ends the Antigravity paragraph instead.
+- **N7, C2's words: amended** (with Security B4).
+- **N8, changelog: fixed.** The Claude entry is back as it was; a separate Major entry "Added: Antigravity usage by project" has two sentences and a plan link. **The link names the live plan path (`dev/plans/2026-11-22-antigravity-reader.md`); it must be re-pointed to `dev/plans/archive/` when the plan is archived.**
+- **N9, small code quality:** (a) the duplicated binding block, (b) the two `try` blocks, (c) the doubled file-information dictionary (the other copy is in `_enumerate_jsonl`, Claude's walker) and (d) the two ways of taking the id from a path: **declined**, since Claude's reader is outside this plan's scope and (b) and (d) are cosmetic. (e) the two docstrings: **fixed**.
+
+**Not done, and not run.**
+
+- The log walker `_enumerate_antigravity` and the log stream still resolve paths on Mac and Linux, so a `logs/` folder swapped for a link after the walker checked it could still be followed. Security B2 named the search; the reviewer called the stream's gap pre-existing, and the stream is shared with Claude and Codex. Not changed; say if you want it.
+- Not run: the whole suite; Windows; Linux (the handle walk ran only on this Mac); any real Antigravity log or `~/.cairn/meter.json`; `pulse.py` tests; the lock beyond `verify_integrity.py`.
+- Run: `-k "antigravity or year_9999"` 68 passed; the three meter files once at the end, 532 passed in 15.95 s (520 at the build, plus 12 new); `cmp` on the twins identical; `install/scaffold.py upgrade --finalize` scoped to `dev/tools/meter.py` and `dev/measurement/README.md` (2 hashes), then `install/verify_integrity.py --target .` exit 0 (70 files match); `tests/quality_gate.py --sub neutrality` exit 1 with fail=8, the same 8 as at the reviewed commit (all in the template README and `session-start/SKILL.md`; my first code commit added 3 in the twin, which `b1f558e2` removed). The prose gates, run on `CHANGELOG.md`, both READMEs and this plan, each exit code read: `claim_check.py` 0, `link_check.py` 0, `sync_doc_snippets.py --check` 0 (756 docs, no drift), `tests/check_cairn.py` 0.
+- Slip: I ran `git stash` by mistake while counting neutrality failures and popped it at once; my four prose files came back unchanged. The other stash in the list (`stash@{1}`, "probe") is not mine and I did not touch it.
+
+**Over target**: the response is long because it answers 5 blocking and 16 non-blocking findings and records 21 mutation checks.
+**Elapsed**: 14:27 to about 14:45 by the machine clock. **Tokens**: unknown.
