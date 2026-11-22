@@ -148,7 +148,7 @@ them.
   of its own saved files name, when that project's file count is at least ten
   times the next project's; if only one project is named, one file is enough.
   It counts toward no project if no project leads that clearly, if no file
-  names one, if the search hits a limit (128 MiB, 5,000 entries or 8 folder
+  names one, if the search hits a limit (128 MiB, 20,000 entries or 8 folder
   levels per conversation) or if it cannot read a file. A folder named `chunks`
   holds copies, so the search skips it without opening it.
   A project's export then carries `antigravity_project_inferred`, because
