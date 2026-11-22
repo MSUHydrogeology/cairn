@@ -232,6 +232,8 @@ The Maintainer accepted the [defect arc](proposals/archive/2026-11-20-claude-v09
 
 Each is known and accepted; none is a task.
 
+- **Linux is a first-class platform for working with Cairn; its release procedure is not.** The Maintainer wrote (chat, 2026-11-22): *"So Cairn should work as a first-class developer tool on Linux, but we don't need the release procedure to."* What an adopter or a developer runs must work on Linux, and a failure there is a defect. Cairn's own release tools (the strict native-evidence check, the signing ceremony) run on the Mac, and the check also on Windows, and need not run on Linux. A test of release tooling therefore skips or is left out on Linux, with its reason in the test; a test of anything else that fails on Linux is repaired or reported. The Linux run at `891dfd6a` found no product defect on this reading: its eight failing files were four test assumptions about a Mac disk or tool (repaired), the release check's refusal of Linux (skipped), a stale floor and an out-of-date quickstart line (both repaired), and the baseline step that fails on every platform ([record](measurement/certification-evidence/README.md)).
+
 - **The board and the status check disagree on an unknown status** such as
   `awaiting-decision-x`: the check flags it, `board.py --maintainer` still
   lists it. Making the board strict would edit a frozen test
