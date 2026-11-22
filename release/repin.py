@@ -1040,11 +1040,13 @@ def dump(obj):
     return (json.dumps(obj, indent=2, sort_keys=True) + "\n").encode()
 
 
-def split_lockfile(raw):
-    """The comment header (kept byte for byte) and the JSON body of the lockfile."""
+def split_lockfile(raw, *, unique=False):
+    """The comment header (kept byte for byte) and the JSON body of the lockfile.  With
+    *unique* a JSON key repeated in any object is a ValueError instead of the last copy winning."""
     lines = raw.decode().split("\n")
     n = next((i for i, ln in enumerate(lines) if ln.strip() and not ln.startswith("#")), len(lines))
-    return "\n".join(lines[:n]), json.loads("\n".join(lines[n:]))
+    body = "\n".join(lines[n:])
+    return "\n".join(lines[:n]), _unique_json(body, "lockfile") if unique else json.loads(body)
 
 
 def parse_output(rel, raw):
@@ -2745,17 +2747,42 @@ def pinned_blobs(ctx):
     return blobs
 
 
+def refuse_repeats(rel, raw, side):
+    """The display keys a file by JSON key and the lockfile by destination, so a repeat would
+    show one copy while a reader of the bytes (`install/verify_integrity.py` reads every lockfile
+    record) sees both.  Fail closed: a repeated key or lockfile destination is refused, not shown."""
+    if raw is None:
+        return
+    try:
+        if rel == LOCKFILE_REL:
+            dsts = [r["dst"] for r in split_lockfile(raw, unique=True)[1]["files"]]
+            again = next((x for x in dsts if dsts.count(x) > 1), None)
+            if again is not None:
+                raise Refuse(f"{d(rel)} {side} lists the destination {d(again)} more than once, and the "
+                             f"net change would show only one copy. Nothing was run.")
+        else:
+            _unique_json(raw, rel)
+    except json.JSONDecodeError:
+        raise                      # not JSON at all: the caller's "cannot be read" refusal says so
+    except ValueError as exc:      # the repeated-key error `_unique_json` raises
+        raise Refuse(f"{d(rel)} {side} repeats a JSON key ({d(str(exc))}), and the net change would "
+                     f"show only one copy. Nothing was run.")
+
+
 def net_change_lines(ctx):
     """The net change of the three pinned files from the anchor to the candidate, key by key,
     from Git objects: one heading per file, then each changed key.  A signed anchor made before
     the layout move holds the two fixtures at their old paths, which are mapped to the new ones;
-    a file the anchor lacks shows every key as new.  Every key and value passes through `d()`."""
+    a file the anchor lacks shows every key as new.  Every key and value passes through `d()`.
+    A file that repeats a key, or a lockfile that repeats a destination, is refused."""
     moved = {new: old for old, new in LEGACY_MOVES.items()} if ctx.get("layout_evidence") else {}
     lines = []
     for rel, new_raw in pinned_blobs(ctx).items():
         was = moved.get(rel, rel)
         old_raw = git(ctx["repo"], "cat-file", "blob", f"{ctx['anchor']}:{was}", check=False)
         try:
+            refuse_repeats(rel, old_raw, "at the anchor")
+            refuse_repeats(rel, new_raw, "at the candidate")
             changes = render_changes(rel, old_raw, new_raw, display_only=True)
         except (ValueError, KeyError, TypeError, AttributeError):
             raise Refuse(f"{d(rel)} cannot be read as keys and values at the anchor or the candidate, "

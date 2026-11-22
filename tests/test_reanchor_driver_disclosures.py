@@ -7,7 +7,7 @@ Promises:
 - An absent or unfilled launcher, or one bound to another packet or lacking the environment fix, refuses the pair.
 - The rehearsal says it executes candidate code before it loads any candidate module.
 - The driver runs no stage and refuses a run option as unknown; printed commands run the reviewed launcher, never the working-tree artifact.
-- `release/repin.py` shows the net change of the three pinned files key by key (a key on one side only as `(absent)`, old fixture paths mapped to the new ones, every key and value escaped for a terminal) and refuses a pinned file the candidate lacks or that cannot be read; after a passing `--check-only` it prints the command it was given, without that flag.
+- `release/repin.py` shows the net change of the three pinned files key by key (a key on one side only as `(absent)`, old fixture paths mapped to the new ones, every key and value escaped for a terminal) and refuses a pinned file the candidate lacks or that cannot be read, or a file that repeats a JSON key or a lock that repeats a destination, since the display would show one copy; after a passing `--check-only` it prints the command it was given, without that flag.
 Sources: release/reanchor_ceremony.py module docstring (the banner and "IT RUNS NO STAGE"); release/reanchor_ceremony.py --help; release/repin.py `net_change_lines`.
 
 
@@ -444,6 +444,15 @@ def _lock(*dsts: str) -> str:
     return "# header\n" + json.dumps({"files": records}, indent=2, sort_keys=True) + "\n"
 
 
+def _record(dst: str, digest: str) -> dict:
+    return {"dst": dst, "hash": "sha256:" + digest}
+
+
+def _lock_records(*records: dict) -> str:
+    """A lock whose records are exactly those given, in that order, repeats included."""
+    return "# header\n" + json.dumps({"files": list(records)}, indent=2) + "\n"
+
+
 def _pinned(baseline: dict, known_new: dict | None = None, lock: str | None = None) -> dict:
     files = {_BASELINE: json.dumps(baseline), _KNOWN_NEW: json.dumps(known_new or {})}
     if lock is not None:
@@ -518,6 +527,38 @@ class TestTheNetChangeOfThePinnedFilesIsShownKeyByKey:
         with pytest.raises(repin.Refuse) as exc:
             repin.net_change_lines(ctx)
         assert needle in str(exc.value), what
+
+    @pytest.mark.parametrize("what,before,after,needle", [
+        ("a candidate lock that repeats a destination, the last copy equal to the anchor's",
+         _pinned({"a": 1}, lock=_lock_records(_record("x", "A"))),
+         _pinned({"a": 1}, lock=_lock_records(_record("x", "B"), _record("x", "A"))),
+         "lists the destination x more than once"),
+        ("an anchor lock that repeats a destination",
+         _pinned({"a": 1}, lock=_lock_records(_record("x", "A"), _record("x", "B"))),
+         _pinned({"a": 1}, lock=_lock_records(_record("x", "B"))),
+         "lists the destination x more than once"),
+        ("a baseline file that repeats a JSON key",
+         _pinned({"a": 1}, lock=_lock()),
+         {**_pinned({"a": 1}, lock=_lock()), _BASELINE: '{"a": 1, "a": 2}'},
+         "repeats a JSON key"),
+        ("a lock record that repeats a JSON key",
+         _pinned({"a": 1}, lock=_lock_records(_record("x", "A"))),
+         _pinned({"a": 1}, lock='# header\n{"files": [{"dst": "x", "hash": "sha256:B", "hash": "sha256:A"}]}\n'),
+         "repeats a JSON key"),
+    ])
+    def test_a_repeated_lock_destination_or_json_key_refuses_because_the_display_would_hide_a_copy(
+            self, repin, tmp_path, what, before, after, needle):
+        ctx = _two_commits(tmp_path, before, after)
+        with pytest.raises(repin.Refuse) as exc:
+            repin.net_change_lines(ctx)
+        assert needle in str(exc.value) and "Nothing was run" in str(exc.value), what
+
+    def test_a_lock_with_distinct_destinations_still_shows_its_net_change(self, repin, tmp_path):
+        before = _pinned({"a": 1}, lock=_lock_records(_record("a", "A"), _record("b", "B"), _record("c", "C")))
+        after = _pinned({"a": 1}, lock=_lock_records(_record("a", "A2"), _record("b", "B"), _record("d", "D")))
+        lines = repin.net_change_lines(_two_commits(tmp_path, before, after))
+        assert f"{_LOCK}: 3 changed" in lines and f"{_BASELINE}: no change" in lines
+        assert sum(line.startswith("  cairn-lock.yml") for line in lines) == 3, lines    # a changed, c dropped, d added
 
 
 class TestThePrintedCeremonyCommandIsTheOneYouWereGiven:
