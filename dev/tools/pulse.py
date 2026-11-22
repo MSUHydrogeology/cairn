@@ -102,8 +102,9 @@ def _read_pulse_report(path: Path, limit: int) -> bytes:
         after = os.fstat(handle.fileno())
         name_after = _check_report_path(path)
         identity = lambda st: (st.st_dev, st.st_ino, st.st_size,
-                               st.st_mtime_ns, st.st_ctime_ns, st.st_nlink)
+                               st.st_mtime_ns, st.st_nlink)
         if (identity(opened) != identity(after)
+                or opened.st_ctime_ns != after.st_ctime_ns
                 or identity(after) != identity(name_after)):
             raise _PulseInputError
     data = b"".join(chunks)

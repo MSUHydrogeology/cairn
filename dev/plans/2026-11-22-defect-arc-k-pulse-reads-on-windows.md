@@ -1,7 +1,7 @@
 # Plan: Defect arc K, the pulse reads a report on Windows
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -146,3 +146,79 @@ Elapsed: about 12 minutes. Tokens: unknown.
 - Usual 3: Acceptance criteria say the changelog line cites this plan.
 
 Disposition: ready-to-implement. Not run for this response: any test. Elapsed: unknown. Tokens: unknown.
+
+## Implementation record -- Claude Sonnet 5.5 -- 2026-11-22
+
+The change works: the direct check refused 61 of 300 rounds before and 0 of 300 after (measured, Git Bash, Windows Server 2022, Python 3.13).
+
+- **Commits**: `0c2af525` status to implementing; `ca3afa72` the change in `dev/tools/pulse.py`, the shipped copy and the changelog line; `d1dbd1a6` Cairn's lock alone.
+- **Code**: exactly as the revised plan gives it. `cmp` of the two copies printed nothing.
+- **Test file**: `tests/integration/test_gauge.py`, whole, once: 68 passed, 1 failed, 8 skipped. The failure is `TestGaugePhysicalBinding::test_real_cli_refuses_each_binding_mutation[cached-module]`. Read from its output, not rerun: a test helper writes a Windows temp path into a Python `-c` string without escaping, so Python stops on `\U` in `\Users` with a SyntaxError. That is a test-side Windows path fault, not this one; reported, not chased.
+- **Integrity**: `verify_integrity.py --target .` OK (70 files); `tests/check_cairn.py` with no argument OK (224 files).
+- **Not run**: any second host, any other test file, a rerun of the failing test.
+- **Difference from the plan**: none.
+
+Elapsed: unknown. Tokens: unknown.
+
+## Code review -- Claude Sonnet 5.5 (usual reviewer) -- 2026-11-22
+
+Reviewed commit: b76327b3cc6d1ce1c5d352a6d8eb153ff0bb3485; range b79c55b1180523d9b0167cffe5d5240e415a6637 to that commit.
+
+**Obligation**: usual code review. A Security Review pass follows; Status is left as it is.
+**Findings**: raised (none blocking)
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The diff of `_read_pulse_report` is the Security Review's code, character for character: one field out of the tuple, one comparison added -- `git diff b79c55b1 HEAD -- dev/tools/pulse.py`.
+2. **Best alternative.** None better: the change time is still checked where both readings come from the open file, with no Windows-only branch -- `dev/tools/pulse.py` 104-108.
+3. **What would show it wrong.** A refusal in the direct check after the change, or a failing test that turns out to depend on the change time; the record shows neither.
+
+**Findings**
+
+1. Non-blocking. The record's count (61 of 300 before, 0 of 300 after) shows the fault gone on this host, and the one failing test has a stated cause (an unescaped Windows path in a `-c` string) unrelated to the pulse. I did not rerun either, so both rest on the record. The record says "read from its output, not rerun"; the cause is plausible, not shown.
+2. Non-blocking. The changelog line says the pulse "still refuses a file that changed during the read". True of size, write time, names and change time by handle; it does not say which, which is acceptable for a one-line note.
+
+Checked directly: only five files changed (pulse, its copy, lock, changelog, plan); `cmp` of the two copies prints nothing; the lock commit `d1dbd1a6` holds only the lock line for `dev/tools/pulse.py`; `verify_integrity.py` reports OK (70 files); the changelog line cites this plan. No frozen or protected file changed beyond the plan's list.
+
+Not covered: Mac and Linux behaviour, any test or direct-check run, whether the failing test was already failing before the change.
+
+Elapsed: about 6 minutes. Tokens: unknown.
+
+**Verdict**: ACCEPT
+
+## Code review -- Claude Opus 5.5 (Security Review) -- 2026-11-22
+
+Reviewed commit: b76327b3cc6d1ce1c5d352a6d8eb153ff0bb3485; range b79c55b1180523d9b0167cffe5d5240e415a6637 to that commit.
+
+**Obligation**: Internal Security Review (code)
+**Findings**: raised (none blocking)
+
+I agree with the usual review on the diff, the copy, the lock and the changelog; on what stays enforced, my wording governs.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The built code is the plan Security Review's code exactly; nothing else in the file moved -- `git diff b79c55b1 b76327b3 -- dev/tools/pulse.py`.
+2. **Best alternative.** None better. Still enforced: no link or reparse point on any path part, a regular file with one name, the same device and file id at open, after the read and by name, size and write time unchanged, and change time unchanged between the two readings by handle -- `dev/tools/pulse.py` 66-109.
+3. **What would show it wrong.** A refusal in the direct check after the change; the record says 0 of 300, which I did not rerun.
+
+**Findings**
+
+1. Non-blocking. On Mac and Linux the change time is no longer compared with the reading by name, so a permissions or owner change made after the last read by handle goes unseen. No byte read can change in that moment, and the reading by name still ties the name to the same file; acceptable.
+2. Non-blocking. The one failing test's cause holds on reading: `tests/test_verify_counts.py` 436-437 puts a quoted Windows path inside a second string, so `\U` reaches Python unescaped. It does not touch the pulse.
+
+The change reads and prints nothing new. `cmp` of the two copies prints nothing; `verify_integrity.py` reports OK (70 files).
+
+Not covered: Mac and Linux (read, not run), any test or direct-check run.
+
+Elapsed: about 8 minutes. Tokens: unknown.
+
+**Verdict**: ACCEPT
+
+## Code response -- Claude Sonnet 5.5 (Implementation) -- 2026-11-22
+
+- Usual 1 (counts and the failing test's cause rest on the record): no change. Strategy runs the direct check once more on the merged tree as its own check, and the Security Review read the failing test's helper and confirmed the cause (`tests/test_verify_counts.py`, the cached-module case).
+- Usual 2 (changelog line does not say which fields): no change; the reviewer found a one-line note acceptable.
+- Security 1 (permissions or owner change after the last handle reading goes unseen on Mac and Linux): no change; no byte read can change then, and the name still ties to the same file.
+- Security 2 (the failing test's cause holds): no change; it does not touch the pulse.
+
+Not run for this response: any test. Elapsed: unknown. Tokens: unknown.
