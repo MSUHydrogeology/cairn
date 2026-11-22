@@ -69,7 +69,7 @@ def _fill_slot(path: Path, slot: str, marker: str, text: str) -> None:
     end = f"<!-- cairn:end {slot} -->"
     assert end in content, f"{path.name} has no {slot} slot"
     path.write_text(content.replace(end, f"{marker}\n{text}\n{end}"),
-                    encoding="utf-8")
+                    encoding="utf-8", newline="\n")
 
 
 def test_a_filled_customized_slot_is_pointed_at_finalize(
@@ -87,7 +87,7 @@ def test_a_filled_customized_slot_is_pointed_at_finalize(
     vendor = tmp_path / "VENDOR.md"
     vendor.write_text(vendor.read_text(encoding="utf-8")
                       + "\nThe `<!-- cairn:customized -->` marker, quoted.\n",
-                      encoding="utf-8")
+                      encoding="utf-8", newline="\n")
     capsys.readouterr()
     assert verify_integrity.verify(tmp_path) == 1
     err = capsys.readouterr().err
@@ -105,7 +105,7 @@ def test_a_filled_customized_slot_is_pointed_at_finalize(
                  str(CAIRN_ROOT), "--finalize", "AGENTS.md"]) == 0
     vendor.write_text(vendor.read_text(encoding="utf-8").replace(
         "\nThe `<!-- cairn:customized -->` marker, quoted.\n", ""),
-        encoding="utf-8")
+        encoding="utf-8", newline="\n")
     assert verify_integrity.verify(tmp_path) == 0
 
     agents = tmp_path / "AGENTS.md"
@@ -113,7 +113,7 @@ def test_a_filled_customized_slot_is_pointed_at_finalize(
     lower_marker = "<!--cairn:customized-->\nOur own conventions.\n"
     assert lower_marker in content
     agents.write_text(content.replace(lower_marker, "Our own conventions.\n"),
-                      encoding="utf-8")
+                      encoding="utf-8", newline="\n")
     _fill_slot(agents, "project-conventions", "<!--CAIRN:CUSTOMIZED-->",
                "Our uppercase-marked conventions.")
     capsys.readouterr()
@@ -131,7 +131,7 @@ def test_a_filled_customized_slot_is_pointed_at_finalize(
     assert uppercase_marker in content
     content = content.replace(uppercase_marker,
                               "Our uppercase-marked conventions.\n")
-    agents.write_text(content, encoding="utf-8")
+    agents.write_text(content, encoding="utf-8", newline="\n")
 
     for malformed in (
         "<!-- cairn:slot mismatched -->\n"
@@ -140,12 +140,12 @@ def test_a_filled_customized_slot_is_pointed_at_finalize(
         "<!-- cairn:slot unclosed -->\n"
         "<!-- cairn:customized -->\n",
     ):
-        agents.write_text(content + malformed, encoding="utf-8")
+        agents.write_text(content + malformed, encoding="utf-8", newline="\n")
         capsys.readouterr()
         assert verify_integrity.verify(tmp_path) == 1
         err = capsys.readouterr().err
         assert "--finalize AGENTS.md" not in err
-        agents.write_text(content, encoding="utf-8")
+        agents.write_text(content, encoding="utf-8", newline="\n")
 
 
 def test_missing_file_fails_closed(tmp_path: Path) -> None:
@@ -362,7 +362,8 @@ def _run_verify(target: Path, module_file: Path = _VERIFY_PY, *,
 
 
 def _text(data: bytes) -> str:
-    return data.decode("utf-8", errors="replace")
+    # A Windows child writes its lines with a carriage return before each new line.
+    return data.decode("utf-8", errors="replace").replace("\r\n", "\n")
 
 
 def _without_note(text: str) -> str:
@@ -426,6 +427,12 @@ def _set(rec_field: str, value) -> Callable[[Path], str]:
 def _need(feature: str) -> None:
     if not hasattr(os, feature):
         pytest.skip(f"os.{feature} not available")
+
+
+def _need_control_names() -> None:
+    """Skip where a file cannot be named with a control character or a backslash."""
+    if os.name == "nt":
+        pytest.skip("a Windows file name cannot hold a control character or a backslash")
 
 
 def _b_dir(target: Path) -> str:
@@ -1221,6 +1228,7 @@ _SPACING_SAMPLES = [
 def test_nothing_the_note_prints_is_outside_printable_ascii(
     tmp_path: Path, capsys
 ) -> None:
+    _need_control_names()
     hostile_slot = "pl\x1b[31maceho\u200flder-é"
     text = _slot(hostile_slot, "Placeholder.")
     _note_tree(tmp_path, [{"dst": "we\x1b[2Jird\nname.md",
@@ -1610,11 +1618,13 @@ def _r_missing(target: Path) -> None:
 
 
 def _r_modified(target: Path) -> None:
+    _need_control_names()
     _note_tree(target, [{"dst": _EVIL}])
     (target / _EVIL).write_bytes(b"modified after install\n")
 
 
 def _r_hint(target: Path) -> None:
+    _need_control_names()
     slot = _slot("s", "Placeholder.").encode()
     _note_tree(target, [{"dst": _EVIL, "installed": slot, "base": slot}])
     (target / _EVIL).write_bytes(
@@ -1745,6 +1755,7 @@ def test_an_ascii_control_character_is_escaped_without_any_non_ascii_text(
 ) -> None:
     """ASCII text is not automatically safe to print: an escape sequence is
     ASCII. The check for "printable" and the check for "ASCII" are separate."""
+    _need_control_names()
     _note_tree(tmp_path, [{"dst": "ctl\x1b[2J\x07.md"}])
     (tmp_path / "ctl\x1b[2J\x07.md").write_bytes(b"modified\n")
     capsys.readouterr()
@@ -1796,7 +1807,9 @@ def test_a_failing_stdout_still_gets_pythons_one_line_reason(tmp_path: Path) -> 
         os.close(writer)
     err = _text(proc.stderr)
     assert proc.returncode == 120
-    assert "BrokenPipeError" in err, err
+    # A closed pipe is a broken pipe to Python on a POSIX host; Windows reports
+    # the same write as a plain OSError.
+    assert ("BrokenPipeError" if os.name != "nt" else "OSError") in err, err
     assert "slot note: files in scope" in err
 
 
@@ -1806,6 +1819,7 @@ def test_a_backslash_in_a_path_is_not_taken_for_an_escape(
     """A real escape character prints as `\\x1b`. The four typed characters
     `\\x1b` in a file name must not print the same, or a reader cannot tell a
     control character from text that looks like one."""
+    _need_control_names()
     real, typed = "a\x1bb.md", "a\\x1bb.md"
     _note_tree(tmp_path, [{"dst": real}, {"dst": typed}])
     (tmp_path / real).write_bytes(b"modified\n")
