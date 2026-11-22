@@ -66,3 +66,31 @@ print(sum(refused() for _ in range(300)), "of 300 refused"); f.unlink()'
 Expected: most refused before, 0 after. Then `cp dev/tools/pulse.py templates/skills/_lib/pulse.py`; then, alone in its commit, `install/scaffold.py upgrade --target . --finalize dev/tools/pulse.py`, then `install/verify_integrity.py --target .`.
 
 Not run: a second host, the rest of the suite.
+
+## Plan review -- Reviewer (Claude Sonnet 5.5) -- 2026-11-22
+
+Reviewed commit: 2e95613b8cb9416e9a2a93f6e867a72c7265e1e3
+
+**Obligation**: usual plan review (Internal)
+**Tier**: Internal
+**Findings**: raised (none blocking)
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. `_read_pulse_report` compares `opened`, `after` (by handle) with `name_after` (by name) on a tuple holding `st_ctime_ns`; Strategy's measurement says Windows reports that field differently by handle and by name, so the refusal follows -- `dev/tools/pulse.py` 100-106.
+2. **Best alternative.** One plain path is right: the bytes stay tied to one file by device and file id, size, write time and name count, so a creation-time swap adds code for a change no byte of the report shows. Both identity tests (line 90 and the tuple) use only `st_dev`/`st_ino` besides the removed field -- `dev/tools/pulse.py` 87-106.
+3. **What would show it wrong.** A refusal after the change in the direct check, or a failing `st_mtime_ns` or `st_ino` comparison in `test_gauge.py`; I did not run either.
+
+**Findings**
+
+1. Non-blocking. The direct check deletes and recreates one name each round. Windows can hand a recreated name its old creation time (file tunneling), so the by-name field may match less often than in a fresh-name test; the change time by handle still moves, so "most refused before" should hold, but the plan should say the count may be below 299.
+2. Non-blocking. The check is written with single quotes around inner double quotes: it works in Git Bash, not in PowerShell. Say "run it in Git Bash".
+3. Non-blocking. The changelog line should cite this plan, as the neighbouring lines do.
+
+Gate on plan J, the shipped copy, the lock alone in its own commit and the changelog line are in order.
+
+Not covered: the measurement itself (not repeated), the Security Review questions, any test run.
+
+Elapsed: about 6 minutes. Tokens: unknown.
+
+**Verdict**: ACCEPT
