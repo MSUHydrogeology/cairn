@@ -22,9 +22,22 @@ Promises:
   that places no file, matches a security-tier file or matches a file already
   in `RELEASE_EXCLUDED_TESTS` fails the check.
 - `cert-files` lists the files Linux and Windows run at certification: every
-  test file except the Cairn-only release exclusions and the system-independent
-  files, so a new unlisted file is included. `--write` saves the same lines to
-  a new absolute path and never replaces a file.
+  test file except the Cairn-only release exclusions, the release-only files
+  and the system-independent files, so a new unlisted file is included.
+  `--write` saves the same lines to a new absolute path and never replaces a
+  file.
+- `cert-files --host windows` keeps the release-only files listed for Windows
+  and nothing else release-only; with no `--host` the selection is the one
+  Linux and Windows share.
+- The "release_only" groups in the configuration are checked: a pattern that
+  places no file, a file two groups place, a file `system_independent` also
+  lists, a malformed group, and a file of `RELEASE_EXCLUDED_TESTS` that no group
+  places or that a group lists for Windows all fail the check.
+- `release-only` prints the release-only files, one path per line, with the
+  counts on standard error; `--host` keeps the files that host runs.
+- `for` leaves a release-only test out unless a changed path is release
+  machinery or is that test file; `--include-release-only` keeps it. The real
+  configuration keeps every excluded file selectable from its own subject.
 """
 from __future__ import annotations
 
@@ -55,11 +68,17 @@ _spec.loader.exec_module(tiers_tool)
 
 
 def _config(tmp_path: Path, tiers: list[dict],
-            independent: list[str] | None = None) -> Path:
+            independent: list[str] | None = None, *,
+            release_only: object = None,
+            release_paths: list[str] | None = None) -> Path:
     path = tmp_path / "tiers.json"
     data = {"tiers": tiers}
-    if independent is not None:
-        data["hosts"] = {"about": "", "system_independent": independent}
+    if independent is not None or release_only is not None:
+        data["hosts"] = {"about": "", "system_independent": independent or []}
+        if release_only is not None:
+            data["hosts"]["release_only"] = release_only
+        if release_paths is not None:
+            data["hosts"]["release_paths"] = release_paths
     path.write_text(json.dumps(data), encoding="utf-8")
     return path
 
@@ -287,6 +306,302 @@ def test_cert_files_write_saves_the_printed_lines_to_a_new_absolute_path(
     assert code == 2
     assert "absolute" in err.getvalue()
     assert not (tmp_path / "relative.txt").exists()
+
+
+def _group(patterns: list[str], hosts: tuple[str, ...] = ("mac",),
+           reason: str = "Tests Cairn's own cut.") -> dict:
+    return {"hosts": list(hosts), "reason": reason, "patterns": list(patterns)}
+
+
+def _release_config(tmp_path: Path, groups: object, *,
+                    independent: list[str] | None = None,
+                    paths: list[str] | None = None) -> Path:
+    return _config(tmp_path, [{"name": "unit", "about": "", "patterns": ["test_*"]}],
+                   independent or [], release_only=groups, release_paths=paths)
+
+
+def _run(verb: list[str], config: Path, folder: Path,
+         root: Path) -> tuple[int, list[str], str]:
+    out, err = io.StringIO(), io.StringIO()
+    code = tiers_tool.main(verb, config=config, test_dir=folder, root=root,
+                           out=out, err=err)
+    return code, out.getvalue().replace("\\", "/").splitlines(), err.getvalue()
+
+
+def test_a_release_only_pattern_that_places_no_file_fails_the_check(tmp_path):
+    folder = _tests(tmp_path, "test_cut", "test_prose")
+    _excluded(folder)
+    config = _release_config(tmp_path, [_group(["test_cut", "test_gone"])])
+    code, err = _check(config, folder)
+    assert code == 1
+    assert "release_only pattern 'test_gone' places no test file" in err
+    assert "'test_cut'" not in err
+
+
+def test_a_file_two_release_only_groups_place_fails_the_check(tmp_path):
+    folder = _tests(tmp_path, "test_cut", "test_other")
+    _excluded(folder)
+    config = _release_config(tmp_path, [
+        _group(["test_cut"]),
+        _group(["test_cu*"], hosts=("mac", "windows")),
+    ])
+    code, err = _check(config, folder)
+    assert code == 1
+    assert "release_only groups both place test_cut.py" in err
+    assert "test_other" not in err
+
+
+def test_a_file_on_both_release_only_and_system_independent_fails_the_check(tmp_path):
+    folder = _tests(tmp_path, "test_cut", "test_prose")
+    _excluded(folder)
+    config = _release_config(tmp_path, [_group(["test_cut"])],
+                             independent=["test_cut", "test_prose"])
+    code, err = _check(config, folder)
+    assert code == 1
+    assert "test_cut.py is on both release_only and system_independent" in err
+    assert "test_prose" not in err
+
+
+def test_an_excluded_file_no_release_only_group_places_fails_the_check(tmp_path):
+    folder = _tests(tmp_path, "test_signing", "test_cut")
+    (folder / "deeper").mkdir()
+    (folder / "deeper" / "test_nested.py").write_text("", encoding="utf-8")
+    _excluded(folder, "tests/test_signing.py", "tests/deeper/test_nested.py")
+    config = _release_config(tmp_path, [_group(["test_signing", "test_cut"])])
+    code, err = _check(config, folder)
+    assert code == 1
+    assert ("RELEASE_EXCLUDED_TESTS lists tests/deeper/test_nested.py, but no "
+            "release_only pattern places it") in err
+    assert "tests/test_signing.py" not in err
+
+    code, err = _check(_release_config(tmp_path, []), folder)
+    assert code == 1
+    assert "tests/test_signing.py" in err and "tests/deeper/test_nested.py" in err
+
+
+def test_an_excluded_file_listed_for_windows_fails_the_check(tmp_path):
+    folder = _tests(tmp_path, "test_signing", "test_strict")
+    _excluded(folder, "tests/test_signing.py")
+    config = _release_config(tmp_path, [
+        _group(["test_signing"], hosts=("mac", "windows")),
+        _group(["test_strict"], hosts=("mac", "windows")),
+    ])
+    code, err = _check(config, folder)
+    assert code == 1
+    assert ("RELEASE_EXCLUDED_TESTS keeps tests/test_signing.py to the Mac, "
+            "but release_only lists it for windows") in err
+    assert "test_strict" not in err
+
+
+def test_a_consistent_release_only_list_passes_the_check(tmp_path):
+    folder = _tests(tmp_path, "test_signing", "test_strict", "test_prose")
+    _excluded(folder, "tests/test_signing.py")
+    config = _release_config(tmp_path, [
+        _group(["test_signing"]),
+        _group(["test_strict"], hosts=("mac", "windows")),
+    ], independent=["test_prose"])
+    assert _check(config, folder) == (0, "")
+
+
+@pytest.mark.parametrize("groups, message", [
+    pytest.param({"hosts": ["mac"]}, "'release_only' must be a list", id="not-a-list"),
+    pytest.param(["test_cut"], "group 1 must be an object", id="not-an-object"),
+    pytest.param([_group(["test_cut"], hosts=("windows",))],
+                 "group 1 needs a 'hosts' list", id="no-mac"),
+    pytest.param([_group(["test_cut"], hosts=("mac", "linux"))],
+                 "group 1 needs a 'hosts' list", id="unknown-host"),
+    pytest.param([_group(["test_cut"], hosts=("mac", "mac"))],
+                 "group 1 needs a 'hosts' list", id="repeated-host"),
+    pytest.param([_group(["test_cut"], reason=" ")],
+                 "group 1 needs a 'reason'", id="blank-reason"),
+    pytest.param([_group([])], "group 1 needs a non-empty list of 'patterns'",
+                 id="no-patterns"),
+])
+def test_a_malformed_release_only_group_is_refused_plainly(tmp_path, groups, message):
+    folder = _tests(tmp_path, "test_cut")
+    _excluded(folder)
+    code, err = _check(_release_config(tmp_path, groups), folder)
+    assert code == 2
+    assert "invalid tier configuration" in err and message in err
+
+
+def _cert_tree(tmp_path: Path) -> tuple[Path, Path]:
+    folder = _tests(tmp_path, "test_signing", "test_cut", "test_strict",
+                    "test_prose", "test_ordinary")
+    (folder / "deeper").mkdir()
+    (folder / "deeper" / "test_nested.py").write_text("", encoding="utf-8")
+    _excluded(folder, "tests/test_signing.py")
+    config = _release_config(tmp_path, [
+        _group(["test_signing", "test_cut"]),
+        _group(["test_strict"], hosts=("mac", "windows")),
+    ], independent=["test_prose"])
+    assert _check(config, folder) == (0, "")
+    return config, folder
+
+
+def test_cert_files_leaves_out_release_only_files_and_host_windows_adds_one_back(
+        tmp_path):
+    config, folder = _cert_tree(tmp_path)
+    shared = ["tests/deeper/test_nested.py", "tests/test_ordinary.py"]
+
+    code, lines, err = _run(["cert-files"], config, folder, tmp_path)
+    assert code == 0, err
+    assert lines == shared
+    assert "2 of 6 test files run on Linux and Windows" in err
+
+    assert _run(["cert-files", "--host", "linux"], config, folder, tmp_path)[1] == shared
+
+    code, lines, err = _run(["cert-files", "--host", "windows"], config, folder,
+                            tmp_path)
+    assert code == 0, err
+    assert lines == shared + ["tests/test_strict.py"]
+    assert "3 of 6 test files run on Windows" in err
+    assert "release-only files listed for Windows and kept: 1" in err
+
+
+def test_release_only_prints_the_files_with_counts_and_filters_by_host(tmp_path):
+    config, folder = _cert_tree(tmp_path)
+
+    code, lines, err = _run(["release-only"], config, folder, tmp_path)
+    assert code == 0, err
+    assert lines == ["tests/test_cut.py", "tests/test_signing.py",
+                     "tests/test_strict.py"]
+    assert "release-only: 3 of 6 test files (3 run on the Mac, 1 of them also on Windows)" in err
+
+    code, lines, err = _run(["release-only", "--host", "windows"], config, folder,
+                            tmp_path)
+    assert code == 0, err
+    assert lines == ["tests/test_strict.py"]
+    assert "release-only: 1 of 6 test files run on windows" in err
+
+    code, lines, err = _run(["release-only", "--host", "mac"], config, folder,
+                            tmp_path)
+    assert code == 0 and len(lines) == 3
+
+
+def test_release_only_prints_nothing_when_the_configuration_has_no_list(tmp_path):
+    folder = _tests(tmp_path, "test_one")
+    _excluded(folder)
+    config = _config(tmp_path, _HOST_TIERS, [])
+    code, lines, err = _run(["release-only"], config, folder, tmp_path)
+    assert code == 0 and lines == []
+    assert "release-only: 0 of 1 test files" in err
+
+
+def _for_tree(tmp_path: Path) -> tuple[Path, Path]:
+    for rel in ("tools/example.py", "release/step.py"):
+        path = tmp_path / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("VALUE = 1\n", encoding="utf-8")
+    folder = _tests(tmp_path, "test_cut", "test_plain")
+    (folder / "test_cut.py").write_text(
+        'import tools.example\nSTEP = "release/step.py"\n', encoding="utf-8")
+    (folder / "test_plain.py").write_text(
+        "import tools.example\n", encoding="utf-8")
+    _excluded(folder)
+    config = _release_config(tmp_path, [_group(["test_cut"])],
+                             paths=["release/*"])
+    return config, folder
+
+
+def test_for_holds_back_a_release_only_test_an_ordinary_change_does_not_touch(
+        tmp_path):
+    config, folder = _for_tree(tmp_path)
+
+    code, lines, err = _run(["for", "tools/example.py"], config, folder, tmp_path)
+    assert code == 0, err
+    assert lines == ["tests/test_plain.py"]
+    assert "1 test files selected for the requested paths" in err
+    assert "1 release-only test files held back" in err
+    assert "tests/test_cut.py" in err
+
+
+def test_for_keeps_a_release_only_test_when_a_changed_path_is_release_machinery(
+        tmp_path):
+    config, folder = _for_tree(tmp_path)
+
+    code, lines, err = _run(["for", "release/step.py"], config, folder, tmp_path)
+    assert code == 0, err
+    assert lines == ["tests/test_cut.py"]
+    assert "held back" not in err
+
+    code, lines, err = _run(["for", "tools/example.py", "release/step.py"], config,
+                            folder, tmp_path)
+    assert code == 0, err
+    assert lines == ["tests/test_cut.py", "tests/test_plain.py"]
+
+
+def test_for_keeps_a_release_only_test_that_is_itself_the_changed_file(tmp_path):
+    config, folder = _for_tree(tmp_path)
+
+    code, lines, err = _run(["for", "tests/test_cut.py"], config, folder, tmp_path)
+    assert code == 0, err
+    assert lines == ["tests/test_cut.py"]
+
+
+def test_for_include_release_only_keeps_what_an_ordinary_change_would_hold_back(
+        tmp_path):
+    config, folder = _for_tree(tmp_path)
+
+    code, lines, err = _run(["for", "--include-release-only", "tools/example.py"],
+                            config, folder, tmp_path)
+    assert code == 0, err
+    assert lines == ["tests/test_cut.py", "tests/test_plain.py"]
+    assert "held back" not in err
+
+
+def _real_release_rows() -> tuple[tuple[str, tuple[str, ...], str], ...]:
+    spec = importlib.util.spec_from_file_location(
+        "_real_security_manifest_for_release_only", ROOT / "tests" / "security_manifest.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.RELEASE_EXCLUDED_TESTS
+
+
+def test_the_real_release_only_list_places_every_excluded_file_for_the_mac_only():
+    files = tiers_tool.find_test_files()
+    groups, _paths = tiers_tool.load_release_only()
+    assert tiers_tool.release_only_problems(
+        groups, files, tiers_tool.load_hosts(),
+        tiers_tool.load_release_excluded(), tiers_tool.TEST_DIR) == []
+    placed, _doubled = tiers_tool.release_only_files(groups, files)
+    by_path = {tiers_tool._repo_path(p, tiers_tool.TEST_DIR): hosts
+               for p, hosts in placed.items()}
+    for path, _subjects, _reason in _real_release_rows():
+        assert by_path[path] == ("mac",), path
+
+
+def test_the_real_configuration_keeps_each_excluded_file_selectable_from_its_subject():
+    files = tiers_tool.find_test_files()
+    groups, machinery = tiers_tool.load_release_only()
+    by_path = {tiers_tool._repo_path(p, tiers_tool.TEST_DIR): p for p in files}
+    for path, subjects, _reason in _real_release_rows():
+        for subject in subjects:
+            kept, held = tiers_tool.drop_unrelated_release_only(
+                [by_path[path]], [subject], groups, machinery, files, ROOT)
+            assert kept == [by_path[path]] and held == [], (path, subject)
+    kept, held = tiers_tool.drop_unrelated_release_only(
+        [by_path["tests/test_repin.py"]], ["dev/tools/meter.py"], groups, machinery,
+        files, ROOT)
+    assert kept == [] and held == [by_path["tests/test_repin.py"]]
+
+
+def test_the_real_cert_files_send_only_the_strict_native_check_to_windows():
+    def listed(*verb):
+        out, err = io.StringIO(), io.StringIO()
+        assert tiers_tool.main(["cert-files", *verb], out=out, err=err) == 0, err.getvalue()
+        return set(out.getvalue().splitlines())
+
+    release_only = {tiers_tool._repo_path(p, tiers_tool.TEST_DIR)
+                    for p in tiers_tool.release_only_files(
+                        tiers_tool.load_release_only()[0],
+                        tiers_tool.find_test_files())[0]}
+    shared = listed()
+    assert not shared & release_only
+    assert listed("--host", "windows") - shared == {"tests/test_security_check.py"}
+    assert (listed("--host", "windows") & release_only
+            == {"tests/test_security_check.py"})
+    assert "tests/test_security_check.py" not in shared
 
 
 def test_for_selects_imports_and_cited_paths_but_not_folder_sweepers(tmp_path):

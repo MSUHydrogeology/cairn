@@ -139,6 +139,74 @@
   ],
   "hosts": {
     "about": "Test files listed under system_independent show no sign that their outcome depends on the operating system, so certification runs them on the Mac only. A file not listed counts as system-dependent, so a new test file runs on every host until someone shows it need not.",
+    "release_only_about": "Test files listed under release_only exist only to protect Cairn's own release cut. They test the release procedure, not code an adopter runs. At certification they run on the hosts their group names (the Mac, and for the strict native-evidence check also Windows) and never on Linux, and an agent doing ordinary development does not run them unless its change touches their subject (release_paths names the release machinery). Patterns are whole file stems, so a new test file runs on every host until someone lists it here. python tests/tier_inventory.py check refuses a pattern that places no file, a file that two groups or system_independent also list, and any file of RELEASE_EXCLUDED_TESTS (tests/security_manifest.py) that is missing here or listed for Windows.",
+    "release_only": [
+      {
+        "hosts": ["mac"],
+        "reason": "Tests of the Maintainer's signing and re-anchor ceremony (release/repin.py, release/reanchor.sh and the reports they show). Only the Maintainer runs the ceremony.",
+        "patterns": [
+          "test_repin",
+          "test_repin_ceremony",
+          "test_reanchor",
+          "test_reanchor_driver_disclosures",
+          "test_ceremony_review_report"
+        ]
+      },
+      {
+        "hosts": ["mac"],
+        "reason": "Tests of the gate tools that guard the re-anchor (tests/_gate_manifest.py, _gate_preflight.py, _gate_reanchor.py, _gate_transition.py). Only the Maintainer's cut uses them.",
+        "patterns": [
+          "test_gate_manifest",
+          "test_gate_preflight",
+          "test_gate_reanchor",
+          "test_gate_transition"
+        ]
+      },
+      {
+        "hosts": ["mac"],
+        "reason": "Tests of the differential oracle (tests/_oracle.py and its activation and trust parts), the gate's comparison of the code with a trusted earlier commit. Only the Maintainer's cut uses it.",
+        "patterns": [
+          "test_oracle",
+          "test_oracle_activation",
+          "test_oracle_trust"
+        ]
+      },
+      {
+        "hosts": ["mac"],
+        "reason": "Tests of tests/quality_gate.py, the quality check run before a cut (order independence, neutrality, redundancy). Only the Maintainer's cut runs it.",
+        "patterns": [
+          "test_quality_gate_cli",
+          "test_quality_gate_order_independence",
+          "test_quality_gate_redundancy",
+          "test_quality_gate_neutrality"
+        ]
+      },
+      {
+        "hosts": ["mac"],
+        "reason": "Tests of the release's own checks: release/check_release_publication.py (the read-only check of a published release) and release/check_release_test_members.py (every required test file ran and passed).",
+        "patterns": [
+          "test_check_release_publication",
+          "test_release_members_contract"
+        ]
+      },
+      {
+        "hosts": ["mac", "windows"],
+        "reason": "Tests of release/security_check.py, the strict native-evidence check. It records one half of its evidence on the Mac and one on Windows, so both run these tests; Linux has nothing to check and skips them by design.",
+        "patterns": [
+          "test_security_check"
+        ]
+      }
+    ],
+    "release_paths": [
+      "release/*",
+      "tests/_gate_*.py",
+      "tests/_oracle*.py",
+      "tests/quality_gate*.py",
+      "tests/security_manifest.py",
+      "tests/fixtures/gate_manifest.json",
+      "tests/fixtures/protected_test_roster.json",
+      "dev/.cairn/allowed_signers"
+    ],
     "system_independent": []
   }
 }

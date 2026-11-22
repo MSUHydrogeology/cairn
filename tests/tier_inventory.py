@@ -16,8 +16,9 @@ placed automatically by its name or stopped until a pattern places it.
   python tests/tier_inventory.py list [TIER]
   python tests/tier_inventory.py list --json
   python tests/tier_inventory.py files TIER    # paths for a scoped pytest run
-  python tests/tier_inventory.py for [--range BASE..HEAD] PATH...
-  python tests/tier_inventory.py cert-files [--write PATH]
+  python tests/tier_inventory.py for [--range BASE..HEAD] [--include-release-only] PATH...
+  python tests/tier_inventory.py cert-files [--host linux|windows] [--write PATH]
+  python tests/tier_inventory.py release-only [--host mac|windows]
 
 ``files`` only prints paths. A tier larger than the broad-run guard allows
 is still refused by that guard outside a certifying run; this tool does not
@@ -25,12 +26,32 @@ work around it.
 
 ``cert-files`` prints the test files Linux and Windows run at certification:
 every test file except the Cairn-only ones in ``RELEASE_EXCLUDED_TESTS``
-(``tests/security_manifest.py``, read as data and never imported) and the
-files the ``system_independent`` list in ``tests/test_tiers.json`` names. A
-file on neither list runs on every host. ``--write PATH`` also saves the lines
-to a new file at an absolute path, for ``python -m pytest @PATH``; it never
-replaces a file. ``check`` also refuses a ``system_independent`` pattern that
-places no file, matches a security-tier file or matches an excluded file.
+(``tests/security_manifest.py``, read as data and never imported), the
+release-only files and the files the ``system_independent`` list in
+``tests/test_tiers.json`` names. A file on none of these lists runs on every
+host. A release-only file is one that exists only to protect Cairn's own
+release cut; the ``hosts.release_only`` groups in ``tests/test_tiers.json``
+name each one with the hosts that run it (the Mac, and for the strict
+native-evidence check also Windows) and a reason. With no ``--host`` the output
+is the selection Linux and Windows share (``--host linux`` says the same);
+``--host windows`` adds back the release-only files listed for Windows.
+``--write PATH`` also saves the lines to a new file at an absolute path, for
+``python -m pytest @PATH``; it never replaces a file. ``check`` also refuses a
+``system_independent`` pattern that places no file, matches a security-tier file
+or matches an excluded file.
+
+``release-only`` prints those files, one path per line, with the counts on
+standard error; ``--host`` keeps the files that host runs. ``check`` refuses a
+``release_only`` pattern that places no file, a file two groups both place, a
+file that ``system_independent`` also lists, a malformed group, and any file of
+``RELEASE_EXCLUDED_TESTS`` that no group places or that a group lists for
+Windows, so the two lists cannot drift.
+
+``for`` leaves a release-only test out of its answer unless a changed path is
+release machinery (``hosts.release_paths``: ``release/``, the gate, oracle and
+quality-gate tools, the release manifest and roster, the signers file) or is
+that test file itself, so ordinary development never runs one by accident.
+``--include-release-only`` keeps them, for the certification reuse judgment.
 
 Standard library only; it reads files and writes nothing, except the one new
 file ``cert-files --write`` is asked for.
@@ -325,6 +346,149 @@ def host_problems(patterns: list[str], files: list[Path], owner: dict[str, str],
     return problems
 
 
+RELEASE_HOSTS = ("mac", "windows")
+
+
+def load_release_only(config: Path = CONFIG) -> tuple[list[dict], list[str]] | None:
+    """Return the ``release_only`` groups and the ``release_paths`` patterns.
+
+    Returns None when the configuration has no ``release_only`` key, so a
+    configuration written before the list existed keeps working. Each group
+    names the hosts that run its files at certification (the Mac always, and
+    Windows where Windows records a half of its own), a one-line reason and
+    file-stem patterns. A malformed group is refused rather than skipped, so a
+    typo cannot quietly put a release-only file back on Linux."""
+    hosts = json.loads(config.read_text(encoding="utf-8")).get("hosts")
+    if not isinstance(hosts, dict) or "release_only" not in hosts:
+        return None
+    raw = hosts["release_only"]
+    if not isinstance(raw, list):
+        raise ValueError(f"{config.name}: 'release_only' must be a list of groups")
+    groups = []
+    for i, group in enumerate(raw, 1):
+        where = f"{config.name}: release_only group {i}"
+        if not isinstance(group, dict):
+            raise ValueError(f"{where} must be an object")
+        names = group.get("hosts")
+        if (not isinstance(names, list) or not names
+                or not all(isinstance(n, str) for n in names)
+                or len(set(names)) != len(names)
+                or any(n not in RELEASE_HOSTS for n in names)
+                or "mac" not in names):
+            raise ValueError(f"{where} needs a 'hosts' list drawn from "
+                             f"{', '.join(RELEASE_HOSTS)} that includes 'mac' "
+                             "(the Mac runs the whole suite)")
+        reason = group.get("reason")
+        if not isinstance(reason, str) or not reason.strip():
+            raise ValueError(f"{where} needs a 'reason' in plain words")
+        patterns = group.get("patterns")
+        if (not isinstance(patterns, list) or not patterns
+                or not all(isinstance(p, str) and p for p in patterns)):
+            raise ValueError(f"{where} needs a non-empty list of 'patterns'")
+        groups.append({"hosts": tuple(names), "reason": reason,
+                       "patterns": patterns})
+    paths = hosts.get("release_paths", [])
+    if not isinstance(paths, list) \
+            or not all(isinstance(p, str) and p for p in paths):
+        raise ValueError(f"{config.name}: 'release_paths' must be a list of "
+                         "repository path patterns")
+    return groups, paths
+
+
+def release_only_files(groups: list[dict], files: list[Path]
+                       ) -> tuple[dict[Path, tuple[str, ...]], list[str]]:
+    """Map each release-only test file to the hosts that run it.
+
+    The second item names every file that two groups both place: its hosts
+    would be ambiguous, so ``check`` refuses it. The first group to place a
+    file keeps it."""
+    placed: dict[Path, tuple[str, ...]] = {}
+    doubled: list[str] = []
+    for group in groups:
+        mine: set[Path] = set()
+        for pattern in group["patterns"]:
+            mine.update(_files_matching(pattern, files))
+        for path in sorted(mine):
+            if path in placed:
+                if path.name not in doubled:
+                    doubled.append(path.name)
+            else:
+                placed[path] = group["hosts"]
+    return placed, doubled
+
+
+def release_only_problems(groups: list[dict], files: list[Path],
+                          independent: list[str], excluded: frozenset[str],
+                          test_dir: Path) -> list[str]:
+    """Plain messages for each ``release_only`` fault ``check`` refuses.
+
+    Whether a file really is release machinery is a judgment this cannot make;
+    it keeps the lists consistent: every pattern places a file, no file has two
+    owners or sits on ``system_independent`` too, and every file of
+    ``RELEASE_EXCLUDED_TESTS`` is placed, on the Mac only."""
+    problems = []
+    for group in groups:
+        for pattern in group["patterns"]:
+            if not _files_matching(pattern, files):
+                problems.append(f"release_only pattern {pattern!r} places no "
+                                "test file")
+    placed, doubled = release_only_files(groups, files)
+    for name in doubled:
+        problems.append(f"release_only groups both place {name}; list a file "
+                        "in one group only")
+    if independent:
+        owner, _unplaced, _unused = classify(
+            files, [{"name": "system_independent", "patterns": independent}])
+        for path in sorted(placed):
+            if path.stem in owner:
+                problems.append(f"{path.name} is on both release_only and "
+                                "system_independent; keep the two lists apart")
+    by_path = {_repo_path(p, test_dir): p for p in files}
+    for repo_path in sorted(excluded):
+        found = by_path.get(repo_path)
+        if found is None:
+            continue
+        if found not in placed:
+            problems.append(f"RELEASE_EXCLUDED_TESTS lists {repo_path}, but no "
+                            "release_only pattern places it; add it, for the "
+                            "Mac only, so the two lists agree")
+        elif "windows" in placed[found]:
+            problems.append(f"RELEASE_EXCLUDED_TESTS keeps {repo_path} to the "
+                            "Mac, but release_only lists it for windows")
+    return problems
+
+
+def _requested_paths(paths: list[str], root: Path) -> list[str]:
+    """The repository-relative names of paths ``tests_for_paths`` accepted."""
+    project_root = root.resolve()
+    names = []
+    for value in paths:
+        path = Path(value)
+        candidate = path.resolve() if path.is_absolute() else (project_root / path).resolve()
+        names.append(candidate.relative_to(project_root).as_posix())
+    return names
+
+
+def drop_unrelated_release_only(chosen: list[Path], requested: list[str],
+                                groups: list[dict], machinery: list[str],
+                                files: list[Path], root: Path
+                                ) -> tuple[list[Path], list[Path]]:
+    """Split ``for``'s answer into the tests to run and release-only tests held back.
+
+    A release-only test stays when some requested path is release machinery
+    (matches a ``release_paths`` pattern) or is that test file itself; with no
+    such path every release-only test is held back, so an ordinary change never
+    runs one."""
+    release_files = set(release_only_files(groups, files)[0])
+    if any(fnmatch.fnmatchcase(path, pattern)
+           for path in requested for pattern in machinery):
+        return chosen, []
+    named = {(root.resolve() / path).resolve() for path in requested}
+    kept = [p for p in chosen
+            if p not in release_files or p.resolve() in named]
+    return kept, [p for p in chosen if p not in kept]
+
+
 def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
                     reviewed_range: str | None = None,
                     broad_limit: int = 40,
@@ -501,16 +665,30 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
     scoped = sub.add_parser("for", help="tests that name changed file paths")
     scoped.add_argument("--range", dest="reviewed_range",
                         help="commit range covered by this review (required for AGENTS.md)")
+    scoped.add_argument("--include-release-only", action="store_true",
+                        help="keep release-only tests the changed paths do not "
+                        "touch (for the certification reuse judgment)")
     scoped.add_argument("paths", nargs="+")
     cert = sub.add_parser("cert-files", help="print the test files Linux and "
                           "Windows run at certification")
+    cert.add_argument("--host", choices=("linux", "windows"),
+                      help="windows adds back the release-only files listed "
+                      "for Windows; linux (the default) is the selection "
+                      "Linux and Windows share")
     cert.add_argument("--write", metavar="PATH",
                       help="also save the lines to a new file at this absolute path")
+    rel = sub.add_parser("release-only", help="print the test files that exist "
+                         "only to protect Cairn's own release cut")
+    rel.add_argument("--host", choices=RELEASE_HOSTS,
+                     help="keep only the files this host runs at certification")
     args = ap.parse_args(argv)
 
     try:
         tiers = load_tiers(config)
         hosts = load_hosts(config) if args.verb in ("check", "cert-files") else []
+        release = (load_release_only(config)
+                   if args.verb in ("check", "cert-files", "release-only", "for")
+                   else None)
     except (ValueError, json.JSONDecodeError) as exc:
         print(f"invalid tier configuration: {exc}", file=err)
         return 2
@@ -524,10 +702,21 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
         except ValueError as exc:
             print(str(exc), file=err)
             return 2
+        held: list[Path] = []
+        if release is not None and not args.include_release_only:
+            chosen, held = drop_unrelated_release_only(
+                chosen, _requested_paths(args.paths, root), release[0],
+                release[1], files, root)
         for path in chosen:
             print(path.relative_to(root) if path.is_relative_to(root) else path,
                   file=out)
         print(f"{len(chosen)} test files selected for the requested paths", file=err)
+        if held:
+            print(f"{len(held)} release-only test files held back, since no "
+                  "changed path is release machinery (--include-release-only "
+                  "keeps them): "
+                  + ", ".join(p.relative_to(root).as_posix() if p.is_relative_to(root)
+                              else str(p) for p in held), file=err)
         if omitted:
             print(f"{len(omitted)} AGENTS.md readers omitted above the guard: "
                   + ", ".join(str(p.relative_to(root)) for p in omitted), file=err)
@@ -578,9 +767,18 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
             return 2
         independent, _unplaced, _unused = classify(
             files, [{"name": "system_independent", "patterns": hosts}])
+        release_hosts = (release_only_files(release[0], files)[0]
+                         if release is not None else {})
+        windows = args.host == "windows"
+
+        def runs_on_this_host(path: Path) -> bool:
+            if _repo_path(path, test_dir) in excluded or path.stem in independent:
+                return False
+            listed = release_hosts.get(path)
+            return listed is None or (windows and "windows" in listed)
+
         lines = sorted(_repo_path(p, test_dir) for p in files
-                       if _repo_path(p, test_dir) not in excluded
-                       and p.stem not in independent)
+                       if runs_on_this_host(p))
         text = "".join(f"{line}\n" for line in lines)
         if args.write:
             target = Path(args.write)
@@ -597,9 +795,28 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
                 print(f"cannot write {target}: {exc}", file=err)
                 return 2
         out.write(text)
-        print(f"cert-files: {len(lines)} of {len(files)} test files run on Linux "
-              f"and Windows ({len(files) - len(lines)} left to the Mac: "
-              "Cairn-only or system-independent)", file=err)
+        kept_release = sum(1 for p in files
+                           if windows and "windows" in release_hosts.get(p, ()))
+        print(f"cert-files: {len(lines)} of {len(files)} test files run on "
+              f"{'Windows' if windows else 'Linux and Windows'} "
+              f"({len(files) - len(lines)} left to the Mac: Cairn-only, "
+              "release-only or system-independent)"
+              + (f"; release-only files listed for Windows and kept: "
+                 f"{kept_release}" if kept_release else ""), file=err)
+        return 0
+
+    if args.verb == "release-only":
+        placed = release_only_files(release[0], files)[0] if release else {}
+        chosen = sorted(
+            _repo_path(p, test_dir) for p, listed in placed.items()
+            if args.host is None or args.host in listed)
+        for line in chosen:
+            print(line, file=out)
+        windows_too = sum(1 for listed in placed.values() if "windows" in listed)
+        print(f"release-only: {len(chosen)} of {len(files)} test files"
+              + (f" run on {args.host}" if args.host else
+                 f" ({len(placed)} run on the Mac, {windows_too} of them also "
+                 "on Windows)"), file=err)
         return 0
 
     if args.verb == "check":
@@ -608,13 +825,17 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
         for name, pattern in unused:
             print(f"UNUSED   {name}: pattern {pattern!r} places no test file (matches none, or an earlier tier owns them)", file=err)
         problems = []
-        if hosts:
+        if hosts or release is not None:
             try:
                 excluded = load_release_excluded(test_dir)
             except ValueError as exc:
                 print(str(exc), file=err)
                 return 2
-            problems = host_problems(hosts, files, owner, excluded, test_dir)
+            if hosts:
+                problems = host_problems(hosts, files, owner, excluded, test_dir)
+            if release is not None:
+                problems += release_only_problems(
+                    release[0], files, hosts, excluded, test_dir)
         for problem in problems:
             print(f"HOSTS    {problem}", file=err)
         if unplaced or unused or problems:
