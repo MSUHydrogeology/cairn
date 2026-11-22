@@ -4503,3 +4503,22 @@ def test_a_link_out_of_a_log_folder_is_not_followed(tmp_path, monkeypatch, case)
 
     assert result["status"] == "written" and result["events"] == 1
     assert keys_of(ledger_of(home)) == [event_key_for("new-1")]
+
+
+@pytest.mark.parametrize("case", ["dev-link"] + (["file-link"] if _can_make_file_link() else []))
+def test_the_work_claims_are_not_read_through_a_link(tmp_path, case):
+    _home, _source, project, _config_path = c2_home(tmp_path)
+    _claim_id, rows = c2_claim_records("019a0000-0000-7000-8000-000000000001")
+    outside = tmp_path / "outside-dev"
+    outside.mkdir()
+    (outside / "intents.jsonl").write_bytes(b"".join(encoded(rows)))
+    if case == "dev-link":
+        (project / "dev").rename(project / "dev-original")
+        _make_folder_link(project / "dev", outside)
+    else:
+        (project / "dev" / "intents.jsonl").unlink()
+        (project / "dev" / "intents.jsonl").symlink_to(outside / "intents.jsonl")
+    approved = {"alias": "sample", "path": str(project),
+                "remote": "https://example.test/team/project.git"}
+
+    assert meter._capture_project_claims(approved) == ([], "attribution_unavailable")

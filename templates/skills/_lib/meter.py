@@ -295,10 +295,10 @@ def _is_link(info):
                 and getattr(info, "st_reparse_tag", 0) in _REPARSE_REDIRECTS)
 
 
-def _read_limited(path, limit, reason="unavailable"):
+def _read_limited(path, limit, reason="unavailable", *, nofollow=False):
     """Read at most `limit` bytes from one open; a longer file is refused."""
     try:
-        fd = os.open(path, os.O_RDONLY | _O_BINARY)
+        fd = os.open(path, os.O_RDONLY | _O_BINARY | (_O_NOFOLLOW if nofollow else 0))
         try:
             chunks, total = [], 0
             while True:
@@ -383,7 +383,7 @@ def _capture_project_claims(project):
                 return [], "attribution_unavailable"
         if not stat.S_ISREG(info.st_mode):
             return [], "attribution_unavailable"
-        raw = _read_limited(target, MAX_CLAIM_BYTES, "source_budget_exceeded")
+        raw = _read_limited(target, MAX_CLAIM_BYTES, "source_budget_exceeded", nofollow=True)
         lines = raw.splitlines(keepends=True)
         if any(len(line) > MAX_CLAIM_LINE for line in lines):
             raise Unavailable("source_budget_exceeded")
@@ -466,9 +466,16 @@ def _take_lock(area):
     def make():
         fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | _O_BINARY, 0o600)
         try:
-            os.write(fd, token)
-        finally:
+            if os.write(fd, token) != len(token):
+                raise OSError
+        except OSError:
             os.close(fd)
+            fd = -1
+            os.unlink(path)               # no empty lock is left behind
+            raise
+        finally:
+            if fd >= 0:
+                os.close(fd)
 
     try:
         try:
