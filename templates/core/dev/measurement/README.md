@@ -60,12 +60,17 @@ them.
   omits its cache-write count gets no total. The pulse prints each row's weighted total as `weighted=`, or `weighted=unknown` where the row has none.
 
   An `antigravity` conversation counts toward the one listed project whose path
-  its own saved files name, and toward no project if they name none or several.
+  its own saved files name, and toward no project if they name none or several,
+  or if the search hits a limit (16 MiB, 5,000 entries or 8 folder levels per
+  conversation) or cannot read a file.
   A project's export then carries `antigravity_project_inferred`, because
-  matching text is an inference, not proof. While any such conversation is
+  matching text is an inference, not proof; a row whose source is no longer
+  listed gets the same label. While any such conversation is
   unattributed, every project's export carries `antigravity_unattributed`, and
   its report shows INCOMPLETE once, on its header line, because those tokens
-  may belong to any project.
+  may belong to any project. An `antigravity` source also has the saved text
+  files in each conversation folder searched for project paths; only which
+  listed projects matched leaves.
 
   After explicit consent, create the version-1 config at the fixed account
   path with only the approved provider and project paths. The aliases below

@@ -59,7 +59,9 @@ them.
 * **Opt-in Meter collection** — `tools/meter.py` reads consent from
   `~/.cairn/meter.json` in the account's home folder (not the `HOME` variable,
   on Mac and Linux); installation creates no configuration or ledger. It reads
-  only what the file lists, and only counts leave a log. The file's content is
+  only what the file lists, and only counts leave a log (an `antigravity` source
+  also has the saved text files in each conversation folder searched for project
+  paths; only which listed projects matched leaves). The file's content is
   checked, not who wrote it. The config is version 1 with `enabled`, `sources`,
   and `projects`. A source names an alias, a tool (`codex`, `claude`, or
   `antigravity`) and the absolute root to scan; a project names an alias, its
@@ -101,7 +103,8 @@ them.
   50,000) are folded into daily totals, which lose the per-artifact split. A run
   that stopped at its limit or could not open a log prints `meter partial:
   catching_up` and exits 5; run `refresh` again until it prints `ok`. A Codex
-  log over 512 MiB is skipped each run (`meter partial: source_too_large`).
+  log over 512 MiB is skipped each run (`meter partial: source_too_large`), and
+  so is an Antigravity log with a line over 8 MiB.
   While the receipt is not `ok` or `disabled`, `python tools/session.py
   session-end --handoff` skips both prunes and exits 5. The summary lists
   `incomplete` among its coverage reasons and the pulse report prints
@@ -142,9 +145,12 @@ them.
   omits its cache-write count gets no total. The pulse prints each row's weighted total as `weighted=`, or `weighted=unknown` where the row has none.
 
   An `antigravity` conversation counts toward the one listed project whose path
-  its own saved files name, and toward no project if they name none or several.
+  its own saved files name, and toward no project if they name none or several,
+  or if the search hits a limit (16 MiB, 5,000 entries or 8 folder levels per
+  conversation) or cannot read a file.
   A project's export then carries `antigravity_project_inferred`, because
-  matching text is an inference, not proof. While any such conversation is
+  matching text is an inference, not proof; a row whose source is no longer
+  listed gets the same label. While any such conversation is
   unattributed, every project's export carries `antigravity_unattributed`, and
   its report shows INCOMPLETE once, on its header line, because those tokens
   may belong to any project.
