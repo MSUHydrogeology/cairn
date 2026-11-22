@@ -2726,8 +2726,8 @@ def _project_export(ledger, config, project_alias):
     reasons = set(verified_ledger["coverage"]["reasons"])
     reasons.add("global_completeness_unknown")
     # A row's tool comes from the consent file's sources today, so a row whose source
-    # was removed has tool None and may be Antigravity's: label it too (it can also
-    # label a removed Claude or Codex source, the safe direction).
+    # was removed has tool None and may be an inferred one: label it too (it can also
+    # label a removed source of another tool, the safe direction).
     if any(row["tool"] in ("antigravity", None) for row in aggregates):  # vendor-ok: text match is an inference
         reasons.add("antigravity_project_inferred")
     result = {
