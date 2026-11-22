@@ -1,7 +1,7 @@
 # Plan: Config-driven model weights, configurable agent tiers, and Antigravity fixes
 
 **Source proposal**: dev/proposals/archive/2026-11-22-neon-config-driven-meter-tiers-and-antigravity.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/custom_session_routines.md, dev/rules/development-environment.md
@@ -61,3 +61,39 @@ Run once on macOS (`/Users/kendal30/conda_envs/lhm/bin/python3.13`) in the imple
 - `python tests/check_cairn.py dev/measurement/README.md templates/core/dev/measurement/README.md dev/rules/custom_session_routines.md CHANGELOG.md dev/plans/2026-11-22-config-driven-meter-tiers-and-antigravity.md`
 - `python dev/tools/sync_doc_snippets.py --check`
 - Post-merge live check: install `~/.cairn/meter-models.json`, test v6->v7 migration on a disposable copy of the backed-up ledger, move live `~/.cairn/meter/ledger.json` aside cleanly, run `meter.py --json` and `meter.py refresh --report --json`, and confirm `cairn-meter-project/3`, `frontier`/`high`/`medium`/`low` tiers, and Antigravity counts match.
+
+## Plan review -- Gemini 4 Neon (Reviewer) -- 2026-11-22
+
+```
+Reviewed commit: fb951b19f45fdbc7065f04ac09013fee13470630
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: ~7m
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes — the 4-chunk plan delivers all accepted Decision commitments (v0.8.1, `frontier` tier for `Fable`/`Astra`/`Carbon`, `cache_read_tokens`, post-landing W1 backup), with two C1/C2 contract gaps (B1–B2) that block clean Low-tier execution -- checked `dev/proposals/archive/2026-11-22-neon-config-driven-meter-tiers-and-antigravity.md:215-231`, `dev/tools/meter.py:1948-2010, 2374-2407, 4089-4141`, `dev/tools/pulse.py:291-470`.
+2. **Best alternative.** Keep the 4-chunk sequence as framed; no simpler path delivers config-driven weights, configurable tiers, v6->v7 migration, and Antigravity fixes together -- verified `dev/tools/check_model_selection.py:155-235` and `tests/test_model_selection_stub.py:154-231` already accept `tier: frontier` without checker edits.
+3. **What would show it wrong.** Cross-model prefix overlaps slipping past validation, Antigravity models staying `weighted=None`, unconfigured `_add_rows` failing `ledger_invalid`, or `pulse.py` rejecting `meter.py`'s `by_tier` -- checked `dev/tools/meter.py:941, 2393-2395, 4092`, `dev/tools/pulse.py:354`.
+
+**Does any rule weaken or disappear?** No: adding `cache_read_tokens` to `dev/rules/custom_session_routines.md:44-54` preserves its allowlist, `docs/methodology/roles.md` stays untouched, and `tests/quality_gate.py --sub neutrality` currently exits 0 (verified).
+
+**Pareto 80/20 test check:** Pass — Verification runs only the 6 directly affected test files plus targeted checks (`check_model_selection.py`, neutrality, twin `cmp`, `verify_integrity.py`, `check_cairn.py`, `sync_doc_snippets.py --check`) with no full-suite bloat.
+
+**Findings**
+
+1. **B1 (Blocking — C1 validation & weight-prefix contract):** C1 enforces non-overlapping prefixes only "per model" (missing cross-model overlaps required by Proposal S2), omits prefix lookup in `_weighted_reference_tokens` (leaving Antigravity's suffixed `model` names unweighted), and omits `tiers` bounds/membership validation (allowing a `tier` outside `tiers` to drop out of `by_tier` and fail `pulse.py`).
+   - *Exact closure*: In C1, replace `<= 32 distinct non-overlapping prefixes per model` with `<= 32 distinct prefixes per model with no exact or prefix overlap across all models[*].prefixes`; replace `configurable tiers default ["high", "medium", "low"] excluding "unknown"/"unspecified"` with `configurable tiers (1..32 distinct r"[a-z][a-z0-9_-]{0,31}" strings, default ["high", "medium", "low"], excluding "unknown"/"unspecified"; every models[m].tier and tier_rules[i].tier must be in tiers)`; and add before `_resolve_model_tier`: `_weighted_reference_tokens resolves exact models[m] before unambiguous models[*].prefixes (failing closed to None).`
+
+2. **B2 (Blocking — C1/C2 `_add_rows`, `_load_ledger`, and `by_tier` parity):** `_add_rows` (`dev/tools/meter.py:2393-2395`) references removed `RATIO_VERSION`; when `models_config` is `None`, merging two differently-indexed daily rows into `reference_index=None` with non-`None` `reference_tokens` violates `_validate_aggregate_row` and fails `_atomic_replace_ledger` (`941`). `_load_ledger` also needs `(ratio_version is None) == (ratio_index is None)` and exact `(schema, reader_version)` pair checks. In C2, `by_tier` omits zero-event-tier rules and non-terminating weight rounding parity (`meter.py:4092` rounds to 28 digits, causing raw `Fraction` comparison in `pulse.py` to reject valid `[1, 3]` exports).
+   - *Exact closure*: Append to C1: `_load_ledger requires (ratio_version is None) == (ratio_index is None) and exact (schema, reader_version) pairs (/6+/6 or /7+/7); _add_rows takes current ratio_version and sets reference_tokens to all-None whenever resulting reference_index is None.` In C2, change `ordered "by_tier" (models_config["tiers"] then "unknown", [] when empty)` to `ordered "by_tier" containing only tiers with events >= 1 (models_config["tiers"] then "unknown", [] when empty)` and change `consistent by_tier` to `consistent by_tier matching exact aggregate tiers (events >= 1, len <= 33, excluding "unspecified", comparing sums via _fraction_text parity)`.
+
+3. **N1 (Non-blocking — C4 existing test updates):** In `tests/integration/test_meter.py`, 11 Antigravity tests (`L1370`, `L4867`–`L5346`) write `a.jsonl`/`x.jsonl`/`y.jsonl`/`z.jsonl` (with `L5106` asserting `2 + 3` entries from `scandir(logs)`), and `L1784`, `L2164`–`L2297`, `L4251`–`L4295` use removed `_RATIO_INDEX`/`RATIO_VERSION` or unconfigured homes; update them alongside C4 (migrating to `transcript.jsonl`, converting `y.jsonl` to a `transcript_full.jsonl` skip check, and updating `L5106` to `2 + 1`).
+
+**Not covered**: Internal Security Review pass (separate required review), `pytest` execution, and private `~/.cairn/`/`~/.gemini/` files (ran `quality_gate.py --sub neutrality`, twin `cmp`, `verify_integrity.py`, `claim_check.py`, `check_cairn.py`, and a 28-digit `Decimal`/`Fraction` check). Exceeds the 300-word target to supply exact one-round closure text for B1–B2.
