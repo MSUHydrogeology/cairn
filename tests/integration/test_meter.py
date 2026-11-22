@@ -1336,6 +1336,15 @@ def test_antigravity_token_records_become_events_with_unknown_cache_kinds(tmp_pa
     other = read_antigravity([reply, antigravity_reply(output_tokens=31),
                               antigravity_reply(created_at="2026-11-05T12:00:01Z")])
     assert len(other["events"]) == 3
+    # The same instant spelled with an offset is the same reply, not a second one.
+    same_instant = read_antigravity(
+        [reply, antigravity_reply(created_at="2026-11-05T07:00:00-05:00")])
+    assert [item["event_key"] for item in same_instant["events"]] == [event["event_key"]]
+    # A record that names its own conversation is an ordinary reply.
+    own = read_antigravity([antigravity_reply(conversationId=AG_CONVERSATION,
+                                              conversation_id=AG_CONVERSATION)])
+    assert [item["event_key"] for item in own["events"]] == [event["event_key"]]
+    assert own["issues"] == []
 
     root = Path(host_absolute(tmp_path / "ag-source"))
     config = {"version": 1, "enabled": True,
@@ -1380,6 +1389,8 @@ def test_antigravity_token_records_become_events_with_unknown_cache_kinds(tmp_pa
     (antigravity_reply(created_at="2026-11-05"), {}, "invalid_record"),
     (antigravity_reply(created_at="not-a-time"), {}, "invalid_record"),
     (antigravity_reply(created_at=1_700_000_000), {}, "invalid_record"),
+    (antigravity_reply(created_at="9999-12-31T23:59:59-05:00"), {}, "invalid_record"),
+    (antigravity_reply(created_at="0001-01-01T00:00:00+05:00"), {}, "invalid_record"),
     ({"input_tokens": 5, "output_tokens": 5}, {}, "invalid_record"),
     (antigravity_reply(conversationId="3f2e1d0c-9b8a-4c7d-8e6f-5a4b3c2d1e0f"), {},
      "conflicting_binding"),
@@ -4804,8 +4815,10 @@ ATTRIBUTION_CASES = [
                  "antigravity_project_not_named", id="a-period-then-a-letter"),
     pytest.param({"notes.dat": lambda r: f"{r}\n"}, {}, None,
                  "antigravity_project_not_named", id="a-file-that-is-not-a-text-kind"),
-    pytest.param({"a.md": lambda r: f"{r}\n" + "." * 50, "b.md": lambda r: "." * 60},
-                 {"MAX_ATTRIBUTION_BYTES": 100}, None,
+    # The first file is read in full (the temp path alone is longer than a small fixed
+    # limit, so the limit follows the root); the second is 60 bytes against 59 left.
+    pytest.param({"a.md": lambda r: f"{r}\n", "b.md": lambda r: "." * 60},
+                 {"MAX_ATTRIBUTION_BYTES": lambda r: len(r) + 60}, None,
                  "antigravity_search_incomplete", id="a-byte-cap-passed-across-files"),
     pytest.param({f"n{number}.md": (lambda r: f"{r}\n") for number in range(5)},
                  {"MAX_ATTRIBUTION_ENTRIES": 3}, None,
@@ -4842,7 +4855,7 @@ def test_an_antigravity_conversation_is_attributed_only_to_the_one_listed_projec
         else:
             (folder / "linked.md").symlink_to(outside / "notes.md")
     for name, value in patches.items():
-        monkeypatch.setattr(meter, name, value)
+        monkeypatch.setattr(meter, name, value(root) if callable(value) else value)
     assert meter._refresh_ledger(home)["events"] == 0             # the start
 
     grow(log, reply_lines(antigravity_reply(created_at=NEW)))
@@ -4902,11 +4915,19 @@ def test_an_antigravity_refresh_reads_only_conversation_logs_and_counts_each_rep
     grow(real, reply_lines(old_copy, reply_a))                    # a copy before the start, a reply
     (logs / "y.jsonl").write_bytes(reply_lines(old_copy, reply_a, reply_a, reply_b))
     grow(claude_log, claude_lines("new-1", timestamp=NEW))
-    opened, real_open = [], os.open
+    opened, real_open, named_by = [], os.open, {}
 
-    def spy(path, *args, **kwargs):
-        opened.append(os.fsdecode(path))
-        return real_open(path, *args, **kwargs)
+    def spy(path, flags=0, *args, dir_fd=None, **kwargs):
+        # A name opened inside an open folder is recorded by its whole path.
+        full = os.fsdecode(path)
+        if dir_fd is None:
+            handle = real_open(path, flags, *args, **kwargs)
+        else:
+            full = os.path.join(named_by.get(dir_fd, "?"), full)
+            handle = real_open(path, flags, *args, dir_fd=dir_fd, **kwargs)
+        named_by[handle] = full
+        opened.append((full, flags))
+        return handle
 
     with monkeypatch.context() as patched:
         patched.setattr(os, "open", spy)
@@ -4921,11 +4942,24 @@ def test_an_antigravity_refresh_reads_only_conversation_logs_and_counts_each_rep
         assert by_key[key]["project_alias"] == "sample" and by_key[key]["reasons"] == []
     # The search reads the conversation's saved text, the chunks copy included, and the
     # log reader reads the two real logs; nothing else under the root is opened.
-    inside = {path for path in opened if path.startswith(str(ag_root))}
+    # (A `chunks/` copy is never read as a log: its counts are not in the ledger above.)
+    paths = [path for path, _flags in opened]
+    inside = {path for path, flags in opened
+              if path.startswith(str(ag_root)) and not flags & meter._O_DIRECTORY}
     base = ag_root / "brain" / AG_CONVERSATION
     assert inside == {str(base / "notes.md"), str(real), str(logs / "y.jsonl"),
                       str(logs / "chunks" / "copy.jsonl")}
-    assert not any(path.startswith((str(outside), str(beside))) for path in opened)
+    assert not any(path.startswith((str(outside), str(beside))) for path in paths)
+    # The search opens each saved file, and on Mac and Linux each folder too, without
+    # following a link or waiting on a pipe (where the platform has those flags).
+    for path, flags in opened:
+        if path.startswith(str(ag_root)) and path != str(real) and path != str(logs / "y.jsonl"):
+            assert flags & meter._O_NOFOLLOW == meter._O_NOFOLLOW, path
+            assert flags & meter._O_NONBLOCK == meter._O_NONBLOCK, path
+    if meter._DIR_FD_WALK:
+        folders = {path for path, flags in opened if flags & meter._O_DIRECTORY}
+        assert str(base) in folders and str(base / ".system_generated" / "logs") in folders
+        assert all(path.startswith(str(ag_root)) for path in folders)
 
     # A folder with more conversations than its cap waits, and the other sources still count.
     other = antigravity_logs(ag_root, AG_OTHER)
@@ -5095,3 +5129,225 @@ def test_antigravity_attribution_shows_in_the_export_reasons(tmp_path):
         assert ("antigravity_project_inferred" in marked[0]) == (name == "sample")
     usage_line, = [line for line in printed["sample"] if "tool=antigravity" in line]
     assert "weighted=unknown" in usage_line
+
+
+# ---- Antigravity: the code review's fixes (plan antigravity-reader, code response) ----
+
+AG_THIRD = "5c4d3e2f-1a0b-4c9d-8e7f-6a5b4c3d2e1f"
+AG_FOURTH = "2f1e0d9c-8b7a-4695-a483-72615a4b3c2d"
+
+
+def ledger_cursor(home, alias, relative):
+    key = meter._digest("cursor", alias, relative)
+    return next((item for item in ledger_of(home)["cursors"] if item["file_key"] == key), None)
+
+
+@pytest.mark.parametrize("when", ["after-the-start", "at-the-start"])
+def test_one_over_long_antigravity_line_skips_that_log_and_never_stops_another_tool(
+        tmp_path, monkeypatch, when):
+    home, ag_root, claude_root, _project, _config_path = antigravity_home(tmp_path, claude=True)
+    logs = antigravity_logs(ag_root, AG_CONVERSATION)
+    log = logs / "x.jsonl"
+    relative = f"brain/{AG_CONVERSATION}/.system_generated/logs/x.jsonl"
+    long_reply = reply_lines(antigravity_reply(created_at=NEW, content="x" * 1000))
+    log.write_bytes(reply_lines(antigravity_reply(created_at=OLD))
+                    + (long_reply if when == "at-the-start" else b""))
+    claude_log = claude_root / "session.jsonl"
+    claude_log.write_bytes(claude_lines("old-1", timestamp=OLD))
+    monkeypatch.setattr(meter, "MAX_LINE", 500)           # the Claude lines stay under it
+
+    first = meter._refresh_ledger(home)                    # the start
+    assert first["events"] == 0
+    if when == "after-the-start":
+        assert first["status"] == "written"
+        before = ledger_cursor(home, "ag-source", relative)
+        assert before is not None
+        grow(log, long_reply)
+    else:
+        assert (first["status"], first["reason"]) == ("partial", "source_too_large")
+        assert ledger_cursor(home, "ag-source", relative) is None      # nothing to keep yet
+    grow(claude_log, claude_lines("new-1", timestamp=NEW))
+
+    second = meter._refresh_ledger(home)
+
+    # The log with the long line is skipped and named; the Claude reply still counts.
+    assert (second["status"], second["reason"]) == ("partial", "source_too_large"), second
+    ledger = ledger_of(home)
+    assert keys_of(ledger) == [event_key_for("new-1")]
+    assert "source_too_large" in ledger["coverage"]["reasons"]
+    assert "source_budget_exceeded" not in ledger["coverage"]["reasons"]
+    if when == "after-the-start":
+        assert ledger_cursor(home, "ag-source", relative) == before       # its old position
+    assert "SECRET" not in json.dumps(ledger)
+
+
+@pytest.mark.skipif(os.name != "posix", reason="Windows walks by path (plan rule 7)")
+def test_a_folder_swapped_for_a_link_during_the_antigravity_search_is_not_followed(
+        tmp_path, monkeypatch):
+    home, ag_root, _claude, project, _config_path = antigravity_home(tmp_path)
+    folder = ag_root / "brain" / AG_CONVERSATION
+    log = antigravity_logs(ag_root, AG_CONVERSATION) / "x.jsonl"
+    log.write_bytes(reply_lines(antigravity_reply(created_at=OLD)))
+    (folder / "a-notes.md").write_text("nothing named here\n", encoding="utf-8")
+    (folder / "zz").mkdir()
+    (folder / "zz" / "inner.md").write_text("nothing named here either\n", encoding="utf-8")
+    outside = tmp_path / "outside-saved-files"
+    outside.mkdir()
+    (outside / "inner.md").write_text(f"saved in {project}\n", encoding="utf-8")
+    assert meter._refresh_ledger(home)["events"] == 0                  # the start
+    grow(log, reply_lines(antigravity_reply(created_at=NEW)))
+    real_open, swapped = os.open, []
+
+    def swap(path, *args, **kwargs):
+        # The folder `zz` was listed as a real folder; now it becomes a link out of the root.
+        if os.fsdecode(path).endswith("a-notes.md") and not swapped:
+            (folder / "zz" / "inner.md").unlink()
+            (folder / "zz").rmdir()
+            _make_folder_link(folder / "zz", outside)
+            swapped.append(True)
+        return real_open(path, *args, **kwargs)
+
+    with monkeypatch.context() as patched:
+        patched.setattr(os, "open", swap)
+        result = meter._refresh_ledger(home)
+
+    assert swapped and result["status"] == "written", result
+    event, = ledger_of(home)["events"]
+    assert (event["project_alias"], event["ownership"], event["reasons"]) == (
+        None, "unknown", ["antigravity_search_incomplete"])
+
+
+def test_an_inferred_figure_keeps_its_label_after_the_antigravity_source_is_removed(tmp_path):
+    home, ag_root, _claude, project, config_path = antigravity_home(tmp_path)
+    logs = antigravity_logs(ag_root, AG_CONVERSATION)
+    (logs.parent.parent / "notes.md").write_text(f"saved in {project}\n", encoding="utf-8")
+    log = logs / "x.jsonl"
+    log.write_bytes(reply_lines(antigravity_reply(created_at=OLD)))
+    assert meter._refresh_ledger(home)["events"] == 0
+    grow(log, reply_lines(antigravity_reply(120, 30, NEW)))
+    assert meter._refresh_ledger(home)["status"] == "written"
+    export_path = project / "dev" / "measurement" / "meter.json"
+
+    def exported():
+        return json.loads(export_path.read_text(encoding="utf-8"))
+
+    assert "antigravity_project_inferred" in exported()["coverage"]["reasons"]
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["sources"] = [item for item in config["sources"] if item["tool"] != "antigravity"]
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    config_path.chmod(0o600)
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    # The figure is still in the project's export, its tool no longer named, and still marked.
+    after = exported()
+    row, = [item for item in after["aggregates"] if item["kinds"]["fresh_input"] == 120]
+    assert row["tool"] is None and row["kinds"]["output"] == 30
+    assert "antigravity_project_inferred" in after["coverage"]["reasons"]
+
+
+def test_an_antigravity_walk_never_follows_a_link_at_any_level_and_stops_at_its_entry_caps(
+        tmp_path, monkeypatch):
+    root = tmp_path / "walk-root"
+    real_logs = antigravity_logs(root, AG_CONVERSATION)
+    (real_logs / "a.jsonl").write_bytes(reply_lines(antigravity_reply()))
+    tree = tmp_path / "outside-conversation"           # a whole conversation, outside the root
+    (tree / ".system_generated" / "logs").mkdir(parents=True)
+    decoy = reply_lines(antigravity_reply(9990, 9991, NEW))
+    (tree / ".system_generated" / "logs" / "d.jsonl").write_bytes(decoy)
+    _make_folder_link(root / "brain" / AG_OTHER, tree)                         # the conversation
+    (root / "brain" / AG_THIRD).mkdir()
+    _make_folder_link(root / "brain" / AG_THIRD / ".system_generated",
+                      tree / ".system_generated")                              # its middle folder
+    (root / "brain" / AG_FOURTH / ".system_generated").mkdir(parents=True)
+    _make_folder_link(root / "brain" / AG_FOURTH / ".system_generated" / "logs",
+                      tree / ".system_generated" / "logs")                     # its logs folder
+
+    files, entries, waiting = meter._enumerate_antigravity(str(root))
+
+    assert [name for name, _info in files] == [
+        f"brain/{AG_CONVERSATION}/.system_generated/logs/a.jsonl"]
+    assert not waiting
+    # The entry caps: the listing of `brain/` (4 folders), then of a conversation's logs.
+    monkeypatch.setattr(meter, "MAX_ATTRIBUTION_RUN_ENTRIES", 1)
+    assert meter._enumerate_antigravity(str(root)) == ([], 2, True)    # stops in `brain/`
+    monkeypatch.setattr(meter, "MAX_ATTRIBUTION_RUN_ENTRIES", 4)       # `brain/` fits, its logs do not
+    assert meter._enumerate_antigravity(str(root)) == ([], 5, True)
+
+
+def make_two_attributed_conversations(tmp_path):
+    """Two conversations that both name the project, each with one old reply (the start)."""
+    home, ag_root, _claude, project, _config_path = antigravity_home(tmp_path)
+    logs = {}
+    for conversation in (AG_CONVERSATION, AG_OTHER):
+        folder = antigravity_logs(ag_root, conversation)
+        (folder.parent.parent / "notes.md").write_text(f"saved in {project}\n", encoding="utf-8")
+        logs[conversation] = folder / "x.jsonl"
+        logs[conversation].write_bytes(reply_lines(antigravity_reply(created_at=OLD)))
+    assert meter._refresh_ledger(home)["events"] == 0                  # the start
+    grow(logs[AG_CONVERSATION], reply_lines(antigravity_reply(120, 30, NEW)))
+    grow(logs[AG_OTHER], reply_lines(antigravity_reply(7, 3, NEW)))
+    return home, ag_root
+
+
+@pytest.mark.parametrize("limit", ["search-bytes", "search-entries", "read-bytes"])
+def test_an_antigravity_conversation_the_refresh_cannot_pay_for_waits_for_the_next_refresh(
+        tmp_path, monkeypatch, limit):
+    home, ag_root = make_two_attributed_conversations(tmp_path)
+    patched = {
+        "search-bytes": ("MAX_ATTRIBUTION_RUN_BYTES", meter.MAX_ATTRIBUTION_BYTES),
+        "search-entries": ("MAX_ATTRIBUTION_RUN_ENTRIES", meter._enumerate_antigravity(
+            str(ag_root))[1] + meter.MAX_ATTRIBUTION_ENTRIES),
+        "read-bytes": ("MAX_RUN_READ_BYTES", meter.MAX_ATTRIBUTION_BYTES + 10),
+    }[limit]
+    real_value = getattr(meter, patched[0])
+    monkeypatch.setattr(meter, *patched)
+
+    second = meter._refresh_ledger(home)
+
+    # The first conversation (by name) is searched and counted; the second waits, labelled.
+    assert (second["status"], second["reason"]) == ("partial", "catching_up"), second
+    assert keys_of(ledger_of(home)) == [antigravity_key(NEW, 120, 30)]
+
+    monkeypatch.setattr(meter, patched[0], real_value)                 # not monkeypatch.undo()
+    third = meter._refresh_ledger(home)
+    assert third["status"] == "written", third
+    assert keys_of(ledger_of(home)) == sorted([antigravity_key(NEW, 120, 30),
+                                               antigravity_key(NEW, 7, 3, AG_OTHER)])
+
+
+def test_a_claude_time_beyond_the_year_9999_limit_is_an_unknown_time_not_a_stopped_refresh(
+        tmp_path):
+    home, _ag_root, claude_root, _project, _config_path = antigravity_home(tmp_path, claude=True)
+    claude_log = claude_root / "session.jsonl"
+    claude_log.write_bytes(claude_lines("old-1", timestamp=OLD))
+    assert meter._refresh_ledger(home)["events"] == 0                  # the start
+    grow(claude_log, claude_lines("far-1", timestamp="9999-12-31T23:59:59-05:00")
+         + claude_lines("new-1", timestamp=NEW))
+
+    result = meter._refresh_ledger(home)
+
+    # The reply with that time counts with its time unknown, as any unreadable time does.
+    assert result["status"] == "written", result
+    ledger = ledger_of(home)
+    assert keys_of(ledger) == sorted([event_key_for("far-1"), event_key_for("new-1")])
+    by_key = {event["event_key"]: event for event in ledger["events"]}
+    assert by_key[event_key_for("far-1")]["time_coverage"] == "unknown"
+    assert by_key[event_key_for("new-1")]["time_coverage"] == "known"
+
+
+@pytest.mark.skipif(os.name != "posix" or (hasattr(os, "geteuid") and os.geteuid() == 0),
+                    reason="needs a folder this account cannot read")
+def test_an_antigravity_conversation_with_an_unreadable_folder_is_left_unattributed(tmp_path):
+    folder = tmp_path / "brain" / AG_CONVERSATION
+    (folder / "sub").mkdir(parents=True)
+    (folder / "notes.md").write_text("/synthetic/project\n", encoding="utf-8")
+    (folder / "sub" / "inner.md").write_text("nothing\n", encoding="utf-8")
+    (folder / "sub").chmod(0)
+    projects = [{"alias": "only", "path": "/synthetic/project",
+                 "remote": "https://example.test/team/p.git"}]
+    try:
+        found = meter._conversation_project(str(tmp_path), AG_CONVERSATION, projects)
+    finally:
+        (folder / "sub").chmod(0o700)
+    assert found[:2] == (None, "antigravity_search_incomplete")

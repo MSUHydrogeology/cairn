@@ -342,6 +342,12 @@ def validate_config_bytes(raw):
 
 _O_BINARY = getattr(os, "O_BINARY", 0)
 _O_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
+_O_DIRECTORY = getattr(os, "O_DIRECTORY", 0)
+_O_NONBLOCK = getattr(os, "O_NONBLOCK", 0)
+# Mac and Linux walk a folder by open handles, so no path is read again after a
+# check. Windows lacks them (no O_NOFOLLOW, no handle-relative open): it walks by path.
+_DIR_FD_WALK = bool(_O_NOFOLLOW and _O_DIRECTORY and os.open in os.supports_dir_fd
+                    and os.scandir in os.supports_fd)
 # Windows reparse tags that redirect a folder or file: a symbolic link, a mount point.
 _REPARSE_REDIRECTS = frozenset({0xA000000C, 0xA0000003})
 _REPARSE_ATTRIBUTE = 0x400
@@ -458,7 +464,8 @@ def _enumerate_antigravity(root):  # vendor-ok: walk the one folder shape the to
     Returns `(files, entries, waiting)`: the files as `_enumerate_jsonl` lists
     them, the entries listed, and whether a cap or an error inside one
     conversation left something for the next refresh. A missing `brain/` or
-    `logs/` gives no files. Only a missing or linked root raises Unavailable.
+    `logs/` gives no files. Only a root that is missing, linked or not a folder
+    raises Unavailable.
     """
     try:
         info = os.lstat(root)
@@ -588,16 +595,19 @@ def _names_project(window, spelling, at_start, at_end):
     return False
 
 
-def _search_attribution_file(path, identity, allowance, names, overlap):
+def _search_attribution_file(path, identity, allowance, names, overlap, dir_fd=None):
     """Search one file's text for project names, reading at most `allowance` bytes.
 
     Returns (aliases named, bytes read, complete). The file must open without
-    following a link and be the file the walk saw (same device and inode); a file
-    larger than the allowance is not opened for reading. Never raises on a read.
+    following a link or, where the platform has the flag, waiting on a pipe, and
+    be the file the walk saw (same device and inode); a file larger than the
+    allowance is opened but not read. With `dir_fd`, `path` is a name inside that
+    open folder, so no folder path is resolved again. Never raises on a read.
     """
     named, used = set(), 0
     try:
-        fd = os.open(path, os.O_RDONLY | _O_BINARY | _O_NOFOLLOW)
+        fd = os.open(path, os.O_RDONLY | _O_BINARY | _O_NOFOLLOW | _O_NONBLOCK,
+                     **({} if dir_fd is None else {"dir_fd": dir_fd}))
     except (OSError, ValueError):
         return named, used, False
     try:
@@ -628,6 +638,29 @@ def _search_attribution_file(path, identity, allowance, names, overlap):
         os.close(fd)
 
 
+def _open_search_folder(target, parent=None, identity=None):
+    """An open handle on a folder, or None. Never follows a link at `target`.
+
+    `target` is a name inside the open folder `parent`, or a path when there is
+    none. The handle must be a folder and, when `identity` (device, inode) is
+    given, the folder the listing saw. Only for platforms that have `_DIR_FD_WALK`.
+    """
+    try:
+        fd = os.open(target, os.O_RDONLY | _O_DIRECTORY | _O_NOFOLLOW | _O_NONBLOCK,
+                     **({} if parent is None else {"dir_fd": parent}))
+    except (OSError, ValueError):
+        return None
+    try:
+        opened = os.fstat(fd)
+        if stat.S_ISDIR(opened.st_mode) and (
+                identity is None or (opened.st_dev, opened.st_ino) == identity):
+            return fd
+    except OSError:
+        pass
+    os.close(fd)
+    return None
+
+
 def _conversation_project(source_root, conversation, projects):  # vendor-ok: the saved files of one conversation
     """Which one listed project do a conversation's saved files name? (plan rule 5)
 
@@ -637,8 +670,13 @@ def _conversation_project(source_root, conversation, projects):  # vendor-ok: th
     `(alias, None, bytes read, entries)` for exactly one project named, else
     `(None, reason, bytes read, entries)` with the reason `antigravity_projects_ambiguous`
     (two or more named, found first), `antigravity_search_incomplete` (a cap, an
-    unreadable file or folder) or `antigravity_project_not_named`. Only which
-    projects matched leaves the search.
+    unreadable file or folder, a folder replaced by a link) or
+    `antigravity_project_not_named`. Only which projects matched leaves the search.
+
+    On Mac and Linux the walk holds every folder open and opens each name inside
+    its parent's handle with O_NOFOLLOW, so a folder swapped for a link after it
+    was listed is refused, never followed out of the root. Windows has no such
+    open (plan rule 7): it walks by path, as the log stream does.
     """
     names = {project["alias"]: _attribution_spellings(project["path"])
              for project in projects}
@@ -648,12 +686,13 @@ def _conversation_project(source_root, conversation, projects):  # vendor-ok: th
                   for spelling in spellings) + 8
     named, incomplete, capped = set(), False, False
     used = entries = 0
-    stack = [(os.path.join(source_root, "brain", conversation), 0)]
-    while stack and len(named) < 2 and not capped:
-        directory, depth = stack.pop()
+
+    def walk(folder, depth):
+        # `folder` is an open handle (Mac, Linux) or a path (Windows).
+        nonlocal incomplete, capped, used, entries
         listing = []
         try:
-            with os.scandir(directory) as scan:
+            with os.scandir(folder) as scan:
                 for entry in scan:
                     entries += 1
                     if entries > MAX_ATTRIBUTION_ENTRIES:
@@ -666,29 +705,65 @@ def _conversation_project(source_root, conversation, projects):  # vendor-ok: th
             incomplete = True
         if capped:
             incomplete = True
-            break
+            return
         folders = []
         for name, path, info in sorted(listing, key=lambda item: item[0]):
             if stat.S_ISDIR(info.st_mode):
                 if depth >= MAX_ATTRIBUTION_DEPTH:
                     incomplete = True
                 else:
-                    folders.append((path, depth + 1))
+                    folders.append((name, path, info))
             elif stat.S_ISREG(info.st_mode) and name.endswith(_ATTRIBUTION_SUFFIXES):
-                try:
-                    walked = os.lstat(path)
-                except (OSError, ValueError):
-                    incomplete = True
-                    continue
+                if _DIR_FD_WALK:
+                    seen = (info.st_dev, info.st_ino)
+                else:
+                    try:
+                        walked = os.lstat(path)   # a directory entry has no file id on Windows
+                    except (OSError, ValueError):
+                        incomplete = True
+                        continue
+                    seen = (walked.st_dev, walked.st_ino)
                 hit, read, complete = _search_attribution_file(
-                    path, (walked.st_dev, walked.st_ino),
-                    MAX_ATTRIBUTION_BYTES - used, names, overlap)
+                    name if _DIR_FD_WALK else path, seen,
+                    MAX_ATTRIBUTION_BYTES - used, names, overlap,
+                    dir_fd=folder if _DIR_FD_WALK else None)
                 used += read
-                named |= hit
+                named.update(hit)
                 incomplete = incomplete or not complete
                 if len(named) >= 2:
+                    return
+        for name, path, info in folders:
+            if len(named) >= 2 or capped:
+                return
+            if not _DIR_FD_WALK:
+                walk(path, depth + 1)
+                continue
+            child = _open_search_folder(name, folder, (info.st_dev, info.st_ino))
+            if child is None:
+                incomplete = True             # unreadable, or no longer the listed folder
+                continue
+            try:
+                walk(child, depth + 1)
+            finally:
+                os.close(child)
+
+    if _DIR_FD_WALK:
+        handles = []
+        try:
+            for target in (source_root, "brain", conversation):
+                handle = _open_search_folder(target, handles[-1] if handles else None)
+                if handle is None:
                     break
-        stack.extend(reversed(folders))
+                handles.append(handle)
+            if len(handles) == 3:
+                walk(handles[-1], 0)
+            else:
+                incomplete = True
+        finally:
+            for handle in handles:
+                os.close(handle)
+    else:
+        walk(os.path.join(source_root, "brain", conversation), 0)
     if len(named) >= 2:
         return None, "antigravity_projects_ambiguous", used, entries
     if incomplete:
@@ -2650,7 +2725,10 @@ def _project_export(ledger, config, project_alias):
         item["model_provenance"], item["effective_model"])))
     reasons = set(verified_ledger["coverage"]["reasons"])
     reasons.add("global_completeness_unknown")
-    if any(row["tool"] == "antigravity" for row in aggregates):  # vendor-ok: text match is an inference
+    # A row's tool comes from the consent file's sources today, so a row whose source
+    # was removed has tool None and may be Antigravity's: label it too (it can also
+    # label a removed Claude or Codex source, the safe direction).
+    if any(row["tool"] in ("antigravity", None) for row in aggregates):  # vendor-ok: text match is an inference
         reasons.add("antigravity_project_inferred")
     result = {
         "schema": "cairn-meter-project/2",
@@ -3114,9 +3192,12 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                     cursors[file_key], used = _start_bookmark(
                         source, relative, enumerated, file_key)
                 except Unavailable as exc:
-                    if exc.reason != "source_read_unavailable":
+                    if exc.reason == "source_read_unavailable":
+                        reasons.add("catching_up")       # left for the next run
+                    elif source["tool"] == "antigravity":  # vendor-ok: one long line skips one log
+                        reasons.add("source_too_large")  # a line over MAX_LINE: this log only
+                    else:
                         raise
-                    reasons.add("catching_up")       # left for the next run
                     continue
                 total_bytes += used
                 continue
@@ -3218,6 +3299,8 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                     if stream.terminal_reason == "source_read_unavailable":
                         break
                     if stream.terminal_reason is not None:
+                        if source["tool"] == "antigravity":  # vendor-ok: one long line skips one log
+                            break                    # skipped below, never raised
                         raise Unavailable(stream.terminal_reason)
                     if stream.resume_failure is None:
                         break
@@ -3226,7 +3309,11 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=N
                     if total_bytes >= MAX_RUN_READ_BYTES:
                         break
                 if stream.terminal_reason is not None:
-                    reasons.add("catching_up")       # unreadable: left for the next run
+                    # Unreadable: left for the next run. An antigravity log with a line
+                    # over MAX_LINE is skipped, keeping its old position, so one long
+                    # line there never stops the refresh for another tool.
+                    reasons.add("catching_up" if stream.terminal_reason
+                                == "source_read_unavailable" else "source_too_large")
                     if old is not None:
                         cursors[file_key] = dict(old)
                     continue
@@ -3657,6 +3744,7 @@ def _timestamp(value):
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if parsed.tzinfo is None:
         raise ValueError
+    parsed.astimezone(timezone.utc)      # a time with no UTC equivalent (year 1 or 9999) is refused
     return parsed.isoformat()
 
 
@@ -4365,7 +4453,10 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     continue
                 reasons = set()
                 bound = None
-                event_key = _digest(tool, antigravity_id, timestamp,
+                # The same instant in two spellings (`Z` or an offset) is one reply.
+                instant = datetime.fromisoformat(timestamp).astimezone(
+                    timezone.utc).isoformat()
+                event_key = _digest(tool, antigravity_id, instant,
                                     kinds["fresh_input"], kinds["output"])
                 if account_filter_requested:
                     kinds = _unknown_kinds()
