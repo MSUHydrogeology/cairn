@@ -284,3 +284,34 @@ Range: 0ed25868722daa4f4a820803c41c1d8f94dfb680..87a757ad669d62ac2028933f9d9b691
 
 **Verdict**: ACCEPT
 **Elapsed time**: unknown. **Tokens**: unknown.
+
+## Code review -- Claude Opus 5.5 (Security Review) -- 2026-11-22
+
+```
+Reviewed commit: 87a757ad669d62ac2028933f9d9b691ee9967687
+Range: 0ed25868722daa4f4a820803c41c1d8f94dfb680..87a757ad669d62ac2028933f9d9b691ee9967687
+```
+
+**Obligation**: Internal Security Review of the code as built.
+**Findings**: none.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes, on security grounds: the stored label and table are checked for form, then replaced, and nothing reads them back -- `meter.py` 1652-1660.
+2. **Best alternative.** None safer: the label must still match one fixed pattern, and every other ledger check is unchanged -- `pulse.py` 39; `meter.py` 1598-1603.
+3. **What would show it wrong.** A stored label or log text reaching the summary or a printed line. None does: the export writes the constant `RATIO_VERSION`, and the pulse uses `ratio_version` only in its form test -- `meter.py` 2396-2400; `pulse.py` 304-305.
+
+**Where I agree.** I agree with the usual review throughout. Its one finding is about README wording and has no security bearing. My words govern only the answers below.
+
+**Answers.**
+
+- *A crafted or damaged ledger.* It can do nothing new. A wrong label or table is refused or replaced. Any error, including a missing attribute, still ends as `ledger_invalid` (`meter.py` 1809-1811). No new path is read or written. The write-then-reload check (`meter.py` 591) no longer covers the stored table's bytes. No harm follows, because they are replaced at every load.
+- *The label form.* I ran one planted check of the pattern, not a test. Only the exact label matched. A trailing newline, an Arabic-Indic digit, an escape sequence and `latest` were each refused.
+- *Codex weighting.* Only the Codex reader sets `selected_context` (`meter.py` 4248). The name has passed `_safe_alias` (`meter.py` 1272-1273). It is used only to look up a row in a fixed table, and the result is decimal text. No new text reaches the summary.
+- *Mixed labels.* `_add_rows` labels a merged row with the current table. That label is stored only in the ledger and never exported.
+- *Reads and consent.* No reader, path or consent check changed.
+
+**Not covered.** Prices; real logs; other hosts; any test run; the pulse's file-identity check, which this plan leaves unchanged.
+
+**Verdict**: ACCEPT (Security Review)
+**Elapsed time**: unknown. **Tokens**: unknown.
