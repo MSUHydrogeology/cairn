@@ -131,3 +131,45 @@ Also: `cp dev/tools/meter.py templates/skills/_lib/meter.py` and the same for `p
 "Each summary row also carries weighted totals: its tokens priced at the model maker's public list prices, in US dollars per million tokens, from the table in `tools/meter.py` dated 2026-11-22. A weighted total is a reference figure for comparing work, never a bill; the table leaves out taxes, subscriptions and introductory prices (Gemini 4 Argon's, which ends 2026-11-30, is not used). A request whose prompt is over a model's long-prompt limit (100,000 tokens for Claude Haiku 5.5, 272,000 for the OpenAI models listed) takes that model's higher weights. A model missing from the table, or a reply with an unknown count, gets counts and no weighted total. A Codex reply is weighted by the model its turn had selected. When the table changes, the ledger keeps working: replies still held one by one are weighted by the new table at the next refresh, and a day already folded keeps the weighting of its day."
 
 In the first README, the sentence "An older ledger is refused with `ledger_old_schema`; move `~/.cairn/meter/ledger.json` aside to start a new one." stays true and is not changed.
+
+## Plan review -- Reviewer (Claude Sonnet 5.5) -- 2026-11-22
+
+```
+Reviewed commit: 5c5c3beeb1c1be5baf93093f12bbc2389a31c320
+```
+
+**Obligation**: Internal plan review (usual pass); the Security Review follows.
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the table, the ledger and the Codex change deliver the Maintainer's request, and the ledger change is real, since `_load_ledger` (`meter.py` 1579-1583) refuses on any table change -- `meter.py` 1579-1583, 1526.
+2. **Best alternative.** None simpler: a form check on the label replaces equality, and the export re-weights held events from the events themselves, so nothing stale is trusted -- `meter.py` 2285, 3180.
+3. **What would show it wrong.** A Codex reply with its write count missing: rule (b) as written blanks every figure, against the plan's own test -- finding 1.
+
+**Checked, no fault.** Every worked figure adds up (Fable 273.6; Haiku 3.33, 50011.65, 10001.33; Codex 64.8; Sonnet 5.5 60.8; Sonnet 4.6 92.4). Each long-prompt weight is a clean multiple of its base. The strict "over" is shown at 99,990 and 100,000. Models with no second level are untouched. `_atomic_replace_ledger` still round-trips: load and candidate both carry the current label and table. The pulse never prints the label. The two "pin" tests named do hold the literal at lines 1658 and 2038. The export weights from events, so only folded days carry old weights.
+
+**Findings**
+
+1. **Blocking.** Rule (b) returns all-unknown when any of the three counts is unknown, but `gpt-6.2-sol` has a `long_prompt` and Codex has no cache-write price. The case "write field deleted: fresh `24`, read `0.8`, output `40`" therefore fails. Replace the counts lines with:
+
+```python
+counts = [kinds["fresh_input"], kinds["cache_read"]]
+if long_level["cache_write_5m"] is not None:
+    counts.append(kinds["cache_write"])
+```
+
+and add to (b): "a model whose long level has no write weights counts only fresh and cached reads as its prompt."
+
+2. Non-blocking. Verification says the two refusal lines "must fail" before the change. They pass before (the old equality refuses `today`); they are guards. Run them once, after, and give their ids (for example `[ratio-version-not-a-label]`, `[daily-reference-index-not-a-label]`).
+3. Non-blocking. The summary's single `ratio_version` names the current table, though folded days and a merged old/new day keep older weights. Add to the README paragraph: "The table date on a summary names the current table; a day folded earlier may carry an earlier one."
+4. Non-blocking. `sources` drops the pages of the four old rows and `as_of` re-dates them, but they were not re-read. Keep their source lines, or say so.
+5. Non-blocking. The unchecked items live only in Scope. Add to both READMEs: "The Gemini rows wait for a reader of Antigravity logs, which the meter does not have; the OpenAI and Google model names are the makers' own and are not matched against a real log; a Codex reply whose log omits its cache-write count gets no total." Template README: write `dev/tools/meter.py`, not `tools/meter.py`.
+
+**Codex weighting.** Accepted on its merits: it touches only `selected_context` events with no effective model; no text reaches the summary that was not already there (`model` is already exported). The Strategy-only check after the build is stated, and the build is told not to run the meter.
+
+**Not covered.** The prices against the makers' pages; real logs; any test run; the Security Review questions.
+
+**Verdict**: REVISE
+**Elapsed time**: unknown. **Tokens**: unknown.
