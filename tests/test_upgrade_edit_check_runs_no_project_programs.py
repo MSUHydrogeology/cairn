@@ -209,15 +209,18 @@ def _diverge_agents(project: Path) -> None:
 
     The file is then uncommitted: the write-set and the unsaved edit overlap."""
     base = project / "dev" / ".cairn" / "base" / "AGENTS.md"
-    base.write_text(base.read_text().replace("# AGENTS.md", "# OLD", 1))
+    # LF, as the installer writes these files: a CRLF edit would conflict with
+    # every line of the upstream text.
+    base.write_text(base.read_text().replace("# AGENTS.md", "# OLD", 1), newline="\n")
     agents = project / "AGENTS.md"
     agents.write_text(
-        agents.read_text().replace("# AGENTS.md", "# OLD", 1) + "\n<!-- keep me -->\n")
+        agents.read_text().replace("# AGENTS.md", "# OLD", 1) + "\n<!-- keep me -->\n",
+        newline="\n")
     lock = s.read_lockfile(project)
     rec = next(r for r in lock["files"] if r["dst"] == "AGENTS.md")
     rec["base_hash"] = "sha256:" + s._sha256_hex(base.read_bytes())
     (project / "dev" / ".cairn" / "cairn-lock.yml").write_text(
-        s._emit_lock_yaml(lock), encoding="utf-8")
+        s._emit_lock_yaml(lock), encoding="utf-8", newline="\n")
 
 
 def _stage(capsys: pytest.CaptureFixture[str], project: Path) -> None:

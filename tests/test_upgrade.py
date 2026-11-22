@@ -3535,7 +3535,7 @@ def test_worked_example_preserves_managed_slot_through_upgrade(tmp_path: Path) -
     end = text.index("<!-- cairn:end project-conventions -->", start)
     customization = "Use millimetres per month for water-budget inputs."
     agents.write_text(text[:start] + "<!-- cairn:slot project-conventions -->\n"
-                      + customization + "\n" + text[end:])
+                      + customization + "\n" + text[end:], newline="\n")
     command = (sys.executable, str(current / "install/scaffold.py"), "upgrade",
                "--target", str(project))
     run(*command, "--plan")
