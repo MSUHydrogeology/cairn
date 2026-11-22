@@ -157,8 +157,23 @@ runs cost machine time, not tokens, and are listed separately.
 | | code review, usual | Medium | 148,768 | 2 | accept; four notes |
 | | code review, Security | High | 143,691 | 3 | accept; two notes |
 | | response to both code reviews, the same agent resumed | Medium | 16,827 | 2 | ready to archive; the harness reports 620,751 for the agent in all |
+| Cost record | run of the prepared update, by an execution agent | Low | 60,027 | 1 | done |
+| Arc J, the meter's table of token weights (2026-11-22) | plan, by the plan's agent | Medium | 173,443 | 4 | awaiting plan review; three more faults found beside the missing rows |
+| | plan review, usual | Medium | 143,783 | 3 | revise: one blocking, on the second price level and Codex |
+| | plan review, Security | High | 89,535 | 1 | accept; two notes |
+| | fold of both plan reviews and the build, the same agent resumed | Medium | 57,295 | 6 | awaiting code review; 8 of 9 test nodes pass, the ninth fails on this machine's pulse fault; the harness reports 230,738 for the agent in all |
+| | code review, usual | Medium | 101,821 | 1 | accept; one note on a README sentence |
+| | code review, Security | High | 106,366 | 2 | accept; no finding |
+| | response to both code reviews, the same agent resumed | Medium | 3,763 | 1 | ready to archive; the harness reports 234,501 for the agent in all |
+| Arc K, the pulse reads a report on Windows (2026-11-22) | plan, by the plan's agent | Medium | 92,132 | 1 | awaiting plan review; 594 words |
+| | plan review, usual | Medium | 70,947 | 1 | accept; three notes |
+| | plan review, Security | High | 91,168 | 1 | revise: two blocking, each with its exact code or words |
+| | fold of both plan reviews and the build, the same agent resumed | Medium | 20,166 | 2 | awaiting code review; the direct check refused 61 of 300 before and none after; the harness reports 112,298 for the agent in all |
+| | code review, usual | Medium | 70,678 | 1 | accept; two notes |
+| | code review, Security | High | 77,004 | 1 | accept; two notes, neither asking for a change |
+| | response to both code reviews, the same agent resumed | Medium | 3,820 | 1 | ready to archive; the harness reports 116,118 for the agent in all |
 
-Total for the day so far: 18,867,520 tokens across 133 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
+Total for the day so far: 20,029,468 tokens across 148 subagent runs (rows from plan A's code review on were added in the evening). Plan A's
 implementer stopped three times; the harness reported 88,695, 94,365 and
 135,367 tokens at those stops, and whether those figures add up or include
 each other is not known. The table uses the last.
@@ -223,8 +238,12 @@ Measured:
   Strategy put every design decision in the brief, so the author did no
   design, and Strategy folded the reviews itself, so no agent was resumed or
   spawned for that. Two against two is a small sample.
-- **Sixty-nine review passes so far.** Two were further passes that a design change required: one
+- **Seventy-seven review passes so far.** Two were further passes that a design change required: one
   by the Maintainer, and one to close a Security finding with a simpler rule. No pass has yet had to come back to check a fix.
+- **A two-line fix cost seven agent runs.** Plan K (2026-11-22) changed two lines of one tool. As a change to a
+  shipped tool it took a plan, two plan reviews, a build, two code reviews and a response: 425,915 tokens by
+  the harness's figures. Plan J the same day changed about 120 lines of code and cost 676,006 over the same
+  seven steps. The price of a step does not shrink with the size of the change.
 - **Replies of five lines work.** From 2026-11-21 each agent writes its full account into
   the plan or proposal and answers the coordinating session in a fixed form of five or six
   lines. Nine agents have done so; none needed a second ask.
@@ -339,9 +358,10 @@ The prices used:
   about 528,000 tokens at each of its 1,993 replies, and its cache is kept
   for an hour, which is priced at twice the model's input price where a
   five-minute cache is priced at one and a quarter times.
-- **The harness's figures for the agent runs listed above sum to about 18.9
-  million tokens. The logs show 725 million for the agents**, 38 times that.
-- **The logs hold 151 agent transcripts; the tables above list 134 runs.** The
+- **When this count was taken, the harness's figures for the agent runs listed
+  above summed to about 18.9 million tokens. The logs showed 725 million for
+  the agents**, 38 times that.
+- **The logs held 151 agent transcripts; the tables above then listed 134 runs.** The
   two do not line up one for one. An agent that carries a plan starts its own
   agents for the plan's chunks, and the harness reports those to that agent,
   not to this session, so they are in the logs and not in the tables. A
