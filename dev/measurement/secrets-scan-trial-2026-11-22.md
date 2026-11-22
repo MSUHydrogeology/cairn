@@ -34,7 +34,7 @@ I read each of the 23 history hits with every long token masked to its first fou
 
 ## What a clean scan needs
 
-- **The cap.** Raise `HISTORY_MAX_BYTES` (history grows about 100 MB a release), or read the history in ranges. The runner pins the helper's bytes and the helper has a shipped copy, so the change reaches protected files and the next re-anchor, and it changes what a security tool accepts: a Security Review.
+- **The cap.** Raise `HISTORY_MAX_BYTES` (the history read grew from 75 MB at v0.6.0 to 104 MB now, about 30 MB in three weeks), or read the history in ranges. Raising it is not one constant: `dev/tools/git_read.py` and its shipped twin (`templates/skills/_lib/git_read.py`) change, and 22 other files name the helper's pinned SHA-256 and must take the new one in step: 8 tools under `dev/tools/`, 9 shipped twins under `templates/`, `install/_scaffold/lockfile.py`, 4 test helpers (`tests/gauge.py`, `tests/gen_legacy_code_review_passes.py`, `tests/measurements.py`, `tests/tier_inventory.py`) and the install lock. About 25 protected files change together, they all appear on the next signing page, and a change to what a security tool accepts takes a Security Review. A range option in the runner alone (scan only commits after a named tag) would touch two files, but it scans less than "every branch and tag", which the release step says.
 - **The reviewed list.** Someone accepts the false positives and the 43 fingerprints go into `gitleaks.fingerprints`. The runner's `--triage-record` writes them in the form the list takes.
 - **Or a waiver.** The scan was waived for 0.8; waiving it again for 0.8.1 needs the Maintainer's word and a line in the release notes.
 
