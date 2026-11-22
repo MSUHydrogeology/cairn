@@ -1025,6 +1025,12 @@ def manifest_status(ctx, dropped_from=None):
 #: writer is the signed ceremony, so no transaction can reach it.
 LOCKFILE_REL = "dev/.cairn/cairn-lock.yml"
 OUTPUTS = (BASELINE_REL, KNOWN_NEW_REL, LOCKFILE_REL)
+#: The two AST fixtures at the paths a signed anchor made before the layout move holds them,
+#: and where they went.  The lockfile did not move.
+LEGACY_MOVES = {
+    "bootstrap/tests/fixtures/scaffold_ast_baseline.json": BASELINE_REL,
+    "bootstrap/tests/fixtures/scaffold_ast_known_new.json": KNOWN_NEW_REL,
+}
 TXN_NAME = "ast-pin-transaction.json"
 STOP_PREFIX = "ast-pin-stop-"
 
@@ -1079,11 +1085,15 @@ def lockfile_correction(ctx):
     return (header + "\n" + json.dumps(doc, indent=2, sort_keys=True) + "\n").encode()
 
 
-def render_changes(rel, old_raw, new_raw, *, reviewed_deletions=()):
+def render_changes(rel, old_raw, new_raw, *, reviewed_deletions=(), display_only=False):
     """Every key the write changes, from the bytes on disk against the bytes to be
-    written.  Not stored text and not the checker's classifier."""
-    old, new = parse_output(rel, old_raw), parse_output(rel, new_raw)
-    if rel == BASELINE_REL and (set(old) - set(new) != set(reviewed_deletions) or set(new) - set(old)):
+    written.  Not stored text and not the checker's classifier.  *display_only* shows
+    keys gained or lost instead of refusing them, and takes an *old_raw* of None (a file
+    the old side lacks: every key is new); it is for a net change shown, never a write."""
+    old = {} if display_only and old_raw is None else parse_output(rel, old_raw)
+    new = parse_output(rel, new_raw)
+    if (not display_only and rel == BASELINE_REL
+            and (set(old) - set(new) != set(reviewed_deletions) or set(new) - set(old))):
         raise Refuse("the pin would add or drop a baseline key. That is a full "
                      "re-pin, which erases the motion record. Nothing was written.")
     fmt = lambda v: "(absent)" if v is None else json.dumps(v, sort_keys=True)
@@ -2563,10 +2573,7 @@ def check_stop_records(ctx, cdir, first_run):
     repo, anchor, head = ctx["repo"], ctx["anchor"], ctx["head"]
     recs = [json.loads(read_safe(f, own=True)) for f in sorted(Path(cdir).glob(STOP_PREFIX + "*.json"))]
     span = f"{anchor}..{head}"
-    legacy_moves = {
-        "bootstrap/tests/fixtures/scaffold_ast_baseline.json": BASELINE_REL,
-        "bootstrap/tests/fixtures/scaffold_ast_known_new.json": KNOWN_NEW_REL,
-    } if ctx.get("layout_evidence") else {}
+    legacy_moves = LEGACY_MOVES if ctx.get("layout_evidence") else {}
     watched = tuple(OUTPUTS) + tuple(legacy_moves)
     # Path-limited listings print rewritten parents, so ask for each commit's real ones.
     listed = set(git_text(repo, "rev-list", "--full-history", span, "--", *watched).split())
@@ -2725,6 +2732,55 @@ def build_packet(ctx, cdir, *, transition=False, baseline=False):
         f"this HEAD, changing only that file.")
 
 
+def pinned_blobs(ctx):
+    """The three pinned files at the candidate, as raw Git blobs.  A candidate that lacks
+    one refuses: there is no blob to record a digest of."""
+    blobs = {}
+    for rel in OUTPUTS:
+        raw = git(ctx["repo"], "cat-file", "blob", f"{ctx['head']}:{rel}", check=False)
+        if raw is None:
+            raise Refuse(f"the candidate has no {d(rel)}, one of the three pinned files. Nothing was run.")
+        blobs[rel] = raw
+    return blobs
+
+
+def net_change_lines(ctx):
+    """The net change of the three pinned files from the anchor to the candidate, key by key,
+    from Git objects: one heading per file, then each changed key.  A signed anchor made before
+    the layout move holds the two fixtures at their old paths, which are mapped to the new ones;
+    a file the anchor lacks shows every key as new.  Every key and value passes through `d()`."""
+    moved = {new: old for old, new in LEGACY_MOVES.items()} if ctx.get("layout_evidence") else {}
+    lines = []
+    for rel, new_raw in pinned_blobs(ctx).items():
+        was = moved.get(rel, rel)
+        old_raw = git(ctx["repo"], "cat-file", "blob", f"{ctx['anchor']}:{was}", check=False)
+        try:
+            changes = render_changes(rel, old_raw, new_raw, display_only=True)
+        except (ValueError, KeyError, TypeError, AttributeError):
+            raise Refuse(f"{d(rel)} cannot be read as keys and values at the anchor or the candidate, "
+                         f"so its net change cannot be shown. Nothing was run.")
+        state = ("not at the anchor, so every key is new" if old_raw is None else
+                 f"{len(changes)} changed" if changes else "no change")
+        where = f" (the anchor holds it at {d(was)})" if was != rel and old_raw is not None else ""
+        lines.append(f"{d(rel)}: {state}{where}")
+        lines.extend(changes)
+    return lines
+
+
+def net_change_digest(lines):
+    """What the reader records: the printed lines joined by newlines, plus a final newline."""
+    return sha(("\n".join(lines) + "\n").encode())
+
+
+def show_net_change(lines):
+    """Print the net change, opened by a line of the driver's own that counts what follows, so
+    output relayed from stage 1 cannot pass as part of it.  The count line is not digested."""
+    say(f"\nNet change of the three pinned files from the anchor to the candidate: "
+        f"{len(lines)} lines follow.")
+    for line in lines:
+        say(line)
+
+
 def prepare_reader_inputs(ctx, cdir, output):
     """Prepare facts for a separate reader; this is not the reader's record."""
     cdir = _plain_absolute_path(cdir)
@@ -2750,6 +2806,12 @@ def prepare_reader_inputs(ctx, cdir, output):
     if ctx.get("layout_evidence"):
         lines.append(f"layout-evidence-sha256 {ctx['layout_evidence']}")
     lines.extend(f"member {sha((ctx['ext'] / m).read_bytes())} {m}" for m in members)
+    net = None
+    if ctx["closure_changed"]:
+        # A transition: the three pinned files at the candidate, and the net change a reader reads.
+        net = net_change_lines(ctx)
+        lines.extend(f"pinned-sha256 {sha(raw)} {rel}" for rel, raw in pinned_blobs(ctx).items())
+        lines.append(f"net-change-sha256 {net_change_digest(net)}")
     transaction = cdir / TXN_NAME
     if transaction.exists() or transaction.is_symlink():
         txn_raw = read_safe(transaction, own=True)
@@ -2761,6 +2823,13 @@ def prepare_reader_inputs(ctx, cdir, output):
     raw = ("\n".join(lines) + "\n").encode()
     write_new(output, raw)
     say(f"wrote reader inputs {d(str(output))} sha256 {sha(raw)}")
+    if net is not None:
+        show_net_change(net)
+        for line in lines:
+            if line.startswith(("pinned-sha256 ", "net-change-sha256 ")):
+                say(line)
+        say("Read the whole net change above, compute each pinned digest yourself from "
+            "`git cat-file blob <read-commit>:<path>`, and only then record the digest of that text.")
     say("These are preparation data, not an independent review or authorization.")
 
 
@@ -2784,9 +2853,35 @@ def record_values(text):
     return one, members
 
 
-def check_record(ctx, packet_digest, launcher_digest, *, baseline_record=None):
+def record_pins(text):
+    """A transition record's own lines as data: the digest of each pinned file and the digest
+    of the net-change text.  A line of either kind that is malformed, or stated twice, is a
+    record that disagrees with itself."""
+    pins, nets = {}, []
+    for line in text.splitlines():
+        if line.startswith("pinned-sha256"):
+            m = re.fullmatch(r"pinned-sha256 ([0-9a-f]{64}) (\S+)", line)
+            if not m:
+                raise Refuse(f"{RECORD_REL} has a malformed pinned-sha256 line.")
+            if m[2] in pins:
+                raise Refuse(f"{RECORD_REL} states pinned-sha256 for {d(m[2])} twice.")
+            pins[m[2]] = m[1]
+        elif line.startswith("net-change-sha256"):
+            m = re.fullmatch(r"net-change-sha256 ([0-9a-f]{64})", line)
+            if not m:
+                raise Refuse(f"{RECORD_REL} has a malformed net-change-sha256 line.")
+            nets.append(m[1])
+    if len(nets) > 1:
+        raise Refuse(f"{RECORD_REL} states net-change-sha256 twice.")
+    return pins, nets
+
+
+def check_record(ctx, packet_digest, launcher_digest, *, baseline_record=None, net_change=False):
     """The reader's record is the candidate's tip: committed on the commit the reader read,
-    changing only itself, and naming this packet, this launcher and these member bytes."""
+    changing only itself, and naming this packet, this launcher and these member bytes.
+    With *net_change* (a transition) it also needs a pinned-sha256 line for each of the three
+    pinned files, each equal to the raw blob at the candidate, and a net-change-sha256 line;
+    it hands that digest back, and the caller compares it with the text it computed."""
     if baseline_record is not None:
         path = _plain_absolute_path(baseline_record)
         if path.is_symlink() or not path.is_file():
@@ -2831,6 +2926,22 @@ def check_record(ctx, packet_digest, launcher_digest, *, baseline_record=None):
                             ("authority files", want, members)):
         if got != said:
             raise Refuse(f"the {what} differ from the ones {RECORD_REL} names. Do not run this.")
+    if not net_change:
+        return None
+    pins, nets = record_pins((ext / RECORD_REL).read_text("utf-8", "replace"))
+    stray = sorted(set(pins) - set(OUTPUTS))
+    if stray:
+        raise Refuse(f"{RECORD_REL} has a pinned-sha256 line for {d(stray[0])}, which is not one of the "
+                     f"three pinned files.")
+    for rel in OUTPUTS:
+        if rel not in pins:
+            raise Refuse(f"{RECORD_REL} has no pinned-sha256 line for {d(rel)}.")
+    if not nets:
+        raise Refuse(f"{RECORD_REL} has no net-change-sha256 line.")
+    for rel, raw in pinned_blobs(ctx).items():
+        if sha(raw) != pins[rel]:
+            raise Refuse(f"{d(rel)} at the candidate is not the file {RECORD_REL} names. Do not run this.")
+    return nets[0]
 
 
 def apply_reviewed_pin(ctx, cdir):
@@ -2942,8 +3053,20 @@ def run_ceremony(ctx, args, launchctl, rec):
     if read_safe(launcher) != anchored.replace(SLOT.encode(), sha(read_safe(packet)).encode()):
         raise Refuse("the launcher is not the anchor's launcher template with the packet's digest in "
                      "its one slot. Do not run it. Nothing was run.")
-    check_record(ctx, sha(read_safe(packet)), ldigest)
+    # A transition also needs the digests of the three pinned files and of their net change.  The
+    # net change is computed here, from Git objects, and its digest compared with the record's
+    # before `reading("validate")` starts the candidate's first code.
+    transition = args.transition and bool(ctx["closure_changed"])
+    recorded_net = check_record(ctx, sha(read_safe(packet)), ldigest, net_change=transition)
     rec.append(f"record {RECORD_REL} names the read commit, this packet, this launcher and these files")
+    net = None
+    if transition:
+        net = net_change_lines(ctx)
+        if net_change_digest(net) != recorded_net:
+            raise Refuse(f"the net change of the pinned files is not the text whose digest {RECORD_REL} "
+                         f"records the reader as reading. Do not run this. Nothing was run.")
+        rec.append(f"net change of the three pinned files, {len(net)} lines, digest {recorded_net}, "
+                   f"equals the one the record names")
 
     def reading(command):
         """validate, show-report and hash-package run through the launcher, which verifies the
@@ -3000,7 +3123,9 @@ def run_ceremony(ctx, args, launchctl, rec):
     elif args.reviewed_commit or (ctx["repin_state"] != "anchored" and not ctx.get("layout_evidence")):
         raise Refuse(f"{REPIN_REL} is {ctx['repin_state']}; its bytes are not the anchor's. Only the "
                      f"first run may continue, with --first-run --reviewed-commit <id>.")
-    check_stop_records(ctx, cdir, args.first_run)
+    if not args.transition:
+        # A transition checks the end state and shows its net change instead of walking history.
+        check_stop_records(ctx, cdir, args.first_run)
     key_checks(rec, pub, private, fingerprint, launchctl, "before stage 1")
     # 5. an owed pin is written, then this stops (a first run shows a lockfile correction and leaves it)
     if not args.first_run and not args.transition and build_transaction(ctx) is not None:
@@ -3043,6 +3168,8 @@ def run_ceremony(ctx, args, launchctl, rec):
         if report_digests != [prior_scan]:
             raise Refuse("the prior scanner and authorization report disagree. Nothing was signed.")
         rec.append(f"prior scanner and report scan digest agree: {prior_scan}")
+    if net is not None:
+        show_net_change(net)
     say("\nSummary 2: what you are about to sign")
     relay(report.stdout)
     manifest_status(ctx)
@@ -3052,6 +3179,8 @@ def run_ceremony(ctx, args, launchctl, rec):
     if args.transition:
         say(f"prior anchor signer comparison: {signer} matches independently supplied fingerprint "
             f"{args.expected_fingerprint}; candidate roster authorizes the new signing key above.")
+        say("Your yes below also approves the net change of the three pinned files shown just above "
+            "Summary 2: the end state of each, in place of a walk through the history.")
     say("Purpose: approve this exact report and package for the existing signing path. After yes, "
         "the driver rechecks the package and key, then the signer signs and moves the anchor; "
         "publication remains separate.")

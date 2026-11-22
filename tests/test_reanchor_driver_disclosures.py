@@ -7,7 +7,8 @@ Promises:
 - An absent or unfilled launcher, or one bound to another packet or lacking the environment fix, refuses the pair.
 - The rehearsal says it executes candidate code before it loads any candidate module.
 - The driver runs no stage and refuses a run option as unknown; printed commands run the reviewed launcher, never the working-tree artifact.
-Sources: release/reanchor_ceremony.py module docstring (the banner and "IT RUNS NO STAGE"); release/reanchor_ceremony.py --help.
+- `release/repin.py` shows the net change of the three pinned files key by key (a key on one side only as `(absent)`, old fixture paths mapped to the new ones, every key and value escaped for a terminal) and refuses a pinned file the candidate lacks or that cannot be read.
+Sources: release/reanchor_ceremony.py module docstring (the banner and "IT RUNS NO STAGE"); release/reanchor_ceremony.py --help; release/repin.py `net_change_lines`.
 
 
 `release/reanchor_ceremony.py` does not decide anything. It prints the closure
@@ -415,3 +416,105 @@ class TestThePrintedCommandsAreTheOnesThatWork:
         for form in forms:
             assert form[:form.index("/bin/sh")] == ["env", "-i", f"HOME={scratch.root}/home",
                                                     "PATH=/usr/bin:/bin", "TERM=$TERM", "LANG=C"], form
+
+
+# ---------------------------------------------------------------------------
+# `release/repin.py`: the net change a transition shows before Summary 2
+# ---------------------------------------------------------------------------
+
+import json  # noqa: E402
+
+_BASELINE = "tests/fixtures/scaffold_ast_baseline.json"
+_KNOWN_NEW = "tests/fixtures/scaffold_ast_known_new.json"
+_LOCK = "dev/.cairn/cairn-lock.yml"
+_OLD_BASELINE = "bootstrap/tests/fixtures/scaffold_ast_baseline.json"
+_OLD_KNOWN_NEW = "bootstrap/tests/fixtures/scaffold_ast_known_new.json"
+
+
+@pytest.fixture(scope="module")
+def repin():
+    spec = importlib.util.spec_from_file_location("repin_under_test", _REPO / "release" / "repin.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _lock(*dsts: str) -> str:
+    records = [{"dst": dst, "hash": "sha256:" + dst} for dst in dsts]
+    return "# header\n" + json.dumps({"files": records}, indent=2, sort_keys=True) + "\n"
+
+
+def _pinned(baseline: dict, known_new: dict | None = None, lock: str | None = None) -> dict:
+    files = {_BASELINE: json.dumps(baseline), _KNOWN_NEW: json.dumps(known_new or {})}
+    if lock is not None:
+        files[_LOCK] = lock
+    return files
+
+
+def _two_commits(root: Path, before: dict, after: dict, **ctx) -> dict:
+    """A repository whose first commit holds *before* and whose second holds *after* (a path
+    absent from *after* is removed), as the context `net_change_lines` reads."""
+    repo = root / "pinned"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    for files, message in ((before, "anchor"), (after, "candidate")):
+        for path in list(repo.rglob("*")):
+            if path.is_file() and ".git" not in path.parts:
+                path.unlink()
+        for rel, text in files.items():
+            target = repo / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(text, encoding="utf-8")
+        _git(repo, "add", "-A")
+        _git(repo, "commit", "-qm", message)
+        if message == "anchor":
+            anchor = _git(repo, "rev-parse", "HEAD")
+    return {"repo": repo, "anchor": anchor, "head": _git(repo, "rev-parse", "HEAD"), **ctx}
+
+
+class TestTheNetChangeOfThePinnedFilesIsShownKeyByKey:
+
+    def test_a_key_on_one_side_only_prints_absent_on_the_other_and_is_not_refused(self, repin, tmp_path):
+        ctx = _two_commits(tmp_path, _pinned({"a": 1, "b": 2}, lock=_lock("x")),
+                           _pinned({"a": 1, "c": 3}, lock=_lock("x")))
+        lines = repin.net_change_lines(ctx)
+        assert f"{_BASELINE}: 2 changed" in lines and f"{_KNOWN_NEW}: no change" in lines
+        assert any("b:  2  ->  (absent)" in line for line in lines)
+        assert any("c:  (absent)  ->  3" in line for line in lines)
+        with pytest.raises(repin.Refuse):          # the default refusal of a write that adds or drops a key stays
+            repin.render_changes(_BASELINE, json.dumps({"a": 1, "b": 2}).encode(),
+                                 json.dumps({"a": 1, "c": 3}).encode())
+
+    def test_a_file_the_anchor_lacks_shows_every_key_as_new_and_old_fixture_paths_are_mapped(
+            self, repin, tmp_path):
+        before = {_OLD_BASELINE: json.dumps({"a": 1}), _OLD_KNOWN_NEW: "{}"}
+        after = _pinned({"a": 2}, lock=_lock("x", "y"))
+        ctx = _two_commits(tmp_path, before, after, layout_evidence="0" * 64)
+        lines = repin.net_change_lines(ctx)
+        assert f"{_BASELINE}: 1 changed (the anchor holds it at {_OLD_BASELINE})" in lines
+        assert f"{_KNOWN_NEW}: no change (the anchor holds it at {_OLD_KNOWN_NEW})" in lines
+        assert f"{_LOCK}: not at the anchor, so every key is new" in lines
+        assert sum("(absent)  ->" in line for line in lines if line.startswith("  cairn-lock.yml")) >= 2
+        unmapped = repin.net_change_lines(dict(ctx, layout_evidence=None))   # no layout move: the old paths are not read
+        assert f"{_BASELINE}: not at the anchor, so every key is new" in unmapped
+
+    def test_every_key_and_value_is_escaped_for_a_terminal(self, repin, tmp_path):
+        hostile = "\x1b[31mred\nnext line"
+        ctx = _two_commits(tmp_path, _pinned({}, lock=_lock()),
+                           _pinned({hostile: hostile}, lock=_lock()))
+        lines = repin.net_change_lines(ctx)
+        text = "\n".join(lines)
+        assert len(lines) == 4, lines              # three headings and the one changed key: no key split a line
+        assert "\x1b" not in text and "\\x1b" in text
+
+    @pytest.mark.parametrize("what,after,needle", [
+        ("a pinned file the candidate lacks", _pinned({"a": 1}), "has no " + _LOCK),
+        ("a pinned file that is not JSON", {**_pinned({"a": 1}, lock=_lock()), _BASELINE: "not json"},
+         "cannot be read as keys and values"),
+    ])
+    def test_a_pinned_file_the_candidate_lacks_or_cannot_be_read_refuses(
+            self, repin, tmp_path, what, after, needle):
+        ctx = _two_commits(tmp_path, _pinned({"a": 1}, lock=_lock()), after)
+        with pytest.raises(repin.Refuse) as exc:
+            repin.net_change_lines(ctx)
+        assert needle in str(exc.value), what

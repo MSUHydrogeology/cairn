@@ -315,7 +315,7 @@ def _layout_bed(root):
     bed.write(legacy_engine, EMPTY_MAPPINGS)
     bed.write("bootstrap/" + BASELINE, _dump(A.digest_module(bed.repo / legacy_engine)))
     bed.write("bootstrap/" + KNOWN_NEW, "{}\n")
-    bed.write("dev/.cairn/cairn-lock.yml", "{}\n")
+    bed.write("dev/.cairn/cairn-lock.yml", _dump({"files": []}))
     frozen = {path: hashlib.sha256((bed.repo / path).read_bytes()).hexdigest()
               for path in (*pairs, retained, removed, old_roster)}
     bed.write("bootstrap/" + MANIFEST, _dump({
@@ -744,6 +744,23 @@ def test_first_run_refuses_an_owed_ast_pin(cbed):
 
 
 LOCKFILE = "dev/.cairn/cairn-lock.yml"
+PINNED = (BASELINE, KNOWN_NEW, LOCKFILE)
+
+
+def write_a_lock(bed, n):
+    """An install lock as Cairn's own scoped finalize rewrites it: records for tracked files, whose
+    hashes change with *n*.  A transition needs the lock at the candidate, as the real tree has it."""
+    records = [{"base_hash": f"sha256:{n}", "dst": dst, "hash": f"sha256:{n}", "src": dst, "verbatim": True}
+               for dst in ("tests/test_smoke.py", "work.py")]
+    bed.write(LOCKFILE, "# cairn-lock.yml -- header\n" + _dump({"cairn_version": "0", "files": records}))
+
+
+def commit_a_record(bed, text):
+    """The reader's record, committed alone on the commit the reader read."""
+    bed.write(RECORD, text)
+    bed.git("add", "--", RECORD)
+    bed.git("commit", "-q", "-m", "reader record", "--", RECORD)
+    bed.recorded = (bed.git("rev-parse", "HEAD").stdout.strip(), bed.packet_and_launcher())
 
 
 def write_a_stale_lockfile(cbed):
@@ -2354,6 +2371,7 @@ def test_transition_packet_uses_signed_prior_authority_and_preserves_ordinary_re
                                  capture_output=True, text=True, check=True).stdout.split()[1]
     cbed.write("tests/_gate_manifest.py",
                cbed.read("tests/_gate_manifest.py") + "\n# changed candidate checker\n")
+    write_a_lock(cbed, 1)                       # a transition needs the install lock at the candidate
     cbed.commit("changed authority")
     ordinary, refused = packet_into(cbed, "ordinary")
     assert refused.returncode == 2 and not list(ordinary.iterdir())
@@ -2379,6 +2397,9 @@ def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anch
     fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
                                  capture_output=True, text=True, check=True).stdout.split()[1]
     preflight = cbed.read("tests/_gate_preflight.py")
+    for n in (1, 2, 3):                         # routine lock rewrites: a history the per-commit walk refused
+        write_a_lock(cbed, n)
+        cbed.commit(f"routine lock update {n}")
     cbed.write("tests/_gate_preflight.py",
                preflight + "\n# reviewed scratch authority change\n")
     cbed.commit("change the scratch verifier")
@@ -2392,7 +2413,7 @@ def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anch
                       "--output", str(reader_inputs), "--expected-fingerprint", fingerprint)
     assert reader.returncode == 0, reader.stdout + reader.stderr
     assert "not an independent review" in reader.stdout
-    cbed.ensure_record()
+    commit_a_record(cbed, reader_inputs.read_text())
 
     prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
     cbed.launcher_digest = hashlib.sha256(
@@ -2504,6 +2525,171 @@ def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anch
     assert cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip() != final_anchor
 
 
+# ---------------------------------------------------------------------------
+# a transition checks the three pinned files at their end state and shows their net change
+# ---------------------------------------------------------------------------
+
+TRANSITION = ("--transition", "--expected-fingerprint")
+NET_CHANGE_HEAD = re.compile(r"^Net change of the three pinned files from the anchor to the candidate: "
+                             r"(\d+) lines follow\.$", re.M)
+
+
+def fingerprint_of(bed):
+    return subprocess.run(["ssh-keygen", "-lf", str(bed.key) + ".pub"],
+                          capture_output=True, text=True, check=True).stdout.split()[1]
+
+
+def lock_history(bed, rewrites=3):
+    """Routine lock rewrites, one commit each: a history the per-commit walk refuses."""
+    for n in range(1, rewrites + 1):
+        write_a_lock(bed, n)
+        bed.commit(f"routine lock update {n}")
+
+
+def prepare_transition(bed):
+    """A changed authority file, then the transition packet and the reader's inputs.  Returns the
+    old signer's fingerprint, the inputs' text and what `prepare-reader` printed; no record yet."""
+    fingerprint = fingerprint_of(bed)
+    bed.write("tests/_gate_preflight.py",
+              bed.read("tests/_gate_preflight.py") + "\n# reviewed scratch authority change\n")
+    bed.commit("change the scratch verifier")
+    for name in ("authorization-packet.txt", "reanchor-launcher.sh"):
+        (bed.cdir / name).unlink()
+    made = bed.run("transition-packet", "--ceremony-dir", str(bed.cdir), "--expected-fingerprint", fingerprint)
+    assert made.returncode == 0, made.stdout + made.stderr
+    bed.launcher_digest = hashlib.sha256((bed.cdir / "reanchor-launcher.sh").read_bytes()).hexdigest()
+    inputs = bed.root / "transition-reader-inputs"
+    read = bed.run("prepare-reader", "--ceremony-dir", str(bed.cdir), "--output", str(inputs),
+                   "--expected-fingerprint", fingerprint)
+    assert read.returncode == 0, read.stdout + read.stderr
+    return fingerprint, inputs.read_text(), read.stdout
+
+
+def shown_net_change(out):
+    """The net change as the driver printed it: the lines its count line says follow, and then
+    the line `Summary 2`."""
+    head = NET_CHANGE_HEAD.search(out)
+    assert head, out
+    rest = out[head.end():].lstrip("\n").split("\n")
+    count = int(head[1])
+    assert rest[count] == "" and rest[count + 1] == "Summary 2: what you are about to sign", out
+    return rest[:count]
+
+
+def digest_of_text(lines):
+    return hashlib.sha256(("\n".join(lines) + "\n").encode()).hexdigest()
+
+
+def test_a_transition_passes_routine_lock_rewrites_and_shows_their_net_change_before_summary_two(cbed):
+    lock_history(cbed)
+    assert "matches no stop record" in rerun_check(cbed), "the control: the per-commit walk refuses this history"
+    fingerprint, inputs, printed = prepare_transition(cbed)
+    for rel in PINNED:
+        assert re.search(rf"^pinned-sha256 [0-9a-f]{{64}} {re.escape(rel)}$", inputs, re.M), rel
+    recorded = re.search(r"^net-change-sha256 ([0-9a-f]{64})$", inputs, re.M)
+    assert recorded and recorded[0] in printed and "pinned-sha256 " in printed   # prepare-reader prints both
+    commit_a_record(cbed, inputs)
+    before = anchor_of(cbed)
+    code, out = full_run(cbed, extra=(*TRANSITION, fingerprint))
+    assert code == 0, out
+    assert moved(cbed, before) and "matches a stop record" not in out
+    lines = shown_net_change(out)
+    assert digest_of_text(lines) == recorded[1]
+    assert any(line.startswith(LOCKFILE) for line in lines) and any("work.py" in line for line in lines)
+
+
+def digit_off(line):
+    parts = line.split(" ")
+    parts[1] = parts[1][:-1] + ("0" if parts[1][-1] != "0" else "1")
+    return " ".join(parts)
+
+
+def swap(prefix, path=None, *, to):
+    """Rewrite each record line that starts with *prefix* (and ends with *path*) by *to*."""
+    return lambda lines: [to(line) if line.startswith(prefix) and (path is None or line.endswith(path)) else line
+                          for line in lines]
+
+
+def drop(prefix, path=None):
+    return lambda lines: [line for line in lines
+                          if not (line.startswith(prefix) and (path is None or line.endswith(path)))]
+
+
+DAMAGES = {
+    "a pinned digest one digit off": (swap("pinned-sha256", BASELINE, to=digit_off), "is not the file"),
+    "a pinned line missing": (drop("pinned-sha256", KNOWN_NEW), "has no pinned-sha256 line for"),
+    "a pinned line twice": (lambda ls: ls + [next(x for x in ls if x.startswith("pinned-sha256"))],
+                            "states pinned-sha256 for"),
+    "a malformed pinned line": (swap("pinned-sha256", LOCKFILE, to=lambda x: x + " extra"),
+                                "malformed pinned-sha256"),
+    "a fourth pinned path": (lambda ls: ls + ["pinned-sha256 " + "1" * 64 + " tests/other.json"],
+                             "not one of the three pinned files"),
+    "no net-change line": (drop("net-change-sha256"), "has no net-change-sha256 line"),
+    "a net-change line twice": (lambda ls: ls + [x for x in ls if x.startswith("net-change-sha256")],
+                                "states net-change-sha256 twice"),
+    "a malformed net-change line": (swap("net-change-sha256", to=lambda x: x[:-1]), "malformed net-change-sha256"),
+    "a net-change digest one digit off": (swap("net-change-sha256", to=digit_off), "is not the text whose digest"),
+}
+
+
+def test_a_transition_record_with_a_wrong_missing_duplicate_or_malformed_line_refuses_before_validate(cbed):
+    lock_history(cbed)
+    fingerprint, inputs, _ = prepare_transition(cbed)
+    good, read_commit = inputs.splitlines(), cbed.git("rev-parse", "HEAD").stdout.strip()
+    marker = cbed.root / "first-child"
+    patch = f"""
+def spy(rec, argv, **kw):
+    open({str(marker)!r}, "w").write(" ".join(argv))
+    raise R.Refuse("stopped by the test at the first child the driver starts")
+R.child = spy
+"""
+    answers = [("Paste the launcher digest", cbed.launcher_digest), ("Do the two digests match", "yes")]
+
+    def run():
+        return drive(cbed, answers, extra=(*TRANSITION, fingerprint), record=False, patch=patch)
+    for name, (damage, needle) in DAMAGES.items():
+        commit_a_record(cbed, "\n".join(damage(good)) + "\n")
+        code, out = run()
+        assert code == 2 and needle in out, (name, out)
+        assert not marker.exists(), f"{name}: a child ran before the record was refused"
+        cbed.git("reset", "-q", "--hard", read_commit)
+    commit_a_record(cbed, "\n".join(good) + "\n")       # control: the undamaged record reaches the first child
+    code, out = run()
+    assert code == 2 and "stopped by the test at the first child" in out and "reanchor-launcher.sh" in marker.read_text()
+
+
+def test_a_transition_displays_a_baseline_key_an_agent_commit_rewrote_before_signing(cbed):
+    key = sorted(json.loads(cbed.read(BASELINE)))[0]
+
+    def rewrite_one_key():
+        baseline = json.loads(cbed.read(BASELINE))
+        baseline[key]["digest"] = "rewritten-by-an-agent"
+        cbed.write(BASELINE, _dump(baseline))
+        cbed.commit("an agent rewrites one baseline key")
+    lock_history(cbed, 1)
+    rewrite_one_key()
+    fingerprint, inputs, _ = prepare_transition(cbed)
+    commit_a_record(cbed, inputs)
+    before = anchor_of(cbed)
+    code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
+                             ("Do the two digests match", "yes"), ("Does Summary 2", "no")],
+                      extra=(*TRANSITION, fingerprint), record=False)
+    assert code == 2 and "Enter passphrase for" not in out and not moved(cbed, before), out
+    lines = shown_net_change(out)
+    changed = [line for line in lines if "scaffold_ast_baseline.json" in line and key in line]
+    assert len(changed) == 1 and "rewritten-by-an-agent" in changed[0], lines
+    assert f"{BASELINE}: 1 changed" in lines and f"{KNOWN_NEW}: no change" in lines
+    assert out.index("Net change of the three pinned files") < out.index("Summary 2")
+
+
+def test_the_ordinary_ceremony_still_refuses_a_pin_commit_no_stop_record_describes(cbed):
+    cbed.write(BASELINE, cbed.read(BASELINE) + " ")
+    cbed.commit("a hand edit of the baseline")
+    code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest), ("Do the two digests match", "yes")])
+    assert code == 2
+    refused_early(out, "matches no stop record")
+
+
 def test_documented_verifier_then_ceremony_on_disposable_authority(cbed):
     full_verifier_anchor(cbed)
     cbed.write("tests/test_workflow_candidate.py", "def test_candidate():\n    pass\n")
@@ -2564,6 +2750,7 @@ def test_reader_inputs_bind_candidate_packet_and_prior_template_without_claiming
     assert "not an independent review" in result.stdout
     assert "read-commit " + cbed.git("rev-parse", "HEAD").stdout.strip() in text
     assert "launcher-sha256 " + cbed.launcher_digest in text
+    assert "pinned-sha256" not in text and "net-change-sha256" not in text     # only a transition carries them
     assert cbed.run(*argv).returncode == 2
     output.unlink()
     (cbed.cdir / "reanchor-launcher.sh").write_text("substituted")
