@@ -1,7 +1,7 @@
 # Plan: A simple usage meter
 
 **Source proposal**: dev/proposals/archive/2026-11-21-claude-simple-meter.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/custom_session_routines.md, dev/rules/development-environment.md
@@ -297,3 +297,27 @@ Also run: the persisted-history, export and linked-parents tests (Windows: 7 pas
 The whole-tree document check still reports 3 issues: the old line citations of the pinned-list file in `dev/proposals/2026-11-19-codex-native-release-membership.md` (two) and `dev/strategy/2026-11-21-claude-read-of-six-unsigned-files.md` (one). The central exemption list cannot hold them: an exemption covers only a path that does not exist, and the file does, so an out-of-range line citation still flags (tried for the proposal; the entries were reported unused and removed again). It would take either a change to `dev/tools/claim_check.py` to let a dated record exempt a line citation, or an edit of the three citations; one of them sits inside a review, which is never edited. Home: Strategy.
 
 Not shown, not run: the Mac; a real refresh on either machine; a Windows run of the file-link cases. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation closeout -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+The simple meter is built, both plan reviews and both code reviews are done with no blocking finding left, and it runs on the machine that the old meter refused.
+
+- The meter reads each listed log folder and writes its record and its summary with one plain set of file calls on every platform. It goes from 7,573 lines to 4,631.
+- Removed: the owner, access-list and link-count tests, the re-checks during a read, the Windows-only layer, and the read of the project's Git settings.
+- Kept: the consent file as the only list of what is read; the reader, which lets only counts leave a log; no link followed out of a log folder; no summary written through a link.
+- 88 tests of removed checks are deleted and three are added. The pinned list of platform-only tests holds 28 Windows and 314 Mac-and-Linux rows.
+
+The branch merged into `0.9-dev` at `8cbdc1b4`. On the merged tree `install/verify_integrity.py --target .` reports OK for 70 files, `cmp` of the two meter copies prints nothing, the pinned list's fingerprint validates, and `tests/check_cairn.py` over the whole tree reports no issue.
+
+**Strategy's check on the Windows Server machine, with the merged meter: met.** The probes print counts and field names only. After a clean start, two refreshes each answered `ok`, with the project on a drive whose folders the Maintainer shares on purpose. Over the stretch between them the meter recorded 10 replies, and an independent count of the same bytes found 10 (20 records; 5 replies recorded more than once, each with differing times). Token totals by kind are equal: output 5,668; cache read 4,827,461; cache write 68,354; fresh input 22. All 10 have a known time and all 10 are filed under the project. One sub-agent ran in that stretch and is recorded as one transcript, with no summary left untied. Every text value in the record and in the summary is a time, a digest, a number or a short plain label, except two built-in constants of the weights table. No lock file is left behind.
+
+Tests, by the build's record: the kept meter files pass on Windows (367, 73 and 14) and in the Linux subsystem.
+Not shown: that the failures in `tests/test_security_check.py` (4 on Windows, 77 in the Linux subsystem) and one in `tests/test_skills_install.py` are those machines' own, since no run was made before the change. Home: the certification runs.
+Not run: the test that quotes the pinned list's count line, which runs only on the Mac; and the whole suite. Home: the certification.
+Remaining: the frozen files this plan changed, each a line at the Maintainer's signing. Home: `dev/PLANNING.md`, section 1, "What the one signing will show".
+Remaining: the same check of the meter on the Mac, and the Antigravity reader. Home: the Mac session's jobs.
+Accepted, in the Maintainer's words quoted in this plan: an account that can change the project could, by swapping a folder for a link at the right instant, make the summary land in another folder.
+Seen: on Windows the pulse refuses a report it has just written; and the weights table has no entry for the newest models, so the summary gives no weighted total. Home: `dev/PLANNING.md`, section 1.
+Changed outside this plan's own files: three line citations of `tests/security_manifest.py` in two other documents were moved to where the same lines now sit (`68e92ceb`).
+
+**Elapsed**: unknown. **Tokens**: unknown.

@@ -1,6 +1,6 @@
 # Plan detail: A simple usage meter
 
-This is the companion of `dev/plans/2026-11-21-simple-meter.md` and part of it. It holds the tables a reviewer needs and that would pass the opening body's word limit: every test sorted, every function removed and what replaces it, the choices the plan makes, the exact document sentences, and the pinned-list and gate-manifest lines. Section letters match the plan. Every code change lands in both copies of the meter (`dev/tools/meter.py` and `templates/skills/_lib/meter.py`); the second is made by copying the first (`cp`) in the same commit, then `cmp` of the two prints nothing. Function sizes below are measured spans of the file at commit `e54319bb`; sizes marked "est." or "about" are estimates, not measurements.
+This is the companion of `dev/plans/archive/2026-11-21-simple-meter.md` and part of it. It holds the tables a reviewer needs and that would pass the opening body's word limit: every test sorted, every function removed and what replaces it, the choices the plan makes, the exact document sentences, and the pinned-list and gate-manifest lines. Section letters match the plan. Every code change lands in both copies of the meter (`dev/tools/meter.py` and `templates/skills/_lib/meter.py`); the second is made by copying the first (`cp`) in the same commit, then `cmp` of the two prints nothing. Function sizes below are measured spans of the file at commit `e54319bb`; sizes marked "est." or "about" are estimates, not measurements.
 
 ## A. Tests sorted
 
