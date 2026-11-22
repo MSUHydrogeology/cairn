@@ -353,6 +353,7 @@ def _enumerate_jsonl(root):
                             raise Unavailable("source_budget_exceeded")
                         stack.append((entry.path, relative, depth + 1))
                     elif stat.S_ISREG(info.st_mode) and name.endswith(".jsonl"):
+                        info = os.lstat(entry.path)       # a directory entry has no file id on Windows
                         files.append((relative, {
                             "dev": info.st_dev, "ino": info.st_ino,
                             "size": info.st_size, "mtime_ns": info.st_mtime_ns,
@@ -748,10 +749,13 @@ class _ApprovedLineStream:
             opened = os.fstat(file_fd)
             if not stat.S_ISREG(opened.st_mode):
                 return
+            # The identity is read by name, as the folder walk reads it: on Windows a
+            # handle and a name can report different change times for one file.
+            named = os.lstat(full)
             self.open_identity = {
-                "dev": opened.st_dev, "ino": opened.st_ino,
-                "size": opened.st_size, "mtime_ns": opened.st_mtime_ns,
-                "ctime_ns": opened.st_ctime_ns,
+                "dev": named.st_dev, "ino": named.st_ino,
+                "size": opened.st_size, "mtime_ns": named.st_mtime_ns,
+                "ctime_ns": named.st_ctime_ns,
             }
             cutter = _LineCutter()
             last_line = None
