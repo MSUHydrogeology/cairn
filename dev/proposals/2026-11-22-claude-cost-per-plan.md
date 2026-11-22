@@ -94,3 +94,29 @@ Declarations get forgotten, and the untied row stays large. Per-step totals disa
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Claude Sonnet 5.5 (Reviewer) -- 2026-11-22
+
+**Reviewed commit**: 93c030a3. **Verdict**: REVISE.
+
+**Foundations.**
+1. *Should this happen as framed?* Yes in aim; the design needs two repairs. The meter has a sub-agent record (`agent_runs`) but does not attach a run to a reply: Claude replies use the session as their thread (`meter.py` line 4063), so the run fingerprint is new data on every reply, which the text does not say.
+2. *Best alternative.* The four rejected options are fairly put. None beats a per-run declaration; "declare once per agent" is the right unit.
+3. *What would show it wrong.* Foreground agents' early replies untied, and one hostile line stopping the meter (findings 1 and 2).
+
+**Problem shown.** The three reasons hold in code: the 22-second windows, the shared tag (`overlap`, `collisions`), and an open claim blocking later ties (`open_claim`). A fourth is real: a claim naming more than one file never ties. My recount of token figures gave 131 "unknown" of 136 with a narrower search than yours; name your search.
+
+**Findings.**
+1. **Blocking: the declaration format, and S4 is false today.** `_claim_snapshot` raises `Unavailable` on any event that is not `claim` or `release`, and on any malformed line. So a new line kind stops the meter for the whole project, and a hostile line does too. It is "skipped" only if the proposal changes this. The record-writing and conflict code (`_intent/record_io.py`, `conflict.py`) also know only the two kinds.
+2. **Blocking: replies before the first declaration.** A starter learns a sub-agent's id after it starts, so its first replies precede the declaration and stay untied under rule 3.
+3. **Blocking: "A ledger survives" is not checkable, and "brought forward" is new.** Older schemas are refused today (`ledger_old_schema`). Old replies have no run fingerprint.
+4. Non-blocking: removing the old tie also removes the artifact column of today's report (`meter.py` lines 2290-2392); say what replaces it. Say a declaration's step name uses the same safe-name check as claim targets.
+
+**Not covered**: logs, the Security Review questions, running anything.
+
+**Exact words.**
+- Proposal item 2, add: "The declaration is a new event kind in the claim record. The meter's reader skips any line of a kind or shape it does not know, and the writer and conflict code ignore it; a malformed line never makes the project unavailable. Test (a) plants one."
+- Rule 3, add: "A run's replies before its first declaration count toward that declaration; a run never declared stays untied."
+- Item 6, replace with: "The ledger schema is raised and a version-6 ledger is migrated, not refused. After a refresh the event count and each day's token sums equal their values before; replies counted earlier are reported once as 'before run tracking', not as untied. Test (b) checks this."
+
+**Time and tokens**: unknown; unknown.
