@@ -1,7 +1,7 @@
 # Cost per plan, from the usage meter
 
 **Author**: Claude Fable 5.2 (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it changes three shipped tools (the usage meter, the work-claim tool and the pulse) and adds one working rule
 **Plan review**: required(Internal + Internal Security Review)
@@ -175,3 +175,26 @@ Both reviews are folded. Every finding is taken; none is refused.
 **Length.** The text below the header is now about 1,616 words against a target of 1,000. The growth is the reviewers' required words on what a declaration holds and on the tie.
 
 Not run for this response: any test. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Decision -- Maintainer (scribed by Claude Fable 5.2) -- 2026-11-22
+
+**Tier**: heavy
+
+**ACCEPTED.** Asked whether he accepts the proposal as revised, with the old tie removed and at the heavy tier, the Maintainer wrote (chat, 2026-11-22):
+
+> "Accept the proposal as revised, yes. Heavy tier is fine"
+
+Earlier the same day he had placed the work:
+
+> "But put it on the v0.9 plan, not the v0.8.1"
+
+What this records, plainly:
+
+- **What he was shown.** The Decision summary and the two choices, word for word, in chat, at his request ("Please give me the decision summary"), and before that Strategy's account of what the two reviews changed. He was not shown the full text.
+- **Choice 1, the old tie: removed.** The question he answered named it, in the words "with the old tie removed". He did not speak of it separately.
+- **Choice 2, the tier: heavy,** in his words. One plan, with a usual review and a Security Review at the plan stage and at the code stage.
+- **Release: v0.9,** in his words. For this one item that sets aside the defect arc's choice to keep v0.9 free of notable new features.
+- **Scope.** The proposal as revised after its two reviews (`af7d6099`). Its Scope delta is `preserved`.
+- **When.** The build waits for the v0.8.1 cut. The plan is opened then, and opening it archives this proposal.
+
+**Elapsed**: unknown. **Tokens**: unknown.
