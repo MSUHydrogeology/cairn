@@ -65,6 +65,17 @@ import shutil  # noqa: E402
 import stat  # noqa: E402
 import time  # noqa: E402
 
+
+def _remove_git_folder(path: Path) -> None:
+    """Remove a `.git` folder: Windows marks Git's object files read-only, and
+    will not delete one until that is lifted."""
+    def make_writable(function, name, _error):
+        os.chmod(name, stat.S_IWRITE)
+        function(name)
+
+    shutil.rmtree(path, onexc=make_writable)
+
+
 from install._scaffold import security as SEC  # noqa: E402
 from install._scaffold import upgrade as U  # noqa: E402
 
@@ -494,7 +505,11 @@ def test_a_file_replaced_between_the_read_and_the_removal_is_kept(
             swapped.append(True)
             replacement = path.with_name("replacement")
             replacement.write_bytes(b"the project's own work\n")
-            os.replace(replacement, path)
+            try:
+                os.replace(replacement, path)
+            except PermissionError:
+                pytest.skip("Windows will not replace a file while it is open, "
+                            "so the swap cannot happen")
         return info
 
     monkeypatch.setattr(SEC.os, "fstat", replace_the_file_just_after_it_is_opened)
@@ -880,7 +895,9 @@ def _read_lock(project: Path) -> dict:
 
 
 def _write_lock(project: Path, lock: dict) -> None:
-    (project / LOCK_REL).write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+    # LF, as the installer writes it: the project's `.gitattributes` asks for LF
+    # and the dirty-tree check hashes the bytes it finds.
+    (project / LOCK_REL).write_text(s._emit_lock_yaml(lock), encoding="utf-8", newline="\n")
 
 
 def _add_record(project: Path, record: dict) -> None:
@@ -1271,7 +1288,7 @@ def test_an_uncommitted_or_ignored_copy_is_kept(
     # No git at all.
     no_git = project.parent / "no-git"
     shutil.copytree(project, no_git, symlinks=True)
-    shutil.rmtree(no_git / ".git")
+    _remove_git_folder(no_git / ".git")
     assert kept_words(no_git) == ("retired, kept", CANNOT_TELL)
 
 
@@ -1583,7 +1600,7 @@ def test_a_subfolder_project_keeps_an_edited_tracked_file(
     repo = tmp_path / "repo"
     sub = repo / "inner"
     shutil.copytree(pristine_install, sub, symlinks=True)
-    shutil.rmtree(sub / ".git")
+    _remove_git_folder(sub / ".git")
     _git(repo, "init", "-q", "-b", "main")
     _add_script(sub, SCRIPT)
     _add_script(sub, SCRIPT_2)
@@ -1850,7 +1867,7 @@ def test_a_missing_unlisted_file_and_a_deleted_shipped_file_still_refuse(
     project: Path, capsys: pytest.CaptureFixture[str],
 ) -> None:
     mine = project / "analysis.py"
-    mine.write_text("print('mine')\n", encoding="utf-8")
+    mine.write_text("print('mine')\n", encoding="utf-8", newline="\n")
     _add_record(project, {
         "dst": "analysis.py", "src": "modules/default-on/nothing-here.py", "verbatim": True,
         "hash": _sha(mine.read_bytes()), "base_hash": _sha(mine.read_bytes())})
@@ -1859,7 +1876,7 @@ def test_a_missing_unlisted_file_and_a_deleted_shipped_file_still_refuse(
     code, _out, err = _finalize(capsys, project)
     assert code == 1 and "analysis.py" in err
     assert "analysis.py" in _records(project)
-    mine.write_text("print('mine')\n", encoding="utf-8")
+    mine.write_text("print('mine')\n", encoding="utf-8", newline="\n")
     (project / "NOTICE.md").unlink()
     _commit_all(project)
     code, _out, err = _finalize(capsys, project)
