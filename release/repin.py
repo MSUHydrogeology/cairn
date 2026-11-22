@@ -1725,6 +1725,30 @@ def confirm(rec, question):
     rec.append(f"yes typed on a terminal: {question}")
 
 
+#: How a public key file begins: `ssh-ed25519`, `ssh-rsa`, `ecdsa-sha2-...`, `sk-ssh-ed25519@...`.
+PUBLIC_KEY_STARTS = (b"ssh-", b"ecdsa-", b"sk-")
+
+
+def check_public_key_file(pub):
+    """A name ending in `.pub` is not proof: refuse a path that is a symbolic link, and a file whose
+    first bytes are not a public-key type.  Reads at most 40 bytes and runs nothing."""
+    where = f"signing_key in the values file, {d(pub)},"
+    if os.path.islink(pub):
+        raise Refuse(f"{where} is a symbolic link. It must name the public key file itself. "
+                     f"No key file was read.")
+    try:
+        fd = os.open(pub, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    except OSError as exc:
+        raise Refuse(f"{where} cannot be opened as a plain file ({exc.strerror}). No key file was read.")
+    with os.fdopen(fd, "rb") as fh:
+        if not stat.S_ISREG(os.fstat(fh.fileno()).st_mode):
+            raise Refuse(f"{where} is not a plain file. No key file was read.")
+        head = fh.read(40)
+    if not head.startswith(PUBLIC_KEY_STARTS):
+        raise Refuse(f"{where} does not start like a public key (ssh-, ecdsa- or sk-), so it is not read as "
+                     f"one. A private key does not. At most 40 bytes of it were read and no program was run.")
+
+
 def key_fingerprint(rec, pub):
     r = child(rec, [KEYGEN, "-lf", pub])
     found = [t for t in r.stdout.split() if t.startswith("SHA256:")]
@@ -3016,6 +3040,7 @@ def run_ceremony(ctx, args, launchctl, rec):
         # Every key read below names this path; a private key file would be read, not just its public half.
         raise Refuse(f"signing_key in the values file must name the public key, a file ending in .pub, "
                      f"and {d(pub)} does not. No key file was read.")
+    check_public_key_file(pub)         # before the launcher's validate or any key program, in both modes
     private = pub[:-4]
     term = os.environ.get("TERM", "xterm")
     rec.append(f"repin ceremony at HEAD {ctx['head']}, anchor {ctx['anchor']}, python "

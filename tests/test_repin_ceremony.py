@@ -2753,6 +2753,31 @@ def test_a_signing_key_that_is_not_a_public_key_file_is_refused_before_any_key_f
     assert touched == [], touched                              # no child was given the key's path, public half included
 
 
+@pytest.mark.parametrize("what,needle", [("a link to the real public key", "must name the public key file itself"),
+                                         ("a file named .pub that holds a private key's header line",
+                                          "does not start like a public key")])
+def test_a_signing_key_path_that_is_a_link_or_holds_no_public_key_is_refused_before_any_key_program_runs(
+        cbed, what, needle):
+    """A name ending in .pub is not enough.  Each is refused by the driver itself, with and without
+    --check-only, before the launcher's validate (candidate code) or any key program is started."""
+    pub = cbed.root / "odd-signing-key.pub"
+    if what.startswith("a link"):
+        pub.symlink_to(str(cbed.key) + ".pub")
+    else:
+        pub.write_text("-----BEGIN OPENSSH PRIVATE KEY-----\nnot a real key\n")
+    values = values_naming(cbed, "odd-key-values", f"signing_key {cbed.key}.pub", f"signing_key {pub}")
+    assert f"signing_key {pub}\n" in values.read_text(), "the instrument did not change the values file"
+    answers = [("Paste the launcher digest", cbed.launcher_digest), ("Do the two digests match", "yes")]
+    for extra, tty in (("--check-only", False), (None, True)):
+        code, out = drive(cbed, answers, extra=(extra,) if extra else (), values=values, audit=True, tty=tty,
+                          timeout=60)
+        assert code == 2 and needle in out, (extra, out)
+        assert "check-only passed" not in out and "Enter passphrase for" not in out, out
+    children = [a for argv, _env in popen_calls(cbed) for a in argv]
+    assert [a for a in children if str(pub) in a] == []            # no child was given the path
+    assert not any(a.endswith("reanchor-launcher.sh") for a in children)    # and validate never ran
+
+
 def test_check_only_passes_where_the_real_run_reaches_the_key_probe_and_touches_no_key(cbed):
     before = folder_listing(cbed)
     code, out = drive(cbed, [], extra=("--check-only",), audit=True, tty=False, timeout=60)
