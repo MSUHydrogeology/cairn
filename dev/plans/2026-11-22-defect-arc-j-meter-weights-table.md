@@ -1,7 +1,7 @@
 # Plan: Defect arc J, the meter's table of token weights
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-22
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -224,3 +224,23 @@ Reviewed commit: 9acb1438
 - Security finding 2: taken. (c) says the two overwrites happen inside the `try` of `_load_ledger`.
 
 Not run for this response: any test. **Elapsed time**: unknown. **Tokens**: unknown.
+
+## Implementation record -- Claude Sonnet 5.5 (Implementation) -- 2026-11-22
+
+**Result.** All three chunks are built. The new totals and the ledger change work on every test run for them, except one pulse test that this machine fails by itself on some runs (below). Nothing was run on real logs.
+
+**Commits by chunk** (branch `arc-j-impl`, work folder `.claude/worktrees/arc-j`): status to implementing; C1 table, two price levels and Codex weighting, with its tests changed first; C2 ledger and pulse change, with T2, T3 and the two refusal lines; C3 shipped copies, both READMEs and the changelog; the lock in its own commit; this record. Hashes are in `git log 0ed25868..arc-j-impl`.
+
+**Tests, Windows, `C:\ProgramData\Anaconda3\python.exe`, each once as the plan says.**
+
+- Before the code change, all three C1 tests failed as expected: T1a, T1b (renamed), the index-pin test. T2 and T3 failed before the C2 code (T2 answered `unavailable` where `written` was expected, read from its failure line; T3 was refused for the new version). The two refusal lines were not run before, as the plan says.
+- After the change: T1a, T1b, T2, the index-pin test, the two comparing tests and both refusal lines passed, 8 of 8 in one run. T3 passed in its first run after the change and again failed in later runs.
+- **T3 failure is this machine's.** It is refused at `_read_pulse_report`, whose check that the file's identity and times did not change while it was read fails on this host (roadmap items (j) and (p)). Evidence: the untouched sibling `test_project_meter_v2_wait_rows_validate_and_reconcile` failed four times in four in the work folder, and in the main checkout (without my change) T3 failed in one of three runs. A direct call of `_parse_meter_aggregate` accepts `cairn-api-token-index/2027-01-15` and `2026-11-06` and refuses `cairn-api-token-index/latest`. Not chased further.
+
+**Direct check of the table.** One command loaded `dev/tools/meter.py` from the work folder and printed each model's weights as decimals, with each `long_prompt` level. I compared the print with the plan's three price tables cell by cell by eye: every cell matches, and the four older rows are unchanged. This was a read, not a test.
+
+**Differences from the plan.** (1) In `_load_ledger` the two overwrites sit right after the schema, label and table form checks, not after every later check; they are still inside the `try`, and a later failure discards the ledger either way. (2) `check_cairn` with no argument, once: OK. `install/verify_integrity.py --target .`: OK.
+
+**Not run.** Any other test, any other host, the whole suite, the real machine (Strategy's check: a refresh on the Windows Server machine with the old ledger left in place). The gate-manifest lines (test_meter, test_gauge hashes, the renamed node, the new T2 node) are owed at the Maintainer's signing.
+
+**Elapsed time**: unknown. **Tokens**: unknown.
