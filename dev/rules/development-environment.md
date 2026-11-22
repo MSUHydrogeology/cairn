@@ -28,6 +28,9 @@ These settings apply to that Terminal and its children; they do not load a key
 into `ssh-agent`. No background service was enabled. The existing
 [Maintainer-only signing procedure](../../release/REANCHOR_RUNBOOK.md)
 still applies. Both signing paths worked with this prompt on 2026-11-03.
+It does not apply to `repin.py ceremony`: its signing stage receives only
+`HOME`, `PATH`, `TERM` and `LANG`, so the passphrase is typed in the terminal
+(see the card at the top of the runbook).
 
 ## Windows VM
 

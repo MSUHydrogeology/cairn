@@ -1,5 +1,36 @@
 # Supervised re-anchor runbook (differential-oracle gate)
 
+## The card: what to have, check and type
+
+This card is all you need to run a ceremony an agent has prepared. The rest of this page, and everything below its end marker, is reference for the agent and for review.
+
+**Have ready.**
+
+- Your signing key is encrypted and is in no ssh agent.
+- You are in a terminal window.
+
+**What the agent hands you.**
+
+- The command to run. The agent has already run it with `--check-only`, which makes every check the ceremony makes before it touches your key, and it passed.
+- The reader's record, committed on the commit to be signed, with its launcher digest.
+- The trusted checkout, which is the folder the command runs in. It must be at the record's commit, and the `checkout` line of the values file names it, not your own working copy. `--check-only` finds a stale checkout or a wrong path before you start.
+
+**What you check.**
+
+1. In the command, `--expected-fingerprint` is the old signer's fingerprint that you hold yourself, not one the agent supplied.
+2. At the first prompt, the launcher digest the driver computed is printed beside the one you paste from the record. They must match.
+3. At Summary 2, the package digest and your signing-key fingerprint.
+4. Just before Summary 2, the net change of the three pinned files (the install lock and the two AST baseline files) since the old anchor. Your `yes` at Summary 2 covers it.
+
+**What you type.**
+
+- The launcher digest at the first prompt.
+- `yes`, the whole lowercase word, at each prompt.
+- `YES` once at `verify-candidate`, if you are asked to run it.
+- Your key's passphrase, once, in the terminal. The signing stage receives only `HOME`, `PATH`, `TERM` and `LANG`, so `SSH_ASKPASS` never reaches it and no graphical prompt appears. The [graphical prompt](../dev/rules/development-environment.md) applies to `baseline-install` and to manual release-tag signing, not here.
+
+Do not run the launcher by hand.
+
 > **Maintainer-only.** Agents prepare the packet and read the change; **you** inspect the script's bound comparisons, make the recorded decisions and sign. No agent signs, loads your key or pushes. The page ends at the marker; below it is reference, except Phase 5, the push, which is the last step and is yours.
 
 **What your yes protects.** Against honest agent mistakes: the anchor moves only to the commit a fresh reader read. It does **not** protect against code running as you, such as a malicious local agent or the candidate's own tests; stage 1 can fool the script's comparisons and leave files that stage 2 loads while you type the key's passphrase. The driver watches the launcher, values file and Python executable; it does not contain code or protect Python's library folder or your other tools.
@@ -137,6 +168,8 @@ The builder can prepare the values file and a fresh package path with
 `python release/repin.py prepare-values --output <new-values-file> --signing-key <public-key> --home <home> --ceremony-dir <outside-checkout-directory>`. The command prints the values-file digest. The independent reader checks every path and digest; the launcher validates the file before use. After a tool upgrade a recorded executable path goes stale, and that is not a malfunction: prepare and check fresh values. No secret is written.
 
 For an ordinary ceremony, `python release/repin.py packet --ceremony-dir <directory>` prepares the packet and launcher. `python release/repin.py prepare-reader --ceremony-dir <directory> --output <new-reader-inputs-file> --expected-fingerprint <independently-trusted-SHA256-fingerprint>` prepares the candidate and member hashes for the independent reader. These inputs are not a review or an authorization. The reader verifies the underlying objects and records their review at the read commit before the Maintainer acts.
+
+For a transition, `prepare-reader` also prints a `pinned-sha256` line for each of the three pinned files (the install lock and the two AST baseline files), a `net-change-sha256` line, and the net-change text itself. The reader records those three digests and the net-change digest. The reader computes each `pinned-sha256` itself, from `git cat-file blob <read-commit>:<path>`; reads the whole net-change text; and only then records its digest. A record copied from the prepared lines without that work gives the Maintainer nothing the driver has not already checked.
 
 When an AST pin is owed, run `python release/repin.py package --ceremony-dir <directory>` at the read commit before the reader writes their record. For a reviewed missing symbol, add `--delete-symbol <exact-baseline-key>` for each missing key; omitted or extra keys refuse. Prepare reader inputs after the package so they include its digest. Once the independent reader has verified and committed the record alone on that read commit, `python release/repin.py apply-reviewed-pin --ceremony-dir <directory>` checks the binding, asks the Maintainer before writing, and stops with an exact-path commit instruction. It does not commit. Run `python release/repin.py commit-reviewed-pin --ceremony-dir <directory>` and approve the exact paths to make that commit. Then prepare fresh ceremony evidence for the new candidate.
 
