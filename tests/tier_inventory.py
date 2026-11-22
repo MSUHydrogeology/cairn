@@ -17,14 +17,28 @@ placed automatically by its name or stopped until a pattern places it.
   python tests/tier_inventory.py list --json
   python tests/tier_inventory.py files TIER    # paths for a scoped pytest run
   python tests/tier_inventory.py for [--range BASE..HEAD] PATH...
+  python tests/tier_inventory.py cert-files [--write PATH]
 
 ``files`` only prints paths. A tier larger than the broad-run guard allows
 is still refused by that guard outside a certifying run; this tool does not
-work around it. Standard library only; it reads files and writes nothing.
+work around it.
+
+``cert-files`` prints the test files Linux and Windows run at certification:
+every test file except the Cairn-only ones in ``RELEASE_EXCLUDED_TESTS``
+(``tests/security_manifest.py``, read as data and never imported) and the
+files the ``system_independent`` list in ``tests/test_tiers.json`` names. A
+file on neither list runs on every host. ``--write PATH`` also saves the lines
+to a new file at an absolute path, for ``python -m pytest @PATH``; it never
+replaces a file. ``check`` also refuses a ``system_independent`` pattern that
+places no file, matches a security-tier file or matches an excluded file.
+
+Standard library only; it reads files and writes nothing, except the one new
+file ``cert-files --write`` is asked for.
 """
 from __future__ import annotations
 
 import argparse
+import ast
 import fnmatch
 import hashlib
 import json
@@ -223,6 +237,94 @@ def classify(files: list[Path], tiers: list[dict]):
     return owner, unplaced, unused
 
 
+def load_hosts(config: Path = CONFIG) -> list[str]:
+    """Return the ``system_independent`` patterns; none when "hosts" is absent.
+
+    A file that matches one of them is run on the Mac only at certification.
+    Unlisted means system-dependent, so a new test file runs on every host."""
+    hosts = json.loads(config.read_text(encoding="utf-8")).get("hosts")
+    if hosts is None:
+        return []
+    patterns = hosts.get("system_independent") if isinstance(hosts, dict) else None
+    if not isinstance(patterns, list) \
+            or not all(isinstance(p, str) and p for p in patterns):
+        raise ValueError(f"{config.name}: 'hosts' needs a 'system_independent' "
+                         "list of patterns")
+    return patterns
+
+
+def load_release_excluded(test_dir: Path = TEST_DIR) -> frozenset[str]:
+    """Return the test paths in ``RELEASE_EXCLUDED_TESTS``, read as data.
+
+    The list lives in ``security_manifest.py`` beside the tests. It is parsed
+    and its literal read, never imported, so reading it runs no code. Each row
+    is (test path, subjects, reason); the test path is the first item."""
+    manifest = test_dir / "security_manifest.py"
+    try:
+        tree = ast.parse(manifest.read_text(encoding="utf-8"), filename=manifest.name)
+    except (OSError, SyntaxError, ValueError) as exc:
+        raise ValueError(f"cannot read RELEASE_EXCLUDED_TESTS from {manifest.name}: "
+                         f"{exc}") from None
+    for node in tree.body:
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            name, value = node.target.id, node.value
+        elif isinstance(node, ast.Assign) and len(node.targets) == 1 \
+                and isinstance(node.targets[0], ast.Name):
+            name, value = node.targets[0].id, node.value
+        else:
+            continue
+        if name != "RELEASE_EXCLUDED_TESTS" or value is None:
+            continue
+        try:
+            rows = ast.literal_eval(value)
+        except (ValueError, TypeError, SyntaxError):
+            rows = None
+        if not isinstance(rows, tuple) or not all(
+                isinstance(row, tuple) and len(row) == 3 and isinstance(row[0], str)
+                for row in rows):
+            raise ValueError(f"RELEASE_EXCLUDED_TESTS in {manifest.name} is not a "
+                             "tuple of (test path, subjects, reason) rows")
+        return frozenset(row[0] for row in rows)
+    raise ValueError(f"no RELEASE_EXCLUDED_TESTS found in {manifest.name}")
+
+
+def _repo_path(path: Path, test_dir: Path) -> str:
+    """The repository-relative name the release manifest uses for a test file."""
+    return "tests/" + path.relative_to(test_dir).as_posix()
+
+
+def _files_matching(pattern: str, files: list[Path]) -> list[Path]:
+    """The test files one pattern matches, by the matcher the tiers use."""
+    owner, _unplaced, _unused = classify(files, [{"name": "hosts",
+                                                  "patterns": [pattern]}])
+    return [p for p in files if p.stem in owner]
+
+
+def host_problems(patterns: list[str], files: list[Path], owner: dict[str, str],
+                  excluded: frozenset[str], test_dir: Path) -> list[str]:
+    """Plain messages for each ``system_independent`` pattern that cannot stand."""
+    problems = []
+    for pattern in patterns:
+        hits = _files_matching(pattern, files)
+        if not hits:
+            problems.append(f"system_independent pattern {pattern!r} places no "
+                            "test file")
+            continue
+        secure = [p.name for p in hits if owner.get(p.stem) == "security"]
+        if secure:
+            problems.append(
+                f"system_independent pattern {pattern!r} matches "
+                f"{', '.join(secure)} in the security tier; hostile-input and "
+                "trust tests depend on the system, so remove the pattern")
+        listed = [p.name for p in hits if _repo_path(p, test_dir) in excluded]
+        if listed:
+            problems.append(
+                f"system_independent pattern {pattern!r} matches "
+                f"{', '.join(listed)}, which RELEASE_EXCLUDED_TESTS already "
+                "lists; keep the two lists apart")
+    return problems
+
+
 def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
                     reviewed_range: str | None = None,
                     broad_limit: int = 40,
@@ -400,10 +502,15 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
     scoped.add_argument("--range", dest="reviewed_range",
                         help="commit range covered by this review (required for AGENTS.md)")
     scoped.add_argument("paths", nargs="+")
+    cert = sub.add_parser("cert-files", help="print the test files Linux and "
+                          "Windows run at certification")
+    cert.add_argument("--write", metavar="PATH",
+                      help="also save the lines to a new file at this absolute path")
     args = ap.parse_args(argv)
 
     try:
         tiers = load_tiers(config)
+        hosts = load_hosts(config) if args.verb in ("check", "cert-files") else []
     except (ValueError, json.JSONDecodeError) as exc:
         print(f"invalid tier configuration: {exc}", file=err)
         return 2
@@ -463,12 +570,54 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
         print(f"unknown tier {args.tier!r}; tiers are {', '.join(known)}", file=err)
         return 2
 
+    if args.verb == "cert-files":
+        try:
+            excluded = load_release_excluded(test_dir)
+        except ValueError as exc:
+            print(str(exc), file=err)
+            return 2
+        independent, _unplaced, _unused = classify(
+            files, [{"name": "system_independent", "patterns": hosts}])
+        lines = sorted(_repo_path(p, test_dir) for p in files
+                       if _repo_path(p, test_dir) not in excluded
+                       and p.stem not in independent)
+        text = "".join(f"{line}\n" for line in lines)
+        if args.write:
+            target = Path(args.write)
+            if not target.is_absolute():
+                print(f"--write needs an absolute path: {args.write}", file=err)
+                return 2
+            try:
+                with open(target, "x", encoding="utf-8", newline="\n") as handle:
+                    handle.write(text)
+            except FileExistsError:
+                print(f"{target} already exists; choose a new path", file=err)
+                return 2
+            except OSError as exc:
+                print(f"cannot write {target}: {exc}", file=err)
+                return 2
+        out.write(text)
+        print(f"cert-files: {len(lines)} of {len(files)} test files run on Linux "
+              f"and Windows ({len(files) - len(lines)} left to the Mac: "
+              "Cairn-only or system-independent)", file=err)
+        return 0
+
     if args.verb == "check":
         for stem in unplaced:
             print(f"UNPLACED {stem}.py: add a pattern for it to {config.name}", file=err)
         for name, pattern in unused:
             print(f"UNUSED   {name}: pattern {pattern!r} places no test file (matches none, or an earlier tier owns them)", file=err)
-        if unplaced or unused:
+        problems = []
+        if hosts:
+            try:
+                excluded = load_release_excluded(test_dir)
+            except ValueError as exc:
+                print(str(exc), file=err)
+                return 2
+            problems = host_problems(hosts, files, owner, excluded, test_dir)
+        for problem in problems:
+            print(f"HOSTS    {problem}", file=err)
+        if unplaced or unused or problems:
             return 1
         print(f"ok: {len(files)} test files, each in exactly one of {len(tiers)} tiers", file=out)
         return 0

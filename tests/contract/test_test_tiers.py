@@ -18,6 +18,13 @@ Promises:
 - Editing a living file (`dev/PLANNING.md` or `CHANGELOG.md`) selects no
   tests, however many tests mention it: the tests build their own copies, and
   the certifying run covers the rest.
+- The "system_independent" list in the configuration is checked: a pattern
+  that places no file, matches a security-tier file or matches a file already
+  in `RELEASE_EXCLUDED_TESTS` fails the check.
+- `cert-files` lists the files Linux and Windows run at certification: every
+  test file except the Cairn-only release exclusions and the system-independent
+  files, so a new unlisted file is included. `--write` saves the same lines to
+  a new absolute path and never replaces a file.
 """
 from __future__ import annotations
 
@@ -47,9 +54,13 @@ tiers_tool = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(tiers_tool)
 
 
-def _config(tmp_path: Path, tiers: list[dict]) -> Path:
+def _config(tmp_path: Path, tiers: list[dict],
+            independent: list[str] | None = None) -> Path:
     path = tmp_path / "tiers.json"
-    path.write_text(json.dumps({"tiers": tiers}), encoding="utf-8")
+    data = {"tiers": tiers}
+    if independent is not None:
+        data["hosts"] = {"about": "", "system_independent": independent}
+    path.write_text(json.dumps(data), encoding="utf-8")
     return path
 
 
@@ -59,6 +70,14 @@ def _tests(tmp_path: Path, *stems: str) -> Path:
     for stem in stems:
         (folder / f"{stem}.py").write_text("", encoding="utf-8")
     return folder
+
+
+def _excluded(folder: Path, *paths: str) -> None:
+    """Write the manifest's exclusion list, in its real shape, beside the tests."""
+    rows = tuple((path, ("tool.py",), "Cairn-only.") for path in paths)
+    (folder / "security_manifest.py").write_text(
+        "RELEASE_EXCLUDED_TESTS: tuple[tuple[str, tuple[str, ...], str], ...] = "
+        f"{rows!r}\n", encoding="utf-8")
 
 
 def _check(config: Path, folder: Path) -> tuple[int, str]:
@@ -169,6 +188,105 @@ def test_a_tier_without_patterns_is_refused_plainly(tmp_path):
         code, err = _check(config, folder)
         assert code == 2
         assert "needs a name and a non-empty list of patterns" in err
+
+
+_HOST_TIERS = [
+    {"name": "security", "about": "", "patterns": ["test_hostile_*"]},
+    {"name": "unit", "about": "", "patterns": ["test_*"]},
+]
+
+
+def test_a_system_independent_pattern_that_places_no_file_fails_the_check(tmp_path):
+    folder = _tests(tmp_path, "test_prose")
+    _excluded(folder)
+    config = _config(tmp_path, _HOST_TIERS, ["test_prose", "test_gone"])
+    code, err = _check(config, folder)
+    assert code == 1
+    assert "'test_gone' places no test file" in err
+    assert "'test_prose'" not in err
+
+
+def test_a_system_independent_pattern_matching_a_security_file_fails_the_check(tmp_path):
+    folder = _tests(tmp_path, "test_hostile_links", "test_prose")
+    _excluded(folder)
+    config = _config(tmp_path, _HOST_TIERS, ["test_hostile_*", "test_prose"])
+    code, err = _check(config, folder)
+    assert code == 1
+    assert "'test_hostile_*' matches test_hostile_links.py in the security tier" in err
+    assert "test_prose" not in err
+
+
+def test_a_system_independent_pattern_matching_an_excluded_file_fails_the_check(tmp_path):
+    folder = _tests(tmp_path, "test_signing", "test_prose")
+    _excluded(folder, "tests/test_signing.py")
+    config = _config(tmp_path, _HOST_TIERS, ["test_signing", "test_prose"])
+    code, err = _check(config, folder)
+    assert code == 1
+    assert "'test_signing' matches test_signing.py" in err
+    assert "RELEASE_EXCLUDED_TESTS" in err
+    assert "test_prose" not in err
+
+
+def test_cert_files_omits_excluded_and_independent_files_and_keeps_a_new_one(tmp_path):
+    folder = _tests(tmp_path, "test_signing", "test_prose", "test_hostile_links",
+                    "test_brand_new")
+    (folder / "deeper").mkdir()
+    (folder / "deeper" / "test_nested.py").write_text("", encoding="utf-8")
+    _excluded(folder, "tests/test_signing.py")
+    config = _config(tmp_path, _HOST_TIERS, ["test_prose"])
+    assert _check(config, folder) == (0, "")
+
+    out, err = io.StringIO(), io.StringIO()
+    code = tiers_tool.main(["cert-files"], config=config, test_dir=folder,
+                           root=tmp_path, out=out, err=err)
+
+    assert code == 0, err.getvalue()
+    assert out.getvalue().splitlines() == [
+        "tests/deeper/test_nested.py",
+        "tests/test_brand_new.py",
+        "tests/test_hostile_links.py",
+    ]
+    assert "3 of 5 test files" in err.getvalue()
+
+
+def test_cert_files_write_refuses_an_existing_path_and_leaves_it_alone(tmp_path):
+    folder = _tests(tmp_path, "test_one")
+    _excluded(folder)
+    config = _config(tmp_path, _HOST_TIERS, [])
+    existing = tmp_path / "already.txt"
+    existing.write_text("keep me\n", encoding="utf-8")
+    out, err = io.StringIO(), io.StringIO()
+
+    code = tiers_tool.main(["cert-files", "--write", str(existing)], config=config,
+                           test_dir=folder, root=tmp_path, out=out, err=err)
+
+    assert code == 2
+    assert "already exists" in err.getvalue()
+    assert existing.read_text(encoding="utf-8") == "keep me\n"
+
+
+def test_cert_files_write_saves_the_printed_lines_to_a_new_absolute_path(
+        tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    folder = _tests(tmp_path, "test_one", "test_two")
+    _excluded(folder)
+    config = _config(tmp_path, _HOST_TIERS, [])
+    target = tmp_path / "cert-files.txt"
+    out, err = io.StringIO(), io.StringIO()
+
+    code = tiers_tool.main(["cert-files", "--write", str(target)], config=config,
+                           test_dir=folder, root=tmp_path, out=out, err=err)
+
+    assert code == 0, err.getvalue()
+    assert target.read_text(encoding="utf-8") == "tests/test_one.py\ntests/test_two.py\n"
+    assert out.getvalue() == target.read_text(encoding="utf-8")
+
+    out, err = io.StringIO(), io.StringIO()
+    code = tiers_tool.main(["cert-files", "--write", "relative.txt"], config=config,
+                           test_dir=folder, root=tmp_path, out=out, err=err)
+    assert code == 2
+    assert "absolute" in err.getvalue()
+    assert not (tmp_path / "relative.txt").exists()
 
 
 def test_for_selects_imports_and_cited_paths_but_not_folder_sweepers(tmp_path):

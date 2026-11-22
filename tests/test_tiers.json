@@ -136,5 +136,9 @@
         "test_verify_stems"
       ]
     }
-  ]
+  ],
+  "hosts": {
+    "about": "Test files listed under system_independent show no sign that their outcome depends on the operating system, so certification runs them on the Mac only. A file not listed counts as system-dependent, so a new test file runs on every host until someone shows it need not.",
+    "system_independent": []
+  }
 }
