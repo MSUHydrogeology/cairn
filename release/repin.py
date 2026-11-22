@@ -49,6 +49,7 @@ import io
 import json
 import re
 import secrets
+import shlex
 import shutil
 import stat
 import subprocess
@@ -2976,10 +2977,21 @@ def write_record(cdir, lines):
     return Path(cdir) / "ceremony-record.txt", sha(raw)
 
 
+def ceremony_command(argv):
+    """The command the Maintainer runs after a passing `--check-only`: this program's own
+    arguments with `--check-only` removed (argparse also accepts a prefix of it), run under the
+    isolated interpreter as the driver itself re-executes."""
+    kept = [a for a in argv if not (len(a) > 3 and "--check-only".startswith(a))]
+    return [sys.executable, "-I", os.path.abspath(__file__), *kept]
+
+
 def run_ceremony(ctx, args, launchctl, rec):
     rc, repo, tmp = ctx["rc"], ctx["repo"], ctx["tmp"]
     cdir, values = Path(args.ceremony_dir), Path(args.values)
-    check_preconditions(ctx)
+    # --check-only makes every check the real run makes before the key probe and stops there: it
+    # asks nothing (so no terminal), starts no stage and writes nothing in the ceremony folder.
+    check_only = args.check_only
+    check_preconditions(ctx, need_terminal=not check_only)
     packet, launcher = cdir / "authorization-packet.txt", cdir / "reanchor-launcher.sh"
     field = {k: rc.values_field(values, k) for k in ("checkout", "signing_key", "package", "home", "python")}
     if None in field.values() or Path(field["checkout"]).resolve() != repo:
@@ -2990,24 +3002,32 @@ def run_ceremony(ctx, args, launchctl, rec):
             or sha(read_safe(Path(field["python"]))) != ctx["layout_python_sha256"]):
         raise Refuse("the ceremony interpreter differs from the independently reviewed layout interpreter.")
     pub = field["signing_key"]
-    private = pub[:-4] if pub.endswith(".pub") else pub
+    if not pub.endswith(".pub"):
+        # Every key read below names this path; a private key file would be read, not just its public half.
+        raise Refuse(f"signing_key in the values file must name the public key, a file ending in .pub, "
+                     f"and {d(pub)} does not. No key file was read.")
+    private = pub[:-4]
     term = os.environ.get("TERM", "xterm")
     rec.append(f"repin ceremony at HEAD {ctx['head']}, anchor {ctx['anchor']}, python "
                f"{sys.version.split()[0]}, git {GIT} sha256 "
                f"{sha(Path(GIT).read_bytes()) if os.path.isfile(GIT) else 'unreadable'}")
     # 1. the launcher's digest, compared by eye and by this program
     ldigest = sha(read_safe(launcher))
-    try:
-        pasted = input("\nPaste the launcher digest from the record: ").strip()
-    except EOFError:
-        pasted = ""
-    say(f"  launcher {d(str(launcher))}\n  computed {ldigest}\n  pasted   {d(pasted)}")
-    if pasted != ldigest:
-        raise Refuse("the launcher's digest is not the one in the record. Do not run it.")
-    say("Purpose: compare the exact launcher bytes with the digest in the record. A match permits "
-        "the existing validation checks to continue; it does not authorize signing or publication.")
-    rec.append(f"launcher digest {ldigest} equals the pasted digest")
-    confirm(rec, "Do the two digests match?")
+    if check_only:
+        # Nothing is pasted: the record check below compares this digest with the record's own.
+        say(f"  launcher {d(str(launcher))}\n  computed {ldigest}")
+    else:
+        try:
+            pasted = input("\nPaste the launcher digest from the record: ").strip()
+        except EOFError:
+            pasted = ""
+        say(f"  launcher {d(str(launcher))}\n  computed {ldigest}\n  pasted   {d(pasted)}")
+        if pasted != ldigest:
+            raise Refuse("the launcher's digest is not the one in the record. Do not run it.")
+        say("Purpose: compare the exact launcher bytes with the digest in the record. A match permits "
+            "the existing validation checks to continue; it does not authorize signing or publication.")
+        rec.append(f"launcher digest {ldigest} equals the pasted digest")
+        confirm(rec, "Do the two digests match?")
 
     # The python the values file names, and the values file itself, are files stage 1's candidate
     # tests can rewrite before stage 2 starts them with the key about to be typed. Hashing them
@@ -3126,6 +3146,11 @@ def run_ceremony(ctx, args, launchctl, rec):
     if not args.transition:
         # A transition checks the end state and shows its net change instead of walking history.
         check_stop_records(ctx, cdir, args.first_run)
+    if check_only:
+        say("\ncheck-only passed: every check the ceremony makes before the key probe passed. It read no "
+            "private key, started no stage, asked nothing and wrote nothing in the ceremony folder. "
+            "Your command, to run in a terminal window:\n  " + shlex.join(ceremony_command(args.argv)))
+        return None
     key_checks(rec, pub, private, fingerprint, launchctl, "before stage 1")
     # 5. an owed pin is written, then this stops (a first run shows a lockfile correction and leaves it)
     if not args.first_run and not args.transition and build_transaction(ctx) is not None:
@@ -3309,6 +3334,9 @@ def main(argv=None, *, launchctl=launchctl_socket):
     ce.add_argument("--ceremony-dir", required=True, metavar="DIR", help="holds the packet and "
                     "launcher, and receives the transaction, stop record and record")
     ce.add_argument("--first-run", action="store_true", help="the anchor does not pin this tool yet")
+    ce.add_argument("--check-only", action="store_true",
+                    help="for an agent to run first: make the checks the ceremony makes before it "
+                    "touches the key, then stop; asks nothing and writes nothing in --ceremony-dir")
     ce.add_argument("--transition", action="store_true",
                     help="run the script-led ceremony for reviewed changed authority")
     ce.add_argument("--expected-fingerprint", metavar="SHA256:...",
@@ -3379,6 +3407,7 @@ def main(argv=None, *, launchctl=launchctl_socket):
     fg = sub.add_parser("forward-guide", help="resume Maintainer approval, exact-path commit and baseline handoff")
     fg.add_argument("--evidence-dir", required=True, metavar="DIR")
     args = ap.parse_args(argv)
+    args.argv = list(sys.argv[1:] if argv is None else argv)
     if args.verb == "forward-prepare":
         try:
             return (prepare_forward_pin(Path(__file__).resolve().parent.parent,
@@ -3507,6 +3536,8 @@ def main(argv=None, *, launchctl=launchctl_socket):
             apply_reviewed_pin(ctx, args.ceremony_dir)
         elif args.verb == "commit-reviewed-pin":
             commit_reviewed_pin(ctx, args.ceremony_dir)
+        elif args.check_only:
+            run_ceremony(ctx, args, launchctl, rec)     # writes no record and prints no finish
         else:
             try:
                 done = run_ceremony(ctx, args, launchctl, rec)

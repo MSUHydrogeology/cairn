@@ -7,7 +7,7 @@ Promises:
 - An absent or unfilled launcher, or one bound to another packet or lacking the environment fix, refuses the pair.
 - The rehearsal says it executes candidate code before it loads any candidate module.
 - The driver runs no stage and refuses a run option as unknown; printed commands run the reviewed launcher, never the working-tree artifact.
-- `release/repin.py` shows the net change of the three pinned files key by key (a key on one side only as `(absent)`, old fixture paths mapped to the new ones, every key and value escaped for a terminal) and refuses a pinned file the candidate lacks or that cannot be read.
+- `release/repin.py` shows the net change of the three pinned files key by key (a key on one side only as `(absent)`, old fixture paths mapped to the new ones, every key and value escaped for a terminal) and refuses a pinned file the candidate lacks or that cannot be read; after a passing `--check-only` it prints the command it was given, without that flag.
 Sources: release/reanchor_ceremony.py module docstring (the banner and "IT RUNS NO STAGE"); release/reanchor_ceremony.py --help; release/repin.py `net_change_lines`.
 
 
@@ -518,3 +518,15 @@ class TestTheNetChangeOfThePinnedFilesIsShownKeyByKey:
         with pytest.raises(repin.Refuse) as exc:
             repin.net_change_lines(ctx)
         assert needle in str(exc.value), what
+
+
+class TestThePrintedCeremonyCommandIsTheOneYouWereGiven:
+
+    @pytest.mark.parametrize("flag", ["--check-only", "--check", "--check-o"])
+    def test_check_only_is_removed_and_everything_else_is_kept(self, repin, flag):
+        given = ["ceremony", "--transition", "--expected-fingerprint", "SHA256:x", flag,
+                 "--values", "v", "--ceremony-dir", "c"]
+        command = repin.ceremony_command(given)
+        assert command == [sys.executable, "-I", str(_REPO / "release" / "repin.py"), "ceremony", "--transition",
+                           "--expected-fingerprint", "SHA256:x", "--values", "v", "--ceremony-dir", "c"]
+

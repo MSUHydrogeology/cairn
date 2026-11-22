@@ -17,6 +17,8 @@ Promises:
 - A stage two that does not move the anchor forward leaves the ceremony not done.
 - Signing tools run by absolute path, with a short fixed environment and no inherited steering variables.
 - Across the layout move, the prior verifier still reports protected removals, and unreviewed inputs refuse before candidate collection.
+- A transition ceremony, whatever its history, checks the three pinned files against the reader's digests, refuses a wrong, missing, duplicate or malformed digest line before any candidate code runs, and shows their net change before Summary 2.
+- `ceremony --check-only` makes every check before the key probe with no terminal, runs no command against a private key, writes nothing in the ceremony folder, and refuses what the real run refuses, for the same reason.
 """
 from __future__ import annotations
 
@@ -26,6 +28,7 @@ import importlib.util
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -467,7 +470,7 @@ sys.addaudithook(_hook)
 
 
 def drive(bed, answers, *, launchctl=None, extra=(), values=None, timeout=240, env=None, audit=False, patch="",
-          record=True):
+          record=True, tty=True):
     """Run `repin ceremony` on a pseudo-terminal, with the one login-session lookup injected.
 
     With audit=True an audit hook logs every subprocess, exec and write-mode open the
@@ -491,6 +494,10 @@ sys.exit(R.main({argv!r}, launchctl=lambda: {launchctl!r}))
     scratch = bed.root / "tmp"
     scratch.mkdir(exist_ok=True)
     env = dict(bed.env, TERM="xterm", TMPDIR=str(scratch), **(env or {}))
+    if not tty:        # what an agent has: no terminal, nothing to type into
+        r = subprocess.run([PY, "-I", "-c", code], env=env, cwd=bed.repo, stdin=subprocess.DEVNULL,
+                           capture_output=True, text=True, timeout=timeout, check=False)
+        return r.returncode, r.stdout + r.stderr
     return run_pty([PY, "-I", "-c", code], answers, env=env, cwd=bed.repo, timeout=timeout)
 
 
@@ -2688,6 +2695,80 @@ def test_the_ordinary_ceremony_still_refuses_a_pin_commit_no_stop_record_describ
     code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest), ("Do the two digests match", "yes")])
     assert code == 2
     refused_early(out, "matches no stop record")
+
+
+# ---------------------------------------------------------------------------
+# `ceremony --check-only`: the dry run an agent makes before the Maintainer starts
+# ---------------------------------------------------------------------------
+
+KEY_PROBE = "R.key_checks = lambda *a: (_ for _ in ()).throw(R.Refuse('reached the key probe'))"
+
+
+def folder_listing(bed):
+    return sorted(p.name for p in bed.cdir.iterdir())
+
+
+def values_naming(bed, name, old, new):
+    path = bed.root / name
+    path.write_text(bed.values.read_text().replace(old, new))
+    return path
+
+
+def refused_the_same_way(bed, needle, *, values=None, record=True):
+    """Check-only (no terminal, nothing typed) and the real run refuse for the same reason."""
+    before = folder_listing(bed)
+    code, dry = drive(bed, [], extra=("--check-only",), values=values, record=record, tty=False, timeout=60)
+    assert code == 2 and needle in dry, dry
+    assert "check-only passed" not in dry and "terminal window" not in dry     # no command is offered
+    assert folder_listing(bed) == before                                       # nothing written beside the packet
+    code, real = drive(bed, [("Paste the launcher digest", bed.launcher_digest),
+                             ("Do the two digests match", "yes")], values=values, record=False)
+    assert code == 2 and needle in real, real
+
+
+def test_check_only_and_the_real_run_refuse_a_stale_trusted_checkout_for_the_same_reason(cbed):
+    cbed.add_record()
+    cbed.git("reset", "-q", "--hard", "HEAD~1")             # the checkout one commit behind the reader's record
+    refused_the_same_way(cbed, "dev/ceremony-record.md is not committed at HEAD", record=False)
+
+
+def test_check_only_and_the_real_run_refuse_a_values_file_naming_the_wrong_checkout_for_the_same_reason(cbed):
+    other = cbed.root / "another-checkout"
+    other.mkdir()
+    wrong = values_naming(cbed, "wrong-checkout-values", f"checkout {cbed.repo}", f"checkout {other}")
+    refused_the_same_way(cbed, "its checkout must be this repository", values=wrong)
+
+
+def test_a_signing_key_that_is_not_a_public_key_file_is_refused_before_any_key_file_is_read(cbed):
+    private = values_naming(cbed, "private-key-values", f"signing_key {cbed.key}.pub", f"signing_key {cbed.key}")
+    assert f"signing_key {cbed.key}\n" in private.read_text(), "the instrument did not change the values file"
+    for extra, tty in (("--check-only", False), (None, True)):
+        code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest)], extra=(extra,) if extra else (),
+                          values=private, audit=True, tty=tty, timeout=60)
+        assert code == 2 and "must name the public key" in out, out
+    touched = [a for argv, _env in popen_calls(cbed) for a in argv if str(cbed.key) in a]
+    assert touched == [], touched                              # no child was given the key's path, public half included
+
+
+def test_check_only_passes_where_the_real_run_reaches_the_key_probe_and_touches_no_key(cbed):
+    before = folder_listing(cbed)
+    code, out = drive(cbed, [], extra=("--check-only",), audit=True, tty=False, timeout=60)
+    assert code == 0, out
+    assert "check-only passed" in out and "Paste the launcher digest" not in out and "type the word yes" not in out
+    assert "Summary 2" not in out and "Enter passphrase for" not in out
+    assert folder_listing(cbed) == before and not list(cbed.cdir.glob("ceremony-record*"))
+    calls = popen_calls(cbed)
+    assert calls, "the instrument saw no child"
+    for argv, _env in calls:
+        assert str(cbed.key) not in argv and not argv[0].endswith("ssh-add"), argv
+        assert not (argv[0].endswith("ssh-keygen") and "-y" in argv), argv
+    printed = re.search(r"terminal window:\n  (.+)\n", out)
+    assert printed, out
+    assert shlex.split(printed[1]) == [PY, "-I", str(cbed.repo / "release/repin.py"), "ceremony", "--values",
+                                       str(cbed.values), "--ceremony-dir", str(cbed.cdir)]
+    code, real = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
+                              ("Do the two digests match", "yes")], patch=KEY_PROBE, record=False)
+    assert code == 2 and "reached the key probe" in real, real     # the real run gets to the key probe too
 
 
 def test_documented_verifier_then_ceremony_on_disposable_authority(cbed):
