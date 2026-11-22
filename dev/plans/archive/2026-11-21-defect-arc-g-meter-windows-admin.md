@@ -1,7 +1,7 @@
 # Plan: Defect arc G, the meter runs for a Windows administrator
 
 **Source proposal**: dev/proposals/archive/2026-11-20-claude-v09-defect-arc.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-21
 **Rules that apply**: dev/rules/protected-surfaces.md, dev/rules/working-agreements.md, dev/rules/conventions.md, dev/rules/development-environment.md
@@ -293,5 +293,17 @@ This is "a second refusal of another kind", which the Scope sends back to Strate
 Seen on the way: Cairn's own ignore file had no line for the meter's summary file, which every installed project gets. Fixed in `b6c26c71`.
 
 Not checked: the export step on Windows, which the fourth finding stops before it runs; the Mac and Linux paths on a real log.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation closeout -- Claude Fable 5.2 (Strategy) -- 2026-11-21
+
+The plan's own criteria held when it was built. Its check on the real machine is now met, by the simple meter and not by this plan's change.
+
+- **C1.** The owner test this plan changed merged at `577e6a8e`, with its one test, after both code reviews accepted it.
+- **Strategy's check: met on 2026-11-21, after the simple meter merged (`8cbdc1b4`).** On the Windows Server machine a refresh with the tracked meter answers `ok`, and its counts equal an independent count of the same log. Between this plan's merge and that one the meter still answered `unavailable`, for the reasons recorded in the section above.
+- **This plan's change is no longer in the code.** The simple meter removed the owner test altogether, on the Maintainer's words "Yes, simplify now. That is way too much for a log that doesn't actually do anything.", and deleted this plan's test with the check it tested. The README sentence this plan added went with them.
+
+Nothing is owed under this plan. The wider record is the simple meter's plan, `dev/plans/archive/2026-11-21-simple-meter.md`.
 
 **Elapsed**: unknown. **Tokens**: unknown.
