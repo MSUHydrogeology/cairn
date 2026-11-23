@@ -47,6 +47,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
+- **Fixed** — The installer on Windows no longer writes through a link. When it copies the skills where symbolic links are unavailable, it now refuses a link or a junction (a Windows folder link) at, or above, a file it writes, as it already did on Mac and Linux, instead of creating a file at the link's far end or stopping with a traceback.
 - **Fixed: The snapshot step writes UTF-8 on Windows.** A snapshot written to a file no longer turns non-ASCII characters into console-encoded text or adds carriage returns, so the pulse reads it.
 - **Fixed: The pulse prints each usage row's weighted total.** The usage line ends with `weighted=` and the row's total, or `weighted=unknown` where the row has none.
 - **Fixed: Three tests that could not pass on Windows now can.** One built a path that broke inside generated code, one moved a file between drives with a rename, and one expected backslashes in a path that session start prints with forward slashes.

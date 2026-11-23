@@ -36,15 +36,18 @@ Promises:
 - A divergent skill copy is quarantined and regenerated, and the divergence warning names escaped project-relative files.
 - An upgrade whose skills fan-out is refused warns, finishes with exit 0, records the skills and leaves no stage behind.
 - A link swapped in after its safety check is replaced, not followed.
+- Where no open can refuse a link (Windows), the install looks first and refuses a link or junction at, or above, a name it writes or renames, and a link followed anyway is caught before a byte is written.
 - Lockfile text, a forged Cairn version or a line break in a finding reason, prints as escaped text on one line.
 """
 from __future__ import annotations
 
 import os
 import secrets
+import stat
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -561,9 +564,11 @@ def test_a_link_swapped_in_at_the_quarantine_name_after_its_check_is_replaced_no
     _after_each_check(monkeypatch, swap)
     try:
         INS.fan_out_skills(TEMPLATES_ROOT, repo, targets=[_CLAUDE_ROW], allow_symlinks=False)
-    except PermissionError:
-        # Windows will not rename a file onto a link to a folder: the install
-        # stops there instead of replacing the link.  Nothing moved into the folder.
+    except ScaffoldSecurityError:
+        # Windows will not rename a file onto a link to a folder.  The install
+        # used to stop there with a PermissionError; it now refuses, in the
+        # install's own words, instead of replacing the link.  The promise (the
+        # divergent file is not moved into the linked folder) is unchanged.
         if os.name != "nt":
             raise
         assert list(outside_dir.iterdir()) == [], "the divergent file was moved into the link's folder"
@@ -604,7 +609,16 @@ def test_anything_at_the_temporary_name_is_refused_not_written_into(
         temporary.write_text(original, encoding="utf-8")
         target_file = temporary
 
-    with pytest.raises(OSError):
+    # The promise is unchanged: a name already at the temporary name is refused
+    # and nothing is written into it.  Only the kind of refusal differs on
+    # Windows for a link: it has no open that refuses one, so the install looks
+    # first and raises its own refusal (not an OSError).  A hard link or a plain
+    # file still fails the exclusive create there, as everywhere.
+    refused = (
+        (OSError, ScaffoldSecurityError)
+        if os.name == "nt" and planted == "symbolic-link" else OSError
+    )
+    with pytest.raises(refused):
         INS.fan_out_skills(TEMPLATES_ROOT, repo, targets=[_CLAUDE_ROW], allow_symlinks=False)
 
     if planted == "symbolic-link":
@@ -647,6 +661,296 @@ def test_a_failed_rename_leaves_no_temporary_file(tmp_path, monkeypatch):
     monkeypatch.undo()
 
     assert not list((repo / ".claude").rglob(".cairn-write-*"))
+
+
+# --- Windows: no open refuses a link there, so the install looks first --------
+
+
+@pytest.fixture()
+def windows_rules(monkeypatch):
+    """Run the Windows branch on any system: it is switched on, there is no
+    no-follow open, and the earlier containment check is out of the way, so the
+    Windows branch is the only thing that can refuse.  (On Windows the switch
+    and the missing flag are already so, and the earlier check is only removed.)"""
+    monkeypatch.setattr(INS, "_ON_WINDOWS", True)
+    monkeypatch.delattr(os, "O_NOFOLLOW", raising=False)
+    monkeypatch.setattr(INS, "_assert_safe_write", lambda _dst, _base: None)
+
+
+def _make_folder_link(link: Path, destination: Path) -> None:
+    """A junction on Windows (it needs no privilege, so it is what a machine with
+    no symbolic links can have), a symbolic link elsewhere."""
+    if os.name == "nt":
+        done = subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(link), str(destination)],
+            capture_output=True, text=True,
+        )
+        if done.returncode != 0:
+            pytest.skip("junctions are not available here")
+    else:
+        os.symlink(destination, link, target_is_directory=True)
+
+
+_WINDOWS_REFUSALS = [
+    "link-at-the-temporary-name",
+    "link-or-junction-on-the-way",
+    "folder-swapped-for-a-link-after-the-check",
+    "quarantine-rename-denied-by-a-link",
+    "copy-rename-denied-by-a-link",
+]
+
+
+# Declared exception (internal hook): Hook: INS._ON_WINDOWS switched on, os.O_NOFOLLOW removed and INS._assert_safe_write removed (windows_rules), and a link swapped in right after a check; a Windows junction and that instant cannot be produced on every system or from outside.
+@pytest.mark.parametrize("case", _WINDOWS_REFUSALS)
+def test_where_no_open_refuses_a_link_the_install_looks_first_and_refuses(
+    tmp_path, monkeypatch, windows_rules, case
+):
+    """Windows has no open that refuses a link, and an open through a dangling
+    link there creates the file it points at.  The install must refuse what it
+    refuses elsewhere, in its own words and before it creates or renames
+    anything through the link."""
+    if not (case == "link-or-junction-on-the-way" and os.name == "nt"):
+        _needs_symlinks(tmp_path)
+    repo = _repo(tmp_path)
+    root = tmp_path.resolve()
+    outside = root / "outside"
+    outside.mkdir()
+    skills = repo / ".claude" / "skills"
+    skill = skills / "session-start"
+    inside = repo / "elsewhere-in-the-project"
+    opened: list[str] = []
+    if case == "link-at-the-temporary-name":
+        monkeypatch.setattr(secrets, "token_hex", lambda _n=None: "guessed")
+        (skills / "_data").mkdir(parents=True)
+        os.symlink(outside / "not-created-yet", skills / "_data" / ".cairn-write-guessed")
+        real_open = os.open
+
+        def spy(path, *args, **kwargs):
+            if Path(path).name.startswith(".cairn-write-"):
+                opened.append(os.fspath(path))
+            return real_open(path, *args, **kwargs)
+
+        monkeypatch.setattr(os, "open", spy)
+    elif case == "link-or-junction-on-the-way":
+        # to a folder inside the project: the earlier check lets a junction through there
+        inside.mkdir()
+        skills.mkdir()
+        _make_folder_link(skill, inside)
+    elif case == "folder-swapped-for-a-link-after-the-check":
+        skill.mkdir(parents=True)
+        (skill / "SKILL.md").write_text("a local edit\n", encoding="utf-8")
+        (outside / "SKILL.md").write_text("someone else's bytes\n", encoding="utf-8")
+        swapped: list[bool] = []
+
+        def swap(dst):
+            # the last check made for this folder, so the whole plan has passed
+            if dst == skill / "SKILL.md.diverged.bak" and not swapped:
+                swapped.append(True)
+                os.rename(skill, skills / "moved")
+                _make_folder_link(skill, outside)
+
+        _after_each_check(monkeypatch, swap)
+    else:
+        real_replace = os.replace
+
+        def replace(src, dst, *args, **kwargs):
+            if Path(dst).is_symlink():  # what Windows says to a rename onto a link to a folder
+                raise PermissionError(13, "Access is denied", str(dst))
+            return real_replace(src, dst, *args, **kwargs)
+
+        monkeypatch.setattr(os, "replace", replace)
+        if case == "quarantine-rename-denied-by-a-link":
+            late = skills / "_data" / "vendor_targets.yml.diverged.bak"
+            late_after = "session-end"  # the check of this folder's file comes after the first file's
+            (skills / "_data").mkdir(parents=True)
+            (skills / "_data" / "vendor_targets.yml").write_text("a local edit\n", encoding="utf-8")
+        else:
+            late = skills / "session-end" / "SKILL.md"
+            late_after = "session-start"  # the check of the next folder's file comes after this one's plan
+            (skills / "session-end").mkdir(parents=True)
+
+        def plant(dst):
+            if dst.parent.name == late_after and not late.is_symlink() and not late.exists():
+                _make_folder_link(late, outside)
+
+        _after_each_check(monkeypatch, plant)
+    outside_before = _snapshot(outside)
+    inside_before = _snapshot(inside) if inside.exists() else {}
+    harness_before = _snapshot(repo / ".claude")
+
+    with pytest.raises(ScaffoldSecurityError, match="through a link or outside the project") as refused:
+        INS.fan_out_skills(TEMPLATES_ROOT, repo, targets=[_CLAUDE_ROW], allow_symlinks=False)
+
+    assert "remove that link" in str(refused.value)
+    assert not opened, "the temporary name was opened (and the file made) before the refusal"
+    if case == "link-or-junction-on-the-way":
+        # a link that is there when the plan is made is refused before the first copy
+        assert _snapshot(repo / ".claude") == harness_before, "a copy was written before the refusal"
+    assert _snapshot(outside) == outside_before, "something was created or renamed through the link"
+    assert (_snapshot(inside) if inside.exists() else {}) == inside_before
+    left = [p for p in (repo / ".claude").rglob(".cairn-write-*") if not p.is_symlink()]
+    assert not left, "a temporary file was left (the link the test planted is not one)"
+
+
+# Declared exception (internal hook): Hook: INS._ON_WINDOWS switched on, and os.replace forced to say "access denied" with no link anywhere; a real denied rename needs a sharing violation from another process.
+def test_a_denied_rename_is_not_called_a_link_when_no_link_is_there(
+    tmp_path, monkeypatch, windows_rules
+):
+    repo = _repo(tmp_path)
+
+    def denied(_src, _dst):
+        raise PermissionError(13, "Access is denied")
+
+    monkeypatch.setattr(os, "replace", denied)
+    with pytest.raises(PermissionError):
+        INS.fan_out_skills(TEMPLATES_ROOT, repo, targets=[_CLAUDE_ROW], allow_symlinks=False)
+    monkeypatch.undo()
+
+    assert not list((repo / ".claude").rglob(".cairn-write-*"))
+
+
+# Declared exception (internal hook): Hook: os.open wrapped to plant a link in the instant before the open, with os.O_NOFOLLOW removed (windows_rules), which is how Windows opens; that instant cannot be hit from outside.
+def test_a_link_planted_just_before_the_open_is_caught_and_its_file_removed(
+    tmp_path, monkeypatch, windows_rules
+):
+    """The look before the open cannot close the instant between it and the open,
+    and Windows then follows the link and creates the file it points at.  The new
+    file's real place is compared with its name before a byte is written, and the
+    file is removed."""
+    _needs_symlinks(tmp_path)
+    repo = _repo(tmp_path)
+    nowhere = tmp_path.resolve() / "outside" / "not-created-yet"
+    nowhere.parent.mkdir()
+    real_open = os.open
+
+    def plant_then_open(path, flags, mode=0o777, **kwargs):
+        if Path(path).name.startswith(".cairn-write-") and not os.path.lexists(path):
+            os.symlink(nowhere, path)
+            # Windows follows the link and creates what it points at; a POSIX
+            # exclusive create would refuse, so open the target as Windows would
+            return real_open(os.path.realpath(path), flags, mode, **kwargs)
+        return real_open(path, flags, mode, **kwargs)
+
+    monkeypatch.setattr(os, "open", plant_then_open)
+    with pytest.raises(ScaffoldSecurityError, match="through a link or outside the project"):
+        INS.fan_out_skills(TEMPLATES_ROOT, repo, targets=[_CLAUDE_ROW], allow_symlinks=False)
+    monkeypatch.undo()
+
+    assert not nowhere.exists(), "the file created through the link was left, or written to"
+    assert not list((repo / ".claude").rglob(".cairn-write-*")), "the planted link was left"
+    assert not list((repo / ".claude").rglob("SKILL.md"))
+
+
+_TAG_SYMLINK, _TAG_MOUNT_POINT = 0xA000000C, 0xA0000003  # Windows reparse tags
+_DIR = stat.S_IFDIR | 0o755
+_LINK = stat.S_IFLNK | 0o777
+
+
+def _entry(mode=_DIR, attributes=0, tag=0):
+    return SimpleNamespace(st_mode=mode, st_file_attributes=attributes, st_reparse_tag=tag)
+
+
+_JUNCTION = _entry(attributes=stat.FILE_ATTRIBUTE_REPARSE_POINT, tag=_TAG_MOUNT_POINT)
+_NAME = "proj/.claude/skills/session-start/SKILL.md"
+_WAY = ["proj/.claude", "proj/.claude/skills", "proj/.claude/skills/session-start"]
+
+
+# Declared exception (internal hook): Direct test of private INS._link_in_path with a fake lstat; Windows reparse attributes cannot be made on every system.
+_FOLDERS = {name: _entry() for name in _WAY}
+
+
+@pytest.mark.parametrize(
+    "entries, include_name, found",
+    [
+        pytest.param({**_FOLDERS, _NAME: _entry(_LINK)}, True, _NAME,
+                     id="symbolic-link-at-the-name"),
+        pytest.param({**_FOLDERS, _WAY[2]: _JUNCTION}, True, _WAY[2], id="junction-on-the-way"),
+        pytest.param(
+            {**_FOLDERS, _WAY[1]: _entry(attributes=stat.FILE_ATTRIBUTE_REPARSE_POINT,
+                                         tag=_TAG_SYMLINK)},
+            True, _WAY[1], id="symbolic-link-seen-only-by-its-reparse-tag"),
+        pytest.param(
+            {**_FOLDERS, _WAY[1]: _entry(attributes=stat.FILE_ATTRIBUTE_REPARSE_POINT,
+                                         tag=0x9000001A)},
+            True, None, id="another-reparse-point-is-not-a-link"),
+        pytest.param({_WAY[0]: _entry()}, True, None, id="a-folder-that-is-not-there-ends-the-walk"),
+        pytest.param(
+            {_WAY[0]: _entry(), _WAY[1]: _entry(), _WAY[2]: _entry(stat.S_IFREG | 0o644),
+             _NAME: NotADirectoryError()},
+            True, None, id="a-file-where-a-folder-should-be"),
+        pytest.param({_WAY[0]: _entry(), _WAY[1]: PermissionError()}, True, _WAY[1],
+                     id="a-name-that-cannot-be-read-counts-as-found"),
+        pytest.param({**_FOLDERS, _NAME: _entry(_LINK)}, False, None, id="the-last-name-left-out"),
+        pytest.param({**_FOLDERS, _WAY[0]: _JUNCTION}, False, _WAY[0],
+                     id="a-folder-above-is-found-with-the-name-left-out"),
+    ],
+)
+def test_a_link_or_junction_on_the_way_is_found_by_its_own_entry(entries, include_name, found):
+    def lstat(path):
+        row = entries.get(path.as_posix())
+        if row is None:
+            raise FileNotFoundError(path)
+        if isinstance(row, OSError):
+            raise row
+        return row
+
+    result = INS._link_in_path(Path(_NAME), Path("proj"), include_name=include_name, lstat=lstat)
+
+    assert (result.as_posix() if result is not None else None) == found
+
+
+# Declared exception (internal hook): Direct test of private INS._link_in_path; a path outside the base is a caller error no public route produces.
+def test_a_path_outside_the_base_counts_as_a_link():
+    result = INS._link_in_path(Path("other/x"), Path("proj"), lstat=lambda _p: _entry())
+
+    assert result == Path("other/x")
+
+
+_REAL = os.path.join("real", "proj", ".claude", "skills", "session-start", ".cairn-write-x")
+_TMP = Path("proj/.claude/skills/session-start/.cairn-write-x")
+
+
+# Declared exception (internal hook): Direct test of private INS._created_elsewhere with fake lstat and realpath; where a followed link leads is the system's answer, which a fake stands in for on every system.
+@pytest.mark.parametrize(
+    "actual, status, unreadable, result",
+    [
+        pytest.param(_REAL, _entry(stat.S_IFREG), None, None, id="where-its-name-says"),
+        pytest.param("\\\\?\\" + _REAL, _entry(stat.S_IFREG), None, None, id="long-path-prefix"),
+        pytest.param(os.path.join("somewhere", "else"), _entry(stat.S_IFREG), None,
+                     os.path.join("somewhere", "else"), id="a-followed-link-led-elsewhere"),
+        pytest.param(_REAL, _entry(_LINK), None, _REAL, id="its-own-name-is-a-link"),
+        pytest.param(_REAL, _entry(stat.S_IFREG), OSError(), os.fspath(_TMP), id="a-name-that-cannot-be-read"),
+    ],
+)
+def test_the_new_file_is_where_its_name_says_or_the_real_place_is_reported(
+    actual, status, unreadable, result
+):
+    def realpath(path):
+        return os.path.join("real", "proj") if Path(path) == Path("proj") else actual
+
+    def lstat(_path):
+        if unreadable is not None:
+            raise unreadable
+        return status
+
+    assert INS._created_elsewhere(_TMP, Path("proj"), lstat=lstat, realpath=realpath) == result
+
+
+# Declared exception (internal hook): Direct test of private INS._remove_created; it runs only on Windows, after a link was followed, which no public route reaches.
+def test_only_the_file_this_run_created_is_removed(tmp_path):
+    ours = tmp_path / "ours"
+    ours.write_bytes(b"x")
+    created = os.stat(ours)
+    stranger = tmp_path / "stranger"
+    stranger.write_bytes(b"someone else's")
+    os.replace(stranger, ours)  # another file now holds that name
+
+    INS._remove_created(os.fspath(ours), created)
+
+    assert ours.read_bytes() == b"someone else's"
+    INS._remove_created(os.fspath(ours), os.stat(ours))
+    assert not ours.exists()
+    INS._remove_created(os.fspath(ours), created)  # gone already: no error
 
 
 # --- the warnings and the upgrade route ---------------------------------------

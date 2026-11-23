@@ -787,6 +787,98 @@ def _emit_skill_symlink(dst: Path, canonical: Path) -> str:
     return "linked"
 
 
+#: True where Windows rules apply.  Windows has no open that refuses a link (no
+#: ``O_NOFOLLOW``), so the copy fallback looks at each name itself before it opens
+#: or renames one.  A module name so a test can switch it on for another system.
+_ON_WINDOWS = os.name == "nt"
+
+
+def _is_redirect(info: os.stat_result) -> bool:
+    """True for a symbolic link or, on Windows, a junction: an entry the system
+    follows to somewhere else.  Another reparse point (a cloud-file placeholder,
+    say) is not followed, so it passes."""
+    if stat.S_ISLNK(info.st_mode):
+        return True
+    # the two tags the system follows: a symbolic link, a mount point (the
+    # same pair as templates/skills/_lib/meter.py, and no stat constant names
+    # them off Windows)
+    return bool(
+        getattr(info, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT
+        and getattr(info, "st_reparse_tag", 0) in (0xA000000C, 0xA0000003)
+    )
+
+
+def _link_in_path(
+    path: Path, base: Path, *, include_name: bool = True,
+    lstat: Callable[[Path], os.stat_result] = os.lstat,
+) -> Path | None:
+    """The first entry on the way from *base* down to *path* that the system
+    follows to somewhere else (:func:`_is_redirect`), or ``None``.
+
+    Each name is looked at itself, never through; the walk stops at the first
+    name that is not there.  A *path* outside *base*, or a name that cannot be
+    read, counts as found, so the caller refuses.  With *include_name* false the
+    last name is left out: a rename that replaces it does not follow a link there."""
+    try:
+        parts = path.relative_to(base).parts
+    except ValueError:
+        return path
+    if not include_name:
+        parts = parts[:-1]
+    walk = base
+    for part in parts:
+        walk = walk / part
+        try:
+            info = lstat(walk)
+        except (FileNotFoundError, NotADirectoryError):
+            return None
+        except OSError:
+            return walk
+        if _is_redirect(info):
+            return walk
+    return None
+
+
+def _created_elsewhere(
+    path: Path, base: Path, *,
+    lstat: Callable[[Path], os.stat_result] = os.lstat,
+    realpath: Callable[[Path], str] = os.path.realpath,
+) -> str | None:
+    """Where the file just created at *path* really is, when that is not *path*
+    under *base* (so a link was followed); ``None`` when it is where its name says.
+
+    The final location is what *realpath* reports (the system's own answer); the
+    expected one is *base*'s final location plus the names below it, compared
+    without case and without a ``\\\\?\\`` prefix.  A name that cannot be read counts
+    as elsewhere."""
+    def plain(name: str) -> str:
+        name = os.path.normcase(name)
+        return name[4:] if name.startswith("\\\\?\\") else name
+
+    try:
+        expected = os.path.join(realpath(base), *path.relative_to(base).parts)
+        actual = realpath(path)
+        if plain(actual) == plain(expected) and not _is_redirect(lstat(path)):
+            return None
+        return actual
+    except (OSError, ValueError):
+        return os.fspath(path)
+
+
+def _remove_created(path: str, created: os.stat_result) -> None:
+    """Remove the file this run created at *path*, only if what is there now is
+    that same file (same volume and file number, not a link).  Best effort: it
+    never raises, and a file number of 0 (a filesystem that gives none) is not
+    trusted to mean "the same"."""
+    try:
+        now = os.lstat(path)
+        if (created.st_ino and not _is_redirect(now)
+                and (now.st_dev, now.st_ino) == (created.st_dev, created.st_ino)):
+            os.unlink(path)
+    except OSError:
+        pass
+
+
 def _emit_skill_copy_fallback(
     dst: Path, canonical: Path, target: Path,
 ) -> str:
@@ -830,6 +922,21 @@ def _emit_skill_copy_fallback(
     name.  Nothing is written outside in the second case, and the next install
     refuses the link.
 
+    **On Windows** no open can refuse a link (there is no ``O_NOFOLLOW``), and
+    an open through a dangling link creates the file it points at.  So the same
+    refusal is made by looking first: every name from the project down to the
+    copy or quarantine name must not be a link or a junction (the whole set,
+    before the first file is touched), and each folder on the way is looked at
+    again just before a rename or a new folder, and the new temporary name just
+    before the open.  Exact: any link or junction there when it is looked at is
+    refused.  Best effort: a link put in the instant between that look and the
+    open is followed once (the standard library has no no-follow open there);
+    the new file's final location is then compared with its own name before a
+    byte is written, and if it is elsewhere that file, which this run created
+    and can still identify, is removed and the install refuses.  A rename that
+    Windows denies is a refusal when a link is the reason, and the original
+    error when it is not.
+
     Raises :class:`ScaffoldSecurityError`: fixed words, the project-relative
     name (escaped, since it is data from the project), and what to do about it.
     Where a link points is never printed.  The divergence warning names the
@@ -856,14 +963,25 @@ def _emit_skill_copy_fallback(
             "the skills."
         )
 
+    def link_refusal(path: Path) -> ScaffoldSecurityError:
+        return refuse(
+            "refusing to write skill copies through a link or outside the "
+            "project", path, "remove that link (or the linked folder above it)",
+        )
+
+    def guard(path: Path, shown_as: Path | None = None, *,
+              include_name: bool = True) -> None:
+        # Windows only (no new call anywhere else): see the docstring
+        if _ON_WINDOWS and _link_in_path(
+                path, target, include_name=include_name) is not None:
+            raise link_refusal(shown_as or path) from None
+
     def check(path: Path) -> None:
+        guard(path)
         try:
             _assert_safe_write(path, target)
         except ScaffoldSecurityError:
-            raise refuse(
-                "refusing to write skill copies through a link or outside the "
-                "project", path, "remove that link (or the linked folder above it)",
-            ) from None
+            raise link_refusal(path) from None
 
     plan: list[tuple[Path, Path, Path | None, bytes]] = []
     for src_file in sorted(canonical.rglob("*")):
@@ -905,19 +1023,39 @@ def _emit_skill_copy_fallback(
     )
     quarantined: list[str] = []
     for rel, out, bak, data in plan:
+        guard(out, include_name=False)  # Windows: the folders, just before use
         if bak is not None:
             # a rename replaces a link at the new name; shutil.move would move
             # the file into the folder that link names
-            os.replace(out, bak)
+            try:
+                os.replace(out, bak)
+            except PermissionError:
+                guard(bak)  # Windows will not rename onto a link to a folder
+                raise
             quarantined.append(esc(rel.as_posix()))
         out.parent.mkdir(parents=True, exist_ok=True)
         tmp = out.with_name(".cairn-write-" + secrets.token_hex(8))
+        guard(tmp, out)  # Windows: a link at the temporary name, or a new folder
         fd = os.open(tmp, flags, 0o666)
+        created = stray = None
         try:
             with os.fdopen(fd, "wb") as handle:
+                if _ON_WINDOWS:
+                    # best effort: a link that came in after the look above was
+                    # followed.  Say where the new file is before writing to it.
+                    created = os.fstat(handle.fileno())
+                    stray = _created_elsewhere(tmp, target)
+                    if stray is not None:
+                        raise link_refusal(out)
                 handle.write(data)
-            os.replace(tmp, out)
+            try:
+                os.replace(tmp, out)
+            except PermissionError:
+                guard(out)  # Windows will not rename onto a link to a folder
+                raise
         except BaseException:
+            if stray is not None:
+                _remove_created(stray, created)
             try:
                 os.unlink(tmp)
             except OSError:
