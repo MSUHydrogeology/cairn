@@ -4863,7 +4863,9 @@ ATTRIBUTION_CASES = [
                  id="an-unlisted-folder-is-ignored"),
     pytest.param({"notes.md": lambda r: f"in {r} and {r}2.\n"}, {}, None,
                  "antigravity_projects_ambiguous", id="two-named-the-second-before-a-period"),
-    pytest.param({"notes.md": lambda r: f"in {r}/sub/x\n"}, {}, None,
+    # The folders below the project are spelled with the platform's own separator, as a
+    # tool writes a path there; the listed nested project is `<root>\sub` on Windows.
+    pytest.param({"notes.md": lambda r: f"in {r}{os.sep}sub{os.sep}x\n"}, {}, None,
                  "antigravity_projects_ambiguous", id="a-nested-project-names-both"),
     pytest.param({"notes.md": lambda r: "nothing here\n"}, {}, None,
                  "antigravity_project_not_named", id="none-named"),
@@ -5095,7 +5097,8 @@ def test_an_antigravity_search_cap_is_128_mib_a_conversation_over_it_is_not_gues
     # A file of 20 MiB (a sparse file of zeros) is past the old 16 MiB cap, within the new one.
     folder = tmp_path / "brain" / AG_CONVERSATION
     folder.mkdir(parents=True)
-    (folder / "notes.md").write_text("/synthetic/project\n", encoding="utf-8")
+    # Exact bytes: write_text would turn "\n" into two bytes on Windows and shift the count.
+    (folder / "notes.md").write_bytes(b"/synthetic/project\n")
     with open(folder / "big.md", "wb") as handle:
         handle.truncate(20 * 1024 * 1024)
     projects = [{"alias": "only", "path": "/synthetic/project",
@@ -5130,7 +5133,7 @@ def test_an_antigravity_search_entry_cap_is_20000_so_a_conversation_of_5200_file
 
 def test_an_antigravity_search_refuses_a_file_that_is_not_the_one_the_walk_saw(tmp_path):
     note = tmp_path / "notes.md"
-    note.write_text("/synthetic/project\n", encoding="utf-8")
+    note.write_bytes(b"/synthetic/project\n")      # exact bytes: 19 on every platform
     seen = os.lstat(note)
     names = {"only": [b"/synthetic/project"]}
     same = meter._search_attribution_file(
