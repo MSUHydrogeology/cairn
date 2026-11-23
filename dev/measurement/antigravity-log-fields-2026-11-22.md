@@ -2,6 +2,8 @@
 
 This note adds follow-up measurements to [the initial look](antigravity-look-2026-11-22.md) and [the real-log check](antigravity-real-log-check-2026-11-22.md). It records only counts, approved key names from [custom session routines](../rules/custom_session_routines.md), environment checks, and the local sanitized `dev/measurement/meter.json` output on one Mac (Python 3.13.13). No raw log value, folder path, UUID, or unapproved key name appears here.
 
+Untracked path: `dev/measurement/meter.json` -- gitignored local meter summary (`.gitignore`), absent on a fresh clone.
+
 ## Answer
 
 **All 46 `transcript.jsonl` / `transcript_full.jsonl` pairs match identically on token records, newer Antigravity replies carry a top-level `model` field ignored today, every token record carries an unapproved cache-token count (~92.6% of total tokens), and Antigravity's folder UUID matches `ANTIGRAVITY_CONVERSATION_ID` rather than `ANTIGRAVITY_TRAJECTORY_ID`.**
