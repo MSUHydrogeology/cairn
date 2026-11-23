@@ -29,7 +29,7 @@ _ROOT = (os.path.abspath(os.path.join(_HERE, "../../..")) if _SOURCE else
          os.path.dirname(os.path.dirname(_HERE)) if _RELOCATED else os.path.dirname(_HERE))
 _GIT_REL = ("templates/skills/_lib/git_read.py" if _SOURCE else
             "dev/tools/git_read.py" if _RELOCATED else "tools/git_read.py")
-_GIT_SHA256 = "b67deb4e50eaee1e420d49af5ddac318aa110407bcd7c03d305091146cf15252"
+_GIT_SHA256 = "e29f38935490c2619130bdf79fc072088618221bb0d2e64ff404c61aff3d5a7a"
 _HELPER_CAP = 256 * 1024
 _FILE_CAP = 8 * 1024 * 1024
 _TOTAL_CAP = 128 * 1024 * 1024

@@ -458,7 +458,7 @@ zero. Fixed commands use a closed child environment, explicit repository path,
 neutral working directory, `DEVNULL` standard input and bounded time and output.
 The helper snapshots the selected Git executable and revalidates it immediately
 before each launch. Version output is capped at 256 bytes, configuration at
-256 KiB, requested ordinary data at 8 MiB, history at 64 MiB and stderr at
+256 KiB, requested ordinary data at 8 MiB, history at 256 MiB and stderr at
 64 KiB; ordinary reads time out after 10 seconds and cleanup has a separate
 2-second bound. Callers can use stricter limits.
 
