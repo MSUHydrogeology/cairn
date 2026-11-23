@@ -612,7 +612,7 @@ def test_windows_native_worker_job_kills_child_on_forced_timeout(
         "api=ns['_WindowsAPI']();ns['_WINDOWS_WORKER_JOB']=api.install_worker_job()\n"
         "child=subprocess.Popen([sys.executable,'-I','-c','import time;time.sleep(60)'],"
         "stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)\n"
-        "Path(sys.argv[2]).write_text(str(child.pid),encoding='ascii');time.sleep(60)\n"
+        "Path(sys.argv[2]).write_text(str(child.pid)+'\\n',encoding='ascii');time.sleep(60)\n"
     )
     worker = subprocess.Popen(
         [sys.executable, "-I", "-c", runner, str(SCRIPT), str(handshake)],
@@ -631,11 +631,21 @@ def test_windows_native_worker_job_kills_child_on_forced_timeout(
     try:
         import time
         deadline = time.monotonic() + 5
-        while not handshake.exists():
+        child_pid = None
+        while child_pid is None:
+            # The file exists as soon as the worker creates it, before the PID is in it.
+            # Only a line that ends in a newline is a whole PID (an empty or cut-off read
+            # is "not yet"); a file still held by the worker's open is "not yet" too.
+            try:
+                text = handshake.read_text(encoding="ascii")
+            except (FileNotFoundError, PermissionError):
+                text = ""
+            if text.endswith("\n"):
+                child_pid = int(text)
+                break
             if worker.poll() is not None or time.monotonic() >= deadline:
                 raise AssertionError("job worker did not publish child PID")
             time.sleep(0.01)
-        child_pid = int(handshake.read_text(encoding="ascii"))
         child_handle = kernel.OpenProcess(0x00100000, False, child_pid)
         assert child_handle
         assert kernel.WaitForSingleObject(child_handle, 0) == 258
