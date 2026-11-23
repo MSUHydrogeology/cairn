@@ -340,15 +340,21 @@ stay with the Maintainer.
    skipped on each platform and its reason, and, for Linux and Windows, the
    `cert-files` command and its file count. Any nonzero exit on any platform, a membership refusal on
    the Mac included, stops the cut. Then, on the Mac, in a fresh `git clone`
-   of the Mac's repository checked out at that commit, fetch nothing more and
-   run
+   of the Mac's repository, made at `/private/tmp/cairn-cut` (remove an earlier
+   one first) and checked out at that commit, fetch nothing more and run
    `python dev/tools/run_portable_security_sweeps.py --target . --policy dev/tools/portable_security_policy.json --json`.
    It scans the tree and every branch and tag in the clone. Only exit 0
    (CLEAN) passes. Exit 5 (a scan leg did not run fully), 10 (findings) or 20
    (degraded) stops the cut; triage findings privately with
    `--triage-record <absolute path>`, and a committed credential means
    stopping and telling the Maintainer to revoke it. Put the exit, the
-   clone's `git rev-parse HEAD` and the summary in the release notes. For
+   clone's `git rev-parse HEAD` and the summary in the release notes. The
+   reviewed false positives in `dev/tools/portable_security_policy.json` name
+   that clone path and the history's commit ids and line numbers
+   (`dev/measurement/secrets-scan-review-2026-11-23.md`): a clone elsewhere, a
+   rewritten commit or an edit to an archived file or to the roster fixture
+   gives exit 10, so repeat the scan on the final commit and, for a new hit,
+   review it the same way and commit the entry before the tag. For
    v0.8.1 the gate commit of steps 4 and 5 is that commit: the one all three
    results and the scan name. The record and join commands of "Strict
    release-security evidence" are not part of the v0.8.1 cut, and the release
