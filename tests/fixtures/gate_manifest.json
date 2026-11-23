@@ -9,8 +9,8 @@
     "tests/fixtures/scaffold_ast_baseline.json": {
       "governed_by": "_ast_attest.py update-symbol \u2014 one allowlisted baseline key, --expect-old guarded",
       "mode": "100644",
-      "oid": "74a3e0a50f4929221dd4ebe036e04491a52d9e2f",
-      "pre_run_sha256": "e7b9567ce7d6e5d62713f0312e9ed4be45940ec65757bb15a9b5d1934543d827"
+      "oid": "c39674f956b18a8f8793eae1c0d0303c735e54de",
+      "pre_run_sha256": "5f5a8aaab67b749dd9348c9bda6c1cab4f08dc079b063874c9ec8a0095444fb0"
     }
   },
   "collection": {
@@ -8974,8 +8974,8 @@
     },
     "tests/fixtures/scaffold_ast_known_new.json": {
       "mode": "100644",
-      "oid": "8c62a7f5c5092317df64d2ee66db776cc5882370",
-      "sha256": "96391241ef21a5721f6f5320f3671af9a5e06b6f71be60d3392aa1b6f87be8c9"
+      "oid": "dbc61790a0941ad7f7263a0f3af5a31ebabbb82f",
+      "sha256": "8b311ac46f0553b17199cd82ccc373d6efec31a9ca4a251176cc1d6e14befa3e"
     },
     "tests/fixtures/skills/README.md": {
       "mode": "100644",
@@ -9496,7 +9496,7 @@
       ]
     },
     "_MODULE_MAPPINGS": {
-      "baseline_digest": "65b3840595161b66",
+      "baseline_digest": "f17e8fad31f012d9",
       "may_change_in_phases": [
         "A intent-split",
         "B onboarding-split",
