@@ -3018,7 +3018,10 @@ class TestIntentSurfacePruning:
     def test_append_and_prune_preserve_binary_jsonl_line_endings(
         self, tmp_path: Path,
     ) -> None:
-        from tools._intent import record_io
+        # The shipped engine, loaded from its own path as the tests above load it.
+        # `from tools._intent import ...` finds it only when an earlier test in the
+        # same process has already loaded the facade, so alone it cannot import.
+        record_io = _load_tool(TOOL_TEMPLATE, name="intent_prune_binary_lines").record_io
 
         log = tmp_path / "dev" / "intents.jsonl"
         record_io.append_record(

@@ -42,6 +42,7 @@ Run from the cairn repo root:
 """
 from __future__ import annotations
 
+import functools
 import hashlib
 import importlib.util
 import json
@@ -110,9 +111,33 @@ _ADMISSIONS_BLOCK_RE = re.compile(
 )
 
 
-def platform_triple(version: str) -> tuple[str, str, str]:
+@functools.lru_cache(maxsize=None)
+def _runner_platform_key() -> tuple[str, str]:
+    """The ``(system, machine)`` pair the runner reads for its admission key.
+
+    On Windows ``platform.machine()`` asks WMI and only if that call fails falls
+    back to ``PROCESSOR_ARCHITECTURE``, which an x64 Python on an ARM64 host sets
+    to ``AMD64``. Python keeps the first answer for the life of the process, so one
+    failed WMI call leaves the pytest process on ``amd64`` while the runner, a
+    fresh process, still answers ``arm64`` and finds no admission. This asks in a
+    fresh process with the system folders the runner is given, so the key a test
+    records is the key the runner looks up. Elsewhere ``platform.machine()`` is
+    the same in every process."""
     import platform  # noqa: PLC0415
-    return (version, platform.system().lower(), platform.machine().lower())
+    if os.name != "nt":
+        return (platform.system().lower(), platform.machine().lower())
+    code = ("import platform; "
+            "print(platform.system().lower(), platform.machine().lower(), sep='\\n')")
+    done = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, timeout=120,
+        check=True, env={**_SYSTEM_ENV, "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    system, machine = (done.stdout.splitlines() + ["", ""])[:2]
+    return (system, machine)
+
+
+def platform_triple(version: str) -> tuple[str, str, str]:
+    return (version, *_runner_platform_key())
 
 
 def runner_copy(tmp_path: Path, admissions: dict | None = None) -> Path:
