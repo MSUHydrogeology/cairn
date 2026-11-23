@@ -840,17 +840,20 @@ def _link_in_path(
 
 
 def _created_elsewhere(
-    path: Path, base: Path, *,
+    path: Path, base: Path, *, opened: os.stat_result,
     lstat: Callable[[Path], os.stat_result] = os.lstat,
     realpath: Callable[[Path], str] = os.path.realpath,
 ) -> str | None:
     """Where the file just created at *path* really is, when that is not *path*
     under *base* (so a link was followed); ``None`` when it is where its name says.
 
-    The final location is what *realpath* reports (the system's own answer); the
-    expected one is *base*'s final location plus the names below it, compared
-    without case and without a ``\\\\?\\`` prefix.  A name that cannot be read counts
-    as elsewhere."""
+    Two answers must agree.  The final location is what *realpath* reports (the
+    system's own answer); the expected one is *base*'s final location plus the
+    names below it, compared without case and without a ``\\\\?\\`` prefix.  And
+    the open file (*opened*, from ``fstat`` on the open descriptor) must be the
+    very entry at *path*: the same volume and file number, which must not be 0.
+    The second answer is what catches a name swapped back to a plain file after
+    a link was followed.  A name that cannot be read counts as elsewhere."""
     def plain(name: str) -> str:
         name = os.path.normcase(name)
         return name[4:] if name.startswith("\\\\?\\") else name
@@ -858,7 +861,10 @@ def _created_elsewhere(
     try:
         expected = os.path.join(realpath(base), *path.relative_to(base).parts)
         actual = realpath(path)
-        if plain(actual) == plain(expected) and not _is_redirect(lstat(path)):
+        now = lstat(path)
+        if (plain(actual) == plain(expected) and not _is_redirect(now)
+                and opened.st_ino
+                and (now.st_dev, now.st_ino) == (opened.st_dev, opened.st_ino)):
             return None
         return actual
     except (OSError, ValueError):
@@ -931,9 +937,10 @@ def _emit_skill_copy_fallback(
     before the open.  Exact: any link or junction there when it is looked at is
     refused.  Best effort: a link put in the instant between that look and the
     open is followed once (the standard library has no no-follow open there);
-    the new file's final location is then compared with its own name before a
-    byte is written, and if it is elsewhere that file, which this run created
-    and can still identify, is removed and the install refuses.  A rename that
+    the new file's final location is then compared with its own name, and the
+    open file with the entry at that name (volume and file number), before a
+    byte is written; if either differs that file, which this run created and
+    can still identify, is removed and the install refuses.  A rename that
     Windows denies is a refusal when a link is the reason, and the original
     error when it is not.
 
@@ -1044,7 +1051,7 @@ def _emit_skill_copy_fallback(
                     # best effort: a link that came in after the look above was
                     # followed.  Say where the new file is before writing to it.
                     created = os.fstat(handle.fileno())
-                    stray = _created_elsewhere(tmp, target)
+                    stray = _created_elsewhere(tmp, target, opened=created)
                     if stray is not None:
                         raise link_refusal(out)
                 handle.write(data)

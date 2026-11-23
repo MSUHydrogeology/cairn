@@ -841,13 +841,46 @@ def test_a_link_planted_just_before_the_open_is_caught_and_its_file_removed(
     assert not list((repo / ".claude").rglob("SKILL.md"))
 
 
+# Declared exception (internal hook): Hook: os.open wrapped to plant a link in the instant before the open and put a plain file back at the name right after it, with os.O_NOFOLLOW removed (windows_rules); that instant cannot be hit from outside.
+def test_a_name_swapped_back_to_a_plain_file_after_a_link_was_followed_is_caught(
+    tmp_path, monkeypatch, windows_rules
+):
+    """Both path answers look right when the name is put back, so the open file
+    itself is compared with the entry at the name (volume and file number)."""
+    _needs_symlinks(tmp_path)
+    repo = _repo(tmp_path)
+    nowhere = tmp_path.resolve() / "outside" / "not-created-yet"
+    nowhere.parent.mkdir()
+    real_open = os.open
+
+    def follow_then_put_the_name_back(path, flags, mode=0o777, **kwargs):
+        if not Path(path).name.startswith(".cairn-write-") or os.path.lexists(path):
+            return real_open(path, flags, mode, **kwargs)
+        os.symlink(nowhere, path)
+        fd = real_open(os.path.realpath(path), flags, mode, **kwargs)  # as Windows follows it
+        os.unlink(path)
+        os.close(real_open(path, flags, mode, **kwargs))  # a plain file at the name again
+        return fd
+
+    monkeypatch.setattr(os, "open", follow_then_put_the_name_back)
+    with pytest.raises(ScaffoldSecurityError, match="through a link or outside the project"):
+        INS.fan_out_skills(TEMPLATES_ROOT, repo, targets=[_CLAUDE_ROW], allow_symlinks=False)
+    monkeypatch.undo()
+
+    # the empty file the open made at the far end cannot be found again, so it stays; no byte went in
+    assert nowhere.read_bytes() == b""
+    assert not list((repo / ".claude").rglob(".cairn-write-*"))
+    assert not list((repo / ".claude").rglob("SKILL.md"))
+
+
 _TAG_SYMLINK, _TAG_MOUNT_POINT = 0xA000000C, 0xA0000003  # Windows reparse tags
 _DIR = stat.S_IFDIR | 0o755
 _LINK = stat.S_IFLNK | 0o777
 
 
-def _entry(mode=_DIR, attributes=0, tag=0):
-    return SimpleNamespace(st_mode=mode, st_file_attributes=attributes, st_reparse_tag=tag)
+def _entry(mode=_DIR, attributes=0, tag=0, number=7):
+    return SimpleNamespace(st_mode=mode, st_file_attributes=attributes, st_reparse_tag=tag,
+                           st_dev=1, st_ino=number)
 
 
 _JUNCTION = _entry(attributes=stat.FILE_ATTRIBUTE_REPARSE_POINT, tag=_TAG_MOUNT_POINT)
@@ -910,7 +943,10 @@ _REAL = os.path.join("real", "proj", ".claude", "skills", "session-start", ".cai
 _TMP = Path("proj/.claude/skills/session-start/.cairn-write-x")
 
 
-# Declared exception (internal hook): Direct test of private INS._created_elsewhere with fake lstat and realpath; where a followed link leads is the system's answer, which a fake stands in for on every system.
+# Declared exception (internal hook): Direct test of private INS._created_elsewhere with fake lstat, realpath and open-file records; where a followed link leads, and which file a name now holds, are the system's answers, which fakes stand in for on every system.
+_OPEN = _entry(stat.S_IFREG)  # what fstat says of the open file: volume 1, file number 7
+
+
 @pytest.mark.parametrize(
     "actual, status, unreadable, result",
     [
@@ -920,6 +956,10 @@ _TMP = Path("proj/.claude/skills/session-start/.cairn-write-x")
                      os.path.join("somewhere", "else"), id="a-followed-link-led-elsewhere"),
         pytest.param(_REAL, _entry(_LINK), None, _REAL, id="its-own-name-is-a-link"),
         pytest.param(_REAL, _entry(stat.S_IFREG), OSError(), os.fspath(_TMP), id="a-name-that-cannot-be-read"),
+        pytest.param(_REAL, _entry(stat.S_IFREG, number=8), None, _REAL,
+                     id="the-name-holds-a-different-file-than-the-open-one"),
+        pytest.param(_REAL, _entry(stat.S_IFREG, number=0), None, _REAL,
+                     id="the-name-holds-a-file-with-no-file-number"),
     ],
 )
 def test_the_new_file_is_where_its_name_says_or_the_real_place_is_reported(
@@ -933,7 +973,11 @@ def test_the_new_file_is_where_its_name_says_or_the_real_place_is_reported(
             raise unreadable
         return status
 
-    assert INS._created_elsewhere(_TMP, Path("proj"), lstat=lstat, realpath=realpath) == result
+    # the last case also has an open file with no number: a 0 is never "the same"
+    opened = _entry(stat.S_IFREG, number=status.st_ino) if status.st_ino == 0 else _OPEN
+
+    assert INS._created_elsewhere(
+        _TMP, Path("proj"), opened=opened, lstat=lstat, realpath=realpath) == result
 
 
 # Declared exception (internal hook): Direct test of private INS._remove_created; it runs only on Windows, after a link was followed, which no public route reaches.
