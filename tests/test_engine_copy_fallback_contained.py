@@ -937,7 +937,7 @@ def test_the_new_file_is_where_its_name_says_or_the_real_place_is_reported(
 
 
 # Declared exception (internal hook): Direct test of private INS._remove_created; it runs only on Windows, after a link was followed, which no public route reaches.
-def test_only_the_file_this_run_created_is_removed(tmp_path):
+def test_only_the_file_this_run_created_is_removed(tmp_path, monkeypatch):
     ours = tmp_path / "ours"
     ours.write_bytes(b"x")
     created = os.stat(ours)
@@ -951,6 +951,31 @@ def test_only_the_file_this_run_created_is_removed(tmp_path):
     INS._remove_created(os.fspath(ours), os.stat(ours))
     assert not ours.exists()
     INS._remove_created(os.fspath(ours), created)  # gone already: no error
+
+    # Two guards a fake record has to reach, because a real file cannot show them.
+    real_lstat = os.lstat
+
+    def entry_at_the_path_reads(record):
+        def lstat(path, *args, **kwargs):
+            if os.fspath(path) == os.fspath(ours):
+                return record
+            return real_lstat(path, *args, **kwargs)
+        monkeypatch.setattr(os, "lstat", lstat)
+
+    # a filesystem that gives no file number: "same volume, number 0" is not "the same file"
+    ours.write_bytes(b"someone else's, put there after the stray file was seen")
+    real = os.stat(ours)
+    no_number = SimpleNamespace(st_mode=real.st_mode, st_dev=real.st_dev, st_ino=0)
+    entry_at_the_path_reads(no_number)
+    INS._remove_created(os.fspath(ours), no_number)
+    monkeypatch.undo()
+    assert ours.read_bytes() == b"someone else's, put there after the stray file was seen"
+
+    # an entry that is a link and carries the created file's own volume and number: not removed
+    entry_at_the_path_reads(SimpleNamespace(st_mode=_LINK, st_dev=real.st_dev, st_ino=real.st_ino))
+    INS._remove_created(os.fspath(ours), real)
+    monkeypatch.undo()
+    assert ours.read_bytes() == b"someone else's, put there after the stray file was seen"
 
 
 # --- the warnings and the upgrade route ---------------------------------------
