@@ -232,7 +232,7 @@
     "type": "Assign"
   },
   "Assign:_MODULE_MAPPINGS": {
-    "digest": "65b3840595161b66",
+    "digest": "f17e8fad31f012d9",
     "span": [
       1040,
       1431
@@ -592,10 +592,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_finalize_lockfile": {
-    "digest": "fc47876a44184a2d",
+    "digest": "f600b25d52b60371",
     "span": [
-      2224,
-      2418
+      2952,
+      3151
     ],
     "type": "FunctionDef"
   },
@@ -608,10 +608,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_compute_upgrade": {
-    "digest": "930c833cd4935fbb",
+    "digest": "b5299f1f4f296fa5",
     "span": [
-      805,
-      1233
+      891,
+      1331
     ],
     "type": "FunctionDef"
   },
@@ -632,10 +632,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_emit_skill_copy_fallback": {
-    "digest": "059b8909b3b7ca5f",
+    "digest": "6137565cf459a7c7",
     "span": [
-      788,
-      935
+      901,
+      1095
     ],
     "type": "FunctionDef"
   },
@@ -960,10 +960,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:cmd_upgrade": {
-    "digest": "1999c588b1a50ee1",
+    "digest": "5b6abdabbf526668",
     "span": [
-      4537,
-      4964
+      5025,
+      5520
     ],
     "type": "FunctionDef"
   },
@@ -1128,10 +1128,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:main": {
-    "digest": "7fe8882cf74adcdc",
+    "digest": "91b0f73ba5acd74f",
     "span": [
-      191,
-      826
+      192,
+      834
     ],
     "type": "FunctionDef"
   },

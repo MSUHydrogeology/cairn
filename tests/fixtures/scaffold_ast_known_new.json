@@ -53,6 +53,21 @@
   "Assign:_CONFIGS": [
     "1176a642f664006e"
   ],
+  "Assign:_DOCPLAN_NEW": [
+    "dbf05f55e1c0c99f"
+  ],
+  "Assign:_DOCPLAN_NOTE": [
+    "e69ec1450e3b9a9d"
+  ],
+  "Assign:_DOCPLAN_OLD": [
+    "d4ab7aa301ecd908"
+  ],
+  "Assign:_DOCPLAN_SRC": [
+    "e9bca9c32dc08bac"
+  ],
+  "Assign:_DOCPLAN_STEPS": [
+    "aa294e9f2bf59028"
+  ],
   "Assign:_EDIT_CHECK_GROUP_SIZE": [
     "a60f5b4a66592efa"
   ],
@@ -71,14 +86,20 @@
   "Assign:_GIT_NO_ANSWER": [
     "39f2a150732b090b"
   ],
+  "Assign:_GIT_READ_CRLF_TEXT": [
+    "da9c457125ddf6f3"
+  ],
   "Assign:_GIT_READ_MAX_BYTES": [
     "15517ab76c5f374b"
   ],
   "Assign:_GIT_READ_MODULE": [
     "96957555990a8280"
   ],
+  "Assign:_GIT_READ_OTHER_TEXT": [
+    "21494d3ae3fd2916"
+  ],
   "Assign:_GIT_READ_SHA256": [
-    "75bfe4935c7f8c8e"
+    "6120c373a914b44f"
   ],
   "Assign:_GIT_TIMEOUT_SECONDS": [
     "bda9be000b9ce526"
@@ -98,6 +119,9 @@
   "Assign:_KEPT_EXISTING_DSTS": [
     "c7f1929340c967d7"
   ],
+  "Assign:_LAYOUT_LOCK_KEYS": [
+    "950d01079e1d2b6f"
+  ],
   "Assign:_LAYOUT_MOVES": [
     "8a2e5c85dfff892d"
   ],
@@ -108,13 +132,19 @@
     "acf24bbee166b7a2"
   ],
   "Assign:_MODULE_DISCOVERY": [
-    "a9b36e8732be2a93"
+    "e5cb1cbc0d063706"
   ],
   "Assign:_MODULE_REQUIRED_TOKENS": [
     "a72b4e9c40b9610c"
   ],
+  "Assign:_NOT_A_VENDOR_WRAPPER": [
+    "b9aa6dd8812bb9f9"
+  ],
   "Assign:_OID": [
     "5f54297576785b41"
+  ],
+  "Assign:_ON_WINDOWS": [
+    "5248768b5f2542b9"
   ],
   "Assign:_PROFILE_CONTROL_RE": [
     "2edba3555711a8a4"
@@ -206,6 +236,9 @@
   "FunctionDef:_assert_stage_has_no_links": [
     "53565ee93f61a900"
   ],
+  "FunctionDef:_cairn_git_is_shallow": [
+    "5b372b612ef25be9"
+  ],
   "FunctionDef:_cairn_provenance": [
     "3f862d2ffba0cca5"
   ],
@@ -227,8 +260,17 @@
   "FunctionDef:_cmd_adopt_collisions": [
     "f61b86e456c66f7d"
   ],
+  "FunctionDef:_cmd_documentation_plan_moved": [
+    "b6d30bddeaf26d14"
+  ],
+  "FunctionDef:_cmd_heal_layout": [
+    "936f0f5be7d0d8e7"
+  ],
   "FunctionDef:_cmd_remove_retired": [
     "2e71e3238ddda1a2"
+  ],
+  "FunctionDef:_cmd_retire_wrapper": [
+    "06490c5219a1d8de"
   ],
   "FunctionDef:_commit_has_path": [
     "8f8b788f7a40e199"
@@ -245,11 +287,17 @@
   "FunctionDef:_count_adoptable_collisions": [
     "3715cff91aa4f798"
   ],
+  "FunctionDef:_created_elsewhere": [
+    "583923f0365e59a0"
+  ],
   "FunctionDef:_disk_dst": [
     "9ec980d865523e90"
   ],
   "FunctionDef:_display_name": [
     "0ca64d081a9d50c1"
+  ],
+  "FunctionDef:_documentation_plan_move_lines": [
+    "991d6668e1b4b880"
   ],
   "FunctionDef:_drop_publisher": [
     "9e748043b0490696"
@@ -284,8 +332,17 @@
   "FunctionDef:_git_in_project": [
     "1fd85add993e2e4d"
   ],
+  "FunctionDef:_git_read_binding_refusal": [
+    "20f5749bd4a64cc5"
+  ],
   "FunctionDef:_git_read_helper": [
     "2728c32d00969c0d"
+  ],
+  "FunctionDef:_git_read_helper_path": [
+    "21bb264160b919fd"
+  ],
+  "FunctionDef:_git_read_plain_bytes": [
+    "857eaf42cf34eeff"
   ],
   "FunctionDef:_git_read_version": [
     "02de30f4309a21e4"
@@ -302,11 +359,14 @@
   "FunctionDef:_is_link_or_reparse": [
     "a3055b3ba07754ad"
   ],
+  "FunctionDef:_is_redirect": [
+    "0bc5bbd229a6942a"
+  ],
   "FunctionDef:_layout_blob": [
     "52b876af12fa37ba"
   ],
   "FunctionDef:_layout_command": [
-    "30410dcffa0f2e20"
+    "c670bb4f79cb29d6"
   ],
   "FunctionDef:_layout_config_path": [
     "b0936029dd12b28c"
@@ -320,11 +380,17 @@
   "FunctionDef:_layout_guard": [
     "5dc9381ed7e31b50"
   ],
+  "FunctionDef:_layout_heal_findings": [
+    "9dd2ae5787daec5e"
+  ],
+  "FunctionDef:_layout_heal_rendered": [
+    "42ca68166fc33cf6"
+  ],
   "FunctionDef:_layout_merge": [
     "e2c9f2c6218c7b57"
   ],
   "FunctionDef:_layout_plan": [
-    "64ad17fe639ba5d0"
+    "e2c77d071e535cde"
   ],
   "FunctionDef:_layout_recorded_source": [
     "ced481d1bd75af6f"
@@ -333,7 +399,7 @@
     "d33503692a8e62b4"
   ],
   "FunctionDef:_layout_target": [
-    "911e0d4a20f1474a"
+    "2ebb6608bd374ca7"
   ],
   "FunctionDef:_layout_tools_profile": [
     "43daece3148d0e2a"
@@ -343,6 +409,9 @@
   ],
   "FunctionDef:_legacy_module_seed_ids": [
     "e232e44863919e59"
+  ],
+  "FunctionDef:_link_in_path": [
+    "910f2cb02e866b12"
   ],
   "FunctionDef:_linked_vendor_wrapper_names": [
     "3d52bc49a7ca3e1d"
@@ -410,6 +479,9 @@
   "FunctionDef:_reject_polluted_children": [
     "9242114fae01b4ce"
   ],
+  "FunctionDef:_remove_created": [
+    "90d8b8bd7e03dfde"
+  ],
   "FunctionDef:_remove_unchanged_file": [
     "0b466562a0f91c4e"
   ],
@@ -454,6 +526,12 @@
   ],
   "FunctionDef:_working_file_differs": [
     "e91f267fbcf9b659"
+  ],
+  "FunctionDef:_wrapper_record_fits": [
+    "6d5502e184731ea3"
+  ],
+  "FunctionDef:_wrapper_retired": [
+    "1acb5cf2e283b544"
   ],
   "FunctionDef:_write_by_replacing": [
     "bd1cc3be76436a8d"

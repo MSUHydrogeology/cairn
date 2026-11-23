@@ -27,10 +27,26 @@
       "verbatim": false
     },
     {
+      "base_hash": "sha256:3845da5fac03a693781d85f953ff64f70aa9e24bd50f801e6f16203f3a1f607f",
+      "dst": ".gitattributes",
+      "hash": "sha256:3845da5fac03a693781d85f953ff64f70aa9e24bd50f801e6f16203f3a1f607f",
+      "src": "core/gitattributes.txt",
+      "verbatim": true
+    },
+    {
       "dst": "AGENTS.md",
       "hash": "sha256:412111d773dfe9877917aa3d6447c49c96e378df788556ba3a64b5332981fe2c",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "base_cache": "dev/.cairn/base/CHANGELOG.md",
+      "base_hash": "sha256:437c63f9096a1df2171ec0e766b65da63b8c3062cfdd5f2d30081733dd7cf055",
+      "dst": "CHANGELOG.md",
+      "hash": "sha256:91db339ee09ee37bed34ea2c5db20539373da7b8a2bdb268c01ebc19dbc394ee",
+      "living_state": true,
+      "src": "core/CHANGELOG.md",
       "verbatim": false
     },
     {
@@ -42,10 +58,42 @@
       "verbatim": false
     },
     {
+      "base_cache": "dev/.cairn/base/NOTICE.md",
+      "base_hash": "sha256:c3efe0ad84c504aa92af310baadccf0d539750f6d95bb9382e8a072b9424fd4f",
+      "dst": "NOTICE.md",
+      "hash": "sha256:c3efe0ad84c504aa92af310baadccf0d539750f6d95bb9382e8a072b9424fd4f",
+      "src": "core/NOTICE.md",
+      "verbatim": false
+    },
+    {
+      "base_cache": "dev/.cairn/base/RULES.md",
+      "base_hash": "sha256:4cbb2907677aa4f74a7706dc69181e356f7ad5274d896c6be247711f7a7830e8",
+      "dst": "RULES.md",
+      "hash": "sha256:c75ef3673f306c16fa257a37d0db4a7da828e842ca87cfbc2be292c7d6b83d46",
+      "living_state": true,
+      "src": "core/RULES.md",
+      "verbatim": false
+    },
+    {
       "dst": "dev/.cairn/model-selection-mapping.yml",
       "hash": "sha256:3e163996dd97e1162d11894b9519861f1ed0e6acc438b91f209e39c6ffbc78c3",
       "living_state": true,
       "src": "modules/team-gated/model_selection_mapping_stub.yml",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "base_cache": "dev/.cairn/base/dev/.cairn/scanner-check-allow.json",
+      "base_hash": "sha256:2ecdb6835ec4488ee09720308c9bb915fac7128cfbccbb6e280262f62c8633b3",
+      "dst": "dev/.cairn/scanner-check-allow.json",
+      "hash": "sha256:0b65961d1dfe87796d22dc523d3cf2cddc93823596d57b1c4ba4531a4baaeebd",
+      "src": "modules/default-on/scanner-check-allow.json",
+      "verbatim": false
+    },
+    {
+      "dst": "dev/DOCUMENTATION_PLAN.md",
+      "hash": "sha256:9cfd35819d960460fcfe40ab5ba216e3ecdd26cd07fbfe3f9805d20676ca44db",
+      "src": "modules/default-on/documentation_plan_template.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
@@ -228,132 +276,6 @@
       "verbatim": false
     },
     {
-      "dst": "dev/upstream/README.md",
-      "hash": "sha256:e9ac5439f9e93d23e154eb20219c1f905fa2035920dc50c001c30935327284e4",
-      "src": "core/dev/upstream/README.md",
-      "unrecoverable_base": true,
-      "verbatim": false
-    },
-    {
-      "dst": "dev/upstream/_template.md",
-      "hash": "sha256:ee6b2f3842ce0dc3f13c18e5c802d034fee131064611ae41a0cebb075df148a3",
-      "src": "core/dev/upstream/_template.md",
-      "unrecoverable_base": true,
-      "verbatim": false
-    },
-    {
-      "dst": "dev/upstream/archive/.gitkeep",
-      "hash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "src": "core/dev/upstream/archive/.gitkeep",
-      "unrecoverable_base": true,
-      "verbatim": false
-    },
-    {
-      "dst": "dev/DOCUMENTATION_PLAN.md",
-      "hash": "sha256:9cfd35819d960460fcfe40ab5ba216e3ecdd26cd07fbfe3f9805d20676ca44db",
-      "src": "modules/default-on/documentation_plan_template.md",
-      "unrecoverable_base": true,
-      "verbatim": false
-    },
-    {
-      "base_hash": "sha256:ea53b9b083bbe74f6fed350286f8dbc8d604ba2e86485bdb75499fc7c4b2c82c",
-      "dst": "dev/tools/bootstrap_github_labels.py",
-      "hash": "sha256:ea53b9b083bbe74f6fed350286f8dbc8d604ba2e86485bdb75499fc7c4b2c82c",
-      "src": "modules/team-gated/issue-capture/bootstrap_github_labels.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:c9863446e54d78f0f83663b266a6c4f1324b61c51291a1f2e5a16fa7e941ce58",
-      "dst": "dev/tools/bootstrap_gitlab_labels.py",
-      "hash": "sha256:c9863446e54d78f0f83663b266a6c4f1324b61c51291a1f2e5a16fa7e941ce58",
-      "src": "modules/team-gated/issue-capture/bootstrap_gitlab_labels.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:103ab77aa55a721618b4fea175b7877833fc9ca4cba57d68841b4071a71a64ff",
-      "dst": "dev/tools/check_model_selection.py",
-      "hash": "sha256:103ab77aa55a721618b4fea175b7877833fc9ca4cba57d68841b4071a71a64ff",
-      "src": "modules/team-gated/check_model_selection.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:8510bf0b8a405adef1611b9255ace0c1987b0a499d0007a1a7dfc093dbf2a924",
-      "dst": "dev/tools/claim_check.py",
-      "hash": "sha256:542d2db92f1ccc88b62be0bbd148f72c8efc94a40f0ddbb849b724ba989a8be3",
-      "src": "modules/default-on/claim_check.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:8ab87d1b562e8a54bf552e1e93f0bd9b33d9cc3ec1bbeafb1933bdeaa30149c3",
-      "dst": "dev/tools/content_scan.py",
-      "hash": "sha256:6c164e45d8cb6a38ccf20fdbcb18cba679fcd013a53a1d7001e8a8d19dc5f7eb",
-      "src": "modules/team-gated/content_scan.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:0b7dbb33a5bf3271bb4c0883c5c20d5f343aae649ffe95abcf07af8958194afd",
-      "dst": "dev/tools/content_scan_allowlist.txt",
-      "hash": "sha256:0b7dbb33a5bf3271bb4c0883c5c20d5f343aae649ffe95abcf07af8958194afd",
-      "src": "modules/team-gated/content_scan_allowlist.txt",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:49ba1709fe519dd52205c1a64e36e14e723135bef3a358e1a7464d8c814146cd",
-      "dst": "dev/tools/content_scan_residuals.txt",
-      "hash": "sha256:49ba1709fe519dd52205c1a64e36e14e723135bef3a358e1a7464d8c814146cd",
-      "src": "modules/team-gated/content_scan_residuals.txt",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:bd7a820a5b41533854e486a344d3ada898b3a12c6b8fcfdae235de1a2b89db53",
-      "dst": "dev/tools/content_scan_roots.txt",
-      "hash": "sha256:57f2f751566f810e9bdbdbf2a78d482b1c66f05d73395bdd90a9d4f45ade2c40",
-      "src": "modules/team-gated/content_scan_roots.txt",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:19aff8e43b6554416f92cc6d519201121ccf7ca9d533b320616bb7f71bb57dcb",
-      "dst": "dev/tools/content_scan_runner.py",
-      "hash": "sha256:e429b2a7af29e9aabb963098ae84e499b32b81a8229ad6a12339dd09d4cf4ebb",
-      "src": "modules/team-gated/content_scan_runner.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:5f3075f545d9f126ab2c07dddf2a6c59c73747c074224846187a25ee1106eaf0",
-      "dst": "dev/tools/link_check.py",
-      "hash": "sha256:6949c9ce9d4ed41c1bf52b4bc2b5ac39b089079c9530fb17ed44f0447f5764c4",
-      "src": "modules/team-gated/link_check.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:e2ae83943fa4bbe05c0e4597ba1d5cb133914d89b72b3cc45afec4ddcfaad1b1",
-      "dst": "dev/tools/portable_security_policy.json",
-      "hash": "sha256:2351e5965fc344c387826c367b86bb461af375cf4eea2716de68c4df1c2395bf",
-      "src": "modules/team-gated/portable_security_policy.json",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:e3ae4cc8caa3f2d4fd24b2da7dbaa91b92d5dad24a5163481153a411057c24ab",
-      "dst": "dev/tools/run_portable_security_sweeps.py",
-      "hash": "sha256:2322185c0ec3f516fa3cdba8705dcb2105a4e762ea94f139e238505cc9da61ca",
-      "src": "modules/team-gated/run_portable_security_sweeps.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:e1dcacb93d141116113ce628f3376f75f3bc24003e4e1b4d1428ba59fcdedf57",
-      "dst": "dev/tools/sync_doc_snippets.py",
-      "hash": "sha256:2c6fcd318d477f21e5a52aa9832faa337bf1e62ea6aadd8fbb8401231c1834c3",
-      "src": "modules/team-gated/sync_doc_snippets.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:bf66a3e7c4534669a4f68ce218538ecf414eeb7773c199c0017bb8f6622df9d9",
-      "dst": "dev/tools/verify_stems.py",
-      "hash": "sha256:bf66a3e7c4534669a4f68ce218538ecf414eeb7773c199c0017bb8f6622df9d9",
-      "src": "modules/default-on/verify_stems.py",
-      "verbatim": true
-    },
-    {
       "base_hash": "sha256:452ee35610b087feecedb10d9f8526e9662cec030db7cf9de908923a16d25738",
       "dst": "dev/tools/_intent/__init__.py",
       "hash": "sha256:452ee35610b087feecedb10d9f8526e9662cec030db7cf9de908923a16d25738",
@@ -410,10 +332,94 @@
       "verbatim": true
     },
     {
+      "base_hash": "sha256:ea53b9b083bbe74f6fed350286f8dbc8d604ba2e86485bdb75499fc7c4b2c82c",
+      "dst": "dev/tools/bootstrap_github_labels.py",
+      "hash": "sha256:ea53b9b083bbe74f6fed350286f8dbc8d604ba2e86485bdb75499fc7c4b2c82c",
+      "src": "modules/team-gated/issue-capture/bootstrap_github_labels.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:c9863446e54d78f0f83663b266a6c4f1324b61c51291a1f2e5a16fa7e941ce58",
+      "dst": "dev/tools/bootstrap_gitlab_labels.py",
+      "hash": "sha256:c9863446e54d78f0f83663b266a6c4f1324b61c51291a1f2e5a16fa7e941ce58",
+      "src": "modules/team-gated/issue-capture/bootstrap_gitlab_labels.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:103ab77aa55a721618b4fea175b7877833fc9ca4cba57d68841b4071a71a64ff",
+      "dst": "dev/tools/check_model_selection.py",
+      "hash": "sha256:103ab77aa55a721618b4fea175b7877833fc9ca4cba57d68841b4071a71a64ff",
+      "src": "modules/team-gated/check_model_selection.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:8510bf0b8a405adef1611b9255ace0c1987b0a499d0007a1a7dfc093dbf2a924",
+      "dst": "dev/tools/claim_check.py",
+      "hash": "sha256:542d2db92f1ccc88b62be0bbd148f72c8efc94a40f0ddbb849b724ba989a8be3",
+      "src": "modules/default-on/claim_check.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:4a13615751ccf4e7f234b37a63bbf18abd497d51318dfc43dddbdcf1c9a0284e",
+      "dst": "dev/tools/code_map.py",
+      "hash": "sha256:9e2f19416133423bcede1d7fa9f5cb706c5f6198ef1a9f80ba6f429df2de9651",
+      "src": "modules/team-gated/code_map.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:8ab87d1b562e8a54bf552e1e93f0bd9b33d9cc3ec1bbeafb1933bdeaa30149c3",
+      "dst": "dev/tools/content_scan.py",
+      "hash": "sha256:6c164e45d8cb6a38ccf20fdbcb18cba679fcd013a53a1d7001e8a8d19dc5f7eb",
+      "src": "modules/team-gated/content_scan.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:0b7dbb33a5bf3271bb4c0883c5c20d5f343aae649ffe95abcf07af8958194afd",
+      "dst": "dev/tools/content_scan_allowlist.txt",
+      "hash": "sha256:0b7dbb33a5bf3271bb4c0883c5c20d5f343aae649ffe95abcf07af8958194afd",
+      "src": "modules/team-gated/content_scan_allowlist.txt",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:49ba1709fe519dd52205c1a64e36e14e723135bef3a358e1a7464d8c814146cd",
+      "dst": "dev/tools/content_scan_residuals.txt",
+      "hash": "sha256:49ba1709fe519dd52205c1a64e36e14e723135bef3a358e1a7464d8c814146cd",
+      "src": "modules/team-gated/content_scan_residuals.txt",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:bd7a820a5b41533854e486a344d3ada898b3a12c6b8fcfdae235de1a2b89db53",
+      "dst": "dev/tools/content_scan_roots.txt",
+      "hash": "sha256:57f2f751566f810e9bdbdbf2a78d482b1c66f05d73395bdd90a9d4f45ade2c40",
+      "src": "modules/team-gated/content_scan_roots.txt",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:19aff8e43b6554416f92cc6d519201121ccf7ca9d533b320616bb7f71bb57dcb",
+      "dst": "dev/tools/content_scan_runner.py",
+      "hash": "sha256:e429b2a7af29e9aabb963098ae84e499b32b81a8229ad6a12339dd09d4cf4ebb",
+      "src": "modules/team-gated/content_scan_runner.py",
+      "verbatim": true
+    },
+    {
       "base_hash": "sha256:4e3cce1bf45f8549ea9990627d87aa9d3dc234b86afd6adc6fd0b4a273c2e2dd",
       "dst": "dev/tools/evolution_infer.py",
       "hash": "sha256:4e3cce1bf45f8549ea9990627d87aa9d3dc234b86afd6adc6fd0b4a273c2e2dd",
       "src": "modules/default-on/evolution_infer.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:511fddd84f82f50b62ee097b0ee25571a67dceb989fbdc4f52d0493fe8f3aaa4",
+      "dst": "dev/tools/exact_replace.py",
+      "hash": "sha256:5c26f30b66e7b860e4e2c134c752458b522f0c78c05e3346edee0e4e4e55fb72",
+      "src": "modules/team-gated/exact_replace.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:b67deb4e50eaee1e420d49af5ddac318aa110407bcd7c03d305091146cf15252",
+      "dst": "dev/tools/git_read.py",
+      "hash": "sha256:e29f38935490c2619130bdf79fc072088618221bb0d2e64ff404c61aff3d5a7a",
+      "src": "skills/_lib/git_read.py",
       "verbatim": true
     },
     {
@@ -424,56 +430,24 @@
       "verbatim": true
     },
     {
-      "base_hash": "sha256:da57cf757a3905b47cfb122f79649aa1260118c8143211bcf4e080e17fde9086",
-      "dst": "dev/tools/prune_intents.py",
-      "hash": "sha256:da57cf757a3905b47cfb122f79649aa1260118c8143211bcf4e080e17fde9086",
-      "src": "modules/team-gated/prune_intents.py",
+      "base_hash": "sha256:5f3075f545d9f126ab2c07dddf2a6c59c73747c074224846187a25ee1106eaf0",
+      "dst": "dev/tools/link_check.py",
+      "hash": "sha256:6949c9ce9d4ed41c1bf52b4bc2b5ac39b089079c9530fb17ed44f0447f5764c4",
+      "src": "modules/team-gated/link_check.py",
       "verbatim": true
     },
     {
-      "base_hash": "sha256:3116f727c5c36b517ab60a7c4e502bad74c965690d2d51b7104ff68f8a1d1544",
-      "dst": "dev/tools/prune_reflections.py",
-      "hash": "sha256:3116f727c5c36b517ab60a7c4e502bad74c965690d2d51b7104ff68f8a1d1544",
-      "src": "modules/default-on/prune_reflections.py",
+      "base_hash": "sha256:9cd9141086c2776aaaef557af3886983723c4f374717332dd5b3f00127f8b4b3",
+      "dst": "dev/tools/meter.py",
+      "hash": "sha256:f9da54068f77da15b12e0266ed97345ac9e6a246cf4890f50afa4ea8667ba2a3",
+      "src": "skills/_lib/meter.py",
       "verbatim": true
     },
     {
-      "base_hash": "sha256:903b7d0c82515042b1f736cc94bdcfdbaf0970e4c3f8bd33448d492cbc6a9ae0",
-      "dst": "dev/tools/session.py",
-      "hash": "sha256:bb6f3cd80ac52fa7a47bd0822fab7507eee558a35f7be0217cc19fee9943ea89",
-      "src": "skills/_lib/session.py",
-      "verbatim": true
-    },
-    {
-      "base_cache": "dev/.cairn/base/CHANGELOG.md",
-      "base_hash": "sha256:437c63f9096a1df2171ec0e766b65da63b8c3062cfdd5f2d30081733dd7cf055",
-      "dst": "CHANGELOG.md",
-      "hash": "sha256:91db339ee09ee37bed34ea2c5db20539373da7b8a2bdb268c01ebc19dbc394ee",
-      "living_state": true,
-      "src": "core/CHANGELOG.md",
-      "verbatim": false
-    },
-    {
-      "base_cache": "dev/.cairn/base/NOTICE.md",
-      "base_hash": "sha256:c3efe0ad84c504aa92af310baadccf0d539750f6d95bb9382e8a072b9424fd4f",
-      "dst": "NOTICE.md",
-      "hash": "sha256:c3efe0ad84c504aa92af310baadccf0d539750f6d95bb9382e8a072b9424fd4f",
-      "src": "core/NOTICE.md",
-      "verbatim": false
-    },
-    {
-      "base_cache": "dev/.cairn/base/dev/.cairn/scanner-check-allow.json",
-      "base_hash": "sha256:2ecdb6835ec4488ee09720308c9bb915fac7128cfbccbb6e280262f62c8633b3",
-      "dst": "dev/.cairn/scanner-check-allow.json",
-      "hash": "sha256:0b65961d1dfe87796d22dc523d3cf2cddc93823596d57b1c4ba4531a4baaeebd",
-      "src": "modules/default-on/scanner-check-allow.json",
-      "verbatim": false
-    },
-    {
-      "base_hash": "sha256:511fddd84f82f50b62ee097b0ee25571a67dceb989fbdc4f52d0493fe8f3aaa4",
-      "dst": "dev/tools/exact_replace.py",
-      "hash": "sha256:5c26f30b66e7b860e4e2c134c752458b522f0c78c05e3346edee0e4e4e55fb72",
-      "src": "modules/team-gated/exact_replace.py",
+      "base_hash": "sha256:e2ae83943fa4bbe05c0e4597ba1d5cb133914d89b72b3cc45afec4ddcfaad1b1",
+      "dst": "dev/tools/portable_security_policy.json",
+      "hash": "sha256:2351e5965fc344c387826c367b86bb461af375cf4eea2716de68c4df1c2395bf",
+      "src": "modules/team-gated/portable_security_policy.json",
       "verbatim": true
     },
     {
@@ -491,34 +465,18 @@
       "verbatim": true
     },
     {
-      "base_hash": "sha256:e45892476c6a7cb86d03b0a9ddb810f0581192d677bffab4327ab7b756c7fd44",
-      "dst": "dev/tools/test_coupling.py",
-      "hash": "sha256:cc017e661be5b1db24cf1cdff784ee38e4d357dc8b703e79c7c13bf370ffe15e",
-      "src": "modules/team-gated/test_coupling.py",
+      "base_hash": "sha256:da57cf757a3905b47cfb122f79649aa1260118c8143211bcf4e080e17fde9086",
+      "dst": "dev/tools/prune_intents.py",
+      "hash": "sha256:da57cf757a3905b47cfb122f79649aa1260118c8143211bcf4e080e17fde9086",
+      "src": "modules/team-gated/prune_intents.py",
       "verbatim": true
     },
     {
-      "base_hash": "sha256:b67deb4e50eaee1e420d49af5ddac318aa110407bcd7c03d305091146cf15252",
-      "dst": "dev/tools/git_read.py",
-      "hash": "sha256:e29f38935490c2619130bdf79fc072088618221bb0d2e64ff404c61aff3d5a7a",
-      "src": "skills/_lib/git_read.py",
+      "base_hash": "sha256:3116f727c5c36b517ab60a7c4e502bad74c965690d2d51b7104ff68f8a1d1544",
+      "dst": "dev/tools/prune_reflections.py",
+      "hash": "sha256:3116f727c5c36b517ab60a7c4e502bad74c965690d2d51b7104ff68f8a1d1544",
+      "src": "modules/default-on/prune_reflections.py",
       "verbatim": true
-    },
-    {
-      "base_hash": "sha256:9cd9141086c2776aaaef557af3886983723c4f374717332dd5b3f00127f8b4b3",
-      "dst": "dev/tools/meter.py",
-      "hash": "sha256:f9da54068f77da15b12e0266ed97345ac9e6a246cf4890f50afa4ea8667ba2a3",
-      "src": "skills/_lib/meter.py",
-      "verbatim": true
-    },
-    {
-      "base_cache": "dev/.cairn/base/RULES.md",
-      "base_hash": "sha256:4cbb2907677aa4f74a7706dc69181e356f7ad5274d896c6be247711f7a7830e8",
-      "dst": "RULES.md",
-      "hash": "sha256:c75ef3673f306c16fa257a37d0db4a7da828e842ca87cfbc2be292c7d6b83d46",
-      "living_state": true,
-      "src": "core/RULES.md",
-      "verbatim": false
     },
     {
       "base_hash": "sha256:c4a9e3146a859a8d4af17ba29328479246b1bf7789fecf6198215226aa37fe79",
@@ -528,11 +486,60 @@
       "verbatim": true
     },
     {
-      "base_hash": "sha256:4a13615751ccf4e7f234b37a63bbf18abd497d51318dfc43dddbdcf1c9a0284e",
-      "dst": "dev/tools/code_map.py",
-      "hash": "sha256:9e2f19416133423bcede1d7fa9f5cb706c5f6198ef1a9f80ba6f429df2de9651",
-      "src": "modules/team-gated/code_map.py",
+      "base_hash": "sha256:e3ae4cc8caa3f2d4fd24b2da7dbaa91b92d5dad24a5163481153a411057c24ab",
+      "dst": "dev/tools/run_portable_security_sweeps.py",
+      "hash": "sha256:2322185c0ec3f516fa3cdba8705dcb2105a4e762ea94f139e238505cc9da61ca",
+      "src": "modules/team-gated/run_portable_security_sweeps.py",
       "verbatim": true
+    },
+    {
+      "base_hash": "sha256:903b7d0c82515042b1f736cc94bdcfdbaf0970e4c3f8bd33448d492cbc6a9ae0",
+      "dst": "dev/tools/session.py",
+      "hash": "sha256:bb6f3cd80ac52fa7a47bd0822fab7507eee558a35f7be0217cc19fee9943ea89",
+      "src": "skills/_lib/session.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:e1dcacb93d141116113ce628f3376f75f3bc24003e4e1b4d1428ba59fcdedf57",
+      "dst": "dev/tools/sync_doc_snippets.py",
+      "hash": "sha256:2c6fcd318d477f21e5a52aa9832faa337bf1e62ea6aadd8fbb8401231c1834c3",
+      "src": "modules/team-gated/sync_doc_snippets.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:e45892476c6a7cb86d03b0a9ddb810f0581192d677bffab4327ab7b756c7fd44",
+      "dst": "dev/tools/test_coupling.py",
+      "hash": "sha256:cc017e661be5b1db24cf1cdff784ee38e4d357dc8b703e79c7c13bf370ffe15e",
+      "src": "modules/team-gated/test_coupling.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:bf66a3e7c4534669a4f68ce218538ecf414eeb7773c199c0017bb8f6622df9d9",
+      "dst": "dev/tools/verify_stems.py",
+      "hash": "sha256:bf66a3e7c4534669a4f68ce218538ecf414eeb7773c199c0017bb8f6622df9d9",
+      "src": "modules/default-on/verify_stems.py",
+      "verbatim": true
+    },
+    {
+      "dst": "dev/upstream/README.md",
+      "hash": "sha256:e9ac5439f9e93d23e154eb20219c1f905fa2035920dc50c001c30935327284e4",
+      "src": "core/dev/upstream/README.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/upstream/_template.md",
+      "hash": "sha256:ee6b2f3842ce0dc3f13c18e5c802d034fee131064611ae41a0cebb075df148a3",
+      "src": "core/dev/upstream/_template.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/upstream/archive/.gitkeep",
+      "hash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "src": "core/dev/upstream/archive/.gitkeep",
+      "unrecoverable_base": true,
+      "verbatim": false
     }
   ],
   "migrated": true,
