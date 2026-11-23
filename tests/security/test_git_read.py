@@ -124,6 +124,10 @@ def test_checked_bytes_refuses_descriptor_change_time_during_read(
         before = os.fstat(fd)
         data = real_read(fd, size)
         if (before.st_dev, before.st_ino) == identity and not mutation:
+            # Linux stamps a change time from a clock that moves every few
+            # milliseconds, so a change made in the same tick as the file's
+            # creation can leave the stamp equal; wait for the clock to move.
+            time.sleep(0.05)
             current = source.stat()
             os.utime(source, ns=(current.st_atime_ns,
                                  current.st_mtime_ns + 4_000_000_000))
