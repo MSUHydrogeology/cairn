@@ -37,6 +37,10 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ## Unreleased
 
+## 0.8.1 — 2026-11-23
+
+The main change: the usage meter now counts Claude and Antigravity work toward a project, takes its price table from a file the account owns, and groups use by capability tier. This release also makes the tools and tests that failed on Windows or Linux pass there.
+
 ### Major changes
 
 - **Changed: Config-driven model weights, configurable tiers, and Antigravity token fields.** The usage meter loads pricing weights, configurable capability tiers (default `high`, `medium`, `low`; Cairn adds `frontier` above `high` for Fable, Astra, and Carbon in `dev/.cairn/meter-models.json`), and adapter bounds from `~/.cairn/meter-models.json` instead of built-in Python tables, exports `cairn-meter-project/3` with per-row `tier` and `by_tier` summaries in `meter.py` and `pulse.py`, migrates version-6 ledgers in place to `cairn-meter-ledger/7`, reads only `transcript.jsonl` with optional `model` and `cache_read_tokens` for Antigravity, and prefers `ANTIGRAVITY_CONVERSATION_ID` in session identity. ([accepted proposal](dev/proposals/archive/2026-11-22-neon-config-driven-meter-tiers-and-antigravity.md))
@@ -47,6 +51,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
+- **Changed** — The security sweeps read up to 256 MiB of Git history, where 64 MiB was the limit, so a project with a long history is scanned instead of reported as degraded. A scan that reads that much needs memory of about twice that size on Mac and Linux, and more on Windows; `install/SAFETY.md` states the new limit. Cairn's own release scan needed it (its history read is 107 MB).
 - **Fixed** — The installer on Windows no longer writes through a link. When it copies the skills where symbolic links are unavailable, it now refuses a link or a junction (a Windows folder link) at, or above, a file it writes, as it already did on Mac and Linux, instead of creating a file at the link's far end or stopping with a traceback.
 - **Fixed: The snapshot step writes UTF-8 on Windows.** A snapshot written to a file no longer turns non-ASCII characters into console-encoded text or adds carriage returns, so the pulse reads it.
 - **Fixed: The pulse prints each usage row's weighted total.** The usage line ends with `weighted=` and the row's total, or `weighted=unknown` where the row has none.
