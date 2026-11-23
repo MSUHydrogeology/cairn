@@ -308,8 +308,9 @@ def test_executable_digest_refuses_an_unrelated_ancestor_change_during_read(
         before = _component_stat_rows(exe) if is_executable and not created else ()
         data = real_read(fd, size)
         if is_executable and not created:
-            if os.name == "nt":
-                time.sleep(0.05)  # Windows file times tick coarsely; let the clock move
+            # File times tick coarsely on Windows and on Linux (every few
+            # milliseconds); let the clock move so the new sibling changes them.
+            time.sleep(0.05)
             sibling.write_text("unrelated\n", encoding="utf-8")
             after = _component_stat_rows(exe)
             changes = {
