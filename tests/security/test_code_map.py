@@ -322,9 +322,17 @@ def test_real_cli_enforces_fixed_total_read_budget(tmp_path: Path) -> None:
 def test_real_cli_enforces_fixed_ast_node_budget(tmp_path: Path) -> None:
     values = ",".join(["0"] * 450_000)
     source = f"x=({values})\n"
+    tree = tmp_path / "tree"
+    tree.mkdir()
     for index in range(5):
-        (tmp_path / f"f{index}.py").write_text(source)
-    completed, result = _run(tmp_path, timeout=65)
+        (tree / f"f{index}.py").write_text(source)
+    # The node budget, not a time limit, must stop this run. A slow or busy
+    # machine parses a 450,000-element file slowly enough to trip the fixed
+    # per-file time limit first (ast_nodes then reads 0), so only the time
+    # budgets are scaled up here; the node budget stays the fixed one.
+    collector = _collector_with_test_limits(
+        tmp_path, PER_FILE_SECONDS=60.0, PARSER_SECONDS=240.0, COMMAND_SECONDS=300.0)
+    completed, result = _run(tree, script=collector, timeout=320)
     assert completed.returncode == 1
     assert result["budgets"]["ast_nodes_limit"] == 2_000_000
     assert result["budgets"]["ast_nodes"] > 2_000_000
