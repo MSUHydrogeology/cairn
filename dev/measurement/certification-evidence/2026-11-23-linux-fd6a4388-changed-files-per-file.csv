@@ -1,0 +1,13 @@
+file,tests,passed,failed,errors,skipped,seconds
+tests/contract/test_test_tiers.py,69,69,0,0,0,12.8
+tests/test_ast_attest.py,29,29,0,0,0,0.3
+tests/test_gitattributes_install.py,10,10,0,0,0,13.1
+tests/test_install_report_slots.py,7,7,0,0,0,13.0
+tests/test_install_time_onboarding.py,28,28,0,0,0,58.9
+tests/test_model_selection_stub.py,52,52,0,0,0,16.3
+tests/test_portable_security_sweeps.py,154,152,0,0,2,124.5
+tests/test_profile_grammar.py,96,96,0,0,0,25.5
+tests/test_python_floor.py,1,1,0,0,0,0.7
+tests/test_security_finding_confidentiality.py,32,32,0,0,0,17.5
+tests/test_security_marker.py,29,28,0,0,1,41.2
+tests/test_skills_fanout.py,9,9,0,0,0,0.0
