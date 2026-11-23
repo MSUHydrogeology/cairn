@@ -7,6 +7,18 @@ Role: Implementation. Follows `dev/measurement/secrets-scan-trial-2026-11-22.md`
 1. **The cap is raised and the scan now reads all of Cairn's history.** `HISTORY_MAX_BYTES` went from 64 MiB to 256 MiB in `dev/tools/git_read.py` and its twin (commit `b7e62006`). The history read is now 106,579,962 bytes (101.6 MiB), 40% of the new cap.
 2. **The scan finds 43 hits, 23 in history and 20 in the current tree, and none is a credential.** 30 are file digests, 10 are public key fingerprints in example text, 3 are made-up test values. This is the same 23 and 20 the trial predicted.
 3. **All 43 are recorded as reviewed** in `gitleaks.fingerprints` of `dev/tools/portable_security_policy.json` (and its shipped twin, which a test requires to be identical).
+4. **A fresh clone then scans clean: exit 0** (see "The clean scan" below). That is the scan of one commit; the cut needs it again on the final commit.
+
+## The clean scan
+
+A new `git clone` of this repository at `/private/tmp/cairn-cut`, at `583f31aae494bfb800b0945229daff77a29e2f17` (`git rev-parse HEAD` in the clone; the commit that recorded the 43 entries and this record), then, from the repository root with Python 3.13.13 and gitleaks 8.30.1:
+
+`python dev/tools/run_portable_security_sweeps.py --target /private/tmp/cairn-cut --policy dev/tools/portable_security_policy.json --json`
+
+- **Exit 0.** Result 0, mode `full` ("admitted artifact ('8.30.1', 'darwin', 'arm64') matched digest f414bc2fb952... (evidence GL-2026-11-18-darwin-arm64-8.30.1)").
+- **Current tree: CLEAN**, 0 findings. **History: CLEAN**, 0 findings.
+- **Before the 43 entries** the same scan of a fresh clone one commit earlier gave exit 10: 20 tree findings and 23 history findings. **Same entries, clone at another path:** exit 10, tree 20 findings, history clean.
+- **Scanned on the Mac only.** This record's own last edit (the commit that added this section) came after the scanned commit; it holds no digest or key-like line.
 
 ## How each hit was read
 
