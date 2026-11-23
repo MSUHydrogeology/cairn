@@ -328,7 +328,7 @@
     {
       "base_hash": "sha256:e2ae83943fa4bbe05c0e4597ba1d5cb133914d89b72b3cc45afec4ddcfaad1b1",
       "dst": "dev/tools/portable_security_policy.json",
-      "hash": "sha256:e2ae83943fa4bbe05c0e4597ba1d5cb133914d89b72b3cc45afec4ddcfaad1b1",
+      "hash": "sha256:2351e5965fc344c387826c367b86bb461af375cf4eea2716de68c4df1c2395bf",
       "src": "modules/team-gated/portable_security_policy.json",
       "verbatim": true
     },
