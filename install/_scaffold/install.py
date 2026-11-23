@@ -876,6 +876,19 @@ def _remove_created(path: str, created: os.stat_result) -> None:
     that same file (same volume and file number, not a link).  Best effort: it
     never raises, and a file number of 0 (a filesystem that gives none) is not
     trusted to mean "the same"."""
+    # What a racer can still do (Windows has no delete through a handle and no
+    # no-follow open), each needing a second program running on this machine at
+    # the same instant, which install/SAFETY.md accepts:
+    # - swap a folder above *path* for a junction between the look and the
+    #   unlink, so the unlink removes a same-named file elsewhere;
+    # - swap a folder for a junction just before the new folder is made, so an
+    #   empty folder appears outside (the next look then refuses);
+    # - swap the temporary name back to a plain file after a link was followed:
+    #   the install refuses, but the far-end file it created cannot be found and
+    #   stays, empty;
+    # - cause a refusal after earlier copies were written, so a refusal in the
+    #   copy loop (not in the plan) can leave the run part-done; the next run
+    #   regenerates the copies, and a diverged file is kept as *.diverged.bak.
     try:
         now = os.lstat(path)
         if (created.st_ino and not _is_redirect(now)
